@@ -4,13 +4,17 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "predev": "tsx ../../scripts/openfl-shims.ts",
     "dev": "vite",
+    "prebuild": "tsx ../../scripts/openfl-shims.ts",
     "build": "vite build",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@flighthq/capture": "file:../../packages/capture",
+    "openfl": "^9.4.1",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "stats-js": "^1.0.1"
   }
 }

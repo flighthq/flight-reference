@@ -3,7 +3,6 @@ import Sprite from 'openfl/display/Sprite';
 import Stage from 'openfl/display/Stage';
 import Event from 'openfl/events/Event';
 import AssetLibrary from 'openfl/utils/AssetLibrary';
-import * as layoutPath from './../assets/layout.swf';
 
 class App extends Sprite {
   private columnOffsetHeight: number;
@@ -13,7 +12,7 @@ class App extends Sprite {
   constructor() {
     super();
 
-    AssetLibrary.loadFromFile(layoutPath).onComplete((library: AssetLibrary) => {
+    AssetLibrary.loadFromFile('assets/layout.swf').onComplete((library: AssetLibrary) => {
       this.layout = library.getMovieClip('Layout');
       this.addChild(this.layout);
 

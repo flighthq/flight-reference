@@ -1,0 +1,38 @@
+[
+  {
+    "id": "counter-notes",
+    "title": "Counter + Notes",
+    "summary": "Small interactive surface for clicks, text entry, toggles, and capture output.",
+    "status": "ready-for-adapters",
+    "initialState": {
+      "count": 2,
+      "note": "Seeded walkthrough state",
+      "accent": "cyan",
+      "enabled": true
+    }
+  },
+  {
+    "id": "form-flags",
+    "title": "Form + Flags",
+    "summary": "Reference sample for boolean state and text updates without relying on snapshots.",
+    "status": "ready-for-adapters",
+    "initialState": {
+      "count": 0,
+      "note": "Flags should stay mirrored",
+      "accent": "amber",
+      "enabled": false
+    }
+  },
+  {
+    "id": "stress-cycle",
+    "title": "Stress Cycle",
+    "summary": "A denser seed state for comparing fingerprints after multiple interactions.",
+    "status": "prototype-shell",
+    "initialState": {
+      "count": 7,
+      "note": "Use this to probe drift between adapters",
+      "accent": "rose",
+      "enabled": true
+    }
+  }
+]

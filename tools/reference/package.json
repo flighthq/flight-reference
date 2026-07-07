@@ -1,0 +1,16 @@
+{
+  "name": "@flighthq/reference",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@flighthq/capture": "file:../../packages/capture",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  }
+}

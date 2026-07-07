@@ -1,0 +1,31 @@
+{
+  "name": "flight-reference",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Standalone reference harness for Flight scenarios and capture utilities.",
+  "workspaces": [
+    "tools/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace @flighthq/reference",
+    "build:capture": "npm run build --workspace @flighthq/capture",
+    "build:reference": "npm run build --workspace @flighthq/reference",
+    "build": "npm run build:capture && npm run build:reference",
+    "test": "npm run test --workspace @flighthq/capture",
+    "typecheck": "npm run typecheck --workspace @flighthq/capture && npm run typecheck --workspace @flighthq/reference",
+    "check": "npm run typecheck && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.14",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.0.2",
+    "vitest": "^3.2.4"
+  }
+}

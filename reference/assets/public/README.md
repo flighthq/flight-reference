@@ -1,1 +1,1 @@
-Committed public assets for reference samples should live in this directory.
+Committed public assets for reference samples should live under `openfl/` in this directory.

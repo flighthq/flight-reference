@@ -1,10 +1,10 @@
 # OpenFL sample assets
 
-Binary sample assets are still staged from local `openfl-samples` and `openfl-samples-ts` clones, but in this standalone repo they should land under `reference/assets/public`, which is what the current reference app serves directly.
+Binary sample assets are still staged from local `openfl-samples` and `openfl-samples-ts` clones, but in this standalone repo they should land under `reference/assets/public/openfl`.
 
 That keeps the reference corpus self-contained:
 
-- committed reference assets live with the reference harness
+- committed reference assets live with the reference harness, namespaced under `openfl/`
 - the staging script is only a bootstrap path while the asset set is still being curated
 - upstream sample paths stay recognizable so ports can remain close to source
 

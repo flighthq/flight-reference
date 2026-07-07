@@ -38,6 +38,14 @@ function walkDeclarations(dir: string, base: string, out: string[]): void {
   }
 }
 
+function walkGeneratedModules(dir: string, out: string[]): void {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) walkGeneratedModules(full, out);
+    else if (entry.isFile() && entry.name.endsWith('.js')) out.push(full);
+  }
+}
+
 const lib = findOpenflLib();
 if (!lib) {
   console.warn('openfl-shims: node_modules/openfl not found; skipping.');
@@ -45,17 +53,19 @@ if (!lib) {
 }
 
 const pubRoot = join(lib, 'openfl');
-const genRoot = join(lib, '_gen', 'openfl');
+const openflGenRoot = join(lib, '_gen', 'openfl');
+const generatedRoot = join(lib, '_gen');
 
 const declarations: string[] = [];
 walkDeclarations(pubRoot, pubRoot, declarations);
 
 const SHIM_PREFIX = 'module.exports = require("';
+const LEGACY_GLOBAL_MARKER = 'var global = $global;\nvar $_;\n';
 
 let written = 0;
 for (const sub of declarations) {
   const jsPath = join(pubRoot, `${sub}.js`);
-  if (!existsSync(join(genRoot, `${sub}.js`))) continue; // no generated impl to point at (pure type)
+  if (!existsSync(join(openflGenRoot, `${sub}.js`))) continue; // no generated impl to point at (pure type)
   // `sub` carries forward slashes, so the require specifier resolves cross-platform and the depth is
   // counted correctly. The `./` prefix plus N `../` walks up from `lib/openfl/<sub>/` to `lib/`.
   const ups = '../'.repeat(sub.split('/').length);
@@ -70,4 +80,28 @@ for (const sub of declarations) {
   written++;
 }
 
-console.log(`openfl-shims: wrote ${written} re-export shim${written === 1 ? '' : 's'}.`);
+const generatedModules: string[] = [];
+walkGeneratedModules(generatedRoot, generatedModules);
+
+let patched = 0;
+for (const modulePath of generatedModules) {
+  const current = readFileSync(modulePath, 'utf8');
+  if (current.includes(LEGACY_GLOBAL_MARKER)) continue;
+  if (!current.includes('$global.Object.defineProperty(exports, "__esModule", {value: true});')) continue;
+  if (!current.includes('global.Object') && !current.includes('($_=')) continue;
+
+  const next = current.replace(
+    '$global.Object.defineProperty(exports, "__esModule", {value: true});\n',
+    `$global.Object.defineProperty(exports, "__esModule", {value: true});\n\n${LEGACY_GLOBAL_MARKER}`,
+  );
+
+  if (next === current) continue;
+  writeFileSync(modulePath, next);
+  patched++;
+}
+
+console.log(
+  `openfl-shims: wrote ${written} re-export shim${written === 1 ? '' : 's'} and patched ${patched} generated module${
+    patched === 1 ? '' : 's'
+  }.`,
+);

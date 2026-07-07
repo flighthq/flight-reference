@@ -1,41 +1,41 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
-import { fingerprintValue } from "./fingerprint.js";
-import { createCaptureSession } from "./session.js";
+import { fingerprintValue } from './fingerprint.js';
+import { createCaptureSession } from './session.js';
 
-describe("fingerprintValue", () => {
-  it("stays stable across object key order", () => {
+describe('fingerprintValue', () => {
+  it('stays stable across object key order', () => {
     const first = fingerprintValue({
       z: 1,
       a: {
         enabled: true,
-        count: 4
-      }
+        count: 4,
+      },
     });
 
     const second = fingerprintValue({
       a: {
         count: 4,
-        enabled: true
+        enabled: true,
       },
-      z: 1
+      z: 1,
     });
 
     expect(first).toBe(second);
   });
 });
 
-describe("createCaptureSession", () => {
-  it("records immutable snapshots and logs", () => {
-    const session = createCaptureSession("compare");
+describe('createCaptureSession', () => {
+  it('records immutable snapshots and logs', () => {
+    const session = createCaptureSession('compare');
     const mutable = {
       count: 1,
-      note: "before"
+      note: 'before',
     };
 
-    session.recordSnapshot("initial", mutable);
-    mutable.note = "after";
-    session.recordLog("info", "updated", mutable);
+    session.recordSnapshot('initial', mutable);
+    mutable.note = 'after';
+    session.recordLog('info', 'updated', mutable);
 
     const snapshots = session.getSnapshots();
     const logs = session.getLogs();
@@ -44,11 +44,11 @@ describe("createCaptureSession", () => {
     expect(logs).toHaveLength(1);
     expect(snapshots[0]?.value).toEqual({
       count: 1,
-      note: "before"
+      note: 'before',
     });
     expect(logs[0]?.data).toEqual({
       count: 1,
-      note: "after"
+      note: 'after',
     });
     expect(session.getFingerprint()).toHaveLength(64);
   });

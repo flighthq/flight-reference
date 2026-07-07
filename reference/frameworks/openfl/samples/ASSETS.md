@@ -1,11 +1,11 @@
 # OpenFL sample assets
 
-The detached OpenFL branch currently stages binary sample assets from local clones into cache directories before `tools/reference` runs.
+Binary sample assets are still staged from local `openfl-samples` and `openfl-samples-ts` clones, but in this standalone repo they should land under `reference/assets/public`, which is what the current reference app serves directly.
 
-That bootstrap path is useful while the corpus is still being assembled, but the repository direction here is different:
+That keeps the reference corpus self-contained:
 
-- keep reference assets inside this repo once the set is curated
-- avoid polluting the main Flight asset tree with static reference-only content
-- keep upstream sample paths recognizable so ports stay close to source
+- committed reference assets live with the reference harness
+- the staging script is only a bootstrap path while the asset set is still being curated
+- upstream sample paths stay recognizable so ports can remain close to source
 
-The staged asset list from the detached branch is the right shortlist for what eventually needs a committed home in this repository.
+The detached branch's asset list is still the right shortlist for what should eventually get a stable, committed home here.

@@ -9,37 +9,37 @@ type NormalizedValue =
     };
 
 function normalize(value: unknown): NormalizedValue {
-  if (value === null || typeof value === "boolean" || typeof value === "number" || typeof value === "string") {
+  if (value === null || typeof value === 'boolean' || typeof value === 'number' || typeof value === 'string') {
     return value;
   }
 
   if (value === undefined) {
     return {
-      $undefined: true
+      $undefined: true,
     };
   }
 
-  if (typeof value === "bigint") {
+  if (typeof value === 'bigint') {
     return {
-      $bigint: value.toString()
+      $bigint: value.toString(),
     };
   }
 
-  if (typeof value === "function") {
+  if (typeof value === 'function') {
     return {
-      $function: value.name || "anonymous"
+      $function: value.name || 'anonymous',
     };
   }
 
-  if (typeof value === "symbol") {
+  if (typeof value === 'symbol') {
     return {
-      $symbol: value.description || ""
+      $symbol: value.description || '',
     };
   }
 
   if (value instanceof Date) {
     return {
-      $date: value.toISOString()
+      $date: value.toISOString(),
     };
   }
 
@@ -49,7 +49,7 @@ function normalize(value: unknown): NormalizedValue {
 
   if (value instanceof Set) {
     return {
-      $set: Array.from(value, (item) => normalize(item))
+      $set: Array.from(value, (item) => normalize(item)),
     };
   }
 
@@ -57,7 +57,7 @@ function normalize(value: unknown): NormalizedValue {
     return {
       $map: Array.from(value.entries())
         .sort(([left], [right]) => String(left).localeCompare(String(right)))
-        .map(([key, entryValue]) => [String(key), normalize(entryValue)])
+        .map(([key, entryValue]) => [String(key), normalize(entryValue)]),
     };
   }
 
@@ -65,7 +65,7 @@ function normalize(value: unknown): NormalizedValue {
     const bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
 
     return {
-      $typedArray: Array.from(bytes)
+      $typedArray: Array.from(bytes),
     };
   }
 
@@ -84,21 +84,12 @@ function hashChunk(input: string, seed: number): string {
     hash = Math.imul(hash, 2246822519) >>> 0;
   }
 
-  return hash.toString(16).padStart(8, "0");
+  return hash.toString(16).padStart(8, '0');
 }
 
 export function fingerprintValue(value: unknown): string {
   const payload = JSON.stringify(normalize(value));
-  return [
-    2166136261,
-    1597334677,
-    3812015801,
-    958282187,
-    1103547991,
-    2654435761,
-    2246822519,
-    3266489917
-  ]
+  return [2166136261, 1597334677, 3812015801, 958282187, 1103547991, 2654435761, 2246822519, 3266489917]
     .map((seed) => hashChunk(payload, seed))
-    .join("");
+    .join('');
 }

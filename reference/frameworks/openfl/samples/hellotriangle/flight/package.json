@@ -1,0 +1,8 @@
+{
+  "name": "openfl-sample-hellotriangle-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

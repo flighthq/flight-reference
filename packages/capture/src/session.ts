@@ -1,6 +1,6 @@
-import { fingerprintValue } from "./fingerprint.js";
+import { fingerprintValue } from './fingerprint.js';
 
-export type CaptureLogLevel = "debug" | "info" | "warn" | "error";
+export type CaptureLogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 export interface CaptureLogEntry {
   at: string;
@@ -60,8 +60,8 @@ export function createCaptureSession(name: string): CaptureSession {
         fingerprint: fingerprintValue({
           level,
           message,
-          data
-        })
+          data,
+        }),
       };
 
       logs.push(entry);
@@ -72,7 +72,7 @@ export function createCaptureSession(name: string): CaptureSession {
         at: stamp(),
         label,
         value: cloneValue(value),
-        fingerprint: fingerprintValue(value)
+        fingerprint: fingerprintValue(value),
       };
 
       snapshots.push(snapshot);
@@ -88,15 +88,15 @@ export function createCaptureSession(name: string): CaptureSession {
       return fingerprintValue({
         name,
         logs,
-        snapshots
+        snapshots,
       });
     },
     toJSON() {
       return {
         name,
         logs: cloneValue(logs),
-        snapshots: cloneValue(snapshots)
+        snapshots: cloneValue(snapshots),
       };
-    }
+    },
   };
 }

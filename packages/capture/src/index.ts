@@ -1,8 +1,3 @@
-export { fingerprintValue } from "./fingerprint.js";
-export { createCaptureSession } from "./session.js";
-export type {
-  CaptureLogEntry,
-  CaptureLogLevel,
-  CaptureSession,
-  CaptureSnapshot
-} from "./session.js";
+export { fingerprintValue } from './fingerprint.js';
+export { createCaptureSession } from './session.js';
+export type { CaptureLogEntry, CaptureLogLevel, CaptureSession, CaptureSnapshot } from './session.js';

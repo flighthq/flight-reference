@@ -15,17 +15,37 @@
     "build:capture": "npm run build --workspace @flighthq/capture",
     "build:reference": "npm run build --workspace @flighthq/reference",
     "build": "npm run build:capture && npm run build:reference",
+    "lint": "oxlint --max-warnings=0",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "fix": "npm run lint:fix && npm run format",
+    "stage:openfl-sample-assets": "tsx scripts/stage-openfl-sample-assets.ts",
+    "ci": "npm run check",
+    "prepare": "husky",
     "test": "npm run test --workspace @flighthq/capture",
     "typecheck": "npm run typecheck --workspace @flighthq/capture && npm run typecheck --workspace @flighthq/reference",
-    "check": "npm run typecheck && npm run test && npm run build"
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build"
   },
   "devDependencies": {
     "@types/node": "^24.0.14",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^5.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "oxfmt": "0.57.0",
+    "oxlint": "1.72.0",
+    "tsx": "^4.22.4",
     "typescript": "^5.9.2",
     "vite": "^7.0.2",
     "vitest": "^3.2.4"
+  },
+  "lint-staged": {
+    "**/*.{ts,tsx}": [
+      "oxlint --fix --max-warnings=0 --no-error-on-unmatched-pattern",
+      "oxfmt --write --no-error-on-unmatched-pattern"
+    ],
+    "**/*.{css,html,json,md}": "oxfmt --write --no-error-on-unmatched-pattern"
   }
 }

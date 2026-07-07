@@ -1,0 +1,8 @@
+{
+  "name": "openfl-sample-creatingcustomevents-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

@@ -1,16 +1,11 @@
-import { type CSSProperties, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useMemo, useRef, useState } from 'react';
 
-import {
-  createCaptureSession,
-  fingerprintValue,
-  type CaptureLogEntry,
-  type CaptureSession
-} from "@flighthq/capture";
-import scenarioManifest from "../../../reference/frameworks/openfl/samples/manifest.json";
+import { createCaptureSession, fingerprintValue, type CaptureLogEntry, type CaptureSession } from '@flighthq/capture';
+import scenarioManifest from '../../../reference/frameworks/openfl/samples/manifest.json';
 
-type PaneId = "flight" | "alternative";
-type Mode = "single" | "compare";
-type Accent = "cyan" | "amber" | "rose";
+type PaneId = 'flight' | 'alternative';
+type Mode = 'single' | 'compare';
+type Accent = 'cyan' | 'amber' | 'rose';
 
 interface DriverState {
   count: number;
@@ -30,47 +25,47 @@ interface ScenarioDefinition {
 type HarnessState = Record<PaneId, DriverState>;
 
 const scenarios = scenarioManifest as ScenarioDefinition[];
-const paneOrder: PaneId[] = ["flight", "alternative"];
+const paneOrder: PaneId[] = ['flight', 'alternative'];
 const paneLabels: Record<PaneId, string> = {
-  flight: "Flight GL",
-  alternative: "Alternative GL"
+  flight: 'Flight GL',
+  alternative: 'Alternative GL',
 };
 const paneSummaries: Record<PaneId, string> = {
-  flight: "Reference renderer surface",
-  alternative: "Comparison renderer surface"
+  flight: 'Reference renderer surface',
+  alternative: 'Comparison renderer surface',
 };
-const accentLabels: Accent[] = ["cyan", "amber", "rose"];
+const accentLabels: Accent[] = ['cyan', 'amber', 'rose'];
 const fallbackScenario: ScenarioDefinition = {
-  id: "empty",
-  title: "Empty manifest",
-  summary: "Add scenarios to scenarios/manifest.json.",
-  status: "needs-scenarios",
+  id: 'empty',
+  title: 'Empty manifest',
+  summary: 'Add scenarios to scenarios/manifest.json.',
+  status: 'needs-scenarios',
   initialState: {
     count: 0,
-    note: "",
-    accent: "cyan",
-    enabled: true
-  }
+    note: '',
+    accent: 'cyan',
+    enabled: true,
+  },
 };
 
 function createHarnessState(initialState: DriverState): HarnessState {
   return {
     flight: structuredClone(initialState),
-    alternative: structuredClone(initialState)
+    alternative: structuredClone(initialState),
   };
 }
 
 function createSessionSet(scenarioId: string): Record<PaneId, CaptureSession> {
   const sessions = {
     flight: createCaptureSession(`flight:${scenarioId}`),
-    alternative: createCaptureSession(`alternative:${scenarioId}`)
+    alternative: createCaptureSession(`alternative:${scenarioId}`),
   };
 
-  sessions.flight.recordLog("info", "Scenario selected", {
-    scenarioId
+  sessions.flight.recordLog('info', 'Scenario selected', {
+    scenarioId,
   });
-  sessions.alternative.recordLog("info", "Scenario selected", {
-    scenarioId
+  sessions.alternative.recordLog('info', 'Scenario selected', {
+    scenarioId,
   });
 
   return sessions;
@@ -99,7 +94,7 @@ function RendererPane({
   onCountDelta,
   onNoteChange,
   onAccentChange,
-  onEnabledChange
+  onEnabledChange,
 }: PaneProps) {
   const logs = summarizeLogs(session);
   const fingerprint = fingerprintValue(state).slice(0, 12);
@@ -113,23 +108,23 @@ function RendererPane({
           <p>{paneSummaries[paneId]}</p>
         </div>
         <div className="pane__status">
-          <span className="pane__pill">{mirrorInputs ? "Lockstep" : "Independent"}</span>
+          <span className="pane__pill">{mirrorInputs ? 'Lockstep' : 'Independent'}</span>
           <span className="pane__pill pane__pill--subtle">{fingerprint}</span>
         </div>
       </header>
 
-      <div className="pane__stage" style={{ "--accent-color": accentToken } as CSSProperties}>
+      <div className="pane__stage" style={{ '--accent-color': accentToken } as CSSProperties}>
         <div className="stage__metric">
           <span className="stage__label">count</span>
           <strong>{state.count}</strong>
         </div>
         <div className="stage__metric">
           <span className="stage__label">enabled</span>
-          <strong>{state.enabled ? "true" : "false"}</strong>
+          <strong>{state.enabled ? 'true' : 'false'}</strong>
         </div>
         <div className="stage__note">
           <span className="stage__label">note</span>
-          <p>{state.note || "No note set."}</p>
+          <p>{state.note || 'No note set.'}</p>
         </div>
       </div>
 
@@ -169,11 +164,7 @@ function RendererPane({
         </label>
 
         <label className="toggle">
-          <input
-            type="checkbox"
-            checked={state.enabled}
-            onChange={(event) => onEnabledChange(event.target.checked)}
-          />
+          <input type="checkbox" checked={state.enabled} onChange={(event) => onEnabledChange(event.target.checked)} />
           <span>Enabled</span>
         </label>
       </div>
@@ -214,27 +205,29 @@ function RendererPane({
 export default function App() {
   const initialScenario = scenarios[0] ?? fallbackScenario;
   const [selectedScenarioId, setSelectedScenarioId] = useState(initialScenario.id);
-  const [mode, setMode] = useState<Mode>("compare");
+  const [mode, setMode] = useState<Mode>('compare');
   const [mirrorInputs, setMirrorInputs] = useState(true);
-  const [harnessState, setHarnessState] = useState<HarnessState>(() => createHarnessState(initialScenario.initialState));
+  const [harnessState, setHarnessState] = useState<HarnessState>(() =>
+    createHarnessState(initialScenario.initialState),
+  );
   const sessionsRef = useRef<Record<PaneId, CaptureSession>>(createSessionSet(initialScenario.id));
 
   const selectedScenario = useMemo(
     () => scenarios.find((scenario) => scenario.id === selectedScenarioId) ?? initialScenario,
-    [initialScenario, selectedScenarioId]
+    [initialScenario, selectedScenarioId],
   );
 
   const applyUpdate = (target: PaneId, message: string, updater: (current: DriverState) => DriverState) => {
     setHarnessState((current) => {
       const recipients = mirrorInputs ? paneOrder : [target];
       const nextState = {
-        ...current
+        ...current,
       };
 
       for (const paneId of recipients) {
         const updated = updater(current[paneId]);
         nextState[paneId] = updated;
-        sessionsRef.current[paneId].recordLog("info", message, updated);
+        sessionsRef.current[paneId].recordLog('info', message, updated);
         sessionsRef.current[paneId].recordSnapshot(message, updated);
       }
 
@@ -248,13 +241,13 @@ export default function App() {
 
     const nextState = createHarnessState(scenario.initialState);
     paneOrder.forEach((paneId) => {
-      sessionsRef.current[paneId].recordSnapshot("reset", nextState[paneId]);
+      sessionsRef.current[paneId].recordSnapshot('reset', nextState[paneId]);
     });
 
     setHarnessState(nextState);
   };
 
-  const visiblePanes = mode === "compare" ? paneOrder : (["flight"] as PaneId[]);
+  const visiblePanes = mode === 'compare' ? paneOrder : (['flight'] as PaneId[]);
 
   return (
     <main className="app-shell">
@@ -268,15 +261,20 @@ export default function App() {
           <span className="sidebar__label">Scenarios</span>
           <ul className="scenario-list">
             {scenarios.length === 0 ? (
-              <li className="scenario-list__empty">Add entries to `reference/frameworks/openfl/samples/manifest.json`.</li>
+              <li className="scenario-list__empty">
+                Add entries to `reference/frameworks/openfl/samples/manifest.json`.
+              </li>
             ) : (
               scenarios.map((scenario) => (
                 <li key={scenario.id}>
                   <button
                     type="button"
-                    className={scenario.id === selectedScenario.id ? "scenario-list__item scenario-list__item--active" : "scenario-list__item"}
-                    onClick={() => selectScenario(scenario)}
-                  >
+                    className={
+                      scenario.id === selectedScenario.id
+                        ? 'scenario-list__item scenario-list__item--active'
+                        : 'scenario-list__item'
+                    }
+                    onClick={() => selectScenario(scenario)}>
                     <strong>{scenario.title}</strong>
                     <span>{scenario.summary}</span>
                     <small>{scenario.status}</small>
@@ -308,16 +306,14 @@ export default function App() {
             <div className="segmented" role="tablist" aria-label="Harness mode">
               <button
                 type="button"
-                className={mode === "single" ? "segmented__button segmented__button--active" : "segmented__button"}
-                onClick={() => setMode("single")}
-              >
+                className={mode === 'single' ? 'segmented__button segmented__button--active' : 'segmented__button'}
+                onClick={() => setMode('single')}>
                 Single
               </button>
               <button
                 type="button"
-                className={mode === "compare" ? "segmented__button segmented__button--active" : "segmented__button"}
-                onClick={() => setMode("compare")}
-              >
+                className={mode === 'compare' ? 'segmented__button segmented__button--active' : 'segmented__button'}
+                onClick={() => setMode('compare')}>
                 Compare
               </button>
             </div>
@@ -333,7 +329,7 @@ export default function App() {
           </div>
         </header>
 
-        <section className={mode === "compare" ? "pane-grid pane-grid--compare" : "pane-grid pane-grid--single"}>
+        <section className={mode === 'compare' ? 'pane-grid pane-grid--compare' : 'pane-grid pane-grid--single'}>
           {visiblePanes.map((paneId) => (
             <RendererPane
               key={paneId}
@@ -342,27 +338,27 @@ export default function App() {
               session={sessionsRef.current[paneId]}
               mirrorInputs={mirrorInputs}
               onCountDelta={(delta) =>
-                applyUpdate(paneId, delta > 0 ? "Increment counter" : "Decrement counter", (current) => ({
+                applyUpdate(paneId, delta > 0 ? 'Increment counter' : 'Decrement counter', (current) => ({
                   ...current,
-                  count: current.count + delta
+                  count: current.count + delta,
                 }))
               }
               onNoteChange={(value) =>
-                applyUpdate(paneId, "Edit note", (current) => ({
+                applyUpdate(paneId, 'Edit note', (current) => ({
                   ...current,
-                  note: value
+                  note: value,
                 }))
               }
               onAccentChange={(value) =>
-                applyUpdate(paneId, "Change accent", (current) => ({
+                applyUpdate(paneId, 'Change accent', (current) => ({
                   ...current,
-                  accent: value
+                  accent: value,
                 }))
               }
               onEnabledChange={(value) =>
-                applyUpdate(paneId, "Toggle enabled", (current) => ({
+                applyUpdate(paneId, 'Toggle enabled', (current) => ({
                   ...current,
-                  enabled: value
+                  enabled: value,
                 }))
               }
             />

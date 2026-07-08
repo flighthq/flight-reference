@@ -1,0 +1,11 @@
+{
+  "name": "openfl-sample-textalignment-openfl",
+  "private": true,
+  "type": "module",
+  "renderers": [
+    "webgl"
+  ],
+  "dependencies": {
+    "openfl": "*"
+  }
+}

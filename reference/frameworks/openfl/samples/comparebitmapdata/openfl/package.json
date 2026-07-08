@@ -1,0 +1,11 @@
+{
+  "name": "openfl-sample-comparebitmapdata-openfl",
+  "private": true,
+  "type": "module",
+  "renderers": [
+    "webgl"
+  ],
+  "dependencies": {
+    "openfl": "*"
+  }
+}

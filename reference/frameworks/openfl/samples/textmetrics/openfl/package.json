@@ -1,0 +1,11 @@
+{
+  "name": "openfl-sample-textmetrics-openfl",
+  "private": true,
+  "type": "module",
+  "renderers": [
+    "webgl"
+  ],
+  "dependencies": {
+    "openfl": "*"
+  }
+}

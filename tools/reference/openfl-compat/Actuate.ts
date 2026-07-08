@@ -3,11 +3,12 @@ type Ease = (t: number) => number;
 interface TweenChain {
   delay(seconds: number): TweenChain;
   ease(fn: Ease): TweenChain;
-  onComplete(fn: () => void): TweenChain;
+  onComplete(fn: (...args: unknown[]) => void, args?: unknown[]): TweenChain;
   sound(left: number, right?: number): TweenChain;
 }
 
 const active = new WeakMap<object, number[]>();
+let paused = false;
 
 function addFrame(target: object, id: number): void {
   const frames = active.get(target) ?? [];
@@ -25,7 +26,8 @@ function cancelTarget(target: object): void {
 function createChain(target: object, seconds: number, props: Record<string, number>): TweenChain {
   let delayMs = 0;
   let ease: Ease = Actuate.defaultEase;
-  let complete: (() => void) | null = null;
+  let complete: ((...args: unknown[]) => void) | null = null;
+  let completeArgs: unknown[] = [];
   let started = false;
 
   const run = (): void => {
@@ -37,13 +39,38 @@ function createChain(target: object, seconds: number, props: Record<string, numb
     }
     const start = performance.now() + delayMs;
     const duration = Math.max(0, seconds * 1000);
+    let pausedAt = 0;
+    let pausedDuration = 0;
 
     const tick = (now: number): void => {
-      if (now < start) {
+      if (paused) {
+        if (pausedAt === 0) pausedAt = now;
         addFrame(target, requestAnimationFrame(tick));
         return;
       }
-      const t = duration === 0 ? 1 : Math.min(1, (now - start) / duration);
+
+      if (pausedAt !== 0) {
+        pausedDuration += now - pausedAt;
+        pausedAt = 0;
+      }
+
+      const adjustedStart = start + pausedDuration;
+
+      if (duration === 0) {
+        for (const [key, from] of startValues) {
+          const to = props[key];
+          (target as Record<string, number>)[key] = from + (to - from);
+        }
+        active.delete(target);
+        complete?.(...completeArgs);
+        return;
+      }
+
+      if (now < adjustedStart) {
+        addFrame(target, requestAnimationFrame(tick));
+        return;
+      }
+      const t = Math.min(1, (now - adjustedStart) / duration);
       const k = ease(t);
       for (const [key, from] of startValues) {
         const to = props[key];
@@ -52,7 +79,8 @@ function createChain(target: object, seconds: number, props: Record<string, numb
       if (t < 1) {
         addFrame(target, requestAnimationFrame(tick));
       } else {
-        complete?.();
+        active.delete(target);
+        complete?.(...completeArgs);
       }
     };
 
@@ -70,8 +98,9 @@ function createChain(target: object, seconds: number, props: Record<string, numb
       ease = fn;
       return this;
     },
-    onComplete(fn: () => void) {
+    onComplete(fn: (...args: unknown[]) => void, args: unknown[] = []) {
       complete = fn;
+      completeArgs = args;
       return this;
     },
     sound(left: number) {
@@ -84,8 +113,20 @@ function createChain(target: object, seconds: number, props: Record<string, numb
 const Actuate = {
   defaultEase: (t: number) => 1 - (1 - t) * (1 - t),
 
+  pauseAll(): void {
+    paused = true;
+  },
+
+  resumeAll(): void {
+    paused = false;
+  },
+
   stop(target: object): void {
     cancelTarget(target);
+  },
+
+  timer(seconds: number): TweenChain {
+    return createChain({}, seconds, {});
   },
 
   transform(target: object, seconds: number): TweenChain {

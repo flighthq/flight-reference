@@ -1,0 +1,11 @@
+{
+  "name": "openfl-sample-tictactoe-openfl",
+  "private": true,
+  "type": "module",
+  "renderers": [
+    "webgl"
+  ],
+  "dependencies": {
+    "openfl": "*"
+  }
+}

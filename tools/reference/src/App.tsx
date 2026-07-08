@@ -16,6 +16,7 @@ interface ImplementationSummary {
   mode: 'preview' | 'source';
   path: string;
   fileCount: number;
+  previewUrl?: string;
 }
 
 interface ReferenceCase {
@@ -26,6 +27,8 @@ interface ReferenceCase {
   title: string;
   summary: string;
   previewRenderers: PreviewRenderer[];
+  flightPreviewLabel?: string;
+  flightPreviewUrl?: string;
   implementations: ImplementationSummary[];
 }
 
@@ -53,21 +56,44 @@ function corpusSortOrder(corpus: string): number {
   return 2;
 }
 
-function implementationLabel(id: string): string {
-  if (id === 'openfl') return 'OpenFL TS';
-  if (id === 'openfl-haxe') return 'OpenFL Haxe';
-  return id;
-}
-
 function rendererLabel(id: string): string {
+  if (id === 'default') return 'Default';
   return id.toUpperCase();
 }
 
+function readUrlState(): {
+  corpusFilter: CorpusFilter;
+  layoutMode: LayoutMode;
+  selectedCaseId: string;
+  selectedRendererId: string;
+} {
+  if (typeof window === 'undefined') {
+    return {
+      corpusFilter: 'samples',
+      layoutMode: 'split',
+      selectedCaseId: allCases[0]?.id ?? fallbackCase.id,
+      selectedRendererId: '',
+    };
+  }
+
+  const url = new URL(window.location.href);
+  const corpus = url.searchParams.get('corpus');
+  const layout = url.searchParams.get('layout');
+
+  return {
+    corpusFilter: corpus === 'all' || corpus === 'functional' || corpus === 'samples' ? corpus : 'samples',
+    layoutMode: layout === 'single' || layout === 'split' ? layout : 'split',
+    selectedCaseId: url.searchParams.get('case') ?? allCases[0]?.id ?? fallbackCase.id,
+    selectedRendererId: url.searchParams.get('renderer') ?? '',
+  };
+}
+
 export default function App() {
-  const [corpusFilter, setCorpusFilter] = useState<CorpusFilter>('samples');
-  const [selectedCaseId, setSelectedCaseId] = useState(allCases[0]?.id ?? fallbackCase.id);
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>('split');
-  const [selectedRendererId, setSelectedRendererId] = useState('');
+  const initialState = readUrlState();
+  const [corpusFilter, setCorpusFilter] = useState<CorpusFilter>(initialState.corpusFilter);
+  const [selectedCaseId, setSelectedCaseId] = useState(initialState.selectedCaseId);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>(initialState.layoutMode);
+  const [selectedRendererId, setSelectedRendererId] = useState(initialState.selectedRendererId);
 
   const visibleCases = useMemo(() => {
     const filtered =
@@ -108,6 +134,21 @@ export default function App() {
   const selectedRenderer =
     selectedCase.previewRenderers.find((renderer) => renderer.id === selectedRendererId) ??
     selectedCase.previewRenderers[0];
+  const hasFlightImplementation = selectedCase.implementations.some((implementation) => implementation.id === 'flight');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('corpus', corpusFilter);
+    url.searchParams.set('layout', layoutMode);
+    url.searchParams.set('case', selectedCase.id);
+
+    if (selectedRenderer?.id) url.searchParams.set('renderer', selectedRenderer.id);
+    else url.searchParams.delete('renderer');
+
+    window.history.replaceState({}, '', url);
+  }, [corpusFilter, layoutMode, selectedCase.id, selectedRenderer?.id]);
 
   return (
     <main className="app-shell">
@@ -153,7 +194,10 @@ export default function App() {
                     <strong>{referenceCase.title}</strong>
                     <span>{referenceCase.summary}</span>
                     <small>
-                      {referenceCase.corpus} · {referenceCase.previewRenderers.length > 0 ? 'preview' : 'source only'}
+                      {referenceCase.corpus} ·{' '}
+                      {referenceCase.previewRenderers.length > 0 || referenceCase.flightPreviewUrl
+                        ? 'preview'
+                        : 'source only'}
                     </small>
                   </button>
                 </li>
@@ -253,47 +297,43 @@ export default function App() {
             <section className="pane">
               <header className="pane__header">
                 <div>
-                  <h3>Details</h3>
-                  <p>Imported implementation inventory for the selected OpenFL case.</p>
+                  <h3>Flight</h3>
+                  <p>
+                    {selectedCase.flightPreviewUrl
+                      ? `Live Flight renderer: ${rendererLabel(selectedCase.flightPreviewLabel ?? 'default')}`
+                      : hasFlightImplementation
+                        ? 'Flight source is present, but runnable preview requires a local Flight checkout.'
+                        : 'This case does not currently have a Flight implementation.'}
+                  </p>
                 </div>
                 <div className="pane__status">
+                  <span className="pane__pill">flight</span>
                   <span className="pane__pill pane__pill--subtle">{selectedCase.name}</span>
                 </div>
               </header>
 
-              <div className="detail-list">
-                <div className="detail-card">
-                  <span className="sidebar__label">Preview Routes</span>
-                  {selectedCase.previewRenderers.length === 0 ? (
-                    <p className="detail-card__empty">No live preview route is currently available.</p>
-                  ) : (
-                    <ul className="detail-card__list">
-                      {selectedCase.previewRenderers.map((renderer) => (
-                        <li key={renderer.id}>
-                          <strong>{rendererLabel(renderer.label)}</strong>
-                          <code>{renderer.url}</code>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+              {selectedCase.flightPreviewUrl ? (
+                <div className="pane__iframe-wrap">
+                  <iframe
+                    className="pane__iframe"
+                    src={selectedCase.flightPreviewUrl}
+                    title={`${selectedCase.title} flight preview`}
+                  />
                 </div>
-
-                <div className="detail-card">
-                  <span className="sidebar__label">Implementations</span>
-                  <ul className="detail-card__list">
-                    {selectedCase.implementations.map((implementation) => (
-                      <li key={implementation.id}>
-                        <strong>{implementationLabel(implementation.id)}</strong>
-                        <span>
-                          {implementation.mode === 'preview' ? 'runnable preview' : 'source only'} ·{' '}
-                          {implementation.fileCount} files
-                        </span>
-                        <code>{implementation.path}</code>
-                      </li>
-                    ))}
-                  </ul>
+              ) : (
+                <div className="pane__empty">
+                  <strong>
+                    {hasFlightImplementation
+                      ? 'Configure a local Flight checkout to enable preview'
+                      : 'No Flight implementation'}
+                  </strong>
+                  <p>
+                    {hasFlightImplementation
+                      ? 'Clone Flight under .cache/upstream/flight or set FLIGHT_REPO, install its dependencies, then restart the dev server.'
+                      : 'This imported case currently only exposes the OpenFL preview or source directories.'}
+                  </p>
                 </div>
-              </div>
+              )}
             </section>
           ) : null}
         </section>

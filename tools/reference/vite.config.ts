@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import react from '@vitejs/plugin-react';
@@ -7,6 +7,70 @@ import { defineConfig } from 'vite';
 
 const repoRoot = resolve(__dirname, '../..');
 const openflReferenceDir = join(repoRoot, 'reference', 'frameworks', 'openfl');
+
+function resolveFlightWorkspaceRoot(): string | null {
+  const candidates = [process.env.FLIGHT_REPO, join(repoRoot, '.cache', 'upstream', 'flight')].filter(
+    (value): value is string => Boolean(value),
+  );
+
+  for (const candidate of candidates) {
+    const packageJson = join(candidate, 'package.json');
+    if (!existsSync(packageJson)) continue;
+
+    try {
+      const manifest = JSON.parse(readFileSync(packageJson, 'utf8')) as { name?: string };
+      if (manifest.name === 'flight') return candidate;
+    } catch {
+      // Ignore malformed manifests while walking upward.
+    }
+  }
+
+  return null;
+}
+
+function buildFlightPackageAliases(workspaceRoot: string): Record<string, string> {
+  const aliases: Record<string, string> = {};
+  const packagesDir = join(workspaceRoot, 'packages');
+  if (!existsSync(packagesDir)) return aliases;
+
+  for (const entry of readdirSync(packagesDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+
+    const packageJson = join(packagesDir, entry.name, 'package.json');
+    const sourceIndex = join(packagesDir, entry.name, 'src', 'index.ts');
+    if (!existsSync(packageJson) || !existsSync(sourceIndex)) continue;
+
+    try {
+      const manifest = JSON.parse(readFileSync(packageJson, 'utf8')) as { name?: string };
+      if (manifest.name?.startsWith('@flighthq/')) {
+        aliases[manifest.name] = sourceIndex;
+      }
+    } catch {
+      // Ignore malformed manifests while enumerating the upstream workspace.
+    }
+  }
+
+  return aliases;
+}
+
+function buildFlightHarnessAliases(workspaceRoot: string): Record<string, string> {
+  const aliases: Record<string, string> = {};
+  const renderPath = join(workspaceRoot, 'tools', 'harness', 'render.ts');
+  const verifyPath = join(workspaceRoot, 'tools', 'harness', 'verify.ts');
+
+  if (existsSync(renderPath)) aliases['@ft/render'] = renderPath;
+  if (existsSync(verifyPath)) aliases['@ft/verify'] = verifyPath;
+
+  return aliases;
+}
+
+const flightWorkspaceRoot = resolveFlightWorkspaceRoot();
+const flightPackageAliases = flightWorkspaceRoot ? buildFlightPackageAliases(flightWorkspaceRoot) : {};
+const flightHarnessAliases = flightWorkspaceRoot ? buildFlightHarnessAliases(flightWorkspaceRoot) : {};
+const flightPreviewsEnabled =
+  flightWorkspaceRoot !== null &&
+  existsSync(join(flightWorkspaceRoot, 'node_modules')) &&
+  typeof flightPackageAliases['@flighthq/sdk'] === 'string';
 
 interface OpenflPreviewRenderer {
   id: string;
@@ -19,6 +83,7 @@ interface ImplementationSummary {
   mode: 'preview' | 'source';
   path: string;
   fileCount: number;
+  previewUrl?: string;
 }
 
 interface OpenflReferenceCase {
@@ -29,6 +94,8 @@ interface OpenflReferenceCase {
   title: string;
   summary: string;
   previewRenderers: OpenflPreviewRenderer[];
+  flightPreviewLabel?: string;
+  flightPreviewUrl?: string;
   implementations: ImplementationSummary[];
 }
 
@@ -92,19 +159,47 @@ function openflPreviewRenderers(caseDir: string): string[] {
   return pkg.renderers?.length ? pkg.renderers : ['webgl'];
 }
 
-function implementationSummaries(caseDir: string): ImplementationSummary[] {
-  const previewCount = openflPreviewRenderers(caseDir).length;
+function flightPreviewLabel(caseDir: string): string | null {
+  const srcDir = join(caseDir, 'flight', 'src');
+  if (!existsSync(join(srcDir, 'app.ts'))) return null;
+
+  const renderEntry = join(srcDir, 'render.ts');
+  if (!existsSync(renderEntry)) return 'default';
+
+  const match = readFileSync(renderEntry, 'utf8').match(/render\.([a-z0-9]+)['"]/i);
+  return match?.[1]?.toLowerCase() ?? 'default';
+}
+
+function flightPreviewUrl(corpus: string, name: string): string {
+  return `/openfl-tests/${corpus}/${name}/flight/`;
+}
+
+function implementationSummaries(
+  caseDir: string,
+  corpus: string,
+  name: string,
+  openflPreviewCount: number,
+  flightRenderer: string | null,
+): ImplementationSummary[] {
   const results: ImplementationSummary[] = [];
 
   for (const implementationId of ['openfl', 'openfl-haxe', 'flight']) {
     const implementationDir = join(caseDir, implementationId);
     if (!existsSync(implementationDir) || !statSync(implementationDir).isDirectory()) continue;
 
+    const previewUrl =
+      implementationId === 'flight' && flightRenderer !== null ? flightPreviewUrl(corpus, name) : undefined;
+
     results.push({
       id: implementationId,
-      mode: implementationId === 'openfl' && previewCount > 0 ? 'preview' : 'source',
+      mode:
+        (implementationId === 'openfl' && openflPreviewCount > 0) ||
+        (implementationId === 'flight' && flightRenderer !== null)
+          ? 'preview'
+          : 'source',
       path: implementationDir.replace(repoRoot + '/', ''),
       fileCount: countFiles(implementationDir),
+      ...(previewUrl ? { previewUrl } : {}),
     });
   }
 
@@ -134,6 +229,8 @@ function discoverCases(): OpenflReferenceCase[] {
         label: renderer,
         url: `/openfl-tests/${corpus}/${name}/${routeSegment(renderer)}/`,
       }));
+      const flightRenderer = flightPreviewLabel(caseDir);
+      const enabledFlightRenderer = flightPreviewsEnabled ? flightRenderer : null;
       const title = readTitle(caseDir, fallbackTitle(name));
 
       cases.push({
@@ -147,7 +244,10 @@ function discoverCases(): OpenflReferenceCase[] {
             ? `${title} imported from the OpenFL ${corpus} corpus.`
             : `${title} imported as source-only OpenFL material.`,
         previewRenderers,
-        implementations: implementationSummaries(caseDir),
+        ...(enabledFlightRenderer
+          ? { flightPreviewLabel: enabledFlightRenderer, flightPreviewUrl: flightPreviewUrl(corpus, name) }
+          : {}),
+        implementations: implementationSummaries(caseDir, corpus, name, previewRenderers.length, enabledFlightRenderer),
       });
     }
   }
@@ -166,6 +266,11 @@ function previewEntrySource(corpus: string, name: string, renderer: string): str
   if (existsSync(app)) return app;
 
   return null;
+}
+
+function flightPreviewSource(corpus: string, name: string): string | null {
+  const app = join(openflReferenceDir, corpus, name, 'flight', 'src', 'app.ts');
+  return existsSync(app) ? app : null;
 }
 
 function previewHtml(title: string, scriptSrc: string, baseHref: string): string {
@@ -207,6 +312,10 @@ function openflReferencePlugin(): Plugin[] {
             input[`openfl-tests/${referenceCase.corpus}/${referenceCase.name}/${routeSegment(renderer.id)}/index`] =
               `virtual:openfl-preview:${referenceCase.corpus}:${referenceCase.name}:${renderer.id}`;
           }
+          if (referenceCase.flightPreviewUrl) {
+            input[`openfl-tests/${referenceCase.corpus}/${referenceCase.name}/flight/index`] =
+              `virtual:flight-preview:${referenceCase.corpus}:${referenceCase.name}`;
+          }
         }
 
         return {
@@ -216,6 +325,10 @@ function openflReferencePlugin(): Plugin[] {
               output: {
                 entryFileNames(chunk) {
                   const id = chunk.facadeModuleId;
+                  if (id?.startsWith('\0virtual:flight-preview:')) {
+                    const [corpus, name] = splitFirst(id.slice('\0virtual:flight-preview:'.length), ':');
+                    return `openfl-tests/${corpus}/${name}/flight/index.js`;
+                  }
                   if (!id?.startsWith('\0virtual:openfl-preview:')) return 'assets/[name]-[hash].js';
 
                   const [corpus, rest] = splitFirst(id.slice('\0virtual:openfl-preview:'.length), ':');
@@ -234,6 +347,7 @@ function openflReferencePlugin(): Plugin[] {
 
       resolveId(source) {
         if (source === 'virtual:openfl-reference-cases') return '\0virtual:openfl-reference-cases';
+        if (source.startsWith('virtual:flight-preview:')) return '\0' + source;
         if (source.startsWith('virtual:openfl-preview:')) return '\0' + source;
       },
 
@@ -246,6 +360,13 @@ function openflReferencePlugin(): Plugin[] {
           const [corpus, rest] = splitFirst(id.slice('\0virtual:openfl-preview:'.length), ':');
           const [name, renderer] = splitFirst(rest, ':');
           const source = previewEntrySource(corpus, name, renderer);
+          if (!source) return null;
+          return `await import(${JSON.stringify(source)});`;
+        }
+
+        if (id.startsWith('\0virtual:flight-preview:')) {
+          const [corpus, name] = splitFirst(id.slice('\0virtual:flight-preview:'.length), ':');
+          const source = flightPreviewSource(corpus, name);
           if (!source) return null;
           return `await import(${JSON.stringify(source)});`;
         }
@@ -271,6 +392,21 @@ function openflReferencePlugin(): Plugin[] {
               ),
             });
           }
+
+          if (referenceCase.flightPreviewUrl) {
+            const entryId = `\0virtual:flight-preview:${referenceCase.corpus}:${referenceCase.name}`;
+            const chunk = Object.values(bundle).find(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (candidate) => candidate.type === 'chunk' && (candidate as any).facadeModuleId === entryId,
+            ) as { fileName: string } | undefined;
+            if (!chunk) continue;
+
+            this.emitFile({
+              type: 'asset',
+              fileName: `openfl-tests/${referenceCase.corpus}/${referenceCase.name}/flight/index.html`,
+              source: previewHtml(`${referenceCase.title} · Flight`, `${viteBase}${chunk.fileName}`, viteBase),
+            });
+          }
         }
       },
     },
@@ -290,10 +426,40 @@ function openflReferencePlugin(): Plugin[] {
           const referenceCase = discoverCases().find(
             (candidate) => candidate.corpus === corpus && candidate.name === name,
           );
+          if (!referenceCase) return next();
+
+          if (rendererSegment === 'flight' && referenceCase.flightPreviewUrl) {
+            const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="${viteBase}" />
+  <link rel="icon" href="data:," />
+  <title>${referenceCase.title} · Flight</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #ffffff; }
+    body { font-family: sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/@vite/client"></script>
+  <script type="module" src="/@id/__x00__virtual:flight-preview:${corpus}:${name}"></script>
+</body>
+</html>`;
+
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            res.setHeader('Cache-Control', 'no-store');
+            res.end(html);
+            return;
+          }
+
           const renderer = referenceCase?.previewRenderers.find(
             (candidate) => routeSegment(candidate.id) === rendererSegment,
           );
-          if (!referenceCase || !renderer) return next();
+          if (!renderer) return next();
 
           const html = `<!DOCTYPE html>
 <html lang="en">
@@ -340,19 +506,22 @@ export default defineConfig({
         $_: 'globalThis.$_',
       },
     },
+    exclude: flightPreviewsEnabled ? ['@flighthq/sdk'] : [],
   },
   resolve: {
     alias: {
       '@flighthq/capture': resolve(repoRoot, 'packages/capture/src/index.ts'),
+      ...(flightPreviewsEnabled ? { ...flightPackageAliases, ...flightHarnessAliases } : {}),
       'motion/Actuate': resolve(repoRoot, 'tools/reference/openfl-compat/Actuate.ts'),
       'motion/easing/Elastic': resolve(repoRoot, 'tools/reference/openfl-compat/Elastic.ts'),
       'motion/easing/Quad': resolve(repoRoot, 'tools/reference/openfl-compat/Quad.ts'),
       openfl: resolve(repoRoot, 'node_modules/openfl/lib/openfl'),
+      'stats.js': resolve(repoRoot, 'node_modules/stats-js/src/Stats.js'),
     },
   },
   server: {
     fs: {
-      allow: [repoRoot],
+      allow: flightWorkspaceRoot ? [repoRoot, flightWorkspaceRoot] : [repoRoot],
     },
   },
 });

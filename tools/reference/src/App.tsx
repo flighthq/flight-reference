@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { cases } from 'virtual:openfl-reference-cases';
 
@@ -88,6 +88,34 @@ function readUrlState(): {
   };
 }
 
+function PreviewFrame({ src, title }: { src: string; title: string }) {
+  const frameRef = useRef<HTMLIFrameElement | null>(null);
+  const [activeSrc, setActiveSrc] = useState<string | null>(src);
+
+  useEffect(() => {
+    if (frameRef.current) frameRef.current.src = 'about:blank';
+    setActiveSrc(null);
+    const handle = window.setTimeout(() => setActiveSrc(src), 0);
+    return () => window.clearTimeout(handle);
+  }, [src]);
+
+  useEffect(() => {
+    return () => {
+      if (frameRef.current) frameRef.current.src = 'about:blank';
+    };
+  }, []);
+
+  if (activeSrc === null) {
+    return (
+      <div className="pane__loading">
+        <span>Loading preview…</span>
+      </div>
+    );
+  }
+
+  return <iframe key={activeSrc} ref={frameRef} className="pane__iframe" src={activeSrc} title={title} />;
+}
+
 export default function App() {
   const initialState = readUrlState();
   const [corpusFilter, setCorpusFilter] = useState<CorpusFilter>(initialState.corpusFilter);
@@ -155,7 +183,6 @@ export default function App() {
       <aside className="sidebar">
         <div className="sidebar__header">
           <h1>flight-reference</h1>
-          <p>OpenFL reference corpus in the current standalone harness.</p>
         </div>
 
         <div className="sidebar__section">
@@ -192,7 +219,6 @@ export default function App() {
                     }
                     onClick={() => setSelectedCaseId(referenceCase.id)}>
                     <strong>{referenceCase.title}</strong>
-                    <span>{referenceCase.summary}</span>
                     <small>
                       {referenceCase.corpus} ·{' '}
                       {referenceCase.previewRenderers.length > 0 || referenceCase.flightPreviewUrl
@@ -203,15 +229,6 @@ export default function App() {
                 </li>
               ))
             )}
-          </ul>
-        </div>
-
-        <div className="sidebar__section sidebar__section--tight">
-          <span className="sidebar__label">Repository rules</span>
-          <ul className="sidebar__notes">
-            <li>Keep the current harness shell.</li>
-            <li>Serve committed OpenFL assets from this repo.</li>
-            <li>Show imported corpus content directly.</li>
           </ul>
         </div>
       </aside>
@@ -280,7 +297,7 @@ export default function App() {
 
             {selectedRenderer ? (
               <div className="pane__iframe-wrap">
-                <iframe className="pane__iframe" src={selectedRenderer.url} title={`${selectedCase.title} preview`} />
+                <PreviewFrame src={selectedRenderer.url} title={`${selectedCase.title} preview`} />
               </div>
             ) : (
               <div className="pane__empty">
@@ -314,11 +331,7 @@ export default function App() {
 
               {selectedCase.flightPreviewUrl ? (
                 <div className="pane__iframe-wrap">
-                  <iframe
-                    className="pane__iframe"
-                    src={selectedCase.flightPreviewUrl}
-                    title={`${selectedCase.title} flight preview`}
-                  />
+                  <PreviewFrame src={selectedCase.flightPreviewUrl} title={`${selectedCase.title} flight preview`} />
                 </div>
               ) : (
                 <div className="pane__empty">

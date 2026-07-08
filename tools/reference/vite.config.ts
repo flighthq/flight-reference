@@ -213,9 +213,10 @@ function implementationSummaries(
   flightRenderer: string | null,
 ): ImplementationSummary[] {
   const results: ImplementationSummary[] = [];
+  const hasOpenflTs = hasImplementationDir(caseDir, 'openfl');
 
   for (const implementationId of ['openfl', 'openfl-haxe', 'flight']) {
-    const implementationDir = join(caseDir, implementationId);
+    if (implementationId === 'openfl-haxe' && hasOpenflTs) continue;
     if (!hasImplementationDir(caseDir, implementationId)) continue;
 
     const previewUrl =
@@ -230,8 +231,8 @@ function implementationSummaries(
         (implementationId === 'flight' && flightRenderer !== null)
           ? 'preview'
           : 'source',
-      path: implementationDir.replace(repoRoot + '/', ''),
-      fileCount: countFiles(implementationDir),
+      path: join(caseDir, implementationId).replace(repoRoot + '/', ''),
+      fileCount: countFiles(join(caseDir, implementationId)),
       ...(previewUrl ? { previewUrl } : {}),
     });
   }

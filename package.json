@@ -12,6 +12,7 @@
   },
   "scripts": {
     "dev": "npm run dev --workspace @flighthq/reference --",
+    "preview": "npm run preview --workspace @flighthq/reference --",
     "build:capture": "npm run build --workspace @flighthq/capture",
     "build:reference": "npm run build --workspace @flighthq/reference",
     "build": "npm run build:capture && npm run build:reference",

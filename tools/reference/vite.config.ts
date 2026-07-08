@@ -121,6 +121,15 @@ function countFiles(dir: string): number {
   return count;
 }
 
+function hasImplementationDir(caseDir: string, implementationId: string): boolean {
+  const implementationDir = join(caseDir, implementationId);
+  return existsSync(implementationDir) && statSync(implementationDir).isDirectory();
+}
+
+function hasUpstreamOpenflImplementation(caseDir: string): boolean {
+  return hasImplementationDir(caseDir, 'openfl') || hasImplementationDir(caseDir, 'openfl-haxe');
+}
+
 function readTitle(caseDir: string, fallback: string): string {
   const projectXmlPath = join(caseDir, 'openfl-haxe', 'project.xml');
   if (!existsSync(projectXmlPath)) return fallback;
@@ -207,7 +216,7 @@ function implementationSummaries(
 
   for (const implementationId of ['openfl', 'openfl-haxe', 'flight']) {
     const implementationDir = join(caseDir, implementationId);
-    if (!existsSync(implementationDir) || !statSync(implementationDir).isDirectory()) continue;
+    if (!hasImplementationDir(caseDir, implementationId)) continue;
 
     const previewUrl =
       implementationId === 'flight' && flightRenderer !== null
@@ -248,6 +257,9 @@ function discoverCases(): OpenflReferenceCase[] {
     for (const caseEntry of caseEntries) {
       const name = caseEntry.name;
       const caseDir = join(corpusDir, name);
+      // Keep the OpenFL reference focused on real upstream OpenFL cases, not legacy Flight-only aliases.
+      if (!hasUpstreamOpenflImplementation(caseDir)) continue;
+
       const previewRenderers = openflPreviewRenderers(caseDir).map((renderer) => ({
         id: renderer,
         label: renderer,

@@ -12,16 +12,18 @@ import {
   ShapeKind,
 } from '@flighthq/sdk';
 
+const WIDTH = 550;
+const HEIGHT = 400;
 const element = document.createElement('div');
 element.style.position = 'relative';
-element.style.width = `${window.innerWidth}px`;
-element.style.height = `${window.innerHeight}px`;
+element.style.width = `${WIDTH}px`;
+element.style.height = `${HEIGHT}px`;
 document.body.appendChild(element);
 
 export const container = element;
 export const state = createDomRenderState(element, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
-  backgroundColor: 0xeeddccff,
+  backgroundColor: 0xffffffff,
 });
 registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
 registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle]);

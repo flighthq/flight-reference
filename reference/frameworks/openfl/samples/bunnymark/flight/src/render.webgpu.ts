@@ -13,12 +13,12 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-export const canvas = createWgpuCanvasElement(550, 400, pixelRatio);
+export const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = await createWgpuRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
-  backgroundColor: 0xeeddccff,
+  backgroundColor: 0xffffffff,
 });
 registerRenderer(state, QuadBatchKind, defaultWgpuQuadBatchRenderer);
 registerDefaultWgpuMaterial(state);

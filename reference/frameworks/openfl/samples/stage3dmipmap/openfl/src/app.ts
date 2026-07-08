@@ -82,7 +82,7 @@ class App extends Sprite {
   }
 
   private initialize(): void {
-    this.context3D = stage.stage3Ds[0].context3D;
+    this.context3D = this.stage.stage3Ds[0].context3D;
 
     this.context3D.configureBackBuffer(550, 400, 1, true);
 

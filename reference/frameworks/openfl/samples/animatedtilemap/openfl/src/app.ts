@@ -11,7 +11,7 @@ AssetLibrary.loadFromManifest(manifest)
   .onComplete((library) => {
     Assets.registerLibrary('default', library);
 
-    const stage = new Stage(550, 400, 0xffffff, Main);
+    const stage = new Stage(800, 400, 0xffffff, Main);
     document.body.appendChild(stage.element);
   })
   .onError((error) => {

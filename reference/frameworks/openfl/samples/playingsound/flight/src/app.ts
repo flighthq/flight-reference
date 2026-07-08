@@ -4,11 +4,9 @@ import {
   appendShapeBeginFill,
   appendShapeRectangle,
   attachPointerInput,
-  attachWindowResize,
   clearShapeCommands,
   connectSignal,
   createApplication,
-  createApplicationWindow,
   createDisplayObject,
   createInputManager,
   createShape,
@@ -26,6 +24,8 @@ import {
 
 import { container, render, scale, setSize } from './render';
 
+const WIDTH = 550;
+const HEIGHT = 400;
 const manager = createTweenManager({ defaultEase: easeOutQuadratic });
 const root = createDisplayObject();
 root.scaleX = scale;
@@ -113,10 +113,7 @@ function resize(w: number, h: number): void {
   invalidateNodeRender(background);
 }
 
-const win = createApplicationWindow();
-connectSignal(win.onResize, () => resize(win.width, win.height));
-attachWindowResize(win, container);
-resize(window.innerWidth, window.innerHeight);
+resize(WIDTH, HEIGHT);
 
 const input = createInputManager();
 attachPointerInput(input, container);
@@ -133,7 +130,7 @@ play();
 const app = createApplication();
 connectSignal(app.onUpdate, (delta: number) => {
   if (channel !== null && channel.state === 'playing') {
-    channel.currentTime += delta;
+    channel.currentTime += delta / 1000;
   }
   updateTweens(manager, delta);
 });

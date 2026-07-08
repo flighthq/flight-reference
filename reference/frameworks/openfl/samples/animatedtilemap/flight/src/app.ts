@@ -67,7 +67,7 @@ const baseY = (STAGE_HEIGHT - spriteScreenSize) / 2 / SCALE;
 const sprites = animationDefs.map((def, i) => {
   const sprite = createSprite();
   sprite.data.atlas = atlas;
-  sprite.x = baseX + i * (48 / SCALE);
+  sprite.x = baseX + i * 48;
   sprite.y = baseY;
   invalidateNodeLocalTransform(sprite);
   addNodeChild(root, sprite);

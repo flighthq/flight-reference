@@ -11,8 +11,8 @@ import Stats from 'stats.js';
 import { canvas, render, scale } from './render';
 
 const GRAVITY = 0.5;
-const WIDTH = 550;
-const HEIGHT = 400;
+const WIDTH = 800;
+const HEIGHT = 600;
 const INITIAL_COUNT = 10;
 const BATCH_SIZE = 100;
 

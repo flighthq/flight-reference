@@ -1,6 +1,5 @@
 import Sprite from 'openfl/display/Sprite';
 import Stage from 'openfl/display/Stage';
-import Font from 'openfl/text/Font';
 import TextField from 'openfl/text/TextField';
 import TextFormat from 'openfl/text/TextFormat';
 import AssetLibrary from 'openfl/utils/AssetLibrary';
@@ -29,14 +28,20 @@ class App extends Sprite {
 }
 
 var manifest = new AssetManifest();
-manifest.addFont('Katamotz Ikasi', 'assets/KatamotzIkasi.woff');
+manifest.addFont('Katamotz Ikasi', 'assets/KatamotzIkasi.ttf');
 
 AssetLibrary.loadFromManifest(manifest)
   .onComplete((library) => {
     Assets.registerLibrary('default', library);
 
-    var stage = new Stage(550, 400, 0xffffff, App);
-    document.body.appendChild(stage.element);
+    Assets.loadFont('assets/KatamotzIkasi.ttf')
+      .onComplete(() => {
+        var stage = new Stage(550, 400, 0xffffff, App);
+        document.body.appendChild(stage.element);
+      })
+      .onError((e) => {
+        console.error(e);
+      });
   })
   .onError((e) => {
     console.error(e);

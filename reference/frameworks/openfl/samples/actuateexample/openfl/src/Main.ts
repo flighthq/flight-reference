@@ -7,11 +7,14 @@ class Main extends Sprite {
   public constructor() {
     super();
 
-    this.initialize();
-    this.construct();
+    if (this.stage !== null) {
+      this.initialize();
+    } else {
+      this.addEventListener(Event.ADDED_TO_STAGE, this.this_onAddedToStage);
+    }
   }
 
-  private animateCircle(circle: Sprite): void {
+  private animateCircle = (circle: Sprite): void => {
     const duration = 1.5 + Math.random() * 4.5;
     const targetX = Math.random() * this.stage.stageWidth;
     const targetY = Math.random() * this.stage.stageHeight;
@@ -19,7 +22,7 @@ class Main extends Sprite {
     Actuate.tween(circle, duration, { x: targetX, y: targetY })
       .ease(Quad.easeOut)
       .onComplete(this.animateCircle, [circle]);
-  }
+  };
 
   private construct(): void {
     for (let i = 0; i < 80; i++) {
@@ -45,6 +48,7 @@ class Main extends Sprite {
   private initialize(): void {
     this.stage.addEventListener(Event.ACTIVATE, this.stage_onActivate);
     this.stage.addEventListener(Event.DEACTIVATE, this.stage_onDeactivate);
+    this.construct();
   }
 
   private stage_onActivate = (_event: Event): void => {
@@ -53,6 +57,11 @@ class Main extends Sprite {
 
   private stage_onDeactivate = (_event: Event): void => {
     Actuate.pauseAll();
+  };
+
+  private this_onAddedToStage = (_event: Event): void => {
+    this.removeEventListener(Event.ADDED_TO_STAGE, this.this_onAddedToStage);
+    this.initialize();
   };
 }
 

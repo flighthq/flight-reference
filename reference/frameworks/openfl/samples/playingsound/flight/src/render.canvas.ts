@@ -1,5 +1,6 @@
 ﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
+  createCanvasElement,
   createCanvasRenderState,
   defaultCanvasBeginFill,
   defaultCanvasDrawRectangle,
@@ -12,18 +13,16 @@ import {
   ShapeKind,
 } from '@flighthq/sdk';
 
+const WIDTH = 550;
+const HEIGHT = 400;
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = document.createElement('canvas');
-canvas.width = window.innerWidth * pixelRatio;
-canvas.height = window.innerHeight * pixelRatio;
-canvas.style.width = `${window.innerWidth}px`;
-canvas.style.height = `${window.innerHeight}px`;
+const canvas = createCanvasElement(WIDTH, HEIGHT, pixelRatio);
 document.body.appendChild(canvas);
 
 export const container = canvas;
 export const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
-  backgroundColor: 0xeeddccff,
+  backgroundColor: 0xffffffff,
 });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle]);

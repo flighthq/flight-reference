@@ -12,12 +12,12 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-export const canvas = createGlCanvasElement(550, 400, pixelRatio);
+export const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
-  backgroundColor: 0xeeddccff,
+  backgroundColor: 0xffffffff,
 });
 registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
 registerDefaultGlMaterial(state);

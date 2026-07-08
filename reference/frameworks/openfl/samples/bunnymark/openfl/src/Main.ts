@@ -8,7 +8,6 @@ import MouseEvent from 'openfl/events/MouseEvent';
 import Tilemap from 'openfl/display/Tilemap';
 import Tileset from 'openfl/display/Tileset';
 import Bunny from './Bunny';
-import * as Stats from 'stats-js';
 
 export class Main extends Sprite {
   private addingBunnies: boolean;
@@ -18,7 +17,6 @@ export class Main extends Sprite {
   private minY: number;
   private maxX: number;
   private maxY: number;
-  private stats: Stats;
   private tilemap: Tilemap;
   private tileset: Tileset;
 
@@ -47,12 +45,6 @@ export class Main extends Sprite {
     //this.tilemap.tileColorTransformEnabled = false;
     this.addChild(this.tilemap);
 
-    this.stats = new Stats();
-    this.stats.domElement.style.position = 'absolute';
-    this.stats.domElement.style.left = '0px';
-    this.stats.domElement.style.top = '0px';
-    document.body.appendChild(this.stats.domElement);
-
     this.stage.addEventListener(MouseEvent.MOUSE_DOWN, this.stage_onMouseDown);
     this.stage.addEventListener(MouseEvent.MOUSE_UP, this.stage_onMouseUp);
     this.stage.addEventListener(Event.ENTER_FRAME, this.stage_onEnterFrame);
@@ -75,8 +67,6 @@ export class Main extends Sprite {
   // Event Handlers
 
   stage_onEnterFrame = (event: Event) => {
-    this.stats.begin();
-
     for (var i = 0; i < this.bunnies.length; i++) {
       var bunny = this.bunnies[i];
       bunny.x += bunny.speedX;
@@ -109,8 +99,6 @@ export class Main extends Sprite {
         this.addBunny();
       }
     }
-
-    this.stats.end();
   };
 
   private stage_onMouseDown = (event: MouseEvent) => {

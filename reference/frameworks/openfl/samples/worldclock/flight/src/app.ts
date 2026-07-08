@@ -37,7 +37,7 @@ function createClock(labelText: string, color: number) {
   addNodeChild(clock, face);
 
   label.data.text = labelText;
-  label.data.textFormat = { align: 'center', color: 0x000000, size: 18 };
+  label.data.textFormat = { align: 'center', color: 0x000000, font: 'sans-serif', size: 18 };
   label.data.width = RADIUS * 2;
   label.x = 0;
   label.y = RADIUS * 2 + 4;

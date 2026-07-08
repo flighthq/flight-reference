@@ -88,7 +88,7 @@ void main(void) {
     );
     this.bitmapTexture.uploadFromBitmapData(bitmapData);
 
-    const vertexData = new Vector<number>([
+    const vertexData = Vector.ofArray([
       bitmapData.width,
       bitmapData.height,
       0,
@@ -112,9 +112,9 @@ void main(void) {
     ]);
 
     this.bitmapVertexBuffer = context.createVertexBuffer(4, 5);
-    this.bitmapVertexBuffer.uploadFromVector(vertexData, 0, 20);
+    this.bitmapVertexBuffer.uploadFromVector(vertexData, 0, 4);
 
-    const indexData = new Vector<number>([0, 1, 2, 2, 1, 3]);
+    const indexData = Vector.ofArray([0, 1, 2, 2, 1, 3]);
     this.bitmapIndexBuffer = context.createIndexBuffer(6);
     this.bitmapIndexBuffer.uploadFromVector(indexData, 0, 6);
 

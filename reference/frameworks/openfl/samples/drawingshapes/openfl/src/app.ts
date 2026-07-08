@@ -121,5 +121,5 @@ class App extends Sprite {
   }
 }
 
-var stage = new Stage(650, 400, 0xffffff, App);
+var stage = new Stage(800, 400, 0xffffff, App);
 document.body.appendChild(stage.element);

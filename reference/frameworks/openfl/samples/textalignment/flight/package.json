@@ -1,0 +1,11 @@
+{
+  "name": "openfl-sample-textalignment-flight",
+  "private": true,
+  "type": "module",
+  "renderers": [
+    "webgl"
+  ],
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

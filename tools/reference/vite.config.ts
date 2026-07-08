@@ -322,6 +322,19 @@ function openflReferencePlugin(): Plugin[] {
 export default defineConfig({
   plugins: [react(), ...openflReferencePlugin()],
   publicDir: resolve(repoRoot, 'reference/assets/public/openfl'),
+  optimizeDeps: {
+    // OpenFL's generated CommonJS output assumes legacy globals like `global` and `$_`.
+    // The predev shim patches node_modules for build/runtime, but Vite's dep optimizer can
+    // still reuse an older cached prebundle in dev. Force dep re-optimization on startup and
+    // rewrite these identifiers during prebundle so dev does not depend on cache freshness.
+    force: true,
+    esbuildOptions: {
+      define: {
+        global: 'globalThis',
+        $_: 'globalThis.$_',
+      },
+    },
+  },
   resolve: {
     alias: {
       '@flighthq/capture': resolve(repoRoot, 'packages/capture/src/index.ts'),

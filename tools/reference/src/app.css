@@ -277,7 +277,7 @@ code {
   min-height: 0;
   height: 100%;
   border-top: 1px solid var(--border);
-  background: #120f0d;
+  background: #ffffff;
   overflow: hidden;
   display: grid;
 }
@@ -296,7 +296,7 @@ code {
   display: grid;
   place-items: center;
   overflow: hidden;
-  padding: 1rem;
+  background: #ffffff;
 }
 
 .pane__mini-crop {

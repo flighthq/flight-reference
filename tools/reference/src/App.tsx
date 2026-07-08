@@ -135,7 +135,7 @@ function readUrlState(): {
   };
 }
 
-const splitViewport = { width: 1280, height: 800 };
+const splitViewport = { width: 670, height: 400 };
 
 function PreviewFrame({
   src,
@@ -151,6 +151,7 @@ function PreviewFrame({
   const frameRef = useRef<HTMLIFrameElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const detachFrameKeyHandlerRef = useRef<(() => void) | null>(null);
+  const teardownMeasurementRef = useRef<(() => void) | null>(null);
   const [activeSrc, setActiveSrc] = useState<string | null>(src);
   const [cropSize, setCropSize] = useState(splitViewport);
   const [scale, setScale] = useState(1);
@@ -158,6 +159,8 @@ function PreviewFrame({
   useEffect(() => {
     detachFrameKeyHandlerRef.current?.();
     detachFrameKeyHandlerRef.current = null;
+    teardownMeasurementRef.current?.();
+    teardownMeasurementRef.current = null;
     if (frameRef.current) frameRef.current.src = 'about:blank';
     setActiveSrc(null);
     setCropSize(splitViewport);
@@ -168,6 +171,7 @@ function PreviewFrame({
   useEffect(() => {
     return () => {
       detachFrameKeyHandlerRef.current?.();
+      teardownMeasurementRef.current?.();
       if (frameRef.current) frameRef.current.src = 'about:blank';
     };
   }, []);
@@ -204,6 +208,7 @@ function PreviewFrame({
     if (!doc || !frameWindow) return;
 
     detachFrameKeyHandlerRef.current?.();
+    teardownMeasurementRef.current?.();
 
     const onFrameKeyDown = (event: KeyboardEvent) => {
       const direction = navigationDirectionFromKey(event);
@@ -222,7 +227,7 @@ function PreviewFrame({
       let maxRight = 0;
       let maxBottom = 0;
 
-      for (const child of Array.from(doc.body.children)) {
+      for (const child of Array.from(doc.body.querySelectorAll<HTMLElement>('*'))) {
         const rect = child.getBoundingClientRect();
         maxRight = Math.max(maxRight, rect.right);
         maxBottom = Math.max(maxBottom, rect.bottom);
@@ -236,14 +241,26 @@ function PreviewFrame({
           : Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight, splitViewport.height);
 
       setCropSize({
-        width: Math.max(320, Math.ceil(measuredWidth)),
-        height: Math.max(240, Math.ceil(measuredHeight)),
+        width: Math.max(64, Math.ceil(measuredWidth)),
+        height: Math.max(64, Math.ceil(measuredHeight)),
       });
     };
 
-    window.setTimeout(measure, 0);
-    window.setTimeout(measure, 120);
-    window.setTimeout(measure, 480);
+    const timers = [0, 50, 150, 400, 1000].map((delay) => window.setTimeout(measure, delay));
+    const mutationObserver = new MutationObserver(() => {
+      window.requestAnimationFrame(measure);
+    });
+    mutationObserver.observe(doc.body, { attributes: true, childList: true, subtree: true });
+
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(doc.documentElement);
+    resizeObserver.observe(doc.body);
+
+    teardownMeasurementRef.current = () => {
+      mutationObserver.disconnect();
+      resizeObserver.disconnect();
+      for (const timer of timers) window.clearTimeout(timer);
+    };
   };
 
   if (activeSrc === null) {

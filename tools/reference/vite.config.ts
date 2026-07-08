@@ -168,12 +168,13 @@ function previewEntrySource(corpus: string, name: string, renderer: string): str
   return null;
 }
 
-function previewHtml(title: string, scriptSrc: string): string {
+function previewHtml(title: string, scriptSrc: string, baseHref: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="${baseHref}" />
   <link rel="icon" href="data:," />
   <title>${title}</title>
   <style>
@@ -263,7 +264,11 @@ function openflReferencePlugin(): Plugin[] {
             this.emitFile({
               type: 'asset',
               fileName: `openfl-tests/${referenceCase.corpus}/${referenceCase.name}/${routeSegment(renderer.id)}/index.html`,
-              source: previewHtml(`${referenceCase.title} · ${renderer.label}`, `${viteBase}${chunk.fileName}`),
+              source: previewHtml(
+                `${referenceCase.title} · ${renderer.label}`,
+                `${viteBase}${chunk.fileName}`,
+                viteBase,
+              ),
             });
           }
         }
@@ -295,6 +300,7 @@ function openflReferencePlugin(): Plugin[] {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="${viteBase}" />
   <link rel="icon" href="data:," />
   <title>${referenceCase.title} · ${renderer.label}</title>
   <style>

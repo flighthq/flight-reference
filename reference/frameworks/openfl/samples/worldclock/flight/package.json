@@ -1,0 +1,8 @@
+{
+  "name": "openfl-sample-worldclock-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

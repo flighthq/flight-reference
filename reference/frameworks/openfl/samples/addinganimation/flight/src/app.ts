@@ -7,6 +7,7 @@ import {
   createTween,
   createTweenManager,
   easeOutElastic,
+  invalidateNodeLocalTransform,
   invalidateNodeRender,
   loadImageResourceFromUrl,
   startApplicationLoop,
@@ -34,19 +35,25 @@ container.y = STAGE_HEIGHT / 2;
 addNodeChild(container, bitmap);
 addNodeChild(main, container);
 
-const image = await loadImageResourceFromUrl('assets/wabbit_alpha.png');
+const image = await loadImageResourceFromUrl('assets/openfl.png');
 bitmap.data.image = image;
+bitmap.data.smoothing = true;
 bitmap.x = -image.width / 2;
 bitmap.y = -image.height / 2;
 
-const tween = createTween(
+const alphaTween = createTween(manager, container, 3000, { alpha: 1 });
+const scaleTween = createTween(
   manager,
   container,
-  3000,
-  { alpha: 1, scaleX: 2, scaleY: 2 },
-  { ease: easeOutElastic, repeat: -1, reflect: true },
+  6000,
+  { scaleX: 1, scaleY: 1 },
+  { delay: 400, ease: easeOutElastic },
 );
-connectSignal(tween.onUpdate, () => invalidateNodeRender(container));
+connectSignal(alphaTween.onUpdate, () => invalidateNodeRender(container));
+connectSignal(scaleTween.onUpdate, () => {
+  invalidateNodeLocalTransform(container);
+  invalidateNodeRender(container);
+});
 
 const app = createApplication();
 connectSignal(app.onUpdate, (delta) => updateTweens(manager, delta));

@@ -7,7 +7,9 @@ main.scaleX = scale;
 main.scaleY = scale;
 
 const bitmap = createBitmap();
-const image = await loadImageResourceFromUrl('assets/wabbit_alpha.png');
+bitmap.data.smoothing = true;
+
+const image = await loadImageResourceFromUrl('assets/openfl.png');
 bitmap.data.image = image;
 bitmap.x = (550 - image.width) / 2;
 bitmap.y = (400 - image.height) / 2;

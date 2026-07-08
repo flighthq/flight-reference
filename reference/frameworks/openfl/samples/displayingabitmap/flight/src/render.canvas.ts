@@ -17,7 +17,7 @@ document.body.appendChild(canvas);
 
 export const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
-  backgroundColor: 0xeeddccff,
+  backgroundColor: 0xffffffff,
 });
 
 registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);

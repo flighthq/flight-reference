@@ -1,24 +1,37 @@
-﻿import type { DisplayObject } from '@flighthq/sdk';
+import type { DisplayObject } from '@flighthq/sdk';
 import {
-  BitmapKind,
   createCanvasElement,
   createCanvasRenderState,
-  defaultCanvasBitmapRenderer,
+  defaultCanvasDrawCircle,
+  defaultCanvasLineStyle,
+  defaultCanvasLineTo,
+  defaultCanvasMoveTo,
+  defaultCanvasShapeRenderer,
   prepareDisplayObjectRender,
+  registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
+  ShapeKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(550, 400, pixelRatio);
+const canvas = createCanvasElement(170, 170, pixelRatio);
 document.body.appendChild(canvas);
 
+export const container = canvas;
 export const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
+registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
+registerCanvasShapeCommands([
+  defaultCanvasDrawCircle,
+  defaultCanvasLineStyle,
+  defaultCanvasLineTo,
+  defaultCanvasMoveTo,
+]);
+
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {

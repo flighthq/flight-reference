@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { cases } from 'virtual:openfl-reference-cases';
 
 type CorpusFilter = 'all' | 'functional' | 'samples';
 type LayoutMode = 'single' | 'split';
+type NavigationDirection = 'next' | 'prev' | 'first' | 'last';
 
 interface PreviewRenderer {
   id: string;
@@ -27,8 +28,7 @@ interface ReferenceCase {
   title: string;
   summary: string;
   previewRenderers: PreviewRenderer[];
-  flightPreviewLabel?: string;
-  flightPreviewUrl?: string;
+  flightPreviewRenderers?: PreviewRenderer[];
   implementations: ImplementationSummary[];
 }
 
@@ -58,7 +58,54 @@ function corpusSortOrder(corpus: string): number {
 
 function rendererLabel(id: string): string {
   if (id === 'default') return 'Default';
+  if (id === 'webgl') return 'GL';
+  if (id === 'webgpu') return 'GPU';
+  if (id === 'canvas') return 'Canvas';
+  if (id === 'dom') return 'DOM';
   return id.toUpperCase();
+}
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+
+  return (
+    target.isContentEditable ||
+    target.tagName === 'INPUT' ||
+    target.tagName === 'TEXTAREA' ||
+    target.tagName === 'SELECT' ||
+    target.tagName === 'OPTION'
+  );
+}
+
+function clampCaseIndex(index: number, total: number): number {
+  if (total <= 0) return 0;
+  return Math.max(0, Math.min(total - 1, index));
+}
+
+function navigationDirectionFromKey(event: KeyboardEvent): NavigationDirection | null {
+  if (event.altKey || event.ctrlKey || event.metaKey) return null;
+  if (isEditableTarget(event.target)) return null;
+
+  switch (event.key) {
+    case 'ArrowRight':
+    case 'ArrowDown':
+    case 'PageDown':
+      return 'next';
+    case 'ArrowLeft':
+    case 'ArrowUp':
+    case 'PageUp':
+      return 'prev';
+    case ' ':
+    case 'Space':
+    case 'Spacebar':
+      return event.shiftKey ? 'prev' : 'next';
+    case 'Home':
+      return 'first';
+    case 'End':
+      return 'last';
+    default:
+      return null;
+  }
 }
 
 function readUrlState(): {
@@ -88,32 +135,157 @@ function readUrlState(): {
   };
 }
 
-function PreviewFrame({ src, title }: { src: string; title: string }) {
+const splitViewport = { width: 1280, height: 800 };
+
+function PreviewFrame({
+  src,
+  title,
+  miniaturized,
+  onNavigate,
+}: {
+  src: string;
+  title: string;
+  miniaturized: boolean;
+  onNavigate: (direction: NavigationDirection) => void;
+}) {
   const frameRef = useRef<HTMLIFrameElement | null>(null);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const detachFrameKeyHandlerRef = useRef<(() => void) | null>(null);
   const [activeSrc, setActiveSrc] = useState<string | null>(src);
+  const [cropSize, setCropSize] = useState(splitViewport);
+  const [scale, setScale] = useState(1);
 
   useEffect(() => {
+    detachFrameKeyHandlerRef.current?.();
+    detachFrameKeyHandlerRef.current = null;
     if (frameRef.current) frameRef.current.src = 'about:blank';
     setActiveSrc(null);
+    setCropSize(splitViewport);
     const handle = window.setTimeout(() => setActiveSrc(src), 0);
     return () => window.clearTimeout(handle);
   }, [src]);
 
   useEffect(() => {
     return () => {
+      detachFrameKeyHandlerRef.current?.();
       if (frameRef.current) frameRef.current.src = 'about:blank';
     };
   }, []);
 
+  useEffect(() => {
+    if (!miniaturized) {
+      setScale(1);
+      return;
+    }
+
+    const updateScale = () => {
+      const wrap = wrapRef.current;
+      if (!wrap) return;
+
+      const bounds = wrap.getBoundingClientRect();
+      if (bounds.width <= 0 || bounds.height <= 0) return;
+
+      const nextScale = Math.min(bounds.width / cropSize.width, bounds.height / cropSize.height, 1);
+      setScale(Number.isFinite(nextScale) && nextScale > 0 ? nextScale : 1);
+    };
+
+    updateScale();
+
+    const observer = new ResizeObserver(updateScale);
+    if (wrapRef.current) observer.observe(wrapRef.current);
+
+    return () => observer.disconnect();
+  }, [cropSize.height, cropSize.width, miniaturized]);
+
+  const handleLoad = () => {
+    const frame = frameRef.current;
+    const frameWindow = frame?.contentWindow;
+    const doc = frame?.contentDocument;
+    if (!doc || !frameWindow) return;
+
+    detachFrameKeyHandlerRef.current?.();
+
+    const onFrameKeyDown = (event: KeyboardEvent) => {
+      const direction = navigationDirectionFromKey(event);
+      if (!direction) return;
+
+      event.preventDefault();
+      onNavigate(direction);
+    };
+
+    frameWindow.addEventListener('keydown', onFrameKeyDown);
+    detachFrameKeyHandlerRef.current = () => frameWindow.removeEventListener('keydown', onFrameKeyDown);
+
+    if (!miniaturized) return;
+
+    const measure = () => {
+      let maxRight = 0;
+      let maxBottom = 0;
+
+      for (const child of Array.from(doc.body.children)) {
+        const rect = child.getBoundingClientRect();
+        maxRight = Math.max(maxRight, rect.right);
+        maxBottom = Math.max(maxBottom, rect.bottom);
+      }
+
+      const measuredWidth =
+        maxRight > 64 ? maxRight : Math.max(doc.documentElement.scrollWidth, doc.body.scrollWidth, splitViewport.width);
+      const measuredHeight =
+        maxBottom > 64
+          ? maxBottom
+          : Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight, splitViewport.height);
+
+      setCropSize({
+        width: Math.max(320, Math.ceil(measuredWidth)),
+        height: Math.max(240, Math.ceil(measuredHeight)),
+      });
+    };
+
+    window.setTimeout(measure, 0);
+    window.setTimeout(measure, 120);
+    window.setTimeout(measure, 480);
+  };
+
   if (activeSrc === null) {
     return (
-      <div className="pane__loading">
+      <div ref={wrapRef} className="pane__loading">
         <span>Loading preview…</span>
       </div>
     );
   }
 
-  return <iframe key={activeSrc} ref={frameRef} className="pane__iframe" src={activeSrc} title={title} />;
+  if (!miniaturized) {
+    return (
+      <iframe
+        key={activeSrc}
+        ref={frameRef}
+        className="pane__iframe"
+        src={activeSrc}
+        title={title}
+        onLoad={handleLoad}
+      />
+    );
+  }
+
+  return (
+    <div ref={wrapRef} className="pane__mini-stage">
+      <div className="pane__mini-crop" style={{ width: cropSize.width * scale, height: cropSize.height * scale }}>
+        <iframe
+          key={activeSrc}
+          ref={frameRef}
+          className="pane__iframe pane__iframe--mini"
+          src={activeSrc}
+          title={title}
+          onLoad={handleLoad}
+          style={{
+            width: cropSize.width,
+            height: cropSize.height,
+            transform: `scale(${scale})`,
+          }}
+        />
+      </div>
+    </div>
+  );
 }
 
 export default function App() {
@@ -162,7 +334,42 @@ export default function App() {
   const selectedRenderer =
     selectedCase.previewRenderers.find((renderer) => renderer.id === selectedRendererId) ??
     selectedCase.previewRenderers[0];
+  const selectedCaseIndex = visibleCases.findIndex((referenceCase) => referenceCase.id === selectedCase.id);
+  const selectedFlightRenderer =
+    selectedCase.flightPreviewRenderers?.find((renderer) => renderer.id === selectedRenderer?.id) ??
+    selectedCase.flightPreviewRenderers?.find((renderer) => renderer.id === 'webgl') ??
+    selectedCase.flightPreviewRenderers?.[0];
   const hasFlightImplementation = selectedCase.implementations.some((implementation) => implementation.id === 'flight');
+
+  useEffect(() => {
+    const selectedButton = document.querySelector<HTMLElement>(`[data-case-id="${CSS.escape(selectedCase.id)}"]`);
+    selectedButton?.scrollIntoView({ block: 'nearest' });
+  }, [selectedCase.id]);
+
+  const navigateCases = useCallback(
+    (direction: NavigationDirection) => {
+      let nextIndex = selectedCaseIndex;
+
+      switch (direction) {
+        case 'next':
+          nextIndex = clampCaseIndex(selectedCaseIndex + 1, visibleCases.length);
+          break;
+        case 'prev':
+          nextIndex = clampCaseIndex(selectedCaseIndex - 1, visibleCases.length);
+          break;
+        case 'first':
+          nextIndex = 0;
+          break;
+        case 'last':
+          nextIndex = clampCaseIndex(visibleCases.length - 1, visibleCases.length);
+          break;
+      }
+
+      const nextCase = visibleCases[nextIndex];
+      if (nextCase && nextCase.id !== selectedCase.id) setSelectedCaseId(nextCase.id);
+    },
+    [selectedCase.id, selectedCaseIndex, visibleCases],
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -177,6 +384,18 @@ export default function App() {
 
     window.history.replaceState({}, '', url);
   }, [corpusFilter, layoutMode, selectedCase.id, selectedRenderer?.id]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const direction = navigationDirectionFromKey(event);
+      if (!direction) return;
+      event.preventDefault();
+      navigateCases(direction);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [navigateCases]);
 
   return (
     <main className="app-shell">
@@ -202,7 +421,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="sidebar__section">
+        <div className="sidebar__section sidebar__section--grow">
           <span className="sidebar__label">OpenFL Cases</span>
           <ul className="scenario-list">
             {visibleCases.length === 0 ? (
@@ -217,11 +436,13 @@ export default function App() {
                         ? 'scenario-list__item scenario-list__item--active'
                         : 'scenario-list__item'
                     }
-                    onClick={() => setSelectedCaseId(referenceCase.id)}>
+                    onClick={() => setSelectedCaseId(referenceCase.id)}
+                    data-case-id={referenceCase.id}>
                     <strong>{referenceCase.title}</strong>
                     <small>
                       {referenceCase.corpus} ·{' '}
-                      {referenceCase.previewRenderers.length > 0 || referenceCase.flightPreviewUrl
+                      {referenceCase.previewRenderers.length > 0 ||
+                      (referenceCase.flightPreviewRenderers?.length ?? 0) > 0
                         ? 'preview'
                         : 'source only'}
                     </small>
@@ -282,7 +503,7 @@ export default function App() {
           <section className="pane">
             <header className="pane__header">
               <div>
-                <h3>Preview</h3>
+                <h3>OpenFL</h3>
                 <p>
                   {selectedRenderer
                     ? `Live OpenFL renderer: ${rendererLabel(selectedRenderer.label)}`
@@ -297,7 +518,12 @@ export default function App() {
 
             {selectedRenderer ? (
               <div className="pane__iframe-wrap">
-                <PreviewFrame src={selectedRenderer.url} title={`${selectedCase.title} preview`} />
+                <PreviewFrame
+                  src={selectedRenderer.url}
+                  title={`${selectedCase.title} preview`}
+                  miniaturized={layoutMode === 'split'}
+                  onNavigate={navigateCases}
+                />
               </div>
             ) : (
               <div className="pane__empty">
@@ -316,8 +542,8 @@ export default function App() {
                 <div>
                   <h3>Flight</h3>
                   <p>
-                    {selectedCase.flightPreviewUrl
-                      ? `Live Flight renderer: ${rendererLabel(selectedCase.flightPreviewLabel ?? 'default')}`
+                    {selectedFlightRenderer
+                      ? `Live Flight renderer: ${rendererLabel(selectedFlightRenderer.label)}`
                       : hasFlightImplementation
                         ? 'Flight source is present, but runnable preview requires a local Flight checkout.'
                         : 'This case does not currently have a Flight implementation.'}
@@ -329,9 +555,14 @@ export default function App() {
                 </div>
               </header>
 
-              {selectedCase.flightPreviewUrl ? (
+              {selectedFlightRenderer ? (
                 <div className="pane__iframe-wrap">
-                  <PreviewFrame src={selectedCase.flightPreviewUrl} title={`${selectedCase.title} flight preview`} />
+                  <PreviewFrame
+                    src={selectedFlightRenderer.url}
+                    title={`${selectedCase.title} flight preview`}
+                    miniaturized
+                    onNavigate={navigateCases}
+                  />
                 </div>
               ) : (
                 <div className="pane__empty">

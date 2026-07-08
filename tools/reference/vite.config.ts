@@ -94,8 +94,7 @@ interface OpenflReferenceCase {
   title: string;
   summary: string;
   previewRenderers: OpenflPreviewRenderer[];
-  flightPreviewLabel?: string;
-  flightPreviewUrl?: string;
+  flightPreviewRenderers?: OpenflPreviewRenderer[];
   implementations: ImplementationSummary[];
 }
 
@@ -170,8 +169,31 @@ function flightPreviewLabel(caseDir: string): string | null {
   return match?.[1]?.toLowerCase() ?? 'default';
 }
 
-function flightPreviewUrl(corpus: string, name: string): string {
-  return `/openfl-tests/${corpus}/${name}/flight/`;
+function flightPreviewRenderers(caseDir: string): string[] {
+  const srcDir = join(caseDir, 'flight', 'src');
+  if (!existsSync(join(srcDir, 'app.ts'))) return [];
+
+  const renderers = readdirSync(srcDir)
+    .map((file) => /^render\.([a-z0-9]+)\.ts$/.exec(file))
+    .filter((match): match is RegExpExecArray => match !== null)
+    .map((match) => match[1])
+    .filter((renderer): renderer is string => typeof renderer === 'string');
+
+  if (renderers.length === 0) {
+    return existsSync(join(srcDir, 'render.ts')) ? [flightPreviewLabel(caseDir) ?? 'default'] : [];
+  }
+
+  const defaultRenderer = flightPreviewLabel(caseDir);
+  return [...renderers].sort((left, right) => {
+    if (left === defaultRenderer) return -1;
+    if (right === defaultRenderer) return 1;
+    return left.localeCompare(right);
+  });
+}
+
+function flightPreviewUrl(corpus: string, name: string, renderer: string): string {
+  if (renderer === 'default') return `/openfl-tests/${corpus}/${name}/flight/`;
+  return `/openfl-tests/${corpus}/${name}/flight/${routeSegment(renderer)}/`;
 }
 
 function implementationSummaries(
@@ -188,7 +210,9 @@ function implementationSummaries(
     if (!existsSync(implementationDir) || !statSync(implementationDir).isDirectory()) continue;
 
     const previewUrl =
-      implementationId === 'flight' && flightRenderer !== null ? flightPreviewUrl(corpus, name) : undefined;
+      implementationId === 'flight' && flightRenderer !== null
+        ? flightPreviewUrl(corpus, name, flightRenderer)
+        : undefined;
 
     results.push({
       id: implementationId,
@@ -229,8 +253,13 @@ function discoverCases(): OpenflReferenceCase[] {
         label: renderer,
         url: `/openfl-tests/${corpus}/${name}/${routeSegment(renderer)}/`,
       }));
-      const flightRenderer = flightPreviewLabel(caseDir);
-      const enabledFlightRenderer = flightPreviewsEnabled ? flightRenderer : null;
+      const enabledFlightPreviewRenderers = flightPreviewsEnabled
+        ? flightPreviewRenderers(caseDir).map((renderer) => ({
+            id: renderer,
+            label: renderer,
+            url: flightPreviewUrl(corpus, name, renderer),
+          }))
+        : [];
       const title = readTitle(caseDir, fallbackTitle(name));
 
       cases.push({
@@ -244,10 +273,14 @@ function discoverCases(): OpenflReferenceCase[] {
             ? `${title} imported from the OpenFL ${corpus} corpus.`
             : `${title} imported as source-only OpenFL material.`,
         previewRenderers,
-        ...(enabledFlightRenderer
-          ? { flightPreviewLabel: enabledFlightRenderer, flightPreviewUrl: flightPreviewUrl(corpus, name) }
-          : {}),
-        implementations: implementationSummaries(caseDir, corpus, name, previewRenderers.length, enabledFlightRenderer),
+        ...(enabledFlightPreviewRenderers.length > 0 ? { flightPreviewRenderers: enabledFlightPreviewRenderers } : {}),
+        implementations: implementationSummaries(
+          caseDir,
+          corpus,
+          name,
+          previewRenderers.length,
+          enabledFlightPreviewRenderers[0]?.id ?? null,
+        ),
       });
     }
   }
@@ -312,9 +345,12 @@ function openflReferencePlugin(): Plugin[] {
             input[`openfl-tests/${referenceCase.corpus}/${referenceCase.name}/${routeSegment(renderer.id)}/index`] =
               `virtual:openfl-preview:${referenceCase.corpus}:${referenceCase.name}:${renderer.id}`;
           }
-          if (referenceCase.flightPreviewUrl) {
-            input[`openfl-tests/${referenceCase.corpus}/${referenceCase.name}/flight/index`] =
-              `virtual:flight-preview:${referenceCase.corpus}:${referenceCase.name}`;
+          for (const renderer of referenceCase.flightPreviewRenderers ?? []) {
+            input[
+              renderer.id === 'default'
+                ? `openfl-tests/${referenceCase.corpus}/${referenceCase.name}/flight/index`
+                : `openfl-tests/${referenceCase.corpus}/${referenceCase.name}/flight/${routeSegment(renderer.id)}/index`
+            ] = `virtual:flight-preview:${referenceCase.corpus}:${referenceCase.name}:${renderer.id}`;
           }
         }
 
@@ -326,8 +362,11 @@ function openflReferencePlugin(): Plugin[] {
                 entryFileNames(chunk) {
                   const id = chunk.facadeModuleId;
                   if (id?.startsWith('\0virtual:flight-preview:')) {
-                    const [corpus, name] = splitFirst(id.slice('\0virtual:flight-preview:'.length), ':');
-                    return `openfl-tests/${corpus}/${name}/flight/index.js`;
+                    const [corpus, rest] = splitFirst(id.slice('\0virtual:flight-preview:'.length), ':');
+                    const [name, renderer] = splitFirst(rest, ':');
+                    return renderer === 'default'
+                      ? `openfl-tests/${corpus}/${name}/flight/index.js`
+                      : `openfl-tests/${corpus}/${name}/flight/${routeSegment(renderer)}/index.js`;
                   }
                   if (!id?.startsWith('\0virtual:openfl-preview:')) return 'assets/[name]-[hash].js';
 
@@ -365,11 +404,25 @@ function openflReferencePlugin(): Plugin[] {
         }
 
         if (id.startsWith('\0virtual:flight-preview:')) {
-          const [corpus, name] = splitFirst(id.slice('\0virtual:flight-preview:'.length), ':');
+          const [corpus, rest] = splitFirst(id.slice('\0virtual:flight-preview:'.length), ':');
+          const [name, renderer] = splitFirst(rest, ':');
           const source = flightPreviewSource(corpus, name);
           if (!source) return null;
-          return `await import(${JSON.stringify(source)});`;
+          return renderer
+            ? `await import(${JSON.stringify(`${source}?flight-renderer=${renderer}`)});`
+            : `await import(${JSON.stringify(source)});`;
         }
+      },
+
+      transform(code, id) {
+        const [filePath, query] = splitFirst(id, '?');
+        if (!query || !filePath.endsWith('/flight/src/app.ts')) return null;
+
+        const params = new URLSearchParams(query);
+        const renderer = params.get('flight-renderer');
+        if (!renderer || renderer === 'default') return null;
+
+        return code.replace(/from\s+(['"])\\.\/render\1/g, `from './render.${renderer}'`);
       },
 
       generateBundle(_, bundle) {
@@ -393,8 +446,8 @@ function openflReferencePlugin(): Plugin[] {
             });
           }
 
-          if (referenceCase.flightPreviewUrl) {
-            const entryId = `\0virtual:flight-preview:${referenceCase.corpus}:${referenceCase.name}`;
+          for (const renderer of referenceCase.flightPreviewRenderers ?? []) {
+            const entryId = `\0virtual:flight-preview:${referenceCase.corpus}:${referenceCase.name}:${renderer.id}`;
             const chunk = Object.values(bundle).find(
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (candidate) => candidate.type === 'chunk' && (candidate as any).facadeModuleId === entryId,
@@ -403,8 +456,15 @@ function openflReferencePlugin(): Plugin[] {
 
             this.emitFile({
               type: 'asset',
-              fileName: `openfl-tests/${referenceCase.corpus}/${referenceCase.name}/flight/index.html`,
-              source: previewHtml(`${referenceCase.title} · Flight`, `${viteBase}${chunk.fileName}`, viteBase),
+              fileName:
+                renderer.id === 'default'
+                  ? `openfl-tests/${referenceCase.corpus}/${referenceCase.name}/flight/index.html`
+                  : `openfl-tests/${referenceCase.corpus}/${referenceCase.name}/flight/${routeSegment(renderer.id)}/index.html`,
+              source: previewHtml(
+                `${referenceCase.title} · Flight ${renderer.label}`,
+                `${viteBase}${chunk.fileName}`,
+                viteBase,
+              ),
             });
           }
         }
@@ -420,15 +480,40 @@ function openflReferencePlugin(): Plugin[] {
         server.middlewares.use((req, res, next) => {
           const urlPath = (req.url ?? '/').split('?')[0] ?? '/';
           const parts = urlPath.split('/').filter(Boolean);
-          if (parts[0] !== 'openfl-tests' || parts.length !== 4) return next();
+          if (parts[0] !== 'openfl-tests') return next();
 
-          const [, corpus, name, rendererSegment] = parts;
+          let corpus = '';
+          let name = '';
+          let rendererSegment = '';
+          let flightRendererSegment = '';
+
+          if (parts.length === 4) {
+            corpus = parts[1] ?? '';
+            name = parts[2] ?? '';
+            rendererSegment = parts[3] ?? '';
+          } else if (parts.length === 5 && parts[3] === 'flight') {
+            corpus = parts[1] ?? '';
+            name = parts[2] ?? '';
+            rendererSegment = parts[3] ?? '';
+            flightRendererSegment = parts[4] ?? '';
+          } else {
+            return next();
+          }
+
           const referenceCase = discoverCases().find(
             (candidate) => candidate.corpus === corpus && candidate.name === name,
           );
           if (!referenceCase) return next();
 
-          if (rendererSegment === 'flight' && referenceCase.flightPreviewUrl) {
+          if (rendererSegment === 'flight') {
+            const renderer =
+              referenceCase.flightPreviewRenderers?.find((candidate) =>
+                flightRendererSegment
+                  ? routeSegment(candidate.id) === flightRendererSegment
+                  : candidate.id === 'default',
+              ) ?? referenceCase.flightPreviewRenderers?.[0];
+            if (!renderer) return next();
+
             const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -446,7 +531,7 @@ function openflReferencePlugin(): Plugin[] {
 <body>
   <div id="app"></div>
   <script type="module" src="/@vite/client"></script>
-  <script type="module" src="/@id/__x00__virtual:flight-preview:${corpus}:${name}"></script>
+  <script type="module" src="/@id/__x00__virtual:flight-preview:${corpus}:${name}:${renderer.id}"></script>
 </body>
 </html>`;
 

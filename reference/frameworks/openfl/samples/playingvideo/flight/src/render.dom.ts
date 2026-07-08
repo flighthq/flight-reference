@@ -11,8 +11,8 @@ import {
 
 const element = document.createElement('div');
 element.style.position = 'relative';
-element.style.width = `${window.innerWidth}px`;
-element.style.height = `${window.innerHeight}px`;
+element.style.width = '550px';
+element.style.height = '400px';
 document.body.style.margin = '0';
 document.body.style.background = '#000';
 document.body.appendChild(element);

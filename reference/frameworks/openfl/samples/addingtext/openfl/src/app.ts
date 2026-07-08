@@ -6,11 +6,14 @@ import AssetLibrary from 'openfl/utils/AssetLibrary';
 import AssetManifest from 'openfl/utils/AssetManifest';
 import Assets from 'openfl/utils/Assets';
 
+const declaredFontName = 'Katamotz Ikasi';
+let loadedFontName = declaredFontName;
+
 class App extends Sprite {
   public constructor() {
     super();
 
-    var format = new TextFormat('Katamotz Ikasi', 30, 0x7a0026);
+    var format = new TextFormat(loadedFontName, 30, 0x7a0026);
     var textField = new TextField();
 
     textField.defaultTextFormat = format;
@@ -28,14 +31,25 @@ class App extends Sprite {
 }
 
 var manifest = new AssetManifest();
-manifest.addFont('Katamotz Ikasi', 'assets/KatamotzIkasi.ttf');
+manifest.addFont(declaredFontName, 'assets/KatamotzIkasi.woff');
 
 AssetLibrary.loadFromManifest(manifest)
   .onComplete((library) => {
     Assets.registerLibrary('default', library);
 
-    Assets.loadFont('assets/KatamotzIkasi.ttf')
-      .onComplete(() => {
+    const font = Assets.getFont(declaredFontName) ?? Assets.getFont('assets/KatamotzIkasi.woff');
+    if (font?.fontName) loadedFontName = font.fontName;
+
+    Assets.loadFont('assets/KatamotzIkasi.woff')
+      .onComplete(async () => {
+        if ('FontFace' in window && 'fonts' in document) {
+          const fontFace = new FontFace(declaredFontName, 'url(assets/KatamotzIkasi.woff)');
+          await fontFace.load();
+          document.fonts.add(fontFace);
+          loadedFontName = declaredFontName;
+          await Promise.allSettled([document.fonts.load(`30px "${loadedFontName}"`), document.fonts.ready]);
+        }
+
         var stage = new Stage(550, 400, 0xffffff, App);
         document.body.appendChild(stage.element);
       })

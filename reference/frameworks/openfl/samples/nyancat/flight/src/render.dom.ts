@@ -11,13 +11,13 @@ import {
 
 const container = document.createElement('div');
 container.style.position = 'relative';
-container.style.width = '220px';
-container.style.height = '220px';
+container.style.width = '400px';
+container.style.height = '400px';
 document.getElementById('app')!.appendChild(container);
 
 export const state = createDomRenderState(container, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
-  backgroundColor: 0x000000ff,
+  backgroundColor: 0xffffffff,
   imageSmoothingEnabled: false,
 });
 registerRenderer(state, BitmapKind, defaultDomBitmapRenderer);

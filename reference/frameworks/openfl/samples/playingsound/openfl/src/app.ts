@@ -34,8 +34,6 @@ class App extends Sprite {
 
     this.resize();
     this.stage.addEventListener(Event.RESIZE, this.stage_onResize);
-
-    this.play();
   }
 
   private pause(fadeOut: number = 1.2): void {

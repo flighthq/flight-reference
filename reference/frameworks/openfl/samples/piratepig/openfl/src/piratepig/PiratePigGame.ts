@@ -118,7 +118,7 @@ export class PiratePigGame extends Sprite {
     this.Logo.smoothing = true;
     this.addChild(this.Logo);
 
-    var font = Assets.getFont('fonts/FreebooterUpdated.ttf');
+    var font = Assets.getFont('Freebooter') ?? Assets.getFont('fonts/FreebooterUpdated.ttf');
     var defaultFormat = new TextFormat(font.fontName, 60, 0x000000);
     defaultFormat.align = TextFormatAlign.RIGHT;
 
@@ -139,7 +139,7 @@ export class PiratePigGame extends Sprite {
     this.Background.graphics.beginFill(0xffffff, 0.4);
     this.Background.graphics.drawRect(0, 0, contentWidth, 75 * PiratePigGame.NUM_ROWS);
 
-    //Background.filters = [ new BlurFilter (10, 10) ];
+    this.Background.filters = [new BlurFilter(10, 10)];
     this.addChild(this.Background);
 
     this.TileContainer.x = 14;

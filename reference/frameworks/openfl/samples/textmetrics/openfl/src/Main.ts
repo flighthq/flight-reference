@@ -23,7 +23,7 @@ class Main extends Sprite {
     this.field = new Point(this.box.x - this.gutter * 2, this.box.y - this.gutter * 2);
 
     var offset = new Point(300, 100);
-    var font = Assets.getFont('assets/LiberationSerif-Regular.ttf');
+    var font = Assets.getFont('Liberation Serif Regular') ?? Assets.getFont('assets/LiberationSerif-Regular.ttf');
     var format = new TextFormat(
       font.fontName,
       120,
@@ -53,14 +53,14 @@ class Main extends Sprite {
     textField.text = 'Wqx\nWqx';
     textField.width = this.field.x;
     textField.height = this.field.y;
-    this.addChild(textField);
-
     var bitmap = new Bitmap(
       new BitmapData(this.box.x + this.buffer * 2, this.box.y + this.buffer * 2, true, 0xffe0e0e0),
     );
     bitmap.x = textField.x - this.buffer;
     bitmap.y = textField.y - this.buffer;
     this.addChild(bitmap);
+
+    this.addChild(textField);
 
     this.out = new TextField();
     this.out.width = 400;

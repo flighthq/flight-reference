@@ -18,6 +18,10 @@ import {
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = document.createElement('canvas');
+canvas.width = 550 * pixelRatio;
+canvas.height = 400 * pixelRatio;
+canvas.style.width = '550px';
+canvas.style.height = '400px';
 canvas.style.display = 'block';
 document.body.style.margin = '0';
 document.body.style.background = '#000';

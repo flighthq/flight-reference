@@ -1,7 +1,9 @@
 import {
+  addNodeChild,
   addTextureAtlasRegion,
   connectSignal,
   createApplication,
+  createDisplayObject,
   createMovieClip,
   createSpritesheet,
   createSpritesheetAnimation,
@@ -19,6 +21,8 @@ import { render, scale } from './render';
 
 const FRAME_W = 220;
 const FRAME_H = 220;
+const STAGE_W = 400;
+const STAGE_H = 400;
 const MARGIN = 2;
 const GAP = 4;
 const COLS_PER_ROW = [5, 4];
@@ -48,15 +52,20 @@ const spritesheet = createSpritesheet({
   animations: { nyancat: animation },
 });
 
+const root = createDisplayObject();
+root.scaleX = scale;
+root.scaleY = scale;
+
 const clip = createMovieClip();
 setMovieClipSource(clip, createSpritesheetTimelineSource(spritesheet, animation));
 playMovieClip(clip);
-clip.scaleX = scale;
-clip.scaleY = scale;
+clip.x = (STAGE_W - FRAME_W) / 2;
+clip.y = (STAGE_H - FRAME_H) / 2;
+addNodeChild(root, clip);
 
 const app = createApplication();
 connectSignal(app.onUpdate, (delta) => updateMovieClip(clip, delta));
 connectSignal(app.onRender, () => {
-  render(clip);
+  render(root);
 });
 startApplicationLoop(app);

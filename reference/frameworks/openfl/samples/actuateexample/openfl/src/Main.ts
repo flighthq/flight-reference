@@ -15,6 +15,8 @@ class Main extends Sprite {
   }
 
   private animateCircle = (circle: Sprite): void => {
+    if (this.stage === null || circle.parent === null) return;
+
     const duration = 1.5 + Math.random() * 4.5;
     const targetX = Math.random() * this.stage.stageWidth;
     const targetY = Math.random() * this.stage.stageHeight;
@@ -32,6 +34,8 @@ class Main extends Sprite {
   }
 
   private createCircle = (): void => {
+    if (this.stage === null) return;
+
     const size = 5 + Math.random() * 35 + 20;
     const circle = new Sprite();
 

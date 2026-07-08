@@ -152,21 +152,8 @@ function PreviewFrame({
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const detachFrameKeyHandlerRef = useRef<(() => void) | null>(null);
   const teardownMeasurementRef = useRef<(() => void) | null>(null);
-  const [activeSrc, setActiveSrc] = useState<string | null>(src);
   const [cropSize, setCropSize] = useState(splitViewport);
   const [scale, setScale] = useState(1);
-
-  useEffect(() => {
-    detachFrameKeyHandlerRef.current?.();
-    detachFrameKeyHandlerRef.current = null;
-    teardownMeasurementRef.current?.();
-    teardownMeasurementRef.current = null;
-    if (frameRef.current) frameRef.current.src = 'about:blank';
-    setActiveSrc(null);
-    setCropSize(splitViewport);
-    const handle = window.setTimeout(() => setActiveSrc(src), 0);
-    return () => window.clearTimeout(handle);
-  }, [src]);
 
   useEffect(() => {
     return () => {
@@ -263,35 +250,17 @@ function PreviewFrame({
     };
   };
 
-  if (activeSrc === null) {
-    return (
-      <div ref={wrapRef} className="pane__loading">
-        <span>Loading preview…</span>
-      </div>
-    );
-  }
-
   if (!miniaturized) {
-    return (
-      <iframe
-        key={activeSrc}
-        ref={frameRef}
-        className="pane__iframe"
-        src={activeSrc}
-        title={title}
-        onLoad={handleLoad}
-      />
-    );
+    return <iframe ref={frameRef} className="pane__iframe" src={src} title={title} onLoad={handleLoad} />;
   }
 
   return (
     <div ref={wrapRef} className="pane__mini-stage">
       <div className="pane__mini-crop" style={{ width: cropSize.width * scale, height: cropSize.height * scale }}>
         <iframe
-          key={activeSrc}
           ref={frameRef}
           className="pane__iframe pane__iframe--mini"
-          src={activeSrc}
+          src={src}
           title={title}
           onLoad={handleLoad}
           style={{
@@ -536,6 +505,7 @@ export default function App() {
             {selectedRenderer ? (
               <div className="pane__iframe-wrap">
                 <PreviewFrame
+                  key={selectedRenderer.url}
                   src={selectedRenderer.url}
                   title={`${selectedCase.title} preview`}
                   miniaturized={layoutMode === 'split'}
@@ -575,6 +545,7 @@ export default function App() {
               {selectedFlightRenderer ? (
                 <div className="pane__iframe-wrap">
                   <PreviewFrame
+                    key={selectedFlightRenderer.url}
                     src={selectedFlightRenderer.url}
                     title={`${selectedCase.title} flight preview`}
                     miniaturized

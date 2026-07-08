@@ -60,10 +60,12 @@ function createCircle(): ReturnType<typeof createShape> {
 }
 
 for (let i = 0; i < CIRCLE_COUNT; i++) {
-  const circle = createCircle();
-  const delay = Math.random() * MAX_START_DELAY;
+  const delay = Math.max(FRAME_DELTA, Math.random() * MAX_START_DELAY);
   const timer = createTweenTimer(manager, delay);
-  connectSignal(timer.onComplete, () => animateCircle(circle));
+  connectSignal(timer.onComplete, () => {
+    const circle = createCircle();
+    animateCircle(circle);
+  });
 }
 
 const app = createApplication();

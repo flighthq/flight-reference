@@ -16,10 +16,10 @@ import {
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = document.createElement('canvas');
-canvas.width = window.innerWidth * pixelRatio;
-canvas.height = window.innerHeight * pixelRatio;
-canvas.style.width = `${window.innerWidth}px`;
-canvas.style.height = `${window.innerHeight}px`;
+canvas.width = 800 * pixelRatio;
+canvas.height = 600 * pixelRatio;
+canvas.style.width = '800px';
+canvas.style.height = '600px';
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 

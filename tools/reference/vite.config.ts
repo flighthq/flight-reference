@@ -188,9 +188,7 @@ function flightPreviewRenderers(caseDir: string): string[] {
     .map((match) => match[1])
     .filter((renderer): renderer is string => typeof renderer === 'string');
 
-  if (renderers.length === 0) {
-    return existsSync(join(srcDir, 'render.ts')) ? [flightPreviewLabel(caseDir) ?? 'default'] : [];
-  }
+  if (renderers.length === 0) return [flightPreviewLabel(caseDir) ?? 'default'];
 
   const defaultRenderer = flightPreviewLabel(caseDir);
   return [...renderers].sort((left, right) => {

@@ -125,8 +125,6 @@ connectSignal(input.onPointerDown, () => {
   }
 });
 
-play();
-
 const app = createApplication();
 connectSignal(app.onUpdate, (delta: number) => {
   if (channel !== null && channel.state === 'playing') {

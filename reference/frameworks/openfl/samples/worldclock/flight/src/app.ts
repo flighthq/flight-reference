@@ -16,10 +16,9 @@ import {
   startApplicationLoop,
 } from '@flighthq/sdk';
 
-import { container, render, scale, setSize } from './render';
+import { render, scale, setSize } from './render';
 
 const RADIUS = 50;
-const CLOCK_SPACING = 120;
 
 const root = createDisplayObject();
 root.scaleX = scale;
@@ -28,7 +27,10 @@ root.scaleY = scale;
 function createClock(labelText: string, color: number) {
   const clock = createDisplayObject();
   const face = createShape();
-  const hands = createShape();
+  const hourHand = createShape();
+  const minuteHand = createShape();
+  const secondHand = createShape();
+  const center = createShape();
   const label = createTextLabel();
 
   appendShapeLineStyle(face, RADIUS / 5, color);
@@ -43,8 +45,11 @@ function createClock(labelText: string, color: number) {
   label.y = RADIUS * 2 + 4;
   addNodeChild(clock, label);
 
-  addNodeChild(clock, hands);
-  return { clock, hands };
+  addNodeChild(clock, hourHand);
+  addNodeChild(clock, minuteHand);
+  addNodeChild(clock, secondHand);
+  addNodeChild(clock, center);
+  return { center, clock, hourHand, minuteHand, secondHand };
 }
 
 const clocks = [
@@ -60,11 +65,20 @@ for (const entry of clocks) {
   addNodeChild(root, entry.clock);
 }
 
-function updateClock(hands: ReturnType<typeof createShape>, date: Date): void {
+function updateClock(
+  hourHand: ReturnType<typeof createShape>,
+  minuteHand: ReturnType<typeof createShape>,
+  secondHand: ReturnType<typeof createShape>,
+  center: ReturnType<typeof createShape>,
+  date: Date,
+): void {
   const shortHand = RADIUS / 2;
   const longHand = (RADIUS * 3) / 4;
 
-  clearShapeCommands(hands);
+  clearShapeCommands(hourHand);
+  clearShapeCommands(minuteHand);
+  clearShapeCommands(secondHand);
+  clearShapeCommands(center);
 
   let hours = date.getHours();
   if (hours >= 12) hours -= 12;
@@ -72,21 +86,24 @@ function updateClock(hands: ReturnType<typeof createShape>, date: Date): void {
   const minuteAngle = (date.getMinutes() / 60) * Math.PI * 2 - Math.PI / 2;
   const secondAngle = (date.getSeconds() / 60) * Math.PI * 2 - Math.PI / 2;
 
-  appendShapeLineStyle(hands, 5, 0x000000);
-  appendShapeMoveTo(hands, RADIUS, RADIUS);
-  appendShapeLineTo(hands, RADIUS + Math.cos(hourAngle) * shortHand, RADIUS + Math.sin(hourAngle) * shortHand);
+  appendShapeLineStyle(hourHand, 5, 0x000000);
+  appendShapeMoveTo(hourHand, RADIUS, RADIUS);
+  appendShapeLineTo(hourHand, RADIUS + Math.cos(hourAngle) * shortHand, RADIUS + Math.sin(hourAngle) * shortHand);
 
-  appendShapeLineStyle(hands, 4, 0x000000);
-  appendShapeMoveTo(hands, RADIUS, RADIUS);
-  appendShapeLineTo(hands, RADIUS + Math.cos(minuteAngle) * longHand, RADIUS + Math.sin(minuteAngle) * longHand);
+  appendShapeLineStyle(minuteHand, 4, 0x000000);
+  appendShapeMoveTo(minuteHand, RADIUS, RADIUS);
+  appendShapeLineTo(minuteHand, RADIUS + Math.cos(minuteAngle) * longHand, RADIUS + Math.sin(minuteAngle) * longHand);
 
-  appendShapeLineStyle(hands, 2, 0xff0000);
-  appendShapeMoveTo(hands, RADIUS, RADIUS);
-  appendShapeLineTo(hands, RADIUS + Math.cos(secondAngle) * longHand, RADIUS + Math.sin(secondAngle) * longHand);
-  appendShapeBeginFill(hands, 0xff0000);
-  appendShapeCircle(hands, RADIUS, RADIUS, 4);
+  appendShapeLineStyle(secondHand, 2, 0xff0000);
+  appendShapeMoveTo(secondHand, RADIUS, RADIUS);
+  appendShapeLineTo(secondHand, RADIUS + Math.cos(secondAngle) * longHand, RADIUS + Math.sin(secondAngle) * longHand);
+  appendShapeBeginFill(center, 0xff0000);
+  appendShapeCircle(center, RADIUS, RADIUS, 4);
 
-  invalidateNodeRender(hands);
+  invalidateNodeRender(hourHand);
+  invalidateNodeRender(minuteHand);
+  invalidateNodeRender(secondHand);
+  invalidateNodeRender(center);
 }
 
 function dateToOffset(date: Date, offset: number): Date {
@@ -103,7 +120,7 @@ function dateToOffset(date: Date, offset: number): Date {
 function updateClocks(): void {
   const now = new Date();
   for (const entry of clocks) {
-    updateClock(entry.hands, dateToOffset(now, entry.offset));
+    updateClock(entry.hourHand, entry.minuteHand, entry.secondHand, entry.center, dateToOffset(now, entry.offset));
   }
 }
 

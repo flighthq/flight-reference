@@ -1,12 +1,10 @@
-import Bitmap from 'openfl/display/Bitmap';
 import Sprite from 'openfl/display/Sprite';
-import Loader from 'openfl/display/Loader';
-import URLRequest from 'openfl/net/URLRequest';
 import Event from 'openfl/events/Event';
 import BitmapData from 'openfl/display/BitmapData';
 import MouseEvent from 'openfl/events/MouseEvent';
 import Tilemap from 'openfl/display/Tilemap';
 import Tileset from 'openfl/display/Tileset';
+import Stats from 'stats.js';
 import Bunny from './Bunny';
 
 export class Main extends Sprite {
@@ -17,6 +15,7 @@ export class Main extends Sprite {
   private minY: number;
   private maxX: number;
   private maxY: number;
+  private stats: Stats;
   private tilemap: Tilemap;
   private tileset: Tileset;
 
@@ -45,11 +44,18 @@ export class Main extends Sprite {
     //this.tilemap.tileColorTransformEnabled = false;
     this.addChild(this.tilemap);
 
+    this.stats = new Stats();
+    this.stats.domElement.style.position = 'absolute';
+    this.stats.domElement.style.left = '0px';
+    this.stats.domElement.style.top = '0px';
+    document.body.appendChild(this.stats.domElement);
+
     this.stage.addEventListener(MouseEvent.MOUSE_DOWN, this.stage_onMouseDown);
     this.stage.addEventListener(MouseEvent.MOUSE_UP, this.stage_onMouseUp);
     this.stage.addEventListener(Event.ENTER_FRAME, this.stage_onEnterFrame);
+    this.stage.addEventListener(Event.RESIZE, this.stage_onResize);
 
-    for (var i = 0; i < 10; i++) {
+    for (var i = 0; i < 100; i++) {
       this.addBunny();
     }
   }
@@ -67,6 +73,8 @@ export class Main extends Sprite {
   // Event Handlers
 
   stage_onEnterFrame = (event: Event) => {
+    this.stats.begin();
+
     for (var i = 0; i < this.bunnies.length; i++) {
       var bunny = this.bunnies[i];
       bunny.x += bunny.speedX;
@@ -99,6 +107,8 @@ export class Main extends Sprite {
         this.addBunny();
       }
     }
+
+    this.stats.end();
   };
 
   private stage_onMouseDown = (event: MouseEvent) => {
@@ -108,6 +118,13 @@ export class Main extends Sprite {
   private stage_onMouseUp = (event: MouseEvent) => {
     this.addingBunnies = false;
     console.log(this.bunnies.length + ' bunnies');
+  };
+
+  private stage_onResize = (_event: Event) => {
+    this.maxX = this.stage.stageWidth;
+    this.maxY = this.stage.stageHeight;
+    this.tilemap.width = this.stage.stageWidth;
+    this.tilemap.height = this.stage.stageHeight;
   };
 }
 

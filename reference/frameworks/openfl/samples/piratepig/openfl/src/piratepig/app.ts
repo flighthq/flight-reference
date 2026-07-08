@@ -1,8 +1,5 @@
-import BitmapData from 'openfl/display/BitmapData';
 import Sprite from 'openfl/display/Sprite';
 import Stage from 'openfl/display/Stage';
-import Sound from 'openfl/media/Sound';
-import Font from 'openfl/text/Font';
 import AssetLibrary from 'openfl/utils/AssetLibrary';
 import AssetManifest from 'openfl/utils/AssetManifest';
 import Assets from 'openfl/utils/Assets';
@@ -40,7 +37,20 @@ class Main extends Sprite {
     AssetLibrary.loadFromManifest(manifest)
       .onComplete((library) => {
         Assets.registerLibrary('default', library);
-        this.addChild(new PiratePig());
+        Assets.loadFont('fonts/FreebooterUpdated.ttf')
+          .onComplete(async () => {
+            if ('FontFace' in window && 'fonts' in document) {
+              const fontFace = new FontFace('Freebooter', 'url(fonts/FreebooterUpdated.ttf)');
+              await fontFace.load();
+              document.fonts.add(fontFace);
+              await Promise.allSettled([document.fonts.load('60px "Freebooter"'), document.fonts.ready]);
+            }
+
+            this.addChild(new PiratePig());
+          })
+          .onError((e) => {
+            console.error(e);
+          });
       })
       .onError((e) => {
         console.error(e);

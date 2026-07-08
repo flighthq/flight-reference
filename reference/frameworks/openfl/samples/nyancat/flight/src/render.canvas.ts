@@ -11,12 +11,12 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(220, 220, pixelRatio);
+const canvas = createCanvasElement(400, 400, pixelRatio);
 document.getElementById('app')!.appendChild(canvas);
 
 export const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
-  backgroundColor: 0x000000ff,
+  backgroundColor: 0xffffffff,
   imageSmoothingEnabled: false,
 });
 registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);

@@ -83,12 +83,18 @@ const n = sources.length;
 const gridW = LABEL_SIZE + n * CELL_SIZE + PAD;
 const gridH = LABEL_SIZE + n * CELL_SIZE + PAD;
 
-const canvas = document.getElementById('app') as HTMLCanvasElement;
+const mount = document.getElementById('app');
+const canvas = mount instanceof HTMLCanvasElement ? mount : document.createElement('canvas');
+if (!(mount instanceof HTMLCanvasElement)) {
+  mount?.replaceWith(canvas);
+}
+canvas.style.display = 'block';
+document.body.style.margin = '0';
 canvas.width = gridW;
 canvas.height = gridH;
 const ctx = canvas.getContext('2d')!;
 
-ctx.fillStyle = '#16213e';
+ctx.fillStyle = '#808080';
 ctx.fillRect(0, 0, gridW, gridH);
 
 for (let col = 0; col < n; col++) {

@@ -16,7 +16,7 @@ import {
   startApplicationLoop,
 } from '@flighthq/sdk';
 
-import { render, scale } from './render';
+import { render, scale, setSize } from './render';
 
 const BUFFER = 64;
 const GUTTER = 2;
@@ -25,10 +25,13 @@ const FIELD_H = 354;
 const TEXT = 'Wqx\nWqx';
 const TEXT_X = 300;
 const TEXT_Y = 100;
+const STAGE_WIDTH = 800;
+const STAGE_HEIGHT = 600;
 
 const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
+setSize(STAGE_WIDTH, STAGE_HEIGHT);
 
 // ---- TextLabel format (matches original: serif, 120px, centered, 20px leading) ----
 

@@ -25,7 +25,7 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createGlCanvasElement(670, 400, pixelRatio);
+const canvas = createGlCanvasElement(window.innerWidth, window.innerHeight, pixelRatio);
 document.body.appendChild(canvas);
 
 export const container = canvas;
@@ -54,4 +54,11 @@ export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
   renderGlBackground(state);
   renderGlDisplayObject(state, root);
+}
+
+export function setSize(w: number, h: number): void {
+  canvas.width = w * pixelRatio;
+  canvas.height = h * pixelRatio;
+  canvas.style.width = `${w}px`;
+  canvas.style.height = `${h}px`;
 }

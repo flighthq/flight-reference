@@ -11,8 +11,8 @@ import {
 
 const container = document.createElement('div');
 container.style.position = 'relative';
-container.style.width = '400px';
-container.style.height = '200px';
+container.style.width = '550px';
+container.style.height = '400px';
 document.body.appendChild(container);
 
 export const state = createDomRenderState(container, {

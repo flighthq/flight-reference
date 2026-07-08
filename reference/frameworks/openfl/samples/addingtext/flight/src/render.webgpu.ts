@@ -13,7 +13,7 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWgpuCanvasElement(400, 200, pixelRatio);
+const canvas = createWgpuCanvasElement(550, 400, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = await createWgpuRenderState(canvas, {

@@ -12,7 +12,7 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createGlCanvasElement(400, 200, pixelRatio);
+const canvas = createGlCanvasElement(550, 400, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(canvas, {

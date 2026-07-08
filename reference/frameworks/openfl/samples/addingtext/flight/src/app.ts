@@ -15,9 +15,4 @@ textField.x = 50;
 textField.y = 50;
 addNodeChild(root, textField);
 
-function enterFrame(): void {
-  render(root);
-  requestAnimationFrame(enterFrame);
-}
-
-requestAnimationFrame(enterFrame);
+render(root);

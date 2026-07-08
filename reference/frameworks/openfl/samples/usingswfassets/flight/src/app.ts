@@ -2,13 +2,17 @@ import {
   addNodeChild,
   appendShapeBeginFill,
   appendShapeRectangle,
+  attachWindowResize,
+  clearShapeCommands,
+  connectSignal,
+  createApplicationWindow,
   createDisplayObject,
   createShape,
   createTextLabel,
   invalidateNodeRender,
 } from '@flighthq/sdk';
 
-import { render, scale } from './render';
+import { container, render, scale, setSize } from './render';
 
 const root = createDisplayObject();
 root.scaleX = scale;
@@ -28,25 +32,32 @@ addNodeChild(root, header);
 addNodeChild(root, column);
 addNodeChild(root, label);
 
-function resize(): void {
-  const width = 550;
-  const height = 400;
-  appendShapeBeginFill(background, 0xf5f5f5);
-  appendShapeRectangle(background, 0, 0, width, height);
-  appendShapeBeginFill(header, 0x24afc4);
-  appendShapeRectangle(header, 0, 0, width, 70);
-  appendShapeBeginFill(column, 0xd8eef2);
-  appendShapeRectangle(column, 360, 70, 170, height - 90);
-  invalidateNodeRender(background);
-  invalidateNodeRender(header);
-  invalidateNodeRender(column);
+const columnOffsetHeight = -90;
+const headerOffsetWidth = 0;
+
+function drawRect(
+  shape: ReturnType<typeof createShape>,
+  color: number,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): void {
+  clearShapeCommands(shape);
+  appendShapeBeginFill(shape, color);
+  appendShapeRectangle(shape, x, y, w, h);
+  invalidateNodeRender(shape);
 }
 
-resize();
-
-function enterFrame(): void {
+function resize(width: number, height: number): void {
+  setSize(width, height);
+  drawRect(background, 0xf5f5f5, 0, 0, width, height);
+  drawRect(header, 0x24afc4, 0, 0, Math.max(width + headerOffsetWidth, 0), 70);
+  drawRect(column, 0xd8eef2, 360, 70, 170, Math.max(height + columnOffsetHeight, 0));
   render(root);
-  requestAnimationFrame(enterFrame);
 }
 
-enterFrame();
+const win = createApplicationWindow();
+connectSignal(win.onResize, () => resize(win.width, win.height));
+attachWindowResize(win, container);
+resize(window.innerWidth, window.innerHeight);

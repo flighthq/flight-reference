@@ -7,6 +7,7 @@ import { defineConfig } from 'vite';
 
 const repoRoot = resolve(__dirname, '../..');
 const openflReferenceDir = join(repoRoot, 'reference', 'frameworks', 'openfl');
+const starlingReferenceDir = join(repoRoot, 'reference', 'frameworks', 'starling');
 
 function resolveFlightWorkspaceRoot(): string | null {
   const candidates = [process.env.FLIGHT_REPO, join(repoRoot, '.cache', 'upstream', 'flight')].filter(
@@ -72,7 +73,11 @@ const flightPreviewsEnabled =
   existsSync(join(flightWorkspaceRoot, 'node_modules')) &&
   typeof flightPackageAliases['@flighthq/sdk'] === 'string';
 
-interface OpenflPreviewRenderer {
+// ---------------------------------------------------------------------------
+// Shared types
+// ---------------------------------------------------------------------------
+
+interface PreviewRenderer {
   id: string;
   label: string;
   url: string;
@@ -86,17 +91,21 @@ interface ImplementationSummary {
   previewUrl?: string;
 }
 
-interface OpenflReferenceCase {
+interface ReferenceCase {
   id: string;
-  framework: 'openfl';
+  framework: string;
   corpus: string;
   name: string;
   title: string;
   summary: string;
-  previewRenderers: OpenflPreviewRenderer[];
-  flightPreviewRenderers?: OpenflPreviewRenderer[];
+  previewRenderers: PreviewRenderer[];
+  flightPreviewRenderers?: PreviewRenderer[];
   implementations: ImplementationSummary[];
 }
+
+// ---------------------------------------------------------------------------
+// Shared utilities
+// ---------------------------------------------------------------------------
 
 function routeSegment(renderer: string): string {
   return renderer.replace(':', '-');
@@ -126,6 +135,40 @@ function hasImplementationDir(caseDir: string, implementationId: string): boolea
   return existsSync(implementationDir) && statSync(implementationDir).isDirectory();
 }
 
+function fallbackTitle(name: string): string {
+  return name
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([a-z])(\d)/g, '$1 $2')
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, (value) => value.toUpperCase());
+}
+
+function previewHtml(title: string, scriptSrc: string, baseHref: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="${baseHref}" />
+  <link rel="icon" href="data:," />
+  <title>${title}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #ffffff; }
+    body { font-family: sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="${scriptSrc}"></script>
+</body>
+</html>`;
+}
+
+// ---------------------------------------------------------------------------
+// OpenFL case discovery
+// ---------------------------------------------------------------------------
+
 function hasUpstreamOpenflImplementation(caseDir: string): boolean {
   return hasImplementationDir(caseDir, 'openfl') || hasImplementationDir(caseDir, 'openfl-haxe');
 }
@@ -136,14 +179,6 @@ function readTitle(caseDir: string, fallback: string): string {
 
   const match = readFileSync(projectXmlPath, 'utf8').match(/<meta[^>]*title="([^"]+)"/);
   return match?.[1] ?? fallback;
-}
-
-function fallbackTitle(name: string): string {
-  return name
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .replace(/([a-z])(\d)/g, '$1 $2')
-    .replace(/[-_]/g, ' ')
-    .replace(/\b\w/g, (value) => value.toUpperCase());
 }
 
 function openflPreviewRenderers(caseDir: string): string[] {
@@ -170,16 +205,15 @@ function openflPreviewRenderers(caseDir: string): string[] {
 function flightPreviewRenderers(caseDir: string): string[] {
   const srcDir = join(caseDir, 'flight', 'src');
   if (!existsSync(join(srcDir, 'app.ts'))) return [];
-  // Keep the reference harness focused on the Flight WebGL backend.
   return ['webgl'];
 }
 
-function flightPreviewUrl(corpus: string, name: string, renderer: string): string {
-  if (renderer === 'default') return `/openfl-tests/${corpus}/${name}/flight/`;
-  return `/openfl-tests/${corpus}/${name}/flight/${routeSegment(renderer)}/`;
+function flightPreviewUrl(framework: string, corpus: string, name: string, renderer: string): string {
+  if (renderer === 'default') return `/${framework}-tests/${corpus}/${name}/flight/`;
+  return `/${framework}-tests/${corpus}/${name}/flight/${routeSegment(renderer)}/`;
 }
 
-function implementationSummaries(
+function openflImplementationSummaries(
   caseDir: string,
   corpus: string,
   name: string,
@@ -195,7 +229,7 @@ function implementationSummaries(
 
     const previewUrl =
       implementationId === 'flight' && flightRenderer !== null
-        ? flightPreviewUrl(corpus, name, flightRenderer)
+        ? flightPreviewUrl('openfl', corpus, name, flightRenderer)
         : undefined;
 
     results.push({
@@ -216,10 +250,10 @@ function implementationSummaries(
 
 const excludedSamples = new Set(['custompreloader', 'gamepadinput', 'writingcustomshaders']);
 
-function discoverCases(): OpenflReferenceCase[] {
+function discoverOpenflCases(): ReferenceCase[] {
   if (!existsSync(openflReferenceDir)) return [];
 
-  const cases: OpenflReferenceCase[] = [];
+  const cases: ReferenceCase[] = [];
   const corpora = readdirSync(openflReferenceDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && entry.name !== 'harness')
     .sort((left, right) => left.name.localeCompare(right.name));
@@ -246,7 +280,7 @@ function discoverCases(): OpenflReferenceCase[] {
         ? flightPreviewRenderers(caseDir).map((renderer) => ({
             id: renderer,
             label: renderer,
-            url: flightPreviewUrl(corpus, name, renderer),
+            url: flightPreviewUrl('openfl', corpus, name, renderer),
           }))
         : [];
       const title = readTitle(caseDir, fallbackTitle(name));
@@ -263,7 +297,7 @@ function discoverCases(): OpenflReferenceCase[] {
             : `${title} imported as source-only OpenFL material.`,
         previewRenderers,
         ...(enabledFlightPreviewRenderers.length > 0 ? { flightPreviewRenderers: enabledFlightPreviewRenderers } : {}),
-        implementations: implementationSummaries(
+        implementations: openflImplementationSummaries(
           caseDir,
           corpus,
           name,
@@ -277,7 +311,79 @@ function discoverCases(): OpenflReferenceCase[] {
   return cases;
 }
 
-function previewEntrySource(corpus: string, name: string, renderer: string): string | null {
+// ---------------------------------------------------------------------------
+// Starling case discovery
+// ---------------------------------------------------------------------------
+
+function discoverStarlingCases(): ReferenceCase[] {
+  if (!existsSync(starlingReferenceDir)) return [];
+
+  const cases: ReferenceCase[] = [];
+  const corpora = readdirSync(starlingReferenceDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .sort((left, right) => left.name.localeCompare(right.name));
+
+  for (const corpusEntry of corpora) {
+    const corpus = corpusEntry.name;
+    const corpusDir = join(starlingReferenceDir, corpus);
+    const caseEntries = readdirSync(corpusDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && entry.name !== '_shared')
+      .sort((left, right) => left.name.localeCompare(right.name));
+
+    for (const caseEntry of caseEntries) {
+      const name = caseEntry.name;
+      const caseDir = join(corpusDir, name);
+      if (!hasImplementationDir(caseDir, 'starling')) continue;
+
+      const srcDir = join(caseDir, 'starling', 'src');
+      if (!existsSync(join(srcDir, 'app.ts'))) continue;
+
+      const previewRenderers: PreviewRenderer[] = [
+        {
+          id: 'webgl',
+          label: 'webgl',
+          url: `/starling-tests/${corpus}/${name}/webgl/`,
+        },
+      ];
+
+      const title = fallbackTitle(name);
+
+      cases.push({
+        id: `starling/${corpus}/${name}`,
+        framework: 'starling',
+        corpus,
+        name,
+        title,
+        summary: `${title} from the Starling ${corpus}.`,
+        previewRenderers,
+        implementations: [
+          {
+            id: 'starling',
+            mode: 'preview',
+            path: join(caseDir, 'starling').replace(repoRoot + '/', ''),
+            fileCount: countFiles(join(caseDir, 'starling')),
+          },
+        ],
+      });
+    }
+  }
+
+  return cases;
+}
+
+// ---------------------------------------------------------------------------
+// Combined discovery
+// ---------------------------------------------------------------------------
+
+function discoverAllCases(): ReferenceCase[] {
+  return [...discoverOpenflCases(), ...discoverStarlingCases()];
+}
+
+// ---------------------------------------------------------------------------
+// Entry-point resolution
+// ---------------------------------------------------------------------------
+
+function openflPreviewEntrySource(corpus: string, name: string, renderer: string): string | null {
   const srcDir = join(openflReferenceDir, corpus, name, 'openfl', 'src');
   if (!existsSync(srcDir)) return null;
 
@@ -290,56 +396,49 @@ function previewEntrySource(corpus: string, name: string, renderer: string): str
   return null;
 }
 
-function flightPreviewSource(corpus: string, name: string): string | null {
-  const app = join(openflReferenceDir, corpus, name, 'flight', 'src', 'app.ts');
+function flightPreviewSource(framework: string, corpus: string, name: string): string | null {
+  const referenceDir = framework === 'starling' ? starlingReferenceDir : openflReferenceDir;
+  const app = join(referenceDir, corpus, name, 'flight', 'src', 'app.ts');
   return existsSync(app) ? app : null;
 }
 
-function previewHtml(title: string, scriptSrc: string, baseHref: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <base href="${baseHref}" />
-  <link rel="icon" href="data:," />
-  <title>${title}</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #ffffff; }
-    body { font-family: sans-serif; }
-  </style>
-</head>
-<body>
-  <div id="app"></div>
-  <script type="module" src="${scriptSrc}"></script>
-</body>
-</html>`;
+function starlingPreviewEntrySource(corpus: string, name: string): string | null {
+  const app = join(starlingReferenceDir, corpus, name, 'starling', 'src', 'app.ts');
+  return existsSync(app) ? app : null;
 }
 
-function openflReferencePlugin(): Plugin[] {
+// ---------------------------------------------------------------------------
+// Vite plugin
+// ---------------------------------------------------------------------------
+
+function referencePlugin(): Plugin[] {
   let viteBase = '/';
 
   return [
     {
-      name: 'openfl-reference:modules',
+      name: 'reference:modules',
       enforce: 'pre',
 
       config(_, env) {
         if (env.command !== 'build') return;
 
         const input: Record<string, string> = { main: resolve(__dirname, 'index.html') };
-        for (const referenceCase of discoverCases()) {
+        for (const referenceCase of discoverAllCases()) {
+          const routePrefix = `${referenceCase.framework}-tests`;
+
           for (const renderer of referenceCase.previewRenderers) {
-            input[`openfl-tests/${referenceCase.corpus}/${referenceCase.name}/${routeSegment(renderer.id)}/index`] =
-              `virtual:openfl-preview:${referenceCase.corpus}:${referenceCase.name}:${renderer.id}`;
+            const virtualPrefix =
+              referenceCase.framework === 'starling' ? 'virtual:starling-preview' : 'virtual:openfl-preview';
+            input[`${routePrefix}/${referenceCase.corpus}/${referenceCase.name}/${routeSegment(renderer.id)}/index`] =
+              `${virtualPrefix}:${referenceCase.corpus}:${referenceCase.name}:${renderer.id}`;
           }
           for (const renderer of referenceCase.flightPreviewRenderers ?? []) {
             input[
               renderer.id === 'default'
-                ? `openfl-tests/${referenceCase.corpus}/${referenceCase.name}/flight/index`
-                : `openfl-tests/${referenceCase.corpus}/${referenceCase.name}/flight/${routeSegment(renderer.id)}/index`
-            ] = `virtual:flight-preview:${referenceCase.corpus}:${referenceCase.name}:${renderer.id}`;
+                ? `${routePrefix}/${referenceCase.corpus}/${referenceCase.name}/flight/index`
+                : `${routePrefix}/${referenceCase.corpus}/${referenceCase.name}/flight/${routeSegment(renderer.id)}/index`
+            ] =
+              `virtual:flight-preview:${referenceCase.framework}:${referenceCase.corpus}:${referenceCase.name}:${renderer.id}`;
           }
         }
 
@@ -351,17 +450,25 @@ function openflReferencePlugin(): Plugin[] {
                 entryFileNames(chunk) {
                   const id = chunk.facadeModuleId;
                   if (id?.startsWith('\0virtual:flight-preview:')) {
-                    const [corpus, rest] = splitFirst(id.slice('\0virtual:flight-preview:'.length), ':');
-                    const [name, renderer] = splitFirst(rest, ':');
+                    const rest = id.slice('\0virtual:flight-preview:'.length);
+                    const [framework, r1] = splitFirst(rest, ':');
+                    const [corpus, r2] = splitFirst(r1, ':');
+                    const [name, renderer] = splitFirst(r2, ':');
                     return renderer === 'default'
-                      ? `openfl-tests/${corpus}/${name}/flight/index.js`
-                      : `openfl-tests/${corpus}/${name}/flight/${routeSegment(renderer)}/index.js`;
+                      ? `${framework}-tests/${corpus}/${name}/flight/index.js`
+                      : `${framework}-tests/${corpus}/${name}/flight/${routeSegment(renderer)}/index.js`;
                   }
-                  if (!id?.startsWith('\0virtual:openfl-preview:')) return 'assets/[name]-[hash].js';
-
-                  const [corpus, rest] = splitFirst(id.slice('\0virtual:openfl-preview:'.length), ':');
-                  const [name, renderer] = splitFirst(rest, ':');
-                  return `openfl-tests/${corpus}/${name}/${routeSegment(renderer)}/index.js`;
+                  if (id?.startsWith('\0virtual:starling-preview:')) {
+                    const [corpus, rest] = splitFirst(id.slice('\0virtual:starling-preview:'.length), ':');
+                    const [name, renderer] = splitFirst(rest, ':');
+                    return `starling-tests/${corpus}/${name}/${routeSegment(renderer)}/index.js`;
+                  }
+                  if (id?.startsWith('\0virtual:openfl-preview:')) {
+                    const [corpus, rest] = splitFirst(id.slice('\0virtual:openfl-preview:'.length), ':');
+                    const [name, renderer] = splitFirst(rest, ':');
+                    return `openfl-tests/${corpus}/${name}/${routeSegment(renderer)}/index.js`;
+                  }
+                  return 'assets/[name]-[hash].js';
                 },
               },
             },
@@ -374,28 +481,39 @@ function openflReferencePlugin(): Plugin[] {
       },
 
       resolveId(source) {
-        if (source === 'virtual:openfl-reference-cases') return '\0virtual:openfl-reference-cases';
+        if (source === 'virtual:reference-cases') return '\0virtual:reference-cases';
         if (source.startsWith('virtual:flight-preview:')) return '\0' + source;
         if (source.startsWith('virtual:openfl-preview:')) return '\0' + source;
+        if (source.startsWith('virtual:starling-preview:')) return '\0' + source;
       },
 
       load(id) {
-        if (id === '\0virtual:openfl-reference-cases') {
-          return `export const cases = ${JSON.stringify(discoverCases())};`;
+        if (id === '\0virtual:reference-cases') {
+          return `export const cases = ${JSON.stringify(discoverAllCases())};`;
         }
 
         if (id.startsWith('\0virtual:openfl-preview:')) {
           const [corpus, rest] = splitFirst(id.slice('\0virtual:openfl-preview:'.length), ':');
           const [name, renderer] = splitFirst(rest, ':');
-          const source = previewEntrySource(corpus, name, renderer);
+          const source = openflPreviewEntrySource(corpus, name, renderer);
+          if (!source) return null;
+          return `await import(${JSON.stringify(source)});`;
+        }
+
+        if (id.startsWith('\0virtual:starling-preview:')) {
+          const [corpus, rest] = splitFirst(id.slice('\0virtual:starling-preview:'.length), ':');
+          const [name] = splitFirst(rest, ':');
+          const source = starlingPreviewEntrySource(corpus, name);
           if (!source) return null;
           return `await import(${JSON.stringify(source)});`;
         }
 
         if (id.startsWith('\0virtual:flight-preview:')) {
-          const [corpus, rest] = splitFirst(id.slice('\0virtual:flight-preview:'.length), ':');
-          const [name, renderer] = splitFirst(rest, ':');
-          const source = flightPreviewSource(corpus, name);
+          const rest = id.slice('\0virtual:flight-preview:'.length);
+          const [framework, r1] = splitFirst(rest, ':');
+          const [corpus, r2] = splitFirst(r1, ':');
+          const [name, renderer] = splitFirst(r2, ':');
+          const source = flightPreviewSource(framework, corpus, name);
           if (!source) return null;
           return renderer
             ? `await import(${JSON.stringify(`${source}?flight-renderer=${renderer}`)});`
@@ -415,9 +533,13 @@ function openflReferencePlugin(): Plugin[] {
       },
 
       generateBundle(_, bundle) {
-        for (const referenceCase of discoverCases()) {
+        for (const referenceCase of discoverAllCases()) {
+          const routePrefix = `${referenceCase.framework}-tests`;
+
           for (const renderer of referenceCase.previewRenderers) {
-            const entryId = `\0virtual:openfl-preview:${referenceCase.corpus}:${referenceCase.name}:${renderer.id}`;
+            const virtualPrefix =
+              referenceCase.framework === 'starling' ? '\0virtual:starling-preview' : '\0virtual:openfl-preview';
+            const entryId = `${virtualPrefix}:${referenceCase.corpus}:${referenceCase.name}:${renderer.id}`;
             const chunk = Object.values(bundle).find(
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (candidate) => candidate.type === 'chunk' && (candidate as any).facadeModuleId === entryId,
@@ -426,7 +548,7 @@ function openflReferencePlugin(): Plugin[] {
 
             this.emitFile({
               type: 'asset',
-              fileName: `openfl-tests/${referenceCase.corpus}/${referenceCase.name}/${routeSegment(renderer.id)}/index.html`,
+              fileName: `${routePrefix}/${referenceCase.corpus}/${referenceCase.name}/${routeSegment(renderer.id)}/index.html`,
               source: previewHtml(
                 `${referenceCase.title} · ${renderer.label}`,
                 `${viteBase}${chunk.fileName}`,
@@ -436,7 +558,7 @@ function openflReferencePlugin(): Plugin[] {
           }
 
           for (const renderer of referenceCase.flightPreviewRenderers ?? []) {
-            const entryId = `\0virtual:flight-preview:${referenceCase.corpus}:${referenceCase.name}:${renderer.id}`;
+            const entryId = `\0virtual:flight-preview:${referenceCase.framework}:${referenceCase.corpus}:${referenceCase.name}:${renderer.id}`;
             const chunk = Object.values(bundle).find(
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (candidate) => candidate.type === 'chunk' && (candidate as any).facadeModuleId === entryId,
@@ -447,8 +569,8 @@ function openflReferencePlugin(): Plugin[] {
               type: 'asset',
               fileName:
                 renderer.id === 'default'
-                  ? `openfl-tests/${referenceCase.corpus}/${referenceCase.name}/flight/index.html`
-                  : `openfl-tests/${referenceCase.corpus}/${referenceCase.name}/flight/${routeSegment(renderer.id)}/index.html`,
+                  ? `${routePrefix}/${referenceCase.corpus}/${referenceCase.name}/flight/index.html`
+                  : `${routePrefix}/${referenceCase.corpus}/${referenceCase.name}/flight/${routeSegment(renderer.id)}/index.html`,
               source: previewHtml(
                 `${referenceCase.title} · Flight ${renderer.label}`,
                 `${viteBase}${chunk.fileName}`,
@@ -461,15 +583,20 @@ function openflReferencePlugin(): Plugin[] {
     },
 
     {
-      name: 'openfl-reference:routes',
+      name: 'reference:routes',
 
       configureServer(server) {
         server.watcher.add(openflReferenceDir);
+        if (existsSync(starlingReferenceDir)) server.watcher.add(starlingReferenceDir);
 
         server.middlewares.use((req, res, next) => {
           const urlPath = (req.url ?? '/').split('?')[0] ?? '/';
           const parts = urlPath.split('/').filter(Boolean);
-          if (parts[0] !== 'openfl-tests') return next();
+
+          const prefix = parts[0] ?? '';
+          if (prefix !== 'openfl-tests' && prefix !== 'starling-tests') return next();
+
+          const framework = prefix === 'starling-tests' ? 'starling' : 'openfl';
 
           let corpus = '';
           let name = '';
@@ -489,8 +616,8 @@ function openflReferencePlugin(): Plugin[] {
             return next();
           }
 
-          const referenceCase = discoverCases().find(
-            (candidate) => candidate.corpus === corpus && candidate.name === name,
+          const referenceCase = discoverAllCases().find(
+            (candidate) => candidate.framework === framework && candidate.corpus === corpus && candidate.name === name,
           );
           if (!referenceCase) return next();
 
@@ -503,6 +630,7 @@ function openflReferencePlugin(): Plugin[] {
               ) ?? referenceCase.flightPreviewRenderers?.[0];
             if (!renderer) return next();
 
+            const virtualPrefix = `virtual:flight-preview:${framework}`;
             const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -520,7 +648,7 @@ function openflReferencePlugin(): Plugin[] {
 <body>
   <div id="app"></div>
   <script type="module" src="/@vite/client"></script>
-  <script type="module" src="/@id/__x00__virtual:flight-preview:${corpus}:${name}:${renderer.id}"></script>
+  <script type="module" src="/@id/__x00__${virtualPrefix}:${corpus}:${name}:${renderer.id}"></script>
 </body>
 </html>`;
 
@@ -530,11 +658,12 @@ function openflReferencePlugin(): Plugin[] {
             return;
           }
 
-          const renderer = referenceCase?.previewRenderers.find(
+          const renderer = referenceCase.previewRenderers.find(
             (candidate) => routeSegment(candidate.id) === rendererSegment,
           );
           if (!renderer) return next();
 
+          const virtualPrefix = framework === 'starling' ? 'virtual:starling-preview' : 'virtual:openfl-preview';
           const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -552,7 +681,7 @@ function openflReferencePlugin(): Plugin[] {
 <body>
   <div id="app"></div>
   <script type="module" src="/@vite/client"></script>
-  <script type="module" src="/@id/__x00__virtual:openfl-preview:${corpus}:${name}:${renderer.id}"></script>
+  <script type="module" src="/@id/__x00__${virtualPrefix}:${corpus}:${name}:${renderer.id}"></script>
 </body>
 </html>`;
 
@@ -565,14 +694,70 @@ function openflReferencePlugin(): Plugin[] {
   ];
 }
 
+// ---------------------------------------------------------------------------
+// Serve static assets from multiple framework public directories.
+// The primary publicDir is for OpenFL; this plugin adds Starling assets
+// under the /starling/ URL prefix.
+// ---------------------------------------------------------------------------
+
+function frameworkStaticPlugin(): Plugin {
+  const staticRoots: Record<string, string> = {
+    starling: resolve(repoRoot, 'reference/assets/public/starling'),
+  };
+
+  return {
+    name: 'reference:framework-static',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const urlPath = (req.url ?? '/').split('?')[0] ?? '/';
+        const parts = urlPath.split('/').filter(Boolean);
+        const prefix = parts[0] ?? '';
+        const root = staticRoots[prefix];
+        if (!root) return next();
+
+        const filePath = join(root, ...parts.slice(1));
+        if (!existsSync(filePath) || !statSync(filePath).isFile()) return next();
+
+        const ext = filePath.split('.').pop() ?? '';
+        const mimeTypes: Record<string, string> = {
+          png: 'image/png',
+          jpg: 'image/jpeg',
+          jpeg: 'image/jpeg',
+          gif: 'image/gif',
+          svg: 'image/svg+xml',
+          mp3: 'audio/mpeg',
+          ogg: 'audio/ogg',
+          mp4: 'video/mp4',
+          webm: 'video/webm',
+          json: 'application/json',
+          xml: 'application/xml',
+          fnt: 'application/octet-stream',
+          atf: 'application/octet-stream',
+          woff: 'font/woff',
+          woff2: 'font/woff2',
+          ttf: 'font/ttf',
+          eot: 'application/vnd.ms-fontobject',
+          js: 'application/javascript',
+          css: 'text/css',
+          html: 'text/html',
+        };
+
+        res.setHeader('Content-Type', mimeTypes[ext] ?? 'application/octet-stream');
+        res.setHeader('Cache-Control', 'no-store');
+        res.end(readFileSync(filePath));
+      });
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Vite config
+// ---------------------------------------------------------------------------
+
 export default defineConfig({
-  plugins: [react(), ...openflReferencePlugin()],
+  plugins: [react(), ...referencePlugin(), frameworkStaticPlugin()],
   publicDir: resolve(repoRoot, 'reference/assets/public/openfl'),
   optimizeDeps: {
-    // OpenFL's generated CommonJS output assumes legacy globals like `global` and `$_`.
-    // The predev shim patches node_modules for build/runtime, but Vite's dep optimizer can
-    // still reuse an older cached prebundle in dev. Force dep re-optimization on startup and
-    // rewrite these identifiers during prebundle so dev does not depend on cache freshness.
     force: true,
     esbuildOptions: {
       define: {
@@ -590,6 +775,7 @@ export default defineConfig({
       'motion/easing/Elastic': resolve(repoRoot, 'tools/reference/openfl-compat/Elastic.ts'),
       'motion/easing/Quad': resolve(repoRoot, 'tools/reference/openfl-compat/Quad.ts'),
       openfl: resolve(repoRoot, 'node_modules/openfl/lib/openfl'),
+      starling: resolve(repoRoot, 'node_modules/starling-framework/lib/starling'),
       'stats.js': resolve(repoRoot, 'node_modules/stats-js/src/Stats.js'),
     },
   },

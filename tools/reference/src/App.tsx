@@ -141,23 +141,19 @@ function PreviewFrame({
   src,
   title,
   miniaturized,
-  onNavigate,
 }: {
   src: string;
   title: string;
   miniaturized: boolean;
-  onNavigate: (direction: NavigationDirection) => void;
 }) {
   const frameRef = useRef<HTMLIFrameElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
-  const detachFrameKeyHandlerRef = useRef<(() => void) | null>(null);
   const teardownMeasurementRef = useRef<(() => void) | null>(null);
   const [cropSize, setCropSize] = useState(splitViewport);
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
     return () => {
-      detachFrameKeyHandlerRef.current?.();
       teardownMeasurementRef.current?.();
       if (frameRef.current) frameRef.current.src = 'about:blank';
     };
@@ -190,23 +186,10 @@ function PreviewFrame({
 
   const handleLoad = () => {
     const frame = frameRef.current;
-    const frameWindow = frame?.contentWindow;
     const doc = frame?.contentDocument;
-    if (!doc || !frameWindow) return;
+    if (!doc) return;
 
-    detachFrameKeyHandlerRef.current?.();
     teardownMeasurementRef.current?.();
-
-    const onFrameKeyDown = (event: KeyboardEvent) => {
-      const direction = navigationDirectionFromKey(event);
-      if (!direction) return;
-
-      event.preventDefault();
-      onNavigate(direction);
-    };
-
-    frameWindow.addEventListener('keydown', onFrameKeyDown);
-    detachFrameKeyHandlerRef.current = () => frameWindow.removeEventListener('keydown', onFrameKeyDown);
 
     if (!miniaturized) return;
 
@@ -509,7 +492,6 @@ export default function App() {
                   src={selectedRenderer.url}
                   title={`${selectedCase.title} preview`}
                   miniaturized={layoutMode === 'split'}
-                  onNavigate={navigateCases}
                 />
               </div>
             ) : (
@@ -549,7 +531,6 @@ export default function App() {
                     src={selectedFlightRenderer.url}
                     title={`${selectedCase.title} flight preview`}
                     miniaturized
-                    onNavigate={navigateCases}
                   />
                 </div>
               ) : (

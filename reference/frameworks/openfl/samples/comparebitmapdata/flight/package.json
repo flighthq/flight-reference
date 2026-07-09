@@ -3,9 +3,10 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@flighthq/sdk": "*",
     "@flighthq/surface": "*"
   },
   "renderers": [
-    "canvas"
+    "webgl"
   ]
 }

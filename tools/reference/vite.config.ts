@@ -167,35 +167,11 @@ function openflPreviewRenderers(caseDir: string): string[] {
   return pkg.renderers?.length ? pkg.renderers : ['webgl'];
 }
 
-function flightPreviewLabel(caseDir: string): string | null {
-  const srcDir = join(caseDir, 'flight', 'src');
-  if (!existsSync(join(srcDir, 'app.ts'))) return null;
-
-  const renderEntry = join(srcDir, 'render.ts');
-  if (!existsSync(renderEntry)) return 'default';
-
-  const match = readFileSync(renderEntry, 'utf8').match(/render\.([a-z0-9]+)['"]/i);
-  return match?.[1]?.toLowerCase() ?? 'default';
-}
-
 function flightPreviewRenderers(caseDir: string): string[] {
   const srcDir = join(caseDir, 'flight', 'src');
   if (!existsSync(join(srcDir, 'app.ts'))) return [];
-
-  const renderers = readdirSync(srcDir)
-    .map((file) => /^render\.([a-z0-9]+)\.ts$/.exec(file))
-    .filter((match): match is RegExpExecArray => match !== null)
-    .map((match) => match[1])
-    .filter((renderer): renderer is string => typeof renderer === 'string');
-
-  if (renderers.length === 0) return [flightPreviewLabel(caseDir) ?? 'default'];
-
-  const defaultRenderer = flightPreviewLabel(caseDir);
-  return [...renderers].sort((left, right) => {
-    if (left === defaultRenderer) return -1;
-    if (right === defaultRenderer) return 1;
-    return left.localeCompare(right);
-  });
+  // Keep the reference harness focused on the Flight WebGL backend.
+  return ['webgl'];
 }
 
 function flightPreviewUrl(corpus: string, name: string, renderer: string): string {

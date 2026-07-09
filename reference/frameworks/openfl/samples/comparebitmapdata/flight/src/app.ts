@@ -1,19 +1,24 @@
-import type { Surface } from '@flighthq/surface';
 import {
-  cloneSurface,
-  compareSurface,
-  createSurface,
-  drawSurface,
-  fillSurfaceRectangle,
-  setSurfacePixel,
-} from '@flighthq/surface';
+  addNodeChild,
+  createBitmap,
+  createDisplayObject,
+  createImageResourceFromSurface,
+  createTextLabel,
+  invalidateNodeLocalTransform,
+  invalidateNodeRender,
+} from '@flighthq/sdk';
+import type { Surface } from '@flighthq/surface';
+import { cloneSurface, compareSurface, createSurface, fillSurfaceRectangle, setSurfacePixel } from '@flighthq/surface';
+
+import { render, scale } from './render';
 
 const IMG_SIZE = 40;
 const CELL_SIZE = IMG_SIZE + 4;
 const LABEL_SIZE = 56;
-const PAD = 8;
 
-const fullRegion = (surface: Surface) => ({ surface, x: 0, y: 0, width: surface.width, height: surface.height });
+const root = createDisplayObject();
+root.scaleX = scale;
+root.scaleY = scale;
 
 function createCheckers(color1: number, color2: number, tileSize = 8): Surface {
   const img = createSurface(IMG_SIZE, IMG_SIZE, color1);
@@ -42,6 +47,7 @@ function createBall(color: number, alpha = 255): Surface {
   const cx = IMG_SIZE / 2;
   const cy = IMG_SIZE / 2;
   const r = IMG_SIZE / 2 - 2;
+
   for (let y = 0; y < IMG_SIZE; y++) {
     for (let x = 0; x < IMG_SIZE; x++) {
       const dx = x + 0.5 - cx;
@@ -51,6 +57,7 @@ function createBall(color: number, alpha = 255): Surface {
       }
     }
   }
+
   return img;
 }
 
@@ -61,6 +68,57 @@ function createRect(color: number, inset = 4): Surface {
     color,
   );
   return img;
+}
+
+function addSurface(surface: Surface, x: number, y: number): void {
+  const bitmap = createBitmap();
+  bitmap.data.image = createImageResourceFromSurface(surface);
+  bitmap.x = x;
+  bitmap.y = y;
+  addNodeChild(root, bitmap);
+  invalidateNodeLocalTransform(bitmap);
+  invalidateNodeRender(bitmap);
+}
+
+function addLabel(
+  text: string,
+  x: number,
+  y: number,
+  options: {
+    align?: 'center' | 'left' | 'right';
+    color?: number;
+    rotation?: number;
+    size?: number;
+    width?: number;
+  } = {},
+): void {
+  const label = createTextLabel();
+  label.data.text = text;
+  label.data.width = options.width ?? 80;
+  label.data.textFormat = {
+    align: options.align ?? 'left',
+    color: options.color ?? 0xaaaaaa,
+    font: 'monospace',
+    size: options.size ?? 9,
+  };
+  label.x = x;
+  label.y = y;
+  label.rotation = options.rotation ?? 0;
+  addNodeChild(root, label);
+  invalidateNodeLocalTransform(label);
+  invalidateNodeRender(label);
+}
+
+function makeNullSurface(): Surface {
+  return createSurface(IMG_SIZE, IMG_SIZE, 0x2a2a2aff);
+}
+
+function makeIncompatibleSurface(): Surface {
+  return createSurface(IMG_SIZE, IMG_SIZE, 0x2a1a1aff);
+}
+
+function makeEqualSurface(): Surface {
+  return createSurface(IMG_SIZE, IMG_SIZE, 0x1a4a1aff);
 }
 
 const sources: Array<{ label: string; img: Surface | null }> = [
@@ -79,112 +137,94 @@ const sources: Array<{ label: string; img: Surface | null }> = [
 
 sources[9].img = cloneSurface(sources[4].img!);
 
-const n = sources.length;
-const gridW = LABEL_SIZE + n * CELL_SIZE + PAD;
-const gridH = LABEL_SIZE + n * CELL_SIZE + PAD;
+const nullSurface = makeNullSurface();
+const incompatibleSurface = makeIncompatibleSurface();
+const equalSurface = makeEqualSurface();
+const count = sources.length;
 
-const mount = document.getElementById('app');
-const canvas = mount instanceof HTMLCanvasElement ? mount : document.createElement('canvas');
-if (!(mount instanceof HTMLCanvasElement)) {
-  mount?.replaceWith(canvas);
-}
-canvas.style.display = 'block';
-document.body.style.margin = '0';
-canvas.width = gridW;
-canvas.height = gridH;
-const ctx = canvas.getContext('2d')!;
-
-ctx.fillStyle = '#808080';
-ctx.fillRect(0, 0, gridW, gridH);
-
-for (let col = 0; col < n; col++) {
+for (let col = 0; col < count; col++) {
   const x = LABEL_SIZE + col * CELL_SIZE;
   const { label, img } = sources[col];
 
-  if (img) {
-    drawSurface(canvas, fullRegion(img), x + 2, 2);
-  } else {
-    ctx.fillStyle = '#333';
-    ctx.fillRect(x + 2, 2, IMG_SIZE, IMG_SIZE);
-    ctx.fillStyle = '#888';
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('null', x + 2 + IMG_SIZE / 2, 2 + IMG_SIZE / 2 + 4);
+  addSurface(img ?? nullSurface, x + 2, 2);
+  if (img === null) {
+    addLabel('null', x + 2, 2 + IMG_SIZE / 2 - 5, {
+      align: 'center',
+      color: 0x888888,
+      size: 10,
+      width: IMG_SIZE,
+    });
   }
 
-  ctx.save();
-  ctx.fillStyle = '#aaa';
-  ctx.font = '9px monospace';
-  ctx.textAlign = 'center';
-  ctx.translate(x + 2 + IMG_SIZE / 2, IMG_SIZE + 6);
-  ctx.rotate(-Math.PI / 4);
-  ctx.fillText(label, 0, 0);
-  ctx.restore();
+  addLabel(label, x - 12, IMG_SIZE + 12, {
+    align: 'center',
+    color: 0xaaaaaa,
+    rotation: -45,
+    size: 9,
+    width: 90,
+  });
 }
 
-for (let row = 0; row < n; row++) {
+for (let row = 0; row < count; row++) {
   const y = LABEL_SIZE + row * CELL_SIZE;
-  const { label: rowLabel, img: rowImg } = sources[row];
+  const { label, img } = sources[row];
 
-  if (rowImg) {
-    drawSurface(canvas, fullRegion(rowImg), 2, y + 2);
-  } else {
-    ctx.fillStyle = '#333';
-    ctx.fillRect(2, y + 2, IMG_SIZE, IMG_SIZE);
-    ctx.fillStyle = '#888';
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('null', 2 + IMG_SIZE / 2, y + 2 + IMG_SIZE / 2 + 4);
+  addSurface(img ?? nullSurface, 2, y + 2);
+  if (img === null) {
+    addLabel('null', 2, y + 2 + IMG_SIZE / 2 - 5, {
+      align: 'center',
+      color: 0x888888,
+      size: 10,
+      width: IMG_SIZE,
+    });
   }
 
-  ctx.fillStyle = '#aaa';
-  ctx.font = '9px monospace';
-  ctx.textAlign = 'left';
-  ctx.fillText(rowLabel, 2, y + IMG_SIZE + 14);
+  addLabel(label, 2, y + IMG_SIZE + 14, {
+    align: 'left',
+    color: 0xaaaaaa,
+    size: 9,
+    width: LABEL_SIZE + IMG_SIZE,
+  });
 
-  for (let col = 0; col < n; col++) {
+  for (let col = 0; col < count; col++) {
     const x = LABEL_SIZE + col * CELL_SIZE;
-    const { img: colImg } = sources[col];
-    if (rowImg === null || colImg === null) {
-      drawNullCell(ctx, x + 2, y + 2);
-    } else if (rowImg.width !== colImg.width || rowImg.height !== colImg.height) {
-      drawIncompatibleCell(ctx, x + 2, y + 2);
-    } else {
-      drawCell(ctx, canvas, x + 2, y + 2, compareSurface(rowImg, colImg));
+    const other = sources[col].img;
+
+    if (img === null || other === null) {
+      addSurface(nullSurface, x + 2, y + 2);
+      continue;
     }
+
+    if (img.width !== other.width || img.height !== other.height) {
+      addSurface(incompatibleSurface, x + 2, y + 2);
+      addLabel('≠', x + 2, y + 2 + IMG_SIZE / 2 - 5, {
+        align: 'center',
+        color: 0xff4444,
+        size: 11,
+        width: IMG_SIZE,
+      });
+      continue;
+    }
+
+    const result = compareSurface(img, other);
+    if (result === null) {
+      addSurface(equalSurface, x + 2, y + 2);
+      addLabel('=', x + 2, y + 2 + IMG_SIZE / 2 - 5, {
+        align: 'center',
+        color: 0x4caf50,
+        size: 11,
+        width: IMG_SIZE,
+      });
+      continue;
+    }
+
+    addSurface(result, x + 2, y + 2);
   }
 }
 
-function drawNullCell(ctx: CanvasRenderingContext2D, x: number, y: number): void {
-  ctx.fillStyle = '#2a2a2a';
-  ctx.fillRect(x, y, IMG_SIZE, IMG_SIZE);
+function enterFrame(): void {
+  render(root);
+  requestAnimationFrame(enterFrame);
 }
 
-function drawIncompatibleCell(ctx: CanvasRenderingContext2D, x: number, y: number): void {
-  ctx.fillStyle = '#2a1a1a';
-  ctx.fillRect(x, y, IMG_SIZE, IMG_SIZE);
-  ctx.fillStyle = '#f44';
-  ctx.font = 'bold 11px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('≠', x + IMG_SIZE / 2, y + IMG_SIZE / 2 + 4);
-}
-
-function drawCell(
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
-  x: number,
-  y: number,
-  result: Surface | null,
-): void {
-  if (result === null) {
-    ctx.fillStyle = '#1a4a1a';
-    ctx.fillRect(x, y, IMG_SIZE, IMG_SIZE);
-    ctx.fillStyle = '#4caf50';
-    ctx.font = 'bold 11px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('=', x + IMG_SIZE / 2, y + IMG_SIZE / 2 + 4);
-    return;
-  }
-
-  drawSurface(canvas, fullRegion(result), x, y);
-}
+enterFrame();

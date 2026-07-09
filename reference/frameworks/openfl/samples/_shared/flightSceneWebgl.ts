@@ -1,12 +1,8 @@
 import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera, GlRenderEffectPipeline, GlRenderState, SceneLights, SceneNode } from '@flighthq/sdk';
+import type { Camera, GlRenderState, SceneLights, SceneNode } from '@flighthq/sdk';
 import {
-  beginGlRenderEffectPipeline,
   createGlCanvasElement,
-  createGlRenderEffectPipeline,
   createGlRenderState,
-  endGlRenderEffectPipeline,
-  prepareSceneRender,
   registerUnlitGlMaterial,
   registerVertexColorGlMaterial,
   renderGlBackground,
@@ -46,32 +42,24 @@ export function createSceneWebglPreview(options: Readonly<SceneWebglPreviewOptio
 
   const state = createGlRenderState(canvas, {
     backgroundColor: options.backgroundColor ?? 0xffffffff,
-    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+    contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: true },
     pixelRatio,
   });
 
   if (options.registerUnlit !== false) registerUnlitGlMaterial(state);
   if (options.registerVertexColor) registerVertexColorGlMaterial(state);
 
-  const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
-    depth: 'depth-stencil',
-    format: 'rgba16f',
-    sampleCount: 4,
-  });
-
   return {
     canvas,
     height,
     render(scene, camera, lights) {
-      beginGlRenderEffectPipeline(state, pipeline);
       renderGlBackground(state);
       const gl = state.gl;
+      gl.enable(gl.DEPTH_TEST);
       gl.depthMask(true);
       gl.clearDepth(1);
       gl.clear(gl.DEPTH_BUFFER_BIT);
-      prepareSceneRender(state, scene, camera, lights);
       drawGlScene(state, scene, camera, lights);
-      endGlRenderEffectPipeline(state, pipeline, []);
     },
     scale: pixelRatio,
     state,

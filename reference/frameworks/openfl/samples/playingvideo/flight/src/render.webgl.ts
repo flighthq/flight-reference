@@ -18,13 +18,13 @@ canvas.style.width = '550px';
 canvas.style.height = '400px';
 canvas.style.display = 'block';
 document.body.style.margin = '0';
-document.body.style.background = '#000';
+document.body.style.background = '#fff';
 document.body.appendChild(canvas);
 
 export const container = canvas;
 export const state = createGlRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
-  backgroundColor: 0x000000ff,
+  backgroundColor: 0xffffffff,
 });
 registerRenderer(state, VideoKind, defaultGlVideoRenderer);
 registerDefaultGlMaterial(state);

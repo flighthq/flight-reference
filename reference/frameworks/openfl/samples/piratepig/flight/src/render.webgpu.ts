@@ -52,7 +52,7 @@ document.body.appendChild(canvas);
 export const container = canvas;
 export const state = await createWgpuRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
-  backgroundColor: 0x000000ff,
+  backgroundColor: 0xffffffff,
 });
 registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);

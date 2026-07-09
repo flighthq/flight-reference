@@ -1,5 +1,8 @@
 {
   "name": "openfl-sample-glslbitmap-flight",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
 }

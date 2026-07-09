@@ -31,19 +31,19 @@ class App extends Sprite {
 }
 
 var manifest = new AssetManifest();
-manifest.addFont(declaredFontName, 'assets/KatamotzIkasi.woff');
+manifest.addFont('assets/KatamotzIkasi.ttf', declaredFontName);
 
 AssetLibrary.loadFromManifest(manifest)
   .onComplete((library) => {
     Assets.registerLibrary('default', library);
 
-    const font = Assets.getFont(declaredFontName) ?? Assets.getFont('assets/KatamotzIkasi.woff');
+    const font = Assets.getFont(declaredFontName) ?? Assets.getFont('assets/KatamotzIkasi.ttf');
     if (font?.fontName) loadedFontName = font.fontName;
 
-    Assets.loadFont('assets/KatamotzIkasi.woff')
+    Assets.loadFont(declaredFontName)
       .onComplete(async () => {
         if ('FontFace' in window && 'fonts' in document) {
-          const fontFace = new FontFace(declaredFontName, 'url(assets/KatamotzIkasi.woff)');
+          const fontFace = new FontFace(declaredFontName, 'url(assets/KatamotzIkasi.ttf)');
           await fontFace.load();
           document.fonts.add(fontFace);
           loadedFontName = declaredFontName;

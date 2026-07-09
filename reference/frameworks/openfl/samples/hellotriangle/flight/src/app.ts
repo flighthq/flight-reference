@@ -9,6 +9,7 @@ import {
   createOrthographicProjection,
   createVector3,
   createVertexColorMaterial,
+  invalidateNodeLocalTransform,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
@@ -25,12 +26,15 @@ const TRIANGLE_LAYOUT: VertexAttributeLayout = {
 };
 
 const geometry = createMeshGeometry({
+  indices: new Uint16Array([0, 1, 2]),
   layout: TRIANGLE_LAYOUT,
-  vertices: new Float32Array([-0.3, -0.3, 0, 1, 0, 0, 1, -0.3, 0.3, 0, 0, 1, 0, 1, 0.3, 0.3, 0, 0, 0, 1, 1]),
+  vertices: new Float32Array([-0.3, -0.3, 0, 1, 0, 0, 1, 0.3, 0.3, 0, 0, 0, 1, 1, -0.3, 0.3, 0, 0, 1, 0, 1]),
 });
 
 const scene = createScene();
-const mesh = createMesh(geometry, [createVertexColorMaterial({ tint: 0xffffffff })]);
+const material = createVertexColorMaterial({ tint: 0xffffffff });
+material.doubleSided = true;
+const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
 const camera = createCamera({
@@ -46,6 +50,7 @@ const zAxis = createVector3(0, 0, 1);
 function frame(): void {
   setMatrix4Identity(mesh.localMatrix);
   rotateMatrix4(mesh.localMatrix, mesh.localMatrix, zAxis, performance.now() / 40);
+  invalidateNodeLocalTransform(mesh);
   render(scene, camera, lights);
   requestAnimationFrame(frame);
 }

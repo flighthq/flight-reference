@@ -5,13 +5,13 @@ import Assets from 'openfl/utils/Assets';
 import Main from './Main';
 
 var manifest = new AssetManifest();
-manifest.addFont('Liberation Serif Regular', 'assets/LiberationSerif-Regular.ttf');
+manifest.addFont('assets/LiberationSerif-Regular.ttf', 'Liberation Serif Regular');
 
 AssetLibrary.loadFromManifest(manifest)
   .onComplete((library) => {
     Assets.registerLibrary('default', library);
 
-    Assets.loadFont('assets/LiberationSerif-Regular.ttf')
+    Assets.loadFont('Liberation Serif Regular')
       .onComplete(async () => {
         if ('FontFace' in window && 'fonts' in document) {
           const fontFace = new FontFace('Liberation Serif Regular', 'url(assets/LiberationSerif-Regular.ttf)');

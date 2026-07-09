@@ -7,8 +7,8 @@ import {
   createTween,
   createTweenManager,
   easeOutElastic,
+  invalidateNodeAppearance,
   invalidateNodeLocalTransform,
-  invalidateNodeRender,
   loadImageResourceFromUrl,
   startApplicationLoop,
   updateTweens,
@@ -49,11 +49,8 @@ const scaleTween = createTween(
   { scaleX: 1, scaleY: 1 },
   { delay: 400, ease: easeOutElastic },
 );
-connectSignal(alphaTween.onUpdate, () => invalidateNodeRender(container));
-connectSignal(scaleTween.onUpdate, () => {
-  invalidateNodeLocalTransform(container);
-  invalidateNodeRender(container);
-});
+connectSignal(alphaTween.onUpdate, () => invalidateNodeAppearance(container));
+connectSignal(scaleTween.onUpdate, () => invalidateNodeLocalTransform(container));
 
 const app = createApplication();
 connectSignal(app.onUpdate, (delta) => updateTweens(manager, delta));

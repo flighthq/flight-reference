@@ -6,10 +6,10 @@ import {
   createCamera,
   createMesh,
   createPerspectiveProjection,
-  createQuadMeshGeometry,
   createTexture,
   createUnlitMaterial,
   createVector3,
+  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
@@ -17,6 +17,7 @@ import {
   translateMatrix4,
 } from '@flighthq/sdk';
 
+import { createTexturedQuadGeometry } from '../../../_shared/flightSceneGeometry';
 import { height, render, width } from './render';
 
 const DAMPING = 1.09;
@@ -37,9 +38,9 @@ function calculateUpdatedVelocity(curVelocity: number, curAcceleration: number, 
 const image = await loadImageResourceFromUrl('assets/checkers.png');
 const texture = createTexture({ image: image });
 const scene = createScene();
-const mesh = createMesh(createQuadMeshGeometry(0.6, 0.6), [
-  createUnlitMaterial({ baseColor: 0xffffffff, baseColorMap: texture }),
-]);
+const material = createUnlitMaterial({ baseColor: 0xffffffff, baseColorMap: texture });
+material.doubleSided = true;
+const mesh = createMesh(createTexturedQuadGeometry(0.6, 0.6), [material]);
 addNodeChild(scene, mesh);
 
 const camera = createCamera({
@@ -110,6 +111,7 @@ function frame(): void {
   translateMatrix4(mesh.localMatrix, mesh.localMatrix, 0, 0, -1);
   rotateMatrix4(mesh.localMatrix, mesh.localMatrix, yAxis, performance.now() / 30);
   rotateMatrix4(mesh.localMatrix, mesh.localMatrix, xAxis, performance.now() / 10);
+  invalidateNodeLocalTransform(mesh);
 
   render(scene, camera, lights);
   requestAnimationFrame(frame);

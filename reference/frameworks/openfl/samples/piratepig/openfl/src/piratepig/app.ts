@@ -32,12 +32,12 @@ class Main extends Sprite {
       manifest.addSound(['sounds/' + sound + '.ogg', 'sounds/' + sound + '.mp3', 'sounds/' + sound + '.wav'], id);
     }
 
-    manifest.addFont('Freebooter', 'fonts/FreebooterUpdated.ttf');
+    manifest.addFont('fonts/FreebooterUpdated.ttf', 'Freebooter');
 
     AssetLibrary.loadFromManifest(manifest)
       .onComplete((library) => {
         Assets.registerLibrary('default', library);
-        Assets.loadFont('fonts/FreebooterUpdated.ttf')
+        Assets.loadFont('Freebooter')
           .onComplete(async () => {
             if ('FontFace' in window && 'fonts' in document) {
               const fontFace = new FontFace('Freebooter', 'url(fonts/FreebooterUpdated.ttf)');

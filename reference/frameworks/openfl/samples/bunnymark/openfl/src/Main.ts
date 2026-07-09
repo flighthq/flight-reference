@@ -10,6 +10,7 @@ import Bunny from './Bunny';
 export class Main extends Sprite {
   private addingBunnies: boolean;
   private bunnies: Array<Bunny>;
+  private counter: HTMLDivElement;
   private gravity: number;
   private minX: number;
   private minY: number;
@@ -23,6 +24,7 @@ export class Main extends Sprite {
     super();
 
     this.bunnies = [];
+    this.counter = document.createElement('div');
 
     BitmapData.loadFromFile('wabbit_alpha.png')
       .onComplete((bitmapData) => this.start(bitmapData))
@@ -49,6 +51,10 @@ export class Main extends Sprite {
     this.stats.domElement.style.left = '0px';
     this.stats.domElement.style.top = '0px';
     document.body.appendChild(this.stats.domElement);
+
+    this.counter.style.cssText =
+      'position:fixed;bottom:0;right:0;width:80px;padding:3px 0;background:#fff;color:#333;font:bold 9px monospace;text-align:center;opacity:0.9;z-index:10000';
+    document.body.appendChild(this.counter);
 
     this.stage.addEventListener(MouseEvent.MOUSE_DOWN, this.stage_onMouseDown);
     this.stage.addEventListener(MouseEvent.MOUSE_UP, this.stage_onMouseUp);
@@ -108,6 +114,7 @@ export class Main extends Sprite {
       }
     }
 
+    this.counter.textContent = this.bunnies.length + ' bunnies';
     this.stats.end();
   };
 

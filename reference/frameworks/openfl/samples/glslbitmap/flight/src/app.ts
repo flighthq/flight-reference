@@ -6,24 +6,25 @@ import {
   createCamera,
   createMesh,
   createOrthographicProjection,
-  createQuadMeshGeometry,
   createTexture,
   createUnlitMaterial,
   createVector3,
+  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
   translateMatrix4,
 } from '@flighthq/sdk';
 
+import { createTexturedQuadGeometry } from '../../../_shared/flightSceneGeometry';
 import { height, render, width } from './render';
 
 const image = await loadImageResourceFromUrl('assets/openfl.png');
 const texture = createTexture({ image: image });
 const scene = createScene();
-const mesh = createMesh(createQuadMeshGeometry(image.width, image.height), [
-  createUnlitMaterial({ baseColor: 0xffffffff, baseColorMap: texture }),
-]);
+const material = createUnlitMaterial({ baseColor: 0xffffffff, baseColorMap: texture });
+material.doubleSided = true;
+const mesh = createMesh(createTexturedQuadGeometry(image.width, image.height, true), [material]);
 addNodeChild(scene, mesh);
 
 const camera = createCamera({
@@ -43,5 +44,6 @@ translateMatrix4(
   height / 2 - 100 - image.height / 2,
   0,
 );
+invalidateNodeLocalTransform(mesh);
 
 render(scene, camera, lights);

@@ -1,6 +1,7 @@
 import {
   addNodeChild,
   appendShapeBeginFill,
+  appendShapeLineStyle,
   appendShapeRectangle,
   attachPointerInput,
   connectSignal,
@@ -26,6 +27,7 @@ root.scaleX = scale;
 root.scaleY = scale;
 
 const destination = createShape();
+appendShapeLineStyle(destination, 1, 0xcccccc);
 appendShapeBeginFill(destination, 0xf5f5f5);
 appendShapeRectangle(destination, 0, 0, image.width + 10, image.height + 10);
 destination.x = 300;

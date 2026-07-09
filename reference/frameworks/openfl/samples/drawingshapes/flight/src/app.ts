@@ -72,14 +72,6 @@ roundSquare.y = 20;
 invalidateNodeLocalTransform(roundSquare);
 addNodeChild(main, roundSquare);
 
-const roundRectangle = createShape();
-appendShapeBeginFill(roundRectangle, 0x24afc4);
-appendShapeRoundRectangle(roundRectangle, 0, 0, 120, 100, 40, 40);
-roundRectangle.x = 660;
-roundRectangle.y = 20;
-invalidateNodeLocalTransform(roundRectangle);
-addNodeChild(main, roundRectangle);
-
 // ── Row 2: polygons ────────────────────────────────────────────────────────
 
 const triangle = createShape();
@@ -124,14 +116,6 @@ octagon.x = 520;
 octagon.y = 150;
 invalidateNodeLocalTransform(octagon);
 addNodeChild(main, octagon);
-
-const decagon = createShape();
-appendShapeBeginFill(decagon, 0x24afc4);
-drawPolygon(decagon, 50, 50, 50, 10);
-decagon.x = 650;
-decagon.y = 150;
-invalidateNodeLocalTransform(decagon);
-addNodeChild(main, decagon);
 
 // ── Row 3: lines and curves ───────────────────────────────────────────────
 

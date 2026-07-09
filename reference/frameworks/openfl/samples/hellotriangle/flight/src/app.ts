@@ -28,7 +28,7 @@ const TRIANGLE_LAYOUT: VertexAttributeLayout = {
 const geometry = createMeshGeometry({
   indices: new Uint16Array([0, 1, 2]),
   layout: TRIANGLE_LAYOUT,
-  vertices: new Float32Array([-0.3, -0.3, 0, 1, 0, 0, 1, 0.3, 0.3, 0, 0, 0, 1, 1, -0.3, 0.3, 0, 0, 1, 0, 1]),
+  vertices: new Float32Array([-0.3, -0.3, 0, 1, 0, 0, 1, -0.3, 0.3, 0, 0, 1, 0, 1, 0.3, 0.3, 0, 0, 0, 1, 1]),
 });
 
 const scene = createScene();
@@ -49,7 +49,7 @@ const zAxis = createVector3(0, 0, 1);
 
 function frame(): void {
   setMatrix4Identity(mesh.localMatrix);
-  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, zAxis, performance.now() / 40);
+  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, zAxis, (performance.now() / 40) * (Math.PI / 180));
   invalidateNodeLocalTransform(mesh);
   render(scene, camera, lights);
   requestAnimationFrame(frame);

@@ -19,12 +19,12 @@ canvas.style.width = '550px';
 canvas.style.height = '400px';
 canvas.style.display = 'block';
 document.body.style.margin = '0';
-document.body.style.background = '#000';
+document.body.style.background = '#fff';
 document.body.appendChild(canvas);
 
 export const container = canvas;
 export const state = await createWgpuRenderState(canvas, {
-  backgroundColor: 0x000000ff,
+  backgroundColor: 0xffffffff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 registerRenderer(state, VideoKind, defaultWgpuVideoRenderer);

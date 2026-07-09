@@ -57,9 +57,9 @@ function play(): void {
   });
   connectSignal(channel.onComplete, () => {
     channel = null;
-    overlay.alpha = 1;
     overlay.visible = true;
-    invalidateNodeRender(overlay);
+    const fadeIn = createTween(tweenManager, overlay, 1000, { alpha: 1 });
+    connectSignal(fadeIn.onUpdate, () => invalidateNodeRender(overlay));
   });
 }
 

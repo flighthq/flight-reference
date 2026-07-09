@@ -42,13 +42,6 @@ class App extends Sprite {
     roundSquare.y = 20;
     this.addChild(roundSquare);
 
-    var roundRectangle = new Sprite();
-    roundRectangle.graphics.beginFill(0x24afc4);
-    roundRectangle.graphics.drawRoundRect(0, 0, 120, 100, 40, 40);
-    roundRectangle.x = 660;
-    roundRectangle.y = 20;
-    this.addChild(roundRectangle);
-
     var triangle = new Sprite();
     triangle.graphics.beginFill(0x24afc4);
     triangle.graphics.moveTo(0, 100);
@@ -87,13 +80,6 @@ class App extends Sprite {
     octogon.y = 150;
     this.addChild(octogon);
 
-    var decagon = new Sprite();
-    decagon.graphics.beginFill(0x24afc4);
-    this.drawPolygon(decagon.graphics, 50, 50, 50, 10);
-    decagon.x = 650;
-    decagon.y = 150;
-    this.addChild(decagon);
-
     var line = new Sprite();
     line.graphics.lineStyle(10, 0x24afc4);
     line.graphics.lineTo(755, 0);
@@ -121,5 +107,5 @@ class App extends Sprite {
   }
 }
 
-var stage = new Stage(800, 400, 0xffffff, App);
+var stage = new Stage(650, 400, 0xffffff, App);
 document.body.appendChild(stage.element);

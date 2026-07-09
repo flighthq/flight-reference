@@ -20,8 +20,10 @@ import { render, scale, setSize } from './render';
 
 const BUFFER = 64;
 const GUTTER = 2;
-const FIELD_W = 354;
-const FIELD_H = 354;
+const BOX_W = 354;
+const BOX_H = 354;
+const FIELD_W = BOX_W - GUTTER * 2;
+const FIELD_H = BOX_H - GUTTER * 2;
 const TEXT = 'Wqx\nWqx';
 const TEXT_X = 300;
 const TEXT_Y = 100;
@@ -92,8 +94,8 @@ const textHeight = result.textHeight;
 
 // ---- Visualization (replaces original's BitmapData drawing) ----
 
-const bmpW = FIELD_W + BUFFER * 2;
-const bmpH = FIELD_H + BUFFER * 2;
+const bmpW = BOX_W + BUFFER * 2;
+const bmpH = BOX_H + BUFFER * 2;
 
 const vizBg = createShape();
 vizBg.x = TEXT_X - BUFFER;
@@ -114,7 +116,7 @@ outText.y = 0;
 outText.data.height = 1000;
 outText.data.multiline = true;
 outText.data.text = buildMetricsString(TEXT_X, TEXT_Y, FIELD_W, FIELD_H, textWidth, textHeight, tlm, result);
-outText.data.width = 350;
+outText.data.width = 400;
 outText.data.wordWrap = false;
 
 // ---- Lorem ipsum section (white background + word-wrapped text) ----
@@ -123,13 +125,11 @@ const whiteBg = createShape();
 whiteBg.x = 0;
 whiteBg.y = 250;
 appendShapeBeginFill(whiteBg, 0xffffff, 1);
-appendShapeRectangle(whiteBg, 0, 0, 200, 200);
+appendShapeRectangle(whiteBg, 0, 0, 200, 100);
 
 const loremText = createRichText();
 loremText.x = 0;
 loremText.y = 250;
-loremText.data.height = 200;
-loremText.data.multiline = true;
 loremText.data.text =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.';
 loremText.data.width = 200;

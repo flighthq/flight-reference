@@ -14,13 +14,13 @@ element.style.position = 'relative';
 element.style.width = '550px';
 element.style.height = '400px';
 document.body.style.margin = '0';
-document.body.style.background = '#000';
+document.body.style.background = '#fff';
 document.body.appendChild(element);
 
 export const container = element;
 export const state = createDomRenderState(element, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
-  backgroundColor: 0x000000ff,
+  backgroundColor: 0xffffffff,
 });
 registerRenderer(state, VideoKind, defaultDomVideoRenderer);
 export const scale = 1;

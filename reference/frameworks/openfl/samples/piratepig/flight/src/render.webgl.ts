@@ -45,7 +45,7 @@ document.body.appendChild(canvas);
 export const container = canvas;
 export const state = createGlRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
-  backgroundColor: 0x000000ff,
+  backgroundColor: 0xffffffff,
 });
 registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);

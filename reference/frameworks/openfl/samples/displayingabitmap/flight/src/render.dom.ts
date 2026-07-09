@@ -17,7 +17,7 @@ document.body.appendChild(container);
 
 export const state = createDomRenderState(container, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
-  backgroundColor: 0xeeddccff,
+  backgroundColor: 0xffffffff,
 });
 
 registerRenderer(state, BitmapKind, defaultDomBitmapRenderer);

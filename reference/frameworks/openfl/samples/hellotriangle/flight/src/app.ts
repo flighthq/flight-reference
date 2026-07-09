@@ -49,7 +49,7 @@ const zAxis = createVector3(0, 0, 1);
 
 function frame(): void {
   setMatrix4Identity(mesh.localMatrix);
-  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, zAxis, performance.now() / 40);
+  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, zAxis, (performance.now() / 40) * (Math.PI / 180));
   invalidateNodeLocalTransform(mesh);
   render(scene, camera, lights);
   requestAnimationFrame(frame);

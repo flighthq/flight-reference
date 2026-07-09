@@ -18,7 +18,7 @@ import {
 } from '@flighthq/sdk';
 
 import { createTexturedQuadGeometry } from '../../../_shared/flightSceneGeometry';
-import { height, render, width } from './render';
+import { render } from './render';
 
 const DAMPING = 1.09;
 const LINEAR_ACCELERATION = 0.0005;
@@ -46,7 +46,7 @@ addNodeChild(scene, mesh);
 const camera = createCamera({
   far: 1000,
   near: 0.1,
-  projection: createPerspectiveProjection({ aspect: width / height, fovY: (45 * Math.PI) / 180 }),
+  projection: createPerspectiveProjection({ aspect: 4 / 3, fovY: (45 * Math.PI) / 180 }),
 });
 
 const lights: SceneLights = { ambient: null, directional: null };
@@ -108,9 +108,9 @@ function frame(): void {
   setCameraViewMatrix4FromLookAt(camera, cameraEye, cameraTarget, up);
 
   setMatrix4Identity(mesh.localMatrix);
-  translateMatrix4(mesh.localMatrix, mesh.localMatrix, 0, 0, -1);
-  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, yAxis, performance.now() / 30);
-  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, xAxis, performance.now() / 10);
+  translateMatrix4(mesh.localMatrix, mesh.localMatrix, 0, 0, 1);
+  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, xAxis, (performance.now() / 10) * (Math.PI / 180));
+  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, yAxis, (performance.now() / 30) * (Math.PI / 180));
   invalidateNodeLocalTransform(mesh);
 
   render(scene, camera, lights);

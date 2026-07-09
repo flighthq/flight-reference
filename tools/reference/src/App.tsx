@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { cases } from 'virtual:openfl-reference-cases';
+import { cases } from 'virtual:reference-cases';
 
-type CorpusFilter = 'all' | 'functional' | 'samples';
 type LayoutMode = 'single' | 'split';
 type NavigationDirection = 'next' | 'prev' | 'first' | 'last';
 
@@ -22,7 +21,7 @@ interface ImplementationSummary {
 
 interface ReferenceCase {
   id: string;
-  framework: 'openfl';
+  framework: string;
   corpus: string;
   name: string;
   title: string;
@@ -32,28 +31,32 @@ interface ReferenceCase {
   implementations: ImplementationSummary[];
 }
 
-const corpusLabels: Record<CorpusFilter, string> = {
-  all: 'All',
-  functional: 'Functional',
-  samples: 'Samples',
-};
-
 const allCases = cases as ReferenceCase[];
 const fallbackCase: ReferenceCase = {
-  id: 'openfl/empty',
+  id: 'empty',
   framework: 'openfl',
   corpus: 'samples',
   name: 'empty',
-  title: 'No OpenFL cases',
-  summary: 'Add OpenFL reference implementations under reference/frameworks/openfl.',
+  title: 'No cases found',
+  summary: 'Add reference implementations under reference/frameworks/.',
   previewRenderers: [],
   implementations: [],
 };
 
-function corpusSortOrder(corpus: string): number {
-  if (corpus === 'samples') return 0;
-  if (corpus === 'functional') return 1;
-  return 2;
+const availableFrameworks = [...new Set(allCases.map((c) => c.framework))].sort();
+
+function frameworkLabel(id: string): string {
+  if (id === 'openfl') return 'OpenFL';
+  if (id === 'starling') return 'Starling';
+  return id.charAt(0).toUpperCase() + id.slice(1);
+}
+
+function corporaForFramework(framework: string): string[] {
+  return [...new Set(allCases.filter((c) => c.framework === framework).map((c) => c.corpus))].sort((a, b) => {
+    if (a === 'samples') return -1;
+    if (b === 'samples') return 1;
+    return a.localeCompare(b);
+  });
 }
 
 function rendererLabel(id: string): string {
@@ -109,55 +112,48 @@ function navigationDirectionFromKey(event: KeyboardEvent): NavigationDirection |
 }
 
 function readUrlState(): {
-  corpusFilter: CorpusFilter;
+  framework: string;
+  corpus: string;
   layoutMode: LayoutMode;
   selectedCaseId: string;
   selectedRendererId: string;
 } {
-  if (typeof window === 'undefined') {
-    return {
-      corpusFilter: 'samples',
-      layoutMode: 'split',
-      selectedCaseId: allCases[0]?.id ?? fallbackCase.id,
-      selectedRendererId: '',
-    };
-  }
+  const defaults = {
+    framework: availableFrameworks[0] ?? 'openfl',
+    corpus: '',
+    layoutMode: 'split' as LayoutMode,
+    selectedCaseId: allCases[0]?.id ?? fallbackCase.id,
+    selectedRendererId: '',
+  };
+
+  if (typeof window === 'undefined') return defaults;
 
   const url = new URL(window.location.href);
-  const corpus = url.searchParams.get('corpus');
+
+  const framework = url.searchParams.get('framework') ?? defaults.framework;
+  const corpus = url.searchParams.get('corpus') ?? '';
   const layout = url.searchParams.get('layout');
 
   return {
-    corpusFilter: corpus === 'all' || corpus === 'functional' || corpus === 'samples' ? corpus : 'samples',
+    framework: availableFrameworks.includes(framework) ? framework : defaults.framework,
+    corpus,
     layoutMode: layout === 'single' || layout === 'split' ? layout : 'split',
-    selectedCaseId: url.searchParams.get('case') ?? allCases[0]?.id ?? fallbackCase.id,
+    selectedCaseId: url.searchParams.get('case') ?? defaults.selectedCaseId,
     selectedRendererId: url.searchParams.get('renderer') ?? '',
   };
 }
 
 const splitViewport = { width: 670, height: 400 };
 
-function PreviewFrame({
-  src,
-  title,
-  miniaturized,
-  onNavigate,
-}: {
-  src: string;
-  title: string;
-  miniaturized: boolean;
-  onNavigate: (direction: NavigationDirection) => void;
-}) {
+function PreviewFrame({ src, title, miniaturized }: { src: string; title: string; miniaturized: boolean }) {
   const frameRef = useRef<HTMLIFrameElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
-  const detachFrameKeyHandlerRef = useRef<(() => void) | null>(null);
   const teardownMeasurementRef = useRef<(() => void) | null>(null);
   const [cropSize, setCropSize] = useState(splitViewport);
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
     return () => {
-      detachFrameKeyHandlerRef.current?.();
       teardownMeasurementRef.current?.();
       if (frameRef.current) frameRef.current.src = 'about:blank';
     };
@@ -190,23 +186,10 @@ function PreviewFrame({
 
   const handleLoad = () => {
     const frame = frameRef.current;
-    const frameWindow = frame?.contentWindow;
     const doc = frame?.contentDocument;
-    if (!doc || !frameWindow) return;
+    if (!doc) return;
 
-    detachFrameKeyHandlerRef.current?.();
     teardownMeasurementRef.current?.();
-
-    const onFrameKeyDown = (event: KeyboardEvent) => {
-      const direction = navigationDirectionFromKey(event);
-      if (!direction) return;
-
-      event.preventDefault();
-      onNavigate(direction);
-    };
-
-    frameWindow.addEventListener('keydown', onFrameKeyDown);
-    detachFrameKeyHandlerRef.current = () => frameWindow.removeEventListener('keydown', onFrameKeyDown);
 
     if (!miniaturized) return;
 
@@ -276,29 +259,34 @@ function PreviewFrame({
 
 export default function App() {
   const initialState = readUrlState();
-  const [corpusFilter, setCorpusFilter] = useState<CorpusFilter>(initialState.corpusFilter);
+  const [selectedFramework, setSelectedFramework] = useState(initialState.framework);
+  const [selectedCorpus, setSelectedCorpus] = useState(initialState.corpus);
   const [selectedCaseId, setSelectedCaseId] = useState(initialState.selectedCaseId);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(initialState.layoutMode);
   const [selectedRendererId, setSelectedRendererId] = useState(initialState.selectedRendererId);
 
-  const visibleCases = useMemo(() => {
-    const filtered =
-      corpusFilter === 'all' ? allCases : allCases.filter((referenceCase) => referenceCase.corpus === corpusFilter);
+  const corpora = useMemo(() => corporaForFramework(selectedFramework), [selectedFramework]);
+  const activeCorpus = corpora.includes(selectedCorpus) ? selectedCorpus : (corpora[0] ?? '');
 
-    return [...filtered].sort((left, right) => {
-      const corpusDelta = corpusSortOrder(left.corpus) - corpusSortOrder(right.corpus);
-      if (corpusDelta !== 0) return corpusDelta;
-      return left.title.localeCompare(right.title);
-    });
-  }, [corpusFilter]);
+  useEffect(() => {
+    if (!corpora.includes(selectedCorpus)) {
+      setSelectedCorpus(corpora[0] ?? '');
+    }
+  }, [corpora, selectedCorpus]);
+
+  const visibleCases = useMemo(() => {
+    return allCases
+      .filter((c) => c.framework === selectedFramework && (activeCorpus === '' || c.corpus === activeCorpus))
+      .sort((a, b) => a.title.localeCompare(b.title));
+  }, [selectedFramework, activeCorpus]);
 
   const selectedCase = useMemo(
-    () => visibleCases.find((referenceCase) => referenceCase.id === selectedCaseId) ?? visibleCases[0] ?? fallbackCase,
+    () => visibleCases.find((c) => c.id === selectedCaseId) ?? visibleCases[0] ?? fallbackCase,
     [selectedCaseId, visibleCases],
   );
 
   useEffect(() => {
-    if (!visibleCases.some((referenceCase) => referenceCase.id === selectedCaseId)) {
+    if (!visibleCases.some((c) => c.id === selectedCaseId)) {
       setSelectedCaseId(visibleCases[0]?.id ?? fallbackCase.id);
     }
   }, [selectedCaseId, visibleCases]);
@@ -320,12 +308,12 @@ export default function App() {
   const selectedRenderer =
     selectedCase.previewRenderers.find((renderer) => renderer.id === selectedRendererId) ??
     selectedCase.previewRenderers[0];
-  const selectedCaseIndex = visibleCases.findIndex((referenceCase) => referenceCase.id === selectedCase.id);
+  const selectedCaseIndex = visibleCases.findIndex((c) => c.id === selectedCase.id);
   const selectedFlightRenderer =
     selectedCase.flightPreviewRenderers?.find((renderer) => renderer.id === selectedRenderer?.id) ??
     selectedCase.flightPreviewRenderers?.find((renderer) => renderer.id === 'webgl') ??
     selectedCase.flightPreviewRenderers?.[0];
-  const hasFlightImplementation = selectedCase.implementations.some((implementation) => implementation.id === 'flight');
+  const hasFlightImplementation = selectedCase.implementations.some((impl) => impl.id === 'flight');
 
   useEffect(() => {
     const selectedButton = document.querySelector<HTMLElement>(`[data-case-id="${CSS.escape(selectedCase.id)}"]`);
@@ -361,7 +349,8 @@ export default function App() {
     if (typeof window === 'undefined') return;
 
     const url = new URL(window.location.href);
-    url.searchParams.set('corpus', corpusFilter);
+    url.searchParams.set('framework', selectedFramework);
+    url.searchParams.set('corpus', activeCorpus);
     url.searchParams.set('layout', layoutMode);
     url.searchParams.set('case', selectedCase.id);
 
@@ -369,7 +358,7 @@ export default function App() {
     else url.searchParams.delete('renderer');
 
     window.history.replaceState({}, '', url);
-  }, [corpusFilter, layoutMode, selectedCase.id, selectedRenderer?.id]);
+  }, [selectedFramework, activeCorpus, layoutMode, selectedCase.id, selectedRenderer?.id]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -383,6 +372,8 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [navigateCases]);
 
+  const fwLabel = frameworkLabel(selectedFramework);
+
   return (
     <main className="app-shell">
       <aside className="sidebar">
@@ -390,28 +381,49 @@ export default function App() {
           <h1>flight-reference</h1>
         </div>
 
-        <div className="sidebar__section">
-          <span className="sidebar__label">Corpus</span>
-          <div className="segmented segmented--full" role="tablist" aria-label="Corpus filter">
-            {(Object.keys(corpusLabels) as CorpusFilter[]).map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                className={
-                  corpusFilter === filter ? 'segmented__button segmented__button--active' : 'segmented__button'
-                }
-                onClick={() => setCorpusFilter(filter)}>
-                {corpusLabels[filter]}
-              </button>
-            ))}
+        {availableFrameworks.length > 1 ? (
+          <div className="sidebar__section">
+            <span className="sidebar__label">Framework</span>
+            <div className="segmented segmented--full" role="tablist" aria-label="Framework">
+              {availableFrameworks.map((fw) => (
+                <button
+                  key={fw}
+                  type="button"
+                  className={
+                    selectedFramework === fw ? 'segmented__button segmented__button--active' : 'segmented__button'
+                  }
+                  onClick={() => setSelectedFramework(fw)}>
+                  {frameworkLabel(fw)}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
+
+        {corpora.length > 1 ? (
+          <div className="sidebar__section">
+            <span className="sidebar__label">Corpus</span>
+            <div className="segmented segmented--full" role="tablist" aria-label="Corpus filter">
+              {corpora.map((corpus) => (
+                <button
+                  key={corpus}
+                  type="button"
+                  className={
+                    activeCorpus === corpus ? 'segmented__button segmented__button--active' : 'segmented__button'
+                  }
+                  onClick={() => setSelectedCorpus(corpus)}>
+                  {corpus.charAt(0).toUpperCase() + corpus.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div className="sidebar__section sidebar__section--grow">
-          <span className="sidebar__label">OpenFL Cases</span>
+          <span className="sidebar__label">{fwLabel} Cases</span>
           <ul className="scenario-list">
             {visibleCases.length === 0 ? (
-              <li className="scenario-list__empty">No OpenFL cases matched the current filter.</li>
+              <li className="scenario-list__empty">No cases matched the current filter.</li>
             ) : (
               visibleCases.map((referenceCase) => (
                 <li key={referenceCase.id}>
@@ -448,24 +460,28 @@ export default function App() {
           </div>
 
           <div className="toolbar__controls">
-            <div className="segmented" role="tablist" aria-label="Layout mode">
-              <button
-                type="button"
-                className={
-                  layoutMode === 'single' ? 'segmented__button segmented__button--active' : 'segmented__button'
-                }
-                onClick={() => setLayoutMode('single')}>
-                Preview
-              </button>
-              <button
-                type="button"
-                className={layoutMode === 'split' ? 'segmented__button segmented__button--active' : 'segmented__button'}
-                onClick={() => setLayoutMode('split')}>
-                Split
-              </button>
-            </div>
+            {hasFlightImplementation || selectedCase.flightPreviewRenderers?.length ? (
+              <div className="segmented" role="tablist" aria-label="Layout mode">
+                <button
+                  type="button"
+                  className={
+                    layoutMode === 'single' ? 'segmented__button segmented__button--active' : 'segmented__button'
+                  }
+                  onClick={() => setLayoutMode('single')}>
+                  Preview
+                </button>
+                <button
+                  type="button"
+                  className={
+                    layoutMode === 'split' ? 'segmented__button segmented__button--active' : 'segmented__button'
+                  }
+                  onClick={() => setLayoutMode('split')}>
+                  Split
+                </button>
+              </div>
+            ) : null}
 
-            {selectedCase.previewRenderers.length > 0 ? (
+            {selectedCase.previewRenderers.length > 1 ? (
               <div className="segmented" role="tablist" aria-label="Preview renderer">
                 {selectedCase.previewRenderers.map((renderer) => (
                   <button
@@ -485,14 +501,19 @@ export default function App() {
           </div>
         </header>
 
-        <section className={layoutMode === 'split' ? 'pane-grid pane-grid--compare' : 'pane-grid pane-grid--single'}>
+        <section
+          className={
+            layoutMode === 'split' && (hasFlightImplementation || selectedCase.flightPreviewRenderers?.length)
+              ? 'pane-grid pane-grid--compare'
+              : 'pane-grid pane-grid--single'
+          }>
           <section className="pane">
             <header className="pane__header">
               <div>
-                <h3>OpenFL</h3>
+                <h3>{fwLabel}</h3>
                 <p>
                   {selectedRenderer
-                    ? `Live OpenFL renderer: ${rendererLabel(selectedRenderer.label)}`
+                    ? `Live ${fwLabel} renderer: ${rendererLabel(selectedRenderer.label)}`
                     : 'This case currently ships source only.'}
                 </p>
               </div>
@@ -508,13 +529,14 @@ export default function App() {
                   key={selectedRenderer.url}
                   src={selectedRenderer.url}
                   title={`${selectedCase.title} preview`}
-                  miniaturized={layoutMode === 'split'}
-                  onNavigate={navigateCases}
+                  miniaturized={
+                    layoutMode === 'split' && !!(hasFlightImplementation || selectedCase.flightPreviewRenderers?.length)
+                  }
                 />
               </div>
             ) : (
               <div className="pane__empty">
-                <strong>No runnable OpenFL TS preview</strong>
+                <strong>No runnable preview</strong>
                 <p>
                   This case currently exists as imported source only. Use the details pane to inspect the available
                   implementation directories.
@@ -523,7 +545,7 @@ export default function App() {
             )}
           </section>
 
-          {layoutMode === 'split' ? (
+          {layoutMode === 'split' && (hasFlightImplementation || selectedCase.flightPreviewRenderers?.length) ? (
             <section className="pane">
               <header className="pane__header">
                 <div>
@@ -549,7 +571,6 @@ export default function App() {
                     src={selectedFlightRenderer.url}
                     title={`${selectedCase.title} flight preview`}
                     miniaturized
-                    onNavigate={navigateCases}
                   />
                 </div>
               ) : (
@@ -562,7 +583,7 @@ export default function App() {
                   <p>
                     {hasFlightImplementation
                       ? 'Clone Flight under .cache/upstream/flight or set FLIGHT_REPO, install its dependencies, then restart the dev server.'
-                      : 'This imported case currently only exposes the OpenFL preview or source directories.'}
+                      : 'This imported case currently only exposes the upstream preview or source directories.'}
                   </p>
                 </div>
               )}

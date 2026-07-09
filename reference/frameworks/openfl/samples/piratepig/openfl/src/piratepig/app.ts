@@ -40,10 +40,11 @@ class Main extends Sprite {
         Assets.loadFont('Freebooter')
           .onComplete(async () => {
             if ('FontFace' in window && 'fonts' in document) {
-              const fontFace = new FontFace('Freebooter', 'url(fonts/FreebooterUpdated.ttf)');
+              const cssName = 'fonts/FreebooterUpdated.ttf';
+              const fontFace = new FontFace(cssName, 'url(fonts/FreebooterUpdated.ttf)');
               await fontFace.load();
               document.fonts.add(fontFace);
-              await Promise.allSettled([document.fonts.load('60px "Freebooter"'), document.fonts.ready]);
+              await Promise.allSettled([document.fonts.load(`60px "${cssName}"`), document.fonts.ready]);
             }
 
             this.addChild(new PiratePig());

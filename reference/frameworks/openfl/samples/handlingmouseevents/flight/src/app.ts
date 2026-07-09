@@ -1,11 +1,9 @@
-import type { Tween } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
   appendShapeLineStyle,
   appendShapeRectangle,
   attachPointerInput,
-  cancelTween,
   connectSignal,
   createApplication,
   createBitmap,
@@ -44,9 +42,9 @@ logo.y = 100;
 addNodeChild(root, logo);
 
 let dragging = false;
+let tweening = false;
 let offsetX = 0;
 let offsetY = 0;
-let activeTween: Tween | null = null;
 
 function hitTestLogo(px: number, py: number): boolean {
   return px >= logo.x && px <= logo.x + image.width && py >= logo.y && py <= logo.y + image.height;
@@ -56,13 +54,10 @@ const input = createInputManager();
 attachPointerInput(input, container);
 
 connectSignal(input.onPointerDown, (data) => {
+  if (tweening) return;
   const x = data.x / scale;
   const y = data.y / scale;
   if (!hitTestLogo(x, y)) return;
-  if (activeTween !== null) {
-    cancelTween(activeTween);
-    activeTween = null;
-  }
   dragging = true;
   offsetX = logo.x - x;
   offsetY = logo.y - y;
@@ -75,7 +70,7 @@ connectSignal(input.onPointerMove, (data) => {
     logo.x = x + offsetX;
     logo.y = y + offsetY;
     invalidateNodeLocalTransform(logo);
-  } else {
+  } else if (!tweening) {
     container.style.cursor = hitTestLogo(x, y) ? 'pointer' : '';
   }
 });
@@ -90,10 +85,11 @@ connectSignal(input.onPointerUp, (data) => {
     y >= destination.y &&
     y <= destination.y + image.height + 10;
   if (hit) {
-    activeTween = createTween(manager, logo, 1000, { x: destination.x + 5, y: destination.y + 5 });
-    connectSignal(activeTween.onUpdate, () => invalidateNodeLocalTransform(logo));
-    connectSignal(activeTween.onComplete, () => {
-      activeTween = null;
+    tweening = true;
+    const tween = createTween(manager, logo, 1000, { x: destination.x + 5, y: destination.y + 5 });
+    connectSignal(tween.onUpdate, () => invalidateNodeLocalTransform(logo));
+    connectSignal(tween.onComplete, () => {
+      tweening = false;
     });
   }
 });

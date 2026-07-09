@@ -69,6 +69,8 @@ AssetLibrary.loadFromManifest(manifest)
     Assets.registerLibrary('default', library);
 
     var stage = new Stage(550, 400, 0xffffff, App);
+    stage.element.style.width = '550px';
+    stage.element.style.height = '400px';
     document.body.appendChild(stage.element);
   })
   .onError((e) => {

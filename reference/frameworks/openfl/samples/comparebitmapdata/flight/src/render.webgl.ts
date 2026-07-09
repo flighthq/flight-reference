@@ -1,11 +1,9 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
-  TextLabelKind,
   createGlCanvasElement,
   createGlRenderState,
   defaultGlBitmapRenderer,
-  defaultGlTextLabelRenderer,
   prepareDisplayObjectRender,
   registerDefaultGlMaterial,
   registerRenderer,
@@ -14,7 +12,7 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createGlCanvasElement(548, 548, pixelRatio);
+const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(canvas, {
@@ -22,7 +20,6 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x808080ff,
 });
 registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
-registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 registerDefaultGlMaterial(state);
 export const scale = pixelRatio;
 

@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
 
-declare module 'virtual:openfl-reference-cases' {
+declare module 'virtual:reference-cases' {
   export const cases: unknown[];
 }

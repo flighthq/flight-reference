@@ -14,7 +14,6 @@ import {
   floodFillSurface,
   ImageChannel,
   loadImageResourceFromUrl,
-  scrollSurface,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -121,8 +120,14 @@ drawContext.restore();
 const drawn = createSurfaceFromCanvas(drawCanvas);
 addSurface(drawn, 130, 140);
 
+// OpenFL scroll(w/2, 0): shift right by half, exposed area retains original pixels.
+// scrollSurface clears the exposed region instead, so replicate OpenFL behavior manually:
+// clone the image, then overwrite the right half with the original left half.
 const scrolled = createSurfaceFromImageResource(image);
-scrollSurface(scrolled, image.width / 2, 0);
+copySurfacePixels(
+  createSurfaceRegion(scrolled, Math.floor(image.width / 2), 0, image.width, image.height),
+  imageRegion,
+);
 addSurface(scrolled, 240, 140);
 
 const thresholded = createSurfaceFromImageResource(image);

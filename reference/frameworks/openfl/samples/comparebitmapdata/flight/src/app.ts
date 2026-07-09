@@ -33,9 +33,23 @@ const sourceNames = [
   'rectangle2',
 ];
 
-const [sourceImages, indicator0, indicatorNull, indicatorDisposed, indicatorError] = await Promise.all([
+const [
+  sourceImages,
+  indicator0,
+  indicatorMinus1,
+  indicatorMinus2,
+  indicatorMinus3,
+  indicatorMinus4,
+  indicatorNull,
+  indicatorDisposed,
+  indicatorError,
+] = await Promise.all([
   Promise.all(sourceNames.map((name) => loadImageResourceFromUrl(`assets/${SIZE}/${name}.png`))),
   loadImageResourceFromUrl(`assets/${SIZE}/0.png`),
+  loadImageResourceFromUrl(`assets/${SIZE}/minus1.png`),
+  loadImageResourceFromUrl(`assets/${SIZE}/minus2.png`),
+  loadImageResourceFromUrl(`assets/${SIZE}/minus3.png`),
+  loadImageResourceFromUrl(`assets/${SIZE}/minus4.png`),
   loadImageResourceFromUrl(`assets/${SIZE}/null.png`),
   loadImageResourceFromUrl(`assets/${SIZE}/disposed.png`),
   loadImageResourceFromUrl(`assets/${SIZE}/error.png`),
@@ -58,6 +72,10 @@ function getSurface(index: number) {
   return index < sourceSurfaces.length ? sourceSurfaces[index] : null;
 }
 
+function getSourceImage(index: number) {
+  return index < sourceImages.length ? sourceImages[index] : null;
+}
+
 for (let col = 0; col < count; col++) {
   addImage(entries[col], HEADER_OFFSET + col * CELL, 10);
 }
@@ -66,6 +84,13 @@ for (let row = 0; row < count; row++) {
   addImage(entries[row], 10, HEADER_OFFSET + row * CELL);
 }
 
+// OpenFL BitmapData.compare returns:
+//   BitmapData (diff)  when same size and different pixels
+//   0                  when identical
+//  -1                  when other is not a BitmapData (null)
+//  -2                  when other is disposed
+//  -3                  when widths differ
+//  -4                  when heights differ
 for (let row = 0; row < count; row++) {
   const rowSurface = getSurface(row);
 
@@ -74,8 +99,26 @@ for (let row = 0; row < count; row++) {
     const y = HEADER_OFFSET + row * CELL;
     const colSurface = getSurface(col);
 
-    if (rowSurface === null || colSurface === null) {
+    if (rowSurface === null && colSurface === null) {
       addImage(indicatorError, x, y);
+      continue;
+    }
+
+    if (rowSurface === null || colSurface === null) {
+      addImage(indicatorMinus1, x, y);
+      continue;
+    }
+
+    const rowImg = getSourceImage(row)!;
+    const colImg = getSourceImage(col)!;
+
+    if (rowImg.width !== colImg.width) {
+      addImage(indicatorMinus3, x, y);
+      continue;
+    }
+
+    if (rowImg.height !== colImg.height) {
+      addImage(indicatorMinus4, x, y);
       continue;
     }
 

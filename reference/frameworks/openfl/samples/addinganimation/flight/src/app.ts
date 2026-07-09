@@ -7,6 +7,7 @@ import {
   createTween,
   createTweenManager,
   easeOutElastic,
+  easeOutQuadratic,
   invalidateNodeLocalTransform,
   invalidateNodeRender,
   loadImageResourceFromUrl,
@@ -41,7 +42,7 @@ bitmap.data.smoothing = true;
 bitmap.x = -image.width / 2;
 bitmap.y = -image.height / 2;
 
-const alphaTween = createTween(manager, container, 3000, { alpha: 1 });
+const alphaTween = createTween(manager, container, 3000, { alpha: 1 }, { ease: easeOutQuadratic });
 const scaleTween = createTween(
   manager,
   container,

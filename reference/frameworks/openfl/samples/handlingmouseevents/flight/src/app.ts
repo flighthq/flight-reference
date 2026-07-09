@@ -1,9 +1,11 @@
+import type { Tween } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
   appendShapeLineStyle,
   appendShapeRectangle,
   attachPointerInput,
+  cancelTween,
   connectSignal,
   createApplication,
   createBitmap,
@@ -44,22 +46,40 @@ addNodeChild(root, logo);
 let dragging = false;
 let offsetX = 0;
 let offsetY = 0;
+let activeTween: Tween | null = null;
+
+function hitTestLogo(px: number, py: number): boolean {
+  return px >= logo.x && px <= logo.x + image.width && py >= logo.y && py <= logo.y + image.height;
+}
+
 const input = createInputManager();
 attachPointerInput(input, container);
+
 connectSignal(input.onPointerDown, (data) => {
   const x = data.x / scale;
   const y = data.y / scale;
-  if (x < logo.x || x > logo.x + image.width || y < logo.y || y > logo.y + image.height) return;
+  if (!hitTestLogo(x, y)) return;
+  if (activeTween !== null) {
+    cancelTween(activeTween);
+    activeTween = null;
+  }
   dragging = true;
   offsetX = logo.x - x;
   offsetY = logo.y - y;
 });
+
 connectSignal(input.onPointerMove, (data) => {
-  if (!dragging) return;
-  logo.x = data.x / scale + offsetX;
-  logo.y = data.y / scale + offsetY;
-  invalidateNodeLocalTransform(logo);
+  const x = data.x / scale;
+  const y = data.y / scale;
+  if (dragging) {
+    logo.x = x + offsetX;
+    logo.y = y + offsetY;
+    invalidateNodeLocalTransform(logo);
+  } else {
+    container.style.cursor = hitTestLogo(x, y) ? 'pointer' : '';
+  }
 });
+
 connectSignal(input.onPointerUp, (data) => {
   dragging = false;
   const x = data.x / scale;
@@ -70,8 +90,11 @@ connectSignal(input.onPointerUp, (data) => {
     y >= destination.y &&
     y <= destination.y + image.height + 10;
   if (hit) {
-    const tween = createTween(manager, logo, 1000, { x: destination.x + 5, y: destination.y + 5 });
-    connectSignal(tween.onUpdate, () => invalidateNodeLocalTransform(logo));
+    activeTween = createTween(manager, logo, 1000, { x: destination.x + 5, y: destination.y + 5 });
+    connectSignal(activeTween.onUpdate, () => invalidateNodeLocalTransform(logo));
+    connectSignal(activeTween.onComplete, () => {
+      activeTween = null;
+    });
   }
 });
 

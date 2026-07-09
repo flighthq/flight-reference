@@ -62,8 +62,8 @@ code {
   padding: 1rem;
   border-right: 1px solid var(--border);
   background: #1b1714;
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
   min-height: 0;
   overflow: hidden;
@@ -94,8 +94,10 @@ code {
 }
 
 .sidebar__section--grow {
+  flex: 1 1 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -369,7 +371,6 @@ code {
   .sidebar {
     border-right: 0;
     border-bottom: 1px solid var(--border);
-    grid-template-rows: auto auto auto;
     overflow: visible;
   }
 

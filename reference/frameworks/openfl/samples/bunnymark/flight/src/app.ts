@@ -13,7 +13,7 @@ import { canvas, render, scale } from './render';
 const GRAVITY = 0.5;
 const WIDTH = 800;
 const HEIGHT = 600;
-const INITIAL_COUNT = 10;
+const INITIAL_COUNT = 100;
 const BATCH_SIZE = 100;
 
 const stats = new Stats();

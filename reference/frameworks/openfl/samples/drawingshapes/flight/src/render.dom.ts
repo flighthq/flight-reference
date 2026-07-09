@@ -21,7 +21,7 @@ import {
 
 const container = document.createElement('div');
 container.style.position = 'relative';
-container.style.width = '800px';
+container.style.width = '650px';
 container.style.height = '400px';
 document.body.appendChild(container);
 

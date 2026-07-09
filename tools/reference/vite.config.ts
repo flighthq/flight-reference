@@ -214,6 +214,8 @@ function implementationSummaries(
   return results;
 }
 
+const excludedSamples = new Set(['custompreloader', 'gamepadinput', 'writingcustomshaders']);
+
 function discoverCases(): OpenflReferenceCase[] {
   if (!existsSync(openflReferenceDir)) return [];
 
@@ -232,7 +234,7 @@ function discoverCases(): OpenflReferenceCase[] {
     for (const caseEntry of caseEntries) {
       const name = caseEntry.name;
       const caseDir = join(corpusDir, name);
-      // Keep the OpenFL reference focused on real upstream OpenFL cases, not legacy Flight-only aliases.
+      if (excludedSamples.has(name)) continue;
       if (!hasUpstreamOpenflImplementation(caseDir)) continue;
 
       const previewRenderers = openflPreviewRenderers(caseDir).map((renderer) => ({

@@ -109,8 +109,8 @@ function frame(): void {
 
   setMatrix4Identity(mesh.localMatrix);
   translateMatrix4(mesh.localMatrix, mesh.localMatrix, 0, 0, -1);
-  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, yAxis, (performance.now() / 30) * (Math.PI / 180));
-  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, xAxis, (performance.now() / 10) * (Math.PI / 180));
+  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, yAxis, performance.now() / 30);
+  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, xAxis, performance.now() / 10);
   invalidateNodeLocalTransform(mesh);
 
   render(scene, camera, lights);

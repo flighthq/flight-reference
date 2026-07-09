@@ -35,7 +35,7 @@ function calculateUpdatedVelocity(curVelocity: number, curAcceleration: number, 
   return curVelocity / DAMPING;
 }
 
-const image = await loadImageResourceFromUrl('assets/openfl.png');
+const image = await loadImageResourceFromUrl('openfl.png');
 const texture = createTexture({ image: image });
 const scene = createScene();
 const material = createUnlitMaterial({ baseColor: 0xffffffff, baseColorMap: texture });

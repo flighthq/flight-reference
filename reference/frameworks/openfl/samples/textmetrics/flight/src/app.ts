@@ -97,12 +97,6 @@ const textHeight = result.textHeight;
 const bmpW = BOX_W + BUFFER * 2;
 const bmpH = BOX_H + BUFFER * 2;
 
-const vizBg = createShape();
-vizBg.x = TEXT_X - BUFFER;
-vizBg.y = TEXT_Y - BUFFER;
-appendShapeBeginFill(vizBg, 0xe0e0e0, 1);
-appendShapeRectangle(vizBg, 0, 0, bmpW, bmpH);
-
 const vizLines = createShape();
 vizLines.x = TEXT_X - BUFFER;
 vizLines.y = TEXT_Y - BUFFER;
@@ -135,9 +129,8 @@ loremText.data.text =
 loremText.data.width = 200;
 loremText.data.wordWrap = true;
 
-// ---- Scene graph (z-order: bg → vizBg → textField → vizLines → lorem → outText) ----
+// ---- Scene graph ----
 
-addNodeChild(root, vizBg);
 addNodeChild(root, textField);
 addNodeChild(root, vizLines);
 addNodeChild(root, whiteBg);

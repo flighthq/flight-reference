@@ -248,7 +248,7 @@ function openflImplementationSummaries(
   return results;
 }
 
-const excludedSamples = new Set(['custompreloader', 'gamepadinput', 'writingcustomshaders']);
+const excludedSamples = new Set(['custompreloader', 'gamepadinput', 'usingswfassets', 'writingcustomshaders']);
 
 function discoverOpenflCases(): ReferenceCase[] {
   if (!existsSync(openflReferenceDir)) return [];

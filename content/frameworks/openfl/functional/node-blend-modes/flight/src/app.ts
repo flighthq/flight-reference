@@ -86,11 +86,11 @@ for (let i = 0; i < BLEND_MODES.length; i++) {
   addNodeChild(root, circle);
 
   const lbl = createRichText();
-  lbl.data.defaultTextFormat = { font: 'sans-serif', size: 14, bold: true, color: 0x222222, align: 'center' };
-  lbl.x = cx - squareImg.width / 2 - 30;
+  lbl.data.defaultTextFormat = { font: 'sans-serif', size: 14, bold: true, color: 0x222222 };
+  lbl.x = cx - squareImg.height / 2 - 30;
   lbl.y = cy + squareImg.height / 2 + 40;
   lbl.data.width = 200;
-  lbl.data.height = 30;
+  lbl.data.height = 200;
   lbl.data.text = name;
   addNodeChild(root, lbl);
 }

@@ -1,7 +1,14 @@
-import type { BlurFilter, ColorMatrixFilter, DropShadowFilter, OuterGlowFilter } from '@flighthq/filters';
+import type {
+  BlurFilter,
+  ColorMatrixFilter,
+  DisplacementMapFilter,
+  DropShadowFilter,
+  OuterGlowFilter,
+} from '@flighthq/filters';
 import {
   createBlurFilter,
   createColorMatrixFilter,
+  createDisplacementMapFilter,
   createDropShadowFilter,
   createOuterGlowFilter,
 } from '@flighthq/filters';
@@ -9,6 +16,7 @@ import { computeBlurFilterCss, computeDropShadowFilterCss, computeOuterGlowFilte
 import {
   applyBoxBlurFilterToGl,
   applyColorMatrixFilterToGl,
+  applyDisplacementMapFilterToGl,
   applyDropShadowFilterToGl,
   applyOuterGlowFilterToGl,
 } from '@flighthq/filters-gl';
@@ -43,6 +51,7 @@ import {
   copyMatrix,
   createBitmap,
   createDisplayContainer,
+  createImageResourceFromCanvas,
   createInputManager,
   createInteractionManager,
   createMatrix,
@@ -74,7 +83,7 @@ const GameWidth = 320;
 const GameHeight = 480;
 const CenterX = 160;
 
-type FilterType = 'none' | 'blur' | 'dropShadow' | 'glow' | 'colorMatrix';
+type FilterType = 'none' | 'blur' | 'dropShadow' | 'glow' | 'colorMatrix' | 'displacementMap';
 
 interface FilterEntry {
   name: string;
@@ -84,6 +93,7 @@ interface FilterEntry {
   dropShadow?: DropShadowFilter;
   glow?: OuterGlowFilter;
   colorMatrix?: ColorMatrixFilter;
+  displacementMap?: DisplacementMapFilter;
 }
 
 const HueDegrees = (180 / Math.PI) * 1;
@@ -108,7 +118,12 @@ const filterInfos: FilterEntry[] = [
     cssFilter: 'drop-shadow(0 0 4px yellow)',
     glow: createOuterGlowFilter({ color: 0xffff00, blurX: 4, blurY: 4, strength: 1, quality: 1 }),
   },
-  { name: 'Displacement Map', type: 'none', cssFilter: 'none' },
+  {
+    name: 'Displacement Map',
+    type: 'displacementMap',
+    cssFilter: 'none',
+    displacementMap: createDisplacementMapFilter({ componentX: 0, componentY: 1, scaleX: 25, scaleY: 25 }),
+  },
   {
     name: 'Invert',
     type: 'colorMatrix',
@@ -233,6 +248,62 @@ const _bounds = createRectangle();
 const _identity = createMatrix();
 const MAX_PADDING = Math.ceil(8 * 3 + 4);
 
+function generateNoiseCanvas(width: number, height: number): HTMLCanvasElement {
+  const c = document.createElement('canvas');
+  c.width = width;
+  c.height = height;
+  const ctx = c.getContext('2d')!;
+  const imageData = ctx.createImageData(width, height);
+  const d = imageData.data;
+
+  function hash(x: number, y: number, channel: number): number {
+    let h = 5 + x * 374761393 + y * 668265263 + channel * 1274126177;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    h = h ^ (h >>> 16);
+    return (h & 0x7fffffff) / 0x7fffffff;
+  }
+
+  function smoothNoise(px: number, py: number, freq: number, channel: number): number {
+    const fx = px / freq;
+    const fy = py / freq;
+    const ix = Math.floor(fx);
+    const iy = Math.floor(fy);
+    const sx = fx - ix;
+    const sy = fy - iy;
+    const u = sx * sx * (3 - 2 * sx);
+    const v = sy * sy * (3 - 2 * sy);
+    const a = hash(ix, iy, channel);
+    const b = hash(ix + 1, iy, channel);
+    const cc = hash(ix, iy + 1, channel);
+    const dd = hash(ix + 1, iy + 1, channel);
+    return a + (b - a) * u + (cc - a) * v + (a - b - cc + dd) * u * v;
+  }
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let r = 0;
+      let g = 0;
+      let amp = 1;
+      let total = 0;
+      for (let oct = 0; oct < 3; oct++) {
+        const freq = 20 / (1 << oct);
+        r += smoothNoise(x, y, freq, oct * 2) * amp;
+        g += smoothNoise(x, y, freq, oct * 2 + 1) * amp;
+        total += amp;
+        amp *= 0.5;
+      }
+      const idx = (y * width + x) * 4;
+      d[idx] = Math.round((r / total) * 255);
+      d[idx + 1] = Math.round((g / total) * 255);
+      d[idx + 2] = 128;
+      d[idx + 3] = 255;
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  return c;
+}
+
 if (target.kind === 'webgl') {
   runGl(target.state);
 } else if (target.kind === 'canvas') {
@@ -253,8 +324,24 @@ function runGl(state: GlRenderState): void {
     createGlRenderTarget(state, { width: w, height: h }),
     createGlRenderTarget(state, { width: w, height: h }),
   ];
+  const mapTarget = createGlRenderTarget(state, { width: w, height: h });
   const cacheTransform = createMatrix();
   const sceneTransform = createMatrix();
+
+  const noiseBmp = createBitmap();
+  noiseBmp.data.image = createImageResourceFromCanvas(generateNoiseCanvas(w, h));
+  addNodeChild(root, noiseBmp);
+  prepareDisplayObjectRender(state, root);
+  {
+    const noiseProxy = getRenderProxy2D(state, noiseBmp);
+    if (noiseProxy !== undefined) setTranslation(noiseProxy.transform2D, 0, 0);
+    beginGlRenderTarget(state, mapTarget, _identity);
+    clearGlRenderTarget(state, mapTarget);
+    renderGlDisplayObject(state, noiseBmp);
+    endGlRenderTarget(state);
+  }
+  noiseBmp.alpha = 0;
+  invalidateNodeAppearance(noiseBmp);
 
   function renderFrame(): void {
     const entry = filterInfos[filterIndex];
@@ -280,6 +367,8 @@ function runGl(state: GlRenderState): void {
         applyDropShadowFilterToGl(state, source, dest, scratch, entry.dropShadow);
       } else if (entry.type === 'glow' && entry.glow !== undefined) {
         applyOuterGlowFilterToGl(state, source, dest, scratch, entry.glow);
+      } else if (entry.type === 'displacementMap' && entry.displacementMap !== undefined) {
+        applyDisplacementMapFilterToGl(state, source, mapTarget, dest, entry.displacementMap);
       } else if (entry.type === 'colorMatrix' && entry.colorMatrix !== undefined) {
         if (entry.dropShadow !== undefined) {
           applyColorMatrixFilterToGl(state, source, scratch[0], entry.colorMatrix);

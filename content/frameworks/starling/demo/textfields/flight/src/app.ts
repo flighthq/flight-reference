@@ -66,6 +66,7 @@ rightTF.data.defaultTextFormat = {
   font: 'Ubuntu, sans-serif',
   size: 19,
   color: 0x208020,
+  align: 'right',
 };
 rightTF.x = 2 * offset + 145;
 rightTF.y = offset + 80 + offset;
@@ -76,14 +77,19 @@ rightTF.data.text = '... or\nbottom right ...';
 addNodeChild(root, rightTF);
 
 const fontTF = createRichText();
-fontTF.data.defaultTextFormat = { font: 'Ubuntu, sans-serif', size: 19, color: 0x000000 };
+fontTF.data.defaultTextFormat = { font: 'Ubuntu, sans-serif', size: 19 };
 fontTF.x = offset;
 fontTF.y = offset + 80 + offset + 80 + offset;
 fontTF.data.width = 300;
 fontTF.data.height = 80;
 fontTF.data.border = true;
 fontTF.data.wordWrap = true;
-fontTF.data.text = '... or centered. Embedded fonts are detected automatically and support basic HTML formatting.';
+fontTF.data.htmlText =
+  '... or centered. Embedded fonts are detected automatically and ' +
+  "<font color='#208080'>support</font> " +
+  "<font color='#996633'>basic</font> " +
+  "<font color='#333399'>HTML</font> " +
+  "<font color='#208020'>formatting</font>.";
 addNodeChild(root, fontTF);
 
 const bmpFontTF = createRichText();

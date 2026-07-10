@@ -231,18 +231,17 @@ function resetEgg(): void {
 }
 resetEgg();
 
-// `align: 'center'` on a RichText's defaultTextFormat produces no visible glyphs on the webgl
-// backend in this SDK snapshot, so the label is left-aligned with a small inset instead.
 const transitionLabel = createRichText();
 transitionLabel.data.defaultTextFormat = {
   font: 'DejaVu Sans, sans-serif',
   size: 20,
   color: 0x000000,
   bold: true,
+  align: 'center',
 };
-transitionLabel.x = 12;
+transitionLabel.x = 0;
 transitionLabel.y = TransitionLabelY;
-transitionLabel.data.width = GameWidth - 12;
+transitionLabel.data.width = GameWidth;
 transitionLabel.data.height = TransitionLabelHeight;
 transitionLabel.data.text = '';
 transitionLabel.alpha = 0;

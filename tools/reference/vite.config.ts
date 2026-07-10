@@ -346,6 +346,14 @@ function discoverStarlingCases(): ReferenceCase[] {
         },
       ];
 
+      const enabledFlightPreviewRenderers = flightPreviewsEnabled
+        ? flightPreviewRenderers(caseDir).map((renderer) => ({
+            id: renderer,
+            label: renderer,
+            url: flightPreviewUrl('starling', corpus, name, renderer),
+          }))
+        : [];
+
       const titlePath = join(caseDir, 'title.txt');
       const title = existsSync(titlePath) ? readFileSync(titlePath, 'utf-8').trim() : fallbackTitle(name);
 
@@ -357,6 +365,7 @@ function discoverStarlingCases(): ReferenceCase[] {
         title,
         summary: `${title} from the Starling ${corpus}.`,
         previewRenderers,
+        ...(enabledFlightPreviewRenderers.length > 0 ? { flightPreviewRenderers: enabledFlightPreviewRenderers } : {}),
         implementations: [
           {
             id: 'starling',
@@ -364,6 +373,17 @@ function discoverStarlingCases(): ReferenceCase[] {
             path: join(caseDir, 'starling').replace(repoRoot + '/', ''),
             fileCount: countFiles(join(caseDir, 'starling')),
           },
+          ...(enabledFlightPreviewRenderers.length > 0
+            ? [
+                {
+                  id: 'flight' as const,
+                  mode: 'preview' as const,
+                  path: join(caseDir, 'flight').replace(repoRoot + '/', ''),
+                  fileCount: countFiles(join(caseDir, 'flight')),
+                  previewUrl: enabledFlightPreviewRenderers[0]!.url,
+                },
+              ]
+            : []),
         ],
       });
     }

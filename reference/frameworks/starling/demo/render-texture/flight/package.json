@@ -1,0 +1,8 @@
+{
+  "name": "starling-demo-render-texture-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "starling-demo-textfields-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

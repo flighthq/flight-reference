@@ -144,7 +144,11 @@ export class PiratePigGame {
     this.obj.scaleX = 1;
     this.obj.scaleY = 1;
 
-    const scale = Math.min((stageWidth * 0.9) / CONTENT_WIDTH, (stageHeight * 0.86) / CONTENT_HEIGHT);
+    const scale = Math.min(
+      (stageWidth * 0.9) / CONTENT_WIDTH,
+      (stageHeight * 0.86) / (BACKGROUND_Y + CONTENT_HEIGHT),
+      1,
+    );
 
     this.currentScale = scale;
     this.obj.scaleX = scale;

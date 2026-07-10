@@ -11,6 +11,7 @@ import {
   createDisplayContainer,
   createRichText,
   createShape,
+  invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   RichTextKind,
@@ -66,11 +67,11 @@ const movies = [
   'The Dark Knight (2008)',
   '12 Angry Men (1957)',
   "Schindler's List (1993)",
-  'The Lord of the Rings: The Return of the King (2003)',
+  'The Lord of the Rings: The Return of the Kind (2003)',
   'Fight Club (1999)',
   'Star Wars: Episode V - The Empire Strikes Back (1980)',
   'The Lord of the Rings: The Fellowship of the Ring (2001)',
-  "One Flew Over the Cuckoo's Nest (1975)",
+  "One Flew Over the Cuckoo's Next (1975)",
   'Goodfellas (1990)',
   'Seven Samurai (1954)',
   'Inception (2010)',
@@ -132,11 +133,10 @@ status.x = 0;
 status.y = 0;
 status.data.width = pos(400);
 status.data.height = pos(50);
-status.data.text = 'clip rectangle test';
+status.data.text = 'CacheAsBitmap: TRUE';
 addNodeChild(root, status);
 
 let inc = pos(5);
-let owlInc = pos(5);
 let owlScrollX = 0;
 let textScrollY = 0;
 let outerAngle = 0;
@@ -144,13 +144,19 @@ const outerInc = (2 * Math.PI) / FRAMES_PER_ROTATION;
 
 function enterFrame(): void {
   textScrollY += inc;
-  if (textScrollY >= pos(550)) inc = -pos(5);
-  else if (textScrollY <= 0) inc = pos(5);
+  if (textScrollY >= pos(550)) {
+    inc = -pos(5);
+    status.data.text = 'CacheAsBitmap: FALSE';
+    invalidateNodeAppearance(status);
+  } else if (textScrollY <= 0) {
+    inc = pos(5);
+    status.data.text = 'CacheAsBitmap: TRUE';
+    invalidateNodeAppearance(status);
+  }
   textContent.y = -textScrollY;
   invalidateNodeLocalTransform(textContent);
 
-  owlScrollX += owlInc;
-  if (owlScrollX >= owlImg.width || owlScrollX <= 0) owlInc = -owlInc;
+  owlScrollX += inc;
   owlContent.x = -owlScrollX;
   invalidateNodeLocalTransform(owlContent);
 

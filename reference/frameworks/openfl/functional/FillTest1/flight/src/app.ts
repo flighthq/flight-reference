@@ -6,6 +6,7 @@ import {
   createDisplayContainer,
   createShape,
   invalidateNodeAppearance,
+  removeNodeChild,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -74,7 +75,18 @@ addNodeChild(root, greenSquare);
 const randomRect = createShape();
 addNodeChild(root, randomRect);
 
+render(root);
+
+let staticsCleared = false;
+
 function enterFrame(): void {
+  if (!staticsCleared) {
+    staticsCleared = true;
+    removeNodeChild(root, redSquare);
+    removeNodeChild(root, blueSquare);
+    removeNodeChild(root, greenSquare);
+  }
+
   clearShapeCommands(randomRect);
 
   const w = seededRandom(1279);

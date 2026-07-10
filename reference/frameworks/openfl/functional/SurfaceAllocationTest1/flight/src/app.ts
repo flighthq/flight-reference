@@ -57,10 +57,10 @@ function makeColoredBitmap(size: number): ReturnType<typeof createBitmap> {
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext('2d')!;
-  const r = rand(256),
-    g = rand(256),
-    b = rand(256),
-    a = rand(256);
+  const r = rand(255),
+    g = rand(255),
+    b = rand(255),
+    a = rand(255);
   ctx.fillStyle = `rgba(${r},${g},${b},${a / 255})`;
   ctx.fillRect(0, 0, size, size);
   const bmp = createBitmap();
@@ -85,40 +85,35 @@ label.x = W / 2 - 100;
 label.y = 50;
 label.data.width = 400;
 label.data.height = 60;
-label.data.text = '0×100, 0×500, 0×1000';
+label.data.text = '0x100, 0x500, 0x1000';
 addNodeChild(root, label);
-
-const instructions = createRichText();
-instructions.data.defaultTextFormat = { font: 'sans-serif', size: 16, color: 0xaaaaaa };
-instructions.x = 20;
-instructions.y = H - 60;
-instructions.data.width = W - 40;
-instructions.data.height = 50;
-instructions.data.text =
-  '↑ add 100 · ↓ remove 100 · → add 500 · ← remove 500 · 1 add 1000 · 4 remove 1000 · 5 clear all';
-addNodeChild(root, instructions);
 
 const bitmaps100: ReturnType<typeof createBitmap>[] = [];
 const bitmaps500: ReturnType<typeof createBitmap>[] = [];
 const bitmaps1000: ReturnType<typeof createBitmap>[] = [];
 
 let nextX = 50;
-let nextY = 100;
+let nextY = 50;
 
 function placeBitmap(bmp: ReturnType<typeof createBitmap>): void {
   bmp.x = nextX;
   bmp.y = nextY;
   addNodeChild(root, bmp);
-  nextX += 30;
-  nextY += 30;
-  if (nextX >= W - 100 || nextY >= H - 100) {
+
+  nextX += 10;
+  nextY += 10;
+
+  if (nextX >= W - 400 || nextY >= H - 200) {
     nextX = 50;
-    nextY = 100;
+    nextY = 50;
+  } else {
+    nextX += 20;
+    nextY += 20;
   }
 }
 
 function updateLabel(): void {
-  label.data.text = `${bitmaps100.length}×100, ${bitmaps500.length}×500, ${bitmaps1000.length}×1000`;
+  label.data.text = `${bitmaps100.length}x100, ${bitmaps500.length}x500, ${bitmaps1000.length}x1000`;
   render(root);
 }
 

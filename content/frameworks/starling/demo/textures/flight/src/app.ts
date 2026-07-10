@@ -62,7 +62,7 @@ flight08.y = -60;
 addNodeChild(root, flight08);
 
 const fallback = createRichText();
-fallback.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0xffffff };
+fallback.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0x000000 };
 fallback.x = CenterX - 110;
 fallback.y = 280;
 fallback.data.width = 220;

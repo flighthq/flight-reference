@@ -41,7 +41,7 @@ addNodeChild(root, bgBmp);
 const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
 
 const infoText = createRichText();
-infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 19, color: 0xffffff };
+infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 12, color: 0x000000 };
 infoText.x = 10;
 infoText.y = 10;
 infoText.data.width = 300;

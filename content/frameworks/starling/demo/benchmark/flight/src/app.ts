@@ -57,7 +57,7 @@ container.y = CenterY;
 addNodeChild(root, container);
 
 const statusText = createRichText();
-statusText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0x000000 };
+statusText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 10, color: 0x000000 };
 statusText.x = 20;
 statusText.y = 10;
 statusText.data.width = 280;
@@ -176,13 +176,13 @@ function benchmarkComplete(measuredFps: number): void {
   resultText = createRichText();
   resultText.data.defaultTextFormat = {
     font: 'DejaVu Sans, sans-serif',
-    size: 24,
+    size: 30,
     color: 0x000000,
   };
   resultText.x = CenterX - 120;
-  resultText.y = CenterY - 60;
+  resultText.y = CenterY - 100;
   resultText.data.width = 240;
-  resultText.data.height = 120;
+  resultText.data.height = 200;
   resultText.data.text = `Result:\n${numChildren} objects\nwith ${Math.round(measuredFps)} fps`;
   addNodeChild(root, resultText);
 

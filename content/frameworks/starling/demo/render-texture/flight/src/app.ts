@@ -54,7 +54,7 @@ drawCtx.fillStyle = 'rgba(0, 0, 0, 0)';
 drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
 
 drawCtx.font = '24px DejaVu Sans, sans-serif';
-drawCtx.fillStyle = 'white';
+drawCtx.fillStyle = 'black';
 drawCtx.textAlign = 'center';
 drawCtx.fillText('Touch the screen', CenterX, 200);
 drawCtx.fillText('to draw!', CenterX, 230);

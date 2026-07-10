@@ -24,22 +24,22 @@ const GameHeight = 480;
 const ButtonWidth = 128;
 const ButtonHeight = 32;
 const GridStartY = 155;
-const GridColumnX = [10, 170];
-const GridRowSpacing = 38;
+const GridColumnX = [28, 167];
+const GridRowSpacing = 46;
 
 const buttons: [string, string][] = [
   ['Textures', 'textures'],
-  ['Blend Modes', 'blend-modes'],
-  ['Movie Clip', 'movie-clip'],
-  ['Animations', 'animations'],
-  ['Custom Hit Test', 'custom-hit-test'],
-  ['Filters', 'filters'],
-  ['Masks', 'masks'],
-  ['Benchmark', 'benchmark'],
   ['Multitouch', 'multitouch'],
-  ['Sprite3D', 'sprite3d'],
   ['TextFields', 'textfields'],
+  ['Animations', 'animations'],
+  ['Custom hit-test', 'custom-hit-test'],
+  ['Movie Clip', 'movie-clip'],
+  ['Filters', 'filters'],
+  ['Blend Modes', 'blend-modes'],
   ['Render Texture', 'render-texture'],
+  ['Benchmark', 'benchmark'],
+  ['Masks', 'masks'],
+  ['Sprite 3D', 'sprite3d'],
 ];
 
 const target = await createFunctionalTarget({

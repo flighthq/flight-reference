@@ -52,13 +52,12 @@ export function createMenuButton(config: MenuButtonConfig): MenuButton {
   overlayBmp.alpha = 0;
   addNodeChild(container, overlayBmp);
 
-  const fontSize = 14;
+  const fontSize = 12;
   const label = createTextLabel();
   label.data.textFormat = {
     font: 'DejaVu Sans, sans-serif',
     size: fontSize,
     color: 0x000000,
-    bold: true,
     align: 'center',
   };
   label.data.width = config.width;

@@ -28,7 +28,7 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createGlCanvasElement(800, 400, pixelRatio);
+const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(canvas, {
@@ -41,7 +41,7 @@ registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerDefaultGlMaterial(state);
 export const scale = pixelRatio;
 export const width = 800;
-export const height = 400;
+export const height = 600;
 
 // Gl has no CSS filter binding, so it realizes the blur with the offscreen filter path:
 // render each node into a GlRenderTarget at its logical size, run the separable box-blur
@@ -132,8 +132,8 @@ export function render(root: DisplayObject): void {
 
 // Box blur of standard deviation σ spreads a few σ past the bounds; pad generously so the
 // tail is not clipped at the target edge.
-function blurPadding(filter: Readonly<BlurFilter>): number {
-  return Math.ceil(Math.max(filter.blurX ?? 4, filter.blurY ?? 4) * 2.5);
+function blurPadding(_filter: Readonly<BlurFilter>): number {
+  return Math.ceil(64 * 2.5);
 }
 
 function setTranslation(out: Matrix, tx: number, ty: number): void {

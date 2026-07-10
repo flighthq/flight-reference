@@ -18,8 +18,8 @@ import {
 import { createFunctionalTarget } from '@ft/render';
 
 const { height, render, width } = await createFunctionalTarget({
-  width: 1100,
-  height: 700,
+  width: 800,
+  height: 600,
   background: 0xffffffff,
   kinds: [BitmapKind, RichTextKind, ShapeKind],
 });
@@ -85,7 +85,7 @@ for (let i = 0; i < BLEND_MODES.length; i++) {
   addNodeChild(root, circle);
 
   const lbl = createRichText();
-  lbl.data.defaultTextFormat = { font: 'sans-serif', size: 14, bold: true, color: 0x222222 };
+  lbl.data.defaultTextFormat = { font: 'sans-serif', size: 14, bold: true, color: 0x222222, align: 'center' };
   lbl.x = cx - squareImg.width / 2 - 30;
   lbl.y = cy + squareImg.height / 2 + 40;
   lbl.data.width = 200;

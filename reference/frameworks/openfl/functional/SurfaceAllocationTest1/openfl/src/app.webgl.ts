@@ -65,6 +65,18 @@ root.addChild(text);
 
 text.text = '0x100, 0x500, 0x1000';
 
+const instructionsFormat = new TextFormat('_sans', 14, 0xffffff);
+const instructions = new TextField();
+instructions.selectable = false;
+instructions.defaultTextFormat = instructionsFormat;
+instructions.x = 10;
+instructions.y = HEIGHT - 40;
+instructions.width = WIDTH - 20;
+instructions.height = 40;
+instructions.textColor = 0xffffff;
+instructions.text = 'Up: +100  Down: -100  Right: +500  Left: -500  1: +1000  4: -1000  5: clear all';
+root.addChild(instructions);
+
 function addNewBitmap(child: Bitmap): void {
   child.x = nextX;
   child.y = nextY;

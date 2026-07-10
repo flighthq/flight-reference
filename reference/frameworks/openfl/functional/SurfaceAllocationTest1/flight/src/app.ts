@@ -88,6 +88,15 @@ label.data.height = 60;
 label.data.text = '0x100, 0x500, 0x1000';
 addNodeChild(root, label);
 
+const instructions = createRichText();
+instructions.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0xffffff };
+instructions.x = 10;
+instructions.y = H - 40;
+instructions.data.width = W - 20;
+instructions.data.height = 40;
+instructions.data.text = 'Up: +100  Down: -100  Right: +500  Left: -500  1: +1000  4: -1000  5: clear all';
+addNodeChild(root, instructions);
+
 const bitmaps100: ReturnType<typeof createBitmap>[] = [];
 const bitmaps500: ReturnType<typeof createBitmap>[] = [];
 const bitmaps1000: ReturnType<typeof createBitmap>[] = [];

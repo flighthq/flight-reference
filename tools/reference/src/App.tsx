@@ -31,6 +31,7 @@ interface ReferenceCase {
   implementations: ImplementationSummary[];
 }
 
+const baseUrl = import.meta.env.BASE_URL;
 const allCases = cases as ReferenceCase[];
 const fallbackCase: ReferenceCase = {
   id: 'empty',
@@ -542,7 +543,7 @@ export default function App() {
               <div className="pane__iframe-wrap">
                 <PreviewFrame
                   key={selectedRenderer.url}
-                  src={selectedRenderer.url}
+                  src={`${baseUrl}${selectedRenderer.url}`}
                   title={`${selectedCase.title} preview`}
                   miniaturized={
                     layoutMode === 'split' && !!(hasFlightImplementation || selectedCase.flightPreviewRenderers?.length)
@@ -583,7 +584,7 @@ export default function App() {
                 <div className="pane__iframe-wrap">
                   <PreviewFrame
                     key={selectedFlightRenderer.url}
-                    src={selectedFlightRenderer.url}
+                    src={`${baseUrl}${selectedFlightRenderer.url}`}
                     title={`${selectedCase.title} flight preview`}
                     miniaturized
                   />

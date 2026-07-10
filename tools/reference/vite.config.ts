@@ -209,8 +209,8 @@ function flightPreviewRenderers(caseDir: string): string[] {
 }
 
 function flightPreviewUrl(framework: string, corpus: string, name: string, renderer: string): string {
-  if (renderer === 'default') return `/${framework}-tests/${corpus}/${name}/flight/`;
-  return `/${framework}-tests/${corpus}/${name}/flight/${routeSegment(renderer)}/`;
+  if (renderer === 'default') return `${framework}-tests/${corpus}/${name}/flight/`;
+  return `${framework}-tests/${corpus}/${name}/flight/${routeSegment(renderer)}/`;
 }
 
 function openflImplementationSummaries(
@@ -274,7 +274,7 @@ function discoverOpenflCases(): ReferenceCase[] {
       const previewRenderers = openflPreviewRenderers(caseDir).map((renderer) => ({
         id: renderer,
         label: renderer,
-        url: `/openfl-tests/${corpus}/${name}/${routeSegment(renderer)}/`,
+        url: `openfl-tests/${corpus}/${name}/${routeSegment(renderer)}/`,
       }));
       const enabledFlightPreviewRenderers = flightPreviewsEnabled
         ? flightPreviewRenderers(caseDir).map((renderer) => ({
@@ -342,7 +342,7 @@ function discoverStarlingCases(): ReferenceCase[] {
         {
           id: 'webgl',
           label: 'webgl',
-          url: `/starling-tests/${corpus}/${name}/webgl/`,
+          url: `starling-tests/${corpus}/${name}/webgl/`,
         },
       ];
 
@@ -668,8 +668,8 @@ function referencePlugin(): Plugin[] {
 </head>
 <body>
   <div id="app"></div>
-  <script type="module" src="/@vite/client"></script>
-  <script type="module" src="/@id/__x00__${virtualPrefix}:${corpus}:${name}:${renderer.id}"></script>
+  <script type="module" src="${viteBase}@vite/client"></script>
+  <script type="module" src="${viteBase}@id/__x00__${virtualPrefix}:${corpus}:${name}:${renderer.id}"></script>
 </body>
 </html>`;
 
@@ -701,8 +701,8 @@ function referencePlugin(): Plugin[] {
 </head>
 <body>
   <div id="app"></div>
-  <script type="module" src="/@vite/client"></script>
-  <script type="module" src="/@id/__x00__${virtualPrefix}:${corpus}:${name}:${renderer.id}"></script>
+  <script type="module" src="${viteBase}@vite/client"></script>
+  <script type="module" src="${viteBase}@id/__x00__${virtualPrefix}:${corpus}:${name}:${renderer.id}"></script>
 </body>
 </html>`;
 
@@ -720,6 +720,7 @@ function referencePlugin(): Plugin[] {
 // ---------------------------------------------------------------------------
 
 export default defineConfig({
+  base: process.env.VITE_BASE || '/',
   plugins: [react(), ...referencePlugin()],
   publicDir: resolve(repoRoot, 'reference/assets/public/openfl'),
   optimizeDeps: {

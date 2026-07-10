@@ -103,10 +103,8 @@ export function render(root: DisplayObject): void {
     beginGlRenderTarget(state, source, _identity);
     clearGlRenderTarget(state, source);
     renderGlDisplayObject(state, node);
-    // The BlurFilter intent maps to a true Gaussian, matching the CSS blur() the DOM and Canvas
-    // columns use. Run it while the render target is still active: the filter passes bind their
-    // own framebuffers and never restore the previous one, so endGlRenderTarget must run after
-    // them — it rebinds the screen framebuffer that the composite draws into.
+    clearGlRenderTarget(state, blurred);
+    clearGlRenderTarget(state, scratch);
     applyGaussianBlurFilterToGl(state, source, blurred, scratch, filter);
     endGlRenderTarget(state);
   }

@@ -253,6 +253,7 @@ function animateGl(state: GlRenderState): void {
       beginGlRenderTarget(state, source, _identity);
       clearGlRenderTarget(state, source);
       renderGlDisplayObject(state, node);
+      clearGlRenderTarget(state, dest);
       for (const s of scratch) clearGlRenderTarget(state, s);
       if (filter.kind === 'InnerShadowFilter') {
         applyInnerShadowFilterToGl(state, source, dest, scratch, filter);

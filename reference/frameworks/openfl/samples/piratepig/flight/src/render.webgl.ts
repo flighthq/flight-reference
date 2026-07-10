@@ -91,6 +91,7 @@ export function applyBackgroundBlur(node: DisplayObject): () => void {
     // next render() draws into; clear the output first since the blur composites over it.
     beginGlRenderTarget(state, out, createMatrix());
     clearGlRenderTarget(state, out);
+    clearGlRenderTarget(state, temp);
     applyGaussianBlurFilterToGl(state, src, out, temp, { blurX: 10, blurY: 10 });
     endGlRenderTarget(state);
     destroyGlRenderTarget(state, temp);

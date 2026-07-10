@@ -256,6 +256,7 @@ function renderGlGlowFrame(state: GlRenderState, entries: GlowEntry[], root: Dis
     beginGlRenderTarget(state, source, _identity);
     clearGlRenderTarget(state, source);
     renderGlDisplayObject(state, node);
+    clearGlRenderTarget(state, dest);
     for (const s of scratch) clearGlRenderTarget(state, s);
     if (filter.kind === 'InnerGlowFilter') {
       applyInnerGlowFilterToGl(state, source, dest, scratch, filter);

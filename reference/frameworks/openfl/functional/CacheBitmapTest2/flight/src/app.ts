@@ -106,12 +106,11 @@ addNodeChild(parent, child2);
 addNodeChild(root, parent);
 
 const status = createRichText();
-status.data.defaultTextFormat = { font: 'sans-serif', size: pos(32), color: 0xffffff };
+status.data.defaultTextFormat = { font: 'sans-serif', size: Math.trunc(pos(32)), color: 0xffffff };
 status.x = pos(10);
 status.y = pos(10);
 status.data.width = pos(1270);
 status.data.height = pos(40);
-status.data.text = 'render cache: OFF';
 addNodeChild(root, status);
 
 const cx = pos(320);
@@ -119,9 +118,22 @@ const cy = pos(120);
 const radius = pos(120);
 let angle = 0;
 let lastTime = performance.now();
-let cacheEnabled = false;
+let cache = 1;
 let lastToggle = performance.now();
 const TOGGLE_MS = 3000;
+
+function updateText(): void {
+  let t = 'cacheAsBitmap: Parent: ';
+  t += (cache & 1) === 1 ? 'ON' : 'OFF';
+  t += ' Child1: ';
+  t += (cache & 2) === 2 ? 'ON' : 'OFF';
+  t += ' Child2: ';
+  t += (cache & 4) === 4 ? 'ON' : 'OFF';
+  status.data.text = t;
+  invalidateNodeAppearance(status);
+}
+
+updateText();
 
 function enterFrame(): void {
   const now = performance.now();
@@ -134,9 +146,8 @@ function enterFrame(): void {
 
   if (now - lastToggle >= TOGGLE_MS) {
     lastToggle = now;
-    cacheEnabled = !cacheEnabled;
-    status.data.text = cacheEnabled ? 'render cache: ON' : 'render cache: OFF';
-    invalidateNodeAppearance(status);
+    cache = (cache + 1) % 8;
+    updateText();
   }
 
   render(root);

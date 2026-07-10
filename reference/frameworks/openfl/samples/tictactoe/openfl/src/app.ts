@@ -4,4 +4,5 @@ import Main from './Main';
 const stage = new Stage(170, 170, 0xffffff, Main);
 stage.element.style.width = '170px';
 stage.element.style.height = '170px';
+document.getElementById('app')?.remove();
 document.body.appendChild(stage.element);

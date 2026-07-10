@@ -38,6 +38,7 @@ AssetLibrary.loadFromManifest(manifest)
     const stage = new Stage(800, 600, 0x808080, Main);
     stage.element.style.width = '800px';
     stage.element.style.height = '600px';
+    document.getElementById('app')?.remove();
     document.body.appendChild(stage.element);
   })
   .onError((error) => {

@@ -110,4 +110,5 @@ class App extends Sprite {
 var stage = new Stage(650, 400, 0xffffff, App);
 stage.element.style.width = '650px';
 stage.element.style.height = '400px';
+document.getElementById('app')?.remove();
 document.body.appendChild(stage.element);

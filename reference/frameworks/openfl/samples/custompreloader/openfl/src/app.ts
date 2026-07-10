@@ -10,6 +10,7 @@ import Preloader from './Preloader';
 var stage = new Stage(550, 400, 0xffffff);
 stage.element.style.width = '550px';
 stage.element.style.height = '400px';
+document.getElementById('app')?.remove();
 document.body.appendChild(stage.element);
 
 var preloader = new Preloader();

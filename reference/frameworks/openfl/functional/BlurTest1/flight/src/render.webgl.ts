@@ -133,7 +133,7 @@ export function render(root: DisplayObject): void {
 // Box blur of standard deviation σ spreads a few σ past the bounds; pad generously so the
 // tail is not clipped at the target edge.
 function blurPadding(_filter: Readonly<BlurFilter>): number {
-  return Math.ceil(64 * 2.5);
+  return Math.ceil(32 * 3);
 }
 
 function setTranslation(out: Matrix, tx: number, ty: number): void {

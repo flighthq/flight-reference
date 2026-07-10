@@ -17,7 +17,7 @@ for (let i = 0; i < 3; i++) {
   bmp.data.smoothing = true;
   bmp.x = 50 + i * (image.width + 50);
   bmp.y = 50;
-  const filter = createBlurFilter({ blurX: 4, blurY: 4 }) as { kind: 'BlurFilter'; blurX: number; blurY: number };
+  const filter = createBlurFilter({ blurX: 2, blurY: 2 }) as { kind: 'BlurFilter'; blurX: number; blurY: number };
   blurred.push({ node: bmp, filter });
   addNodeChild(root, bmp);
 }
@@ -26,7 +26,7 @@ applyBlurFilters(blurred);
 
 function enterFrame() {
   const sinT = Math.sin((performance.now() / 1000) * 0.5);
-  const amount = Math.abs(sinT) * 64;
+  const amount = Math.abs(sinT) * 32;
   for (const entry of blurred) {
     entry.filter.blurX = amount;
     entry.filter.blurY = amount;

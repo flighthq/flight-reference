@@ -84,35 +84,67 @@ for (let i = 0; i < 6; i++) {
 type FilterFactory = (blur: number, angle: number) => DropShadowFilter | InnerShadowFilter;
 const factories: FilterFactory[] = [
   (blur, angle) =>
-    createDropShadowFilter({ distance: 4, angle, color: 0x000000, alpha: 1, blurX: blur, blurY: blur, quality: 3 }),
+    createDropShadowFilter({
+      distance: 4,
+      angle,
+      color: 0x000000,
+      alpha: 1,
+      blurX: blur / 2,
+      blurY: blur / 2,
+      quality: 3,
+    }),
   (blur, angle) =>
-    createInnerShadowFilter({ distance: 4, angle, color: 0x000000, alpha: 1, blurX: blur, blurY: blur, quality: 3 }),
+    createInnerShadowFilter({
+      distance: 4,
+      angle,
+      color: 0x000000,
+      alpha: 1,
+      blurX: blur / 2,
+      blurY: blur / 2,
+      quality: 3,
+    }),
   (blur, angle) =>
     createDropShadowFilter({
       distance: 4,
       angle,
       color: 0x000000,
       alpha: 1,
-      blurX: blur,
-      blurY: blur,
+      blurX: blur / 2,
+      blurY: blur / 2,
       quality: 3,
       knockout: true,
     }),
   (blur, angle) =>
-    createInnerShadowFilter({ distance: 4, angle, color: 0x000000, alpha: 1, blurX: blur, blurY: blur, quality: 3 }),
+    createInnerShadowFilter({
+      distance: 4,
+      angle,
+      color: 0x000000,
+      alpha: 1,
+      blurX: blur / 2,
+      blurY: blur / 2,
+      quality: 3,
+    }),
   (blur, angle) =>
     createDropShadowFilter({
       distance: 4,
       angle,
       color: 0x000000,
       alpha: 1,
-      blurX: blur,
-      blurY: blur,
+      blurX: blur / 2,
+      blurY: blur / 2,
       quality: 3,
       hideObject: true,
     }),
   (blur, angle) =>
-    createInnerShadowFilter({ distance: 4, angle, color: 0x000000, alpha: 1, blurX: blur, blurY: blur, quality: 3 }),
+    createInnerShadowFilter({
+      distance: 4,
+      angle,
+      color: 0x000000,
+      alpha: 1,
+      blurX: blur / 2,
+      blurY: blur / 2,
+      quality: 3,
+    }),
 ];
 
 function createFilters(blur: number, angle: number): (DropShadowFilter | InnerShadowFilter)[] {
@@ -121,7 +153,7 @@ function createFilters(blur: number, angle: number): (DropShadowFilter | InnerSh
 
 const _bounds = createRectangle();
 const _identity = createMatrix();
-const MAX_PADDING = Math.ceil(10 * 2.5 + 4 + 4);
+const MAX_PADDING = Math.ceil(5 * 3 + 4 + 4);
 
 if (target.kind === 'canvas') {
   animateCanvas(target.state);

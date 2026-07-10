@@ -38,9 +38,9 @@ function loadBitmapData(url: string): Promise<BitmapData> {
   owlSprite.graphics.drawRect(0, 0, owlData.width, owlData.height);
   owlSprite.graphics.endFill();
 
-  const owlRect = new Rectangle(0, 300, 200, 250);
-  // Upstream sets owlSprite.scrollRect = textRect here, but textRect is
-  // not yet defined (null), so the owl initially has no scrollRect.
+  // Upstream uses OwlAlpha.png (~400x600) with scrollRect (0, 300, 200, 250) to show just the eyes.
+  // openfl.png is 100x100, so we scale the clip region proportionally.
+  const owlRect = new Rectangle(0, 0, 60, 60);
 
   const normalTextFormat = new TextFormat('_sans', 28, 0, false);
   normalTextFormat.align = TextFormatAlign.LEFT;

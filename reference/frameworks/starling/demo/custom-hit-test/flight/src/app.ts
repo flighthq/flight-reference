@@ -36,6 +36,8 @@ infoText.x = 10;
 infoText.y = 10;
 infoText.data.width = 300;
 infoText.data.height = 100;
+infoText.data.multiline = true;
+infoText.data.wordWrap = true;
 infoText.data.text = 'Pushing the bird button below will only work when the touch is within a circle.';
 addNodeChild(root, infoText);
 
@@ -57,6 +59,8 @@ missText.x = 10;
 missText.y = buttonY + buttonHeight + 12;
 missText.data.width = 300;
 missText.data.height = 30;
+missText.data.multiline = true;
+missText.data.wordWrap = true;
 missText.data.text = 'Outside circle!';
 missText.alpha = 0;
 addNodeChild(root, missText);

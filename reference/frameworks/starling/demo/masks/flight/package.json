@@ -1,0 +1,8 @@
+{
+  "name": "starling-demo-masks-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

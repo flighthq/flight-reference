@@ -1,0 +1,8 @@
+{
+  "name": "starling-demo-benchmark-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

@@ -147,17 +147,18 @@ function createButton(
   appendShapeRectangle(shape, ButtonX, y, ButtonWidth, ButtonHeight);
   addNodeChild(root, shape);
 
+  // `align: 'center'` on a RichText's defaultTextFormat produces no visible glyphs on the webgl
+  // backend in this SDK snapshot, so the label is left-aligned with a small inset instead.
   const label = createRichText();
   label.data.defaultTextFormat = {
     font: 'DejaVu Sans, sans-serif',
     size: 14,
     color: 0xffffff,
     bold: true,
-    align: 'center',
   };
-  label.x = ButtonX;
+  label.x = ButtonX + 12;
   label.y = y;
-  label.data.width = ButtonWidth;
+  label.data.width = ButtonWidth - 12;
   label.data.height = ButtonHeight;
   label.data.text = text;
   addNodeChild(root, label);
@@ -195,17 +196,18 @@ function resetEgg(): void {
 }
 resetEgg();
 
+// `align: 'center'` on a RichText's defaultTextFormat produces no visible glyphs on the webgl
+// backend in this SDK snapshot, so the label is left-aligned with a small inset instead.
 const transitionLabel = createRichText();
 transitionLabel.data.defaultTextFormat = {
   font: 'DejaVu Sans, sans-serif',
   size: 20,
   color: 0x000000,
   bold: true,
-  align: 'center',
 };
-transitionLabel.x = 0;
+transitionLabel.x = 12;
 transitionLabel.y = TransitionLabelY;
-transitionLabel.data.width = GameWidth;
+transitionLabel.data.width = GameWidth - 12;
 transitionLabel.data.height = TransitionLabelHeight;
 transitionLabel.data.text = '';
 transitionLabel.alpha = 0;

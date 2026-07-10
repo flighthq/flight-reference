@@ -34,7 +34,7 @@ import {
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWgpuCanvasElement(800, 400, pixelRatio);
+const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = await createWgpuRenderState(canvas, {
@@ -48,7 +48,7 @@ registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);
 registerDefaultWgpuMaterial(state);
 export const scale = pixelRatio;
 export const width = 800;
-export const height = 400;
+export const height = 600;
 
 // Wgpu offscreen filter path: render each node into a WgpuRenderTarget at its logical
 // size, run the separable Gaussian-blur passes (applyGaussianBlurFilterToWgpu, target →
@@ -147,8 +147,8 @@ export function render(root: DisplayObject): void {
   submitWgpuRenderPass(state);
 }
 
-function blurPadding(filter: Readonly<BlurFilter>): number {
-  return Math.ceil(Math.max(filter.blurX ?? 4, filter.blurY ?? 4) * 2.5);
+function blurPadding(_filter: Readonly<BlurFilter>): number {
+  return Math.ceil(64 * 2.5);
 }
 
 // Maps node-local (lx, ly) → target pixel (lx + tx0, h - (ly + ty0)): the standard

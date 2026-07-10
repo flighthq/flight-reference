@@ -27,6 +27,10 @@ import Constants from './constants';
 
 import Game from './game';
 
+export function launchMenu(): void {
+  launchScene(null!);
+}
+
 export function launchScene(SceneClass: new () => any): void {
   class SceneLauncher extends Sprite {
     private _starling: Starling;
@@ -122,7 +126,11 @@ export function launchScene(SceneClass: new () => any): void {
 
     private startGame = (assets: AssetManager): void => {
       var game: Game = this._starling.root as Game;
-      game.startScene(assets, SceneClass);
+      if (SceneClass != null) {
+        game.startScene(assets, SceneClass);
+      } else {
+        game.start(assets);
+      }
       setTimeout(this.removeElements, 150);
     };
 

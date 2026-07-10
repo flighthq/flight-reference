@@ -21,10 +21,6 @@ function createTextField(fmt: TextFormat, x: number, y: number): TextField {
 }
 
 (async () => {
-  const ff = new FontFace('Unifont', 'url(assets/unifont-8.0.01.ttf)');
-  await ff.load();
-  (document.fonts as any).add(ff);
-
   const utf8str = await (await fetch('assets/data.utf8')).text();
 
   root.graphics.beginFill(0xffffff, 1.0);

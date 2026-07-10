@@ -20,7 +20,14 @@ class Game extends Sprite {
 
   public constructor() {
     super();
-    // nothing to do here -- Startup will call "start" immediately.
+  }
+
+  private static navigateHarness(caseId: string): boolean {
+    if (typeof window !== 'undefined' && window.parent !== window) {
+      window.parent.postMessage({ type: 'reference:navigate', caseId }, '*');
+      return true;
+    }
+    return false;
   }
 
   public start(assets: AssetManager): void {
@@ -33,7 +40,6 @@ class Game extends Sprite {
   }
 
   private showMainMenu(): void {
-    // now would be a good time for a clean-up
     System.gc();
 
     if (this._mainMenu == null) this._mainMenu = new MainMenu();
@@ -54,6 +60,7 @@ class Game extends Sprite {
   };
 
   private closeScene(): void {
+    if (Game.navigateHarness('starling/demo/main-menu')) return;
     this._currentScene.removeFromParent(true);
     this._currentScene = null;
     this.showMainMenu();
@@ -61,6 +68,9 @@ class Game extends Sprite {
 
   private showScene(name: string): void {
     if (this._currentScene != null) return;
+
+    var caseName = this._mainMenu.sceneCaseIds[name];
+    if (caseName && Game.navigateHarness('starling/demo/' + caseName)) return;
 
     var sceneClass = this._mainMenu.sceneClasses[name];
     this._currentScene = new sceneClass();
@@ -73,8 +83,16 @@ class Game extends Sprite {
     this.addChild(new Image(assets.getTexture('background')));
     this._currentScene = new SceneClass();
     this.addChild(this._currentScene);
+    this.addEventListener(Event.TRIGGERED, this.onSceneBackButton);
     this.stage.addEventListener(KeyboardEvent.KEY_DOWN, this.onKey);
   }
+
+  private onSceneBackButton = (event: Event): void => {
+    var button: Button = event.target as Button;
+    if (button.name == 'backButton') {
+      Game.navigateHarness('starling/demo/main-menu');
+    }
+  };
 
   public static get assets(): AssetManager {
     return Game.sAssets;

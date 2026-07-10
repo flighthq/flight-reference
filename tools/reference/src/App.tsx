@@ -372,6 +372,21 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [navigateCases]);
 
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'reference:navigate' && typeof event.data.caseId === 'string') {
+        const target = allCases.find((c) => c.id === event.data.caseId);
+        if (target) {
+          setSelectedFramework(target.framework);
+          setSelectedCorpus(target.corpus);
+          setSelectedCaseId(target.id);
+        }
+      }
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
+
   const fwLabel = frameworkLabel(selectedFramework);
 
   return (

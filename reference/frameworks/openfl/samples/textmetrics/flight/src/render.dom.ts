@@ -19,6 +19,7 @@ element.style.position = 'relative';
 element.style.width = '800px';
 element.style.height = '600px';
 document.body.style.margin = '0';
+document.getElementById('app')?.remove();
 document.body.appendChild(element);
 
 export const container = element;

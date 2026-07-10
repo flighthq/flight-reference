@@ -18,6 +18,7 @@ const element = document.createElement('div');
 element.style.position = 'relative';
 element.style.width = `${WIDTH}px`;
 element.style.height = `${HEIGHT}px`;
+document.getElementById('app')?.remove();
 document.body.appendChild(element);
 
 export const container = element;

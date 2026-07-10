@@ -19,6 +19,7 @@ canvas.style.height = '400px';
 canvas.style.display = 'block';
 document.body.style.margin = '0';
 document.body.style.background = '#fff';
+document.getElementById('app')?.remove();
 document.body.appendChild(canvas);
 
 export const container = canvas;

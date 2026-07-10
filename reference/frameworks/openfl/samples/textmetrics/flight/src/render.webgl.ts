@@ -23,6 +23,7 @@ canvas.style.width = '800px';
 canvas.style.height = '600px';
 canvas.style.display = 'block';
 document.body.style.margin = '0';
+document.getElementById('app')?.remove();
 document.body.appendChild(canvas);
 
 export const container = canvas;

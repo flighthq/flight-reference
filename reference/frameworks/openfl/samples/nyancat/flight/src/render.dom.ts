@@ -13,7 +13,8 @@ const container = document.createElement('div');
 container.style.position = 'relative';
 container.style.width = '400px';
 container.style.height = '400px';
-document.getElementById('app')!.appendChild(container);
+document.getElementById('app')?.remove();
+document.body.appendChild(container);
 
 export const state = createDomRenderState(container, {
   sceneGraphSyncPolicy: 'requiresInvalidation',

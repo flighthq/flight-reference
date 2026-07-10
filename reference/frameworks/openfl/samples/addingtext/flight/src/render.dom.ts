@@ -13,6 +13,7 @@ const container = document.createElement('div');
 container.style.position = 'relative';
 container.style.width = '550px';
 container.style.height = '400px';
+document.getElementById('app')?.remove();
 document.body.appendChild(container);
 
 export const state = createDomRenderState(container, {

@@ -12,7 +12,8 @@ import {
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(400, 400, pixelRatio);
-document.getElementById('app')!.appendChild(canvas);
+document.getElementById('app')?.remove();
+document.body.appendChild(canvas);
 
 export const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',

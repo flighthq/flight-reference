@@ -13,6 +13,7 @@ import {
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(550, 400, pixelRatio);
+document.getElementById('app')?.remove();
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(canvas, {

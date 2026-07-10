@@ -25,6 +25,7 @@ import {
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(window.innerWidth, window.innerHeight, pixelRatio);
+document.getElementById('app')?.remove();
 document.body.appendChild(canvas);
 
 export const container = canvas;

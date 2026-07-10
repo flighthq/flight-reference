@@ -14,6 +14,7 @@ import {
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
+document.getElementById('app')?.remove();
 document.body.appendChild(canvas);
 
 export const state = await createWgpuRenderState(canvas, {

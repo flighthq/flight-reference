@@ -22,6 +22,7 @@ canvas.style.width = `${WIDTH}px`;
 canvas.style.height = `${HEIGHT}px`;
 canvas.style.display = 'block';
 document.body.style.margin = '0';
+document.getElementById('app')?.remove();
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(canvas, {

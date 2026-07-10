@@ -22,6 +22,7 @@ import {
 } from '@flighthq/sdk';
 
 export const container = document.createElement('div');
+document.getElementById('app')?.remove();
 document.body.appendChild(container);
 
 export const state = createDomRenderState(container, {

@@ -12,6 +12,7 @@ import {
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(550, 400, pixelRatio);
+document.getElementById('app')?.remove();
 document.body.appendChild(canvas);
 
 export const state = createCanvasRenderState(canvas, {

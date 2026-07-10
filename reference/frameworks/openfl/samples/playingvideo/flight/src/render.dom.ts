@@ -15,6 +15,7 @@ element.style.width = '550px';
 element.style.height = '400px';
 document.body.style.margin = '0';
 document.body.style.background = '#fff';
+document.getElementById('app')?.remove();
 document.body.appendChild(element);
 
 export const container = element;

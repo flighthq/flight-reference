@@ -17,6 +17,7 @@ const WIDTH = 550;
 const HEIGHT = 400;
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(WIDTH, HEIGHT, pixelRatio);
+document.getElementById('app')?.remove();
 document.body.appendChild(canvas);
 
 export const container = canvas;

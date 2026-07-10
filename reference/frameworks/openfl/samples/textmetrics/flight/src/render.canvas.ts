@@ -21,6 +21,7 @@ canvas.height = 600 * pixelRatio;
 canvas.style.width = '800px';
 canvas.style.height = '600px';
 document.body.style.margin = '0';
+document.getElementById('app')?.remove();
 document.body.appendChild(canvas);
 
 export const container = canvas;

@@ -57,7 +57,7 @@ export function createMenuButton(config: MenuButtonConfig): MenuButton {
   label.data.textFormat = {
     font: 'DejaVu Sans, sans-serif',
     size: fontSize,
-    color: 0xffffff,
+    color: 0x000000,
     bold: true,
     align: 'center',
   };

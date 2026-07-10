@@ -7,9 +7,9 @@ import {
 } from '@flighthq/filters';
 import { computeBlurFilterCss, computeDropShadowFilterCss, computeOuterGlowFilterCss } from '@flighthq/filters-css';
 import {
+  applyBoxBlurFilterToGl,
   applyColorMatrixFilterToGl,
   applyDropShadowFilterToGl,
-  applyGaussianBlurFilterToGl,
   applyOuterGlowFilterToGl,
 } from '@flighthq/filters-gl';
 import {
@@ -88,8 +88,8 @@ const filterInfos: FilterEntry[] = [
   {
     name: 'Blur',
     type: 'blur',
-    cssFilter: 'blur(4px)',
-    blur: createBlurFilter({ blurX: 4, blurY: 4 }),
+    cssFilter: 'blur(1px)',
+    blur: createBlurFilter({ blurX: 1, blurY: 1 }),
   },
   {
     name: 'Drop Shadow',
@@ -267,7 +267,7 @@ function runGl(state: GlRenderState): void {
       renderGlDisplayObject(state, rocket);
 
       if (entry.type === 'blur' && entry.blur !== undefined) {
-        applyGaussianBlurFilterToGl(state, source, dest, scratch[0], entry.blur);
+        applyBoxBlurFilterToGl(state, source, dest, scratch[0], entry.blur);
       } else if (entry.type === 'dropShadow' && entry.dropShadow !== undefined) {
         applyDropShadowFilterToGl(state, source, dest, scratch, entry.dropShadow);
       } else if (entry.type === 'glow' && entry.glow !== undefined) {

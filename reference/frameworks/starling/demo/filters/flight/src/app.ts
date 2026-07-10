@@ -268,6 +268,7 @@ function runGl(state: GlRenderState): void {
       clearGlRenderTarget(state, source);
       renderGlDisplayObject(state, rocket);
       clearGlRenderTarget(state, dest);
+      for (const s of scratch) clearGlRenderTarget(state, s);
 
       if (entry.type === 'blur' && entry.blur !== undefined) {
         applyBoxBlurFilterToGl(state, source, dest, scratch[0], entry.blur);

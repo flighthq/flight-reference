@@ -51,7 +51,7 @@ const rowLabels: ReturnType<typeof createRichText>[] = [];
 for (let y = 0; y < ROWS; y++) {
   const tf = createRichText();
   tf.data.defaultTextFormat = fmt;
-  tf.x = 10;
+  tf.x = 100;
   tf.y = 75 + y * 30;
   tf.data.width = 120;
   tf.data.height = 30;
@@ -81,10 +81,10 @@ function updateDisplay(): void {
   for (let y = 0; y < ROWS; y++) {
     for (let x = 0; x < COLS; x++) {
       const cp = (y + lineOffset) * COLS + x;
-      cells[y][x].data.text = cp <= 0x10ffff ? String.fromCodePoint(cp) : '';
+      cells[y][x].data.text = cp <= 0x10ffff ? String.fromCharCode(cp) : '';
     }
     const base = (y + lineOffset) * COLS;
-    const hex = base.toString(16).toUpperCase().padStart(6, '0');
+    const hex = base.toString(16).padStart(6, '0');
     rowLabels[y].data.text = '0x' + hex;
   }
   render(root);

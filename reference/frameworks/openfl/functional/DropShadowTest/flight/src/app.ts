@@ -1,12 +1,3 @@
-// Requires: assets/wabbit_alpha.png
-// Port of DropShadowTest. Shows drop shadow and inner shadow variants.
-// Abstract filter descriptors are created here; each render layer applies them with
-// the strategy that suits its substrate:
-//   - DOM:    element CSS filter (computeDropShadowFilterCss → setDomCssFilter)
-//   - Canvas: baked once into an offscreen render cache via CSS drop-shadow
-//   - Gl:  offscreen render target + applyDropShadowFilterToGl /
-//             applyInnerShadowFilterToGl shader passes
-// CSS only covers non-knockout outer variants; inner shadow is Gl-only.
 import type { DropShadowFilter, InnerShadowFilter } from '@flighthq/filters';
 import { createDropShadowFilter, createInnerShadowFilter } from '@flighthq/filters';
 import { computeDropShadowFilterCss } from '@flighthq/filters-css';
@@ -37,7 +28,6 @@ import {
   createMatrix,
   createRectangle,
   createRenderCache,
-  createRichText,
   createShape,
   createGlRenderTarget,
   drawGlRenderTargetResult,
@@ -49,7 +39,6 @@ import {
   prepareDisplayObjectRender,
   renderGlBackground,
   renderGlDisplayObject,
-  RichTextKind,
   setDomCssFilter,
   ShapeKind,
   useRenderCache,
@@ -58,9 +47,9 @@ import { createFunctionalTarget } from '@ft/render';
 
 const target = await createFunctionalTarget({
   width: 800,
-  height: 500,
+  height: 400,
   background: 0xffffffff,
-  kinds: [BitmapKind, RichTextKind, ShapeKind],
+  kinds: [BitmapKind, ShapeKind],
   cache: true,
 });
 const { scale } = target;
@@ -78,96 +67,111 @@ appendShapeRectangle(bg, 0, 0, W, H);
 appendShapeEndFill(bg);
 addNodeChild(root, bg);
 
-const image = await loadImageResourceFromUrl('assets/wabbit_alpha.png');
+const image = await loadImageResourceFromUrl('assets/openfl.png');
+const imageWidth = image.width;
 
-const IMAGE_SCALE = 3;
-const iw = image.width * IMAGE_SCALE;
-const ih = image.height * IMAGE_SCALE;
-const colSpacing = iw + 40;
-const rowSpacing = ih + 50;
-const startX = 50;
-const startY = 40;
-
-const variants: { label: string; filter: DropShadowFilter | InnerShadowFilter }[] = [
-  { label: 'drop shadow', filter: createDropShadowFilter() },
-  { label: 'colored shadow', filter: createDropShadowFilter({ color: 0xff0000 }) },
-  { label: 'large shadow', filter: createDropShadowFilter({ distance: 16, blurX: 8, blurY: 8 }) },
-  { label: 'hide object', filter: createDropShadowFilter({ hideObject: true }) },
-  { label: 'inner shadow', filter: createInnerShadowFilter() },
-  { label: 'inner + colored', filter: createInnerShadowFilter({ color: 0x0044ff, blurX: 6, blurY: 6 }) },
-];
-
-type FilterEntry = { node: DisplayObject; filter: DropShadowFilter | InnerShadowFilter };
-const filtered: FilterEntry[] = [];
-
-for (let i = 0; i < variants.length; i++) {
-  const col = i % 3;
-  const row = Math.floor(i / 3);
-  const x = startX + col * colSpacing;
-  const y = startY + row * rowSpacing;
-  const { label, filter } = variants[i];
-
+const nodes: DisplayObject[] = [];
+for (let i = 0; i < 6; i++) {
   const bmp = createBitmap();
   bmp.data.image = image;
   bmp.data.smoothing = true;
-  bmp.scaleX = IMAGE_SCALE;
-  bmp.scaleY = IMAGE_SCALE;
-  bmp.x = x;
-  bmp.y = y;
+  bmp.x = 50 + i * (imageWidth + 50);
+  bmp.y = 50;
   addNodeChild(root, bmp);
-  filtered.push({ node: bmp, filter });
+  nodes.push(bmp);
+}
 
-  const lbl = createRichText();
-  lbl.data.defaultTextFormat = { font: 'sans-serif', size: 12, color: 0x444444 };
-  lbl.x = x;
-  lbl.y = y + ih + 4;
-  lbl.data.width = colSpacing - 8;
-  lbl.data.height = 20;
-  lbl.data.text = label;
-  addNodeChild(root, lbl);
+type FilterFactory = (blur: number, angle: number) => DropShadowFilter | InnerShadowFilter;
+const factories: FilterFactory[] = [
+  (blur, angle) =>
+    createDropShadowFilter({ distance: 4, angle, color: 0x000000, alpha: 1, blurX: blur, blurY: blur, quality: 3 }),
+  (blur, angle) =>
+    createInnerShadowFilter({ distance: 4, angle, color: 0x000000, alpha: 1, blurX: blur, blurY: blur, quality: 3 }),
+  (blur, angle) =>
+    createDropShadowFilter({
+      distance: 4,
+      angle,
+      color: 0x000000,
+      alpha: 1,
+      blurX: blur,
+      blurY: blur,
+      quality: 3,
+      knockout: true,
+    }),
+  (blur, angle) =>
+    createInnerShadowFilter({ distance: 4, angle, color: 0x000000, alpha: 1, blurX: blur, blurY: blur, quality: 3 }),
+  (blur, angle) =>
+    createDropShadowFilter({
+      distance: 4,
+      angle,
+      color: 0x000000,
+      alpha: 1,
+      blurX: blur,
+      blurY: blur,
+      quality: 3,
+      hideObject: true,
+    }),
+  (blur, angle) =>
+    createInnerShadowFilter({ distance: 4, angle, color: 0x000000, alpha: 1, blurX: blur, blurY: blur, quality: 3 }),
+];
+
+function createFilters(blur: number, angle: number): (DropShadowFilter | InnerShadowFilter)[] {
+  return factories.map((f) => f(blur, angle));
 }
 
 const _bounds = createRectangle();
 const _identity = createMatrix();
+const MAX_PADDING = Math.ceil(10 * 2.5 + 4 + 4);
 
 if (target.kind === 'canvas') {
-  applyCanvasDropShadow(target.state, filtered);
-  target.render(root);
+  animateCanvas(target.state);
 } else if (target.kind === 'webgl') {
-  renderGlDropShadow(target.state, filtered, root);
+  animateGl(target.state);
 } else if (target.kind === 'dom') {
-  applyDomDropShadow(target.state, filtered);
-  target.render(root);
+  animateDom(target.state);
 } else {
   target.render(root);
 }
 
-function applyCanvasDropShadow(state: CanvasRenderState, list: FilterEntry[]): void {
-  for (const { node, filter } of list) {
-    if (filter.type === 'innerShadow') continue;
-    const css = computeDropShadowFilterCss(filter);
-    if (css === null) continue;
-    const img = (node as Bitmap).data.image;
-    if (img === null || img.source === null) continue;
-    computeNodeBoundsRectangle(_bounds, node, node);
-    const padding = dropShadowPadding(filter);
-    const { width: w, height: h } = computeRenderTargetSize(_bounds, padding, 1, 1);
+function animateCanvas(state: CanvasRenderState): void {
+  const caches = nodes.map((node) => {
     const cache = createRenderCache();
     useRenderCache(state, node, cache);
-    const renderTarget = ensureCanvasRenderCacheTarget(state, cache, w, h);
-    const ctx = renderTarget.context;
-    ctx.clearRect(0, 0, renderTarget.canvas.width, renderTarget.canvas.height);
-    ctx.imageSmoothingEnabled = true;
-    ctx.filter = css;
-    ctx.drawImage(img.source, padding - _bounds.x, padding - _bounds.y);
-    ctx.filter = 'none';
-    computeRenderCacheTransform(cache.transform, _bounds, padding, padding);
+    return cache;
+  });
+
+  function frame(): void {
+    const sinT = Math.sin(performance.now() / 1000) * 0.5 + 0.5;
+    const filters = createFilters(2 + sinT * 8, sinT * 360);
+
+    for (let i = 0; i < nodes.length; i++) {
+      const filter = filters[i];
+      if (filter.kind === 'InnerShadowFilter') continue;
+      const css = computeDropShadowFilterCss(filter);
+      if (css === null) continue;
+      const img = (nodes[i] as Bitmap).data.image;
+      if (img === null || img.source === null) continue;
+      computeNodeBoundsRectangle(_bounds, nodes[i], nodes[i]);
+      const { width: w, height: h } = computeRenderTargetSize(_bounds, MAX_PADDING, 1, 1);
+      const renderTarget = ensureCanvasRenderCacheTarget(state, caches[i], w, h);
+      const ctx = renderTarget.context;
+      ctx.clearRect(0, 0, renderTarget.canvas.width, renderTarget.canvas.height);
+      ctx.imageSmoothingEnabled = true;
+      ctx.filter = css;
+      ctx.drawImage(img.source, MAX_PADDING - _bounds.x, MAX_PADDING - _bounds.y);
+      ctx.filter = 'none';
+      computeRenderCacheTransform(caches[i].transform, _bounds, MAX_PADDING, MAX_PADDING);
+    }
+
+    target.render(root);
+    requestAnimationFrame(frame);
   }
+
+  frame();
 }
 
 type ShadowEntry = {
   node: DisplayObject;
-  filter: DropShadowFilter | InnerShadowFilter;
   source: GlRenderTarget;
   dest: GlRenderTarget;
   scratch: [GlRenderTarget, GlRenderTarget, GlRenderTarget];
@@ -175,15 +179,13 @@ type ShadowEntry = {
   sceneTransform: Matrix;
 };
 
-function renderGlDropShadow(state: GlRenderState, list: FilterEntry[], root: DisplayObject): void {
+function animateGl(state: GlRenderState): void {
   const entries: ShadowEntry[] = [];
-  for (const { node, filter } of list) {
+  for (const node of nodes) {
     computeNodeBoundsRectangle(_bounds, node, node);
-    const padding = dropShadowPadding(filter);
-    const { width: w, height: h } = computeRenderTargetSize(_bounds, padding, 1, 1);
+    const { width: w, height: h } = computeRenderTargetSize(_bounds, MAX_PADDING, 1, 1);
     entries.push({
       node,
-      filter,
       source: createGlRenderTarget(state, { width: w, height: h }),
       dest: createGlRenderTarget(state, { width: w, height: h }),
       scratch: [
@@ -196,60 +198,75 @@ function renderGlDropShadow(state: GlRenderState, list: FilterEntry[], root: Dis
     });
   }
 
-  prepareDisplayObjectRender(state, root);
+  function frame(): void {
+    const sinT = Math.sin(performance.now() / 1000) * 0.5 + 0.5;
+    const filters = createFilters(2 + sinT * 8, sinT * 360);
 
-  for (const entry of entries) {
-    const renderProxy = getRenderProxy2D(state, entry.node);
-    if (renderProxy !== undefined) copyMatrix(entry.sceneTransform, renderProxy.transform2D);
-  }
+    prepareDisplayObjectRender(state, root);
 
-  for (const entry of entries) {
-    const { node, filter, source, dest, scratch } = entry;
-    const padding = dropShadowPadding(filter);
-    computeNodeBoundsRectangle(_bounds, node, node);
-    computeRenderCacheTransform(entry.cacheTransform, _bounds, padding, padding);
-    const renderProxy = getRenderProxy2D(state, node);
-    if (renderProxy === undefined) continue;
-    setTranslation(renderProxy.transform2D, padding - _bounds.x, padding - _bounds.y);
-    beginGlRenderTarget(state, source, _identity);
-    clearGlRenderTarget(state, source);
-    renderGlDisplayObject(state, node);
-    if (filter.type === 'innerShadow') {
-      applyInnerShadowFilterToGl(state, source, dest, scratch, filter);
-    } else {
-      applyDropShadowFilterToGl(state, source, dest, scratch, filter);
+    for (const entry of entries) {
+      const renderProxy = getRenderProxy2D(state, entry.node);
+      if (renderProxy !== undefined) copyMatrix(entry.sceneTransform, renderProxy.transform2D);
     }
-    endGlRenderTarget(state);
+
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      const filter = filters[i];
+      const { node, source, dest, scratch } = entry;
+      computeNodeBoundsRectangle(_bounds, node, node);
+      computeRenderCacheTransform(entry.cacheTransform, _bounds, MAX_PADDING, MAX_PADDING);
+      const renderProxy = getRenderProxy2D(state, node);
+      if (renderProxy === undefined) continue;
+      setTranslation(renderProxy.transform2D, MAX_PADDING - _bounds.x, MAX_PADDING - _bounds.y);
+      beginGlRenderTarget(state, source, _identity);
+      clearGlRenderTarget(state, source);
+      renderGlDisplayObject(state, node);
+      if (filter.kind === 'InnerShadowFilter') {
+        applyInnerShadowFilterToGl(state, source, dest, scratch, filter);
+      } else {
+        applyDropShadowFilterToGl(state, source, dest, scratch, filter);
+      }
+      endGlRenderTarget(state);
+    }
+
+    for (const entry of entries) {
+      const renderProxy = getRenderProxy2D(state, entry.node);
+      if (renderProxy !== undefined) copyMatrix(renderProxy.transform2D, entry.sceneTransform);
+    }
+
+    renderGlBackground(state);
+    renderGlDisplayObject(state, root);
+
+    for (const entry of entries) {
+      const renderProxy = getRenderProxy2D(state, entry.node);
+      if (renderProxy === undefined) continue;
+      drawGlRenderTargetResult(state, renderProxy, entry.dest, entry.cacheTransform);
+    }
+
+    requestAnimationFrame(frame);
   }
 
-  for (const entry of entries) {
-    const renderProxy = getRenderProxy2D(state, entry.node);
-    if (renderProxy !== undefined) copyMatrix(renderProxy.transform2D, entry.sceneTransform);
-  }
-
-  renderGlBackground(state);
-  renderGlDisplayObject(state, root);
-
-  for (const entry of entries) {
-    const renderProxy = getRenderProxy2D(state, entry.node);
-    if (renderProxy === undefined) continue;
-    drawGlRenderTargetResult(state, renderProxy, entry.dest, entry.cacheTransform);
-  }
+  frame();
 }
 
-function applyDomDropShadow(state: DomRenderState, list: FilterEntry[]): void {
+function animateDom(state: DomRenderState): void {
   enableDomCssFilterSupport(state);
-  for (const { node, filter } of list) {
-    if (filter.type === 'innerShadow') continue;
-    setDomCssFilter(state, node, computeDropShadowFilterCss(filter));
-  }
-}
 
-function dropShadowPadding(filter: Readonly<DropShadowFilter | InnerShadowFilter>): number {
-  const blur = Math.max(filter.blurX ?? 4, filter.blurY ?? 4);
-  if (filter.type === 'innerShadow') return Math.ceil(blur * 2.5 + 4);
-  const distance = (filter as DropShadowFilter).distance ?? 4;
-  return Math.ceil(blur * 2.5 + Math.abs(distance) + 4);
+  function frame(): void {
+    const sinT = Math.sin(performance.now() / 1000) * 0.5 + 0.5;
+    const filters = createFilters(2 + sinT * 8, sinT * 360);
+
+    for (let i = 0; i < nodes.length; i++) {
+      const filter = filters[i];
+      if (filter.kind === 'InnerShadowFilter') continue;
+      setDomCssFilter(state, nodes[i], computeDropShadowFilterCss(filter));
+    }
+
+    target.render(root);
+    requestAnimationFrame(frame);
+  }
+
+  frame();
 }
 
 function setTranslation(out: Matrix, tx: number, ty: number): void {

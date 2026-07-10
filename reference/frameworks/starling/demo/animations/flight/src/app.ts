@@ -1,21 +1,26 @@
+import type { DisplayObject } from '@flighthq/sdk';
 import {
   addNodeChild,
-  appendShapeBeginFill,
-  appendShapeEndFill,
-  appendShapeRectangle,
+  attachPointerInput,
   BitmapKind,
+  connectInputToInteraction,
   createBitmap,
   createDisplayContainer,
+  createInteractionManager,
+  createInputManager,
   createRectangle,
   createRichText,
-  createShape,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
+  prepareDisplayObjectRender,
+  registerDefaultHitTestPoints,
   RichTextKind,
-  ShapeKind,
+  TextLabelKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
+
+import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src/menuButton';
 
 const GameWidth = 320;
 const GameHeight = 480;
@@ -123,14 +128,16 @@ function easeOutElastic(t: number): number {
   return Math.pow(2, -10 * t) * Math.sin(((t - 0.075) * (2 * Math.PI)) / 0.3) + 1;
 }
 
-const { render } = await createFunctionalTarget({
+const target = await createFunctionalTarget({
   width: GameWidth,
   height: GameHeight,
   background: 0xffffffff,
-  kinds: [BitmapKind, RichTextKind, ShapeKind],
+  kinds: [BitmapKind, RichTextKind, TextLabelKind],
 });
 
 const root = createDisplayContainer();
+root.scaleX = target.scale;
+root.scaleY = target.scale;
 
 const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
 const bgBmp = createBitmap();
@@ -139,46 +146,52 @@ addNodeChild(root, bgBmp);
 
 const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
 
-function createButton(
-  y: number,
-  text: string,
-): { shape: ReturnType<typeof createShape>; label: ReturnType<typeof createRichText> } {
-  const shape = createShape();
-  appendShapeBeginFill(shape, 0x444488);
-  appendShapeRectangle(shape, ButtonX, y, ButtonWidth, ButtonHeight);
-  addNodeChild(root, shape);
+registerDefaultHitTestPoints();
+const input = createInputManager();
+attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);
+const interaction = createInteractionManager<DisplayObject>(root);
+connectInputToInteraction(input, interaction, target.scale);
 
-  // `align: 'center'` on a RichText's defaultTextFormat produces no visible glyphs on the webgl
-  // backend in this SDK snapshot, so the label is left-aligned with a small inset instead.
-  const label = createRichText();
-  label.data.defaultTextFormat = {
-    font: 'DejaVu Sans, sans-serif',
-    size: 14,
-    color: 0xffffff,
-    bold: true,
-  };
-  label.x = ButtonX + 12;
-  label.y = y;
-  label.data.width = ButtonWidth - 12;
-  label.data.height = ButtonHeight;
-  label.data.text = text;
-  addNodeChild(root, label);
+const startBtn = createMenuButton({
+  atlas,
+  regions: BUTTON_REGIONS_1X,
+  text: 'Start animation',
+  width: 128,
+  height: 32,
+  onTriggered: onStartButtonClick,
+});
+startBtn.root.x = ButtonX;
+startBtn.root.y = StartButtonY;
+startBtn.connect(interaction);
+addNodeChild(root, startBtn.root);
 
-  return { shape, label };
-}
+const delayBtn = createMenuButton({
+  atlas,
+  regions: BUTTON_REGIONS_1X,
+  text: 'Delayed call',
+  width: 128,
+  height: 32,
+  onTriggered: onDelayButtonClick,
+});
+delayBtn.root.x = ButtonX;
+delayBtn.root.y = DelayButtonY;
+delayBtn.connect(interaction);
+addNodeChild(root, delayBtn.root);
 
-function setButtonAlpha(
-  button: { shape: ReturnType<typeof createShape>; label: ReturnType<typeof createRichText> },
-  alpha: number,
-): void {
-  button.shape.alpha = alpha;
-  button.label.alpha = alpha;
-  invalidateNodeAppearance(button.shape);
-  invalidateNodeAppearance(button.label);
-}
-
-const startButton = createButton(StartButtonY, 'Start animation');
-const delayButton = createButton(DelayButtonY, 'Delayed call');
+const backBtn = createMenuButton({
+  atlas,
+  regions: BUTTON_REGIONS_1X,
+  text: 'Back',
+  width: 88,
+  height: 32,
+  onTriggered: () => {
+    window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
+  },
+});
+backBtn.root.x = GameWidth / 2 - 88 / 2;
+backBtn.root.y = GameHeight - 42 + 4;
+backBtn.connect(interaction);
+addNodeChild(root, backBtn.root);
 
 const egg = createBitmap();
 egg.data.image = atlas;
@@ -220,7 +233,7 @@ let delayBusy = false;
 function onStartButtonClick(): void {
   if (startBusy) return;
   startBusy = true;
-  setButtonAlpha(startButton, 0.5);
+  startBtn.enabled = false;
 
   resetEgg();
 
@@ -240,7 +253,7 @@ function onStartButtonClick(): void {
     },
     onComplete() {
       startBusy = false;
-      setButtonAlpha(startButton, 1);
+      startBtn.enabled = true;
     },
   });
 
@@ -262,7 +275,7 @@ function onStartButtonClick(): void {
 function onDelayButtonClick(): void {
   if (delayBusy) return;
   delayBusy = true;
-  setButtonAlpha(delayButton, 0.5);
+  delayBtn.enabled = false;
 
   setTimeout(() => {
     egg.alpha = 0.5;
@@ -276,56 +289,14 @@ function onDelayButtonClick(): void {
 
   setTimeout(() => {
     delayBusy = false;
-    setButtonAlpha(delayButton, 1);
+    delayBtn.enabled = true;
   }, 2000);
 }
 
-function hitTestButton(x: number, y: number, buttonY: number): boolean {
-  return x >= ButtonX && x <= ButtonX + ButtonWidth && y >= buttonY && y <= buttonY + ButtonHeight;
-}
-
-const backBtnW = 88;
-const backBtnH = 42;
-const backBtnX = GameWidth / 2 - backBtnW / 2;
-const backBtnY = GameHeight - backBtnH + 4;
-
-const backBtnBg = createShape();
-appendShapeBeginFill(backBtnBg, 0x444488);
-appendShapeRectangle(backBtnBg, backBtnX, backBtnY, backBtnW, backBtnH);
-appendShapeEndFill(backBtnBg);
-addNodeChild(root, backBtnBg);
-
-const backBtnLabel = createRichText();
-backBtnLabel.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0xffffff };
-backBtnLabel.x = backBtnX;
-backBtnLabel.y = backBtnY + 4;
-backBtnLabel.data.width = backBtnW;
-backBtnLabel.data.height = backBtnH;
-backBtnLabel.data.text = 'Back';
-addNodeChild(root, backBtnLabel);
-
-document.addEventListener('click', (event) => {
-  if (!(event.target instanceof HTMLCanvasElement)) return;
-
-  const x = event.offsetX;
-  const y = event.offsetY;
-
-  if (x >= backBtnX && x <= backBtnX + backBtnW && y >= backBtnY && y <= backBtnY + backBtnH) {
-    window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
-    return;
-  }
-
-  if (hitTestButton(x, y, StartButtonY)) {
-    onStartButtonClick();
-  } else if (hitTestButton(x, y, DelayButtonY)) {
-    onDelayButtonClick();
-  }
-});
-
 function enterFrame(now: number): void {
   updateTweens(now);
-  render(root);
+  prepareDisplayObjectRender(target.state, root);
+  target.render(root);
   requestAnimationFrame(enterFrame);
 }
-
 requestAnimationFrame(enterFrame);

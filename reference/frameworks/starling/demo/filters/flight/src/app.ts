@@ -32,23 +32,23 @@ import type {
 } from '@flighthq/sdk';
 import {
   addNodeChild,
-  appendShapeBeginFill,
-  appendShapeEndFill,
-  appendShapeRectangle,
+  attachPointerInput,
   beginGlRenderTarget,
   BitmapKind,
   clearGlRenderTarget,
   computeNodeBoundsRectangle,
   computeRenderCacheTransform,
   computeRenderTargetSize,
+  connectInputToInteraction,
   copyMatrix,
   createBitmap,
   createDisplayContainer,
+  createInputManager,
+  createInteractionManager,
   createMatrix,
   createRectangle,
   createRenderCache,
   createRichText,
-  createShape,
   createGlRenderTarget,
   drawGlRenderTargetResult,
   enableDomCssFilterSupport,
@@ -58,14 +58,17 @@ import {
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
+  registerDefaultHitTestPoints,
   renderGlBackground,
   renderGlDisplayObject,
   RichTextKind,
   setDomCssFilter,
-  ShapeKind,
+  TextLabelKind,
   useRenderCache,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
+
+import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src/menuButton';
 
 const GameWidth = 320;
 const GameHeight = 480;
@@ -153,11 +156,13 @@ const target = await createFunctionalTarget({
   width: GameWidth,
   height: GameHeight,
   background: 0xffffffff,
-  kinds: [BitmapKind, RichTextKind, ShapeKind],
+  kinds: [BitmapKind, RichTextKind, TextLabelKind],
   cache: true,
 });
 
 const root = createDisplayContainer();
+root.scaleX = target.scale;
+root.scaleY = target.scale;
 
 const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
 const bgBmp = createBitmap();
@@ -182,50 +187,49 @@ infoText.data.height = 32;
 infoText.data.text = filterInfos[0].name;
 addNodeChild(root, infoText);
 
-const btnBg = createShape();
-appendShapeBeginFill(btnBg, 0x444488);
-appendShapeRectangle(btnBg, CenterX - 64, 15, 128, 32);
-appendShapeEndFill(btnBg);
-addNodeChild(root, btnBg);
-
-const btnLabel = createRichText();
-btnLabel.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0xffffff };
-btnLabel.x = CenterX - 64;
-btnLabel.y = 19;
-btnLabel.data.width = 128;
-btnLabel.data.height = 32;
-btnLabel.data.text = 'Switch Filter';
-addNodeChild(root, btnLabel);
-
-const backBtnW = 88;
-const backBtnH = 42;
-const backBtnX = GameWidth / 2 - backBtnW / 2;
-const backBtnY = GameHeight - backBtnH + 4;
-
-const backBtnBg = createShape();
-appendShapeBeginFill(backBtnBg, 0x444488);
-appendShapeRectangle(backBtnBg, backBtnX, backBtnY, backBtnW, backBtnH);
-appendShapeEndFill(backBtnBg);
-addNodeChild(root, backBtnBg);
-
-const backBtnLabel = createRichText();
-backBtnLabel.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0xffffff };
-backBtnLabel.x = backBtnX;
-backBtnLabel.y = backBtnY + 4;
-backBtnLabel.data.width = backBtnW;
-backBtnLabel.data.height = backBtnH;
-backBtnLabel.data.text = 'Back';
-addNodeChild(root, backBtnLabel);
-
-const _bounds = createRectangle();
-const _identity = createMatrix();
-const MAX_PADDING = Math.ceil(8 * 3 + 4);
+registerDefaultHitTestPoints();
+const inputMgr = createInputManager();
+attachPointerInput(inputMgr, (target.state as { canvas: HTMLCanvasElement }).canvas);
+const interaction = createInteractionManager<DisplayObject>(root);
+connectInputToInteraction(inputMgr, interaction, target.scale);
 
 function switchFilter(): void {
   filterIndex = (filterIndex + 1) % filterInfos.length;
   infoText.data.text = filterInfos[filterIndex].name;
   invalidateNodeAppearance(infoText);
 }
+
+const switchBtn = createMenuButton({
+  atlas,
+  regions: BUTTON_REGIONS_1X,
+  text: 'Switch Filter',
+  width: 128,
+  height: 32,
+  onTriggered: switchFilter,
+});
+switchBtn.root.x = CenterX - 64;
+switchBtn.root.y = 15;
+switchBtn.connect(interaction);
+addNodeChild(root, switchBtn.root);
+
+const backBtn = createMenuButton({
+  atlas,
+  regions: BUTTON_REGIONS_1X,
+  text: 'Back',
+  width: 88,
+  height: 32,
+  onTriggered: () => {
+    window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
+  },
+});
+backBtn.root.x = GameWidth / 2 - 88 / 2;
+backBtn.root.y = GameHeight - 42 + 4;
+backBtn.connect(interaction);
+addNodeChild(root, backBtn.root);
+
+const _bounds = createRectangle();
+const _identity = createMatrix();
+const MAX_PADDING = Math.ceil(8 * 3 + 4);
 
 if (target.kind === 'webgl') {
   runGl(target.state);
@@ -360,18 +364,3 @@ function setTranslation(out: Matrix, tx: number, ty: number): void {
   out.tx = tx;
   out.ty = ty;
 }
-
-const canvas = document.querySelector('canvas')!;
-
-canvas.addEventListener('click', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const mx = ((e.clientX - rect.left) / rect.width) * GameWidth;
-  const my = ((e.clientY - rect.top) / rect.height) * GameHeight;
-
-  if (mx >= backBtnX && mx <= backBtnX + backBtnW && my >= backBtnY && my <= backBtnY + backBtnH) {
-    window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
-    return;
-  }
-
-  switchFilter();
-});

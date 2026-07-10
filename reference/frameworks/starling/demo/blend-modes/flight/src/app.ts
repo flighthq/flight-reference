@@ -1,35 +1,42 @@
+import type { DisplayObject } from '@flighthq/sdk';
 import {
   addNodeChild,
-  appendShapeBeginFill,
-  appendShapeEndFill,
-  appendShapeRectangle,
+  attachPointerInput,
   BitmapKind,
   BlendMode,
+  connectInputToInteraction,
   createBitmap,
   createDisplayContainer,
+  createInteractionManager,
+  createInputManager,
   createRectangle,
   createRichText,
-  createShape,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
+  prepareDisplayObjectRender,
+  registerDefaultHitTestPoints,
   RichTextKind,
-  ShapeKind,
+  TextLabelKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
+
+import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src/menuButton';
 
 const GameWidth = 320;
 const GameHeight = 480;
 const CenterX = 160;
 
-const { render } = await createFunctionalTarget({
+const target = await createFunctionalTarget({
   width: GameWidth,
   height: GameHeight,
   background: 0xffffffff,
   blend: true,
-  kinds: [BitmapKind, RichTextKind, ShapeKind],
+  kinds: [BitmapKind, RichTextKind, TextLabelKind],
 });
 
 const root = createDisplayContainer();
+root.scaleX = target.scale;
+root.scaleY = target.scale;
 
 const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
 const bgBmp = createBitmap();
@@ -64,60 +71,52 @@ infoText.data.height = 32;
 infoText.data.text = blendModes[0][1];
 addNodeChild(root, infoText);
 
-const btnBg = createShape();
-appendShapeBeginFill(btnBg, 0x444488);
-appendShapeRectangle(btnBg, CenterX - 64, 15, 128, 32);
-appendShapeEndFill(btnBg);
-addNodeChild(root, btnBg);
+registerDefaultHitTestPoints();
 
-const btnLabel = createRichText();
-btnLabel.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0xffffff };
-btnLabel.x = CenterX - 64;
-btnLabel.y = 19;
-btnLabel.data.width = 128;
-btnLabel.data.height = 32;
-btnLabel.data.text = 'Switch Mode';
-addNodeChild(root, btnLabel);
+const input = createInputManager();
+attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);
 
-const backBtnW = 88;
-const backBtnH = 42;
-const backBtnX = GameWidth / 2 - backBtnW / 2;
-const backBtnY = GameHeight - backBtnH + 4;
+const interaction = createInteractionManager<DisplayObject>(root);
+connectInputToInteraction(input, interaction, target.scale);
 
-const backBtnBg = createShape();
-appendShapeBeginFill(backBtnBg, 0x444488);
-appendShapeRectangle(backBtnBg, backBtnX, backBtnY, backBtnW, backBtnH);
-appendShapeEndFill(backBtnBg);
-addNodeChild(root, backBtnBg);
-
-const backBtnLabel = createRichText();
-backBtnLabel.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0xffffff };
-backBtnLabel.x = backBtnX;
-backBtnLabel.y = backBtnY + 4;
-backBtnLabel.data.width = backBtnW;
-backBtnLabel.data.height = backBtnH;
-backBtnLabel.data.text = 'Back';
-addNodeChild(root, backBtnLabel);
-
-render(root);
-
-const canvas = document.querySelector('canvas')!;
-
-canvas.addEventListener('click', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const mx = ((e.clientX - rect.left) / rect.width) * GameWidth;
-  const my = ((e.clientY - rect.top) / rect.height) * GameHeight;
-
-  if (mx >= backBtnX && mx <= backBtnX + backBtnW && my >= backBtnY && my <= backBtnY + backBtnH) {
-    window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
-    return;
-  }
-
-  modeIndex = (modeIndex + 1) % blendModes.length;
-  const [mode, name] = blendModes[modeIndex];
-  rocket.blendMode = mode;
-  infoText.data.text = name;
-  invalidateNodeAppearance(rocket);
-  invalidateNodeAppearance(infoText);
-  render(root);
+const switchBtn = createMenuButton({
+  atlas,
+  regions: BUTTON_REGIONS_1X,
+  text: 'Switch Mode',
+  width: 128,
+  height: 32,
+  onTriggered: () => {
+    modeIndex = (modeIndex + 1) % blendModes.length;
+    const [mode, name] = blendModes[modeIndex];
+    rocket.blendMode = mode;
+    infoText.data.text = name;
+    invalidateNodeAppearance(rocket);
+    invalidateNodeAppearance(infoText);
+  },
 });
+switchBtn.root.x = CenterX - 64;
+switchBtn.root.y = 15;
+switchBtn.connect(interaction);
+addNodeChild(root, switchBtn.root);
+
+const backBtn = createMenuButton({
+  atlas,
+  regions: BUTTON_REGIONS_1X,
+  text: 'Back',
+  width: 88,
+  height: 32,
+  onTriggered: () => {
+    window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
+  },
+});
+backBtn.root.x = GameWidth / 2 - 88 / 2;
+backBtn.root.y = GameHeight - 42 + 4;
+backBtn.connect(interaction);
+addNodeChild(root, backBtn.root);
+
+function frame(): void {
+  prepareDisplayObjectRender(target.state, root);
+  target.render(root);
+  requestAnimationFrame(frame);
+}
+frame();

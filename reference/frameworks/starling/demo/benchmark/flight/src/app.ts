@@ -1,25 +1,29 @@
-import type { Bitmap, RichText } from '@flighthq/sdk';
+import type { Bitmap, DisplayObject, RichText } from '@flighthq/sdk';
 import {
   addNodeChild,
-  appendShapeBeginFill,
-  appendShapeEndFill,
-  appendShapeRectangle,
+  attachPointerInput,
   BitmapKind,
+  connectInputToInteraction,
   createBitmap,
   createDisplayContainer,
+  createInteractionManager,
+  createInputManager,
   createRectangle,
   createRichText,
-  createShape,
   getNodeChildCount,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
+  prepareDisplayObjectRender,
+  registerDefaultHitTestPoints,
   removeNodeChild,
   removeNodeChildAt,
   RichTextKind,
-  ShapeKind,
+  TextLabelKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
+
+import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src/menuButton';
 
 const GameWidth = 320;
 const GameHeight = 480;
@@ -30,14 +34,16 @@ const TargetFps = 60;
 const FrameTimeWindow = 10;
 const MaxFailCount = 100;
 
-const { render } = await createFunctionalTarget({
+const target = await createFunctionalTarget({
   width: GameWidth,
   height: GameHeight,
   background: 0xffffffff,
-  kinds: [BitmapKind, RichTextKind, ShapeKind],
+  kinds: [BitmapKind, RichTextKind, TextLabelKind],
 });
 
 const root = createDisplayContainer();
+root.scaleX = target.scale;
+root.scaleY = target.scale;
 
 const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
 const bgBmp = createBitmap();
@@ -60,31 +66,32 @@ statusText.data.width = 280;
 statusText.data.height = 30;
 addNodeChild(root, statusText);
 
-const startButtonBg = createShape();
-appendShapeBeginFill(startButtonBg, 0x444488);
-appendShapeRectangle(startButtonBg, CenterX - 64, 15, 128, 32);
-addNodeChild(root, startButtonBg);
-
-const startButtonLabel = createRichText();
-startButtonLabel.data.defaultTextFormat = {
-  font: 'DejaVu Sans, sans-serif',
-  size: 14,
-  color: 0xffffff,
-};
-startButtonLabel.x = CenterX - 64;
-startButtonLabel.y = 19;
-startButtonLabel.data.width = 128;
-startButtonLabel.data.height = 32;
-startButtonLabel.data.text = 'Start benchmark';
-addNodeChild(root, startButtonLabel);
-
 let resultText: RichText | null = null;
 
+registerDefaultHitTestPoints();
+const input = createInputManager();
+attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);
+const interaction = createInteractionManager<DisplayObject>(root);
+connectInputToInteraction(input, interaction, target.scale);
+
+const startBtn = createMenuButton({
+  atlas,
+  regions: BUTTON_REGIONS_1X,
+  text: 'Start benchmark',
+  width: 128,
+  height: 32,
+  onTriggered: () => {
+    if (!started) startBenchmark();
+  },
+});
+startBtn.root.x = CenterX - 64;
+startBtn.root.y = 15;
+startBtn.connect(interaction);
+addNodeChild(root, startBtn.root);
+
 function setButtonVisible(value: boolean): void {
-  startButtonBg.visible = value;
-  startButtonLabel.visible = value;
-  invalidateNodeAppearance(startButtonBg);
-  invalidateNodeAppearance(startButtonLabel);
+  startBtn.root.visible = value;
+  invalidateNodeAppearance(startBtn.root);
 }
 
 const objectPool: Bitmap[] = [];
@@ -159,7 +166,7 @@ function startBenchmark(): void {
   statusText.data.text = '';
   invalidateNodeAppearance(statusText);
 
-  render(root);
+  target.render(root);
 }
 
 function benchmarkComplete(measuredFps: number): void {
@@ -191,38 +198,20 @@ function benchmarkComplete(measuredFps: number): void {
   invalidateNodeAppearance(statusText);
 }
 
-const backBtnW = 88;
-const backBtnH = 42;
-const backBtnX = GameWidth / 2 - backBtnW / 2;
-const backBtnY = GameHeight - backBtnH + 4;
-
-const backBtnBg = createShape();
-appendShapeBeginFill(backBtnBg, 0x444488);
-appendShapeRectangle(backBtnBg, backBtnX, backBtnY, backBtnW, backBtnH);
-appendShapeEndFill(backBtnBg);
-addNodeChild(root, backBtnBg);
-
-const backBtnLabel = createRichText();
-backBtnLabel.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0xffffff };
-backBtnLabel.x = backBtnX;
-backBtnLabel.y = backBtnY + 4;
-backBtnLabel.data.width = backBtnW;
-backBtnLabel.data.height = backBtnH;
-backBtnLabel.data.text = 'Back';
-addNodeChild(root, backBtnLabel);
-
-const canvas = document.querySelector('canvas')!;
-
-canvas.addEventListener('click', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const mx = ((e.clientX - rect.left) / rect.width) * GameWidth;
-  const my = ((e.clientY - rect.top) / rect.height) * GameHeight;
-  if (mx >= backBtnX && mx <= backBtnX + backBtnW && my >= backBtnY && my <= backBtnY + backBtnH) {
+const backBtn = createMenuButton({
+  atlas,
+  regions: BUTTON_REGIONS_1X,
+  text: 'Back',
+  width: 88,
+  height: 32,
+  onTriggered: () => {
     window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
-    return;
-  }
-  if (!started) startBenchmark();
+  },
 });
+backBtn.root.x = GameWidth / 2 - 88 / 2;
+backBtn.root.y = GameHeight - 42 + 4;
+backBtn.connect(interaction);
+addNodeChild(root, backBtn.root);
 
 let lastTime = performance.now();
 
@@ -266,12 +255,12 @@ function enterFrame(now: number): void {
       statusText.data.text = `${getNodeChildCount(container)} objects, ${Math.round(measuredFps)} fps`;
       invalidateNodeAppearance(statusText);
     }
-
-    render(root);
   }
 
+  prepareDisplayObjectRender(target.state, root);
+  target.render(root);
   requestAnimationFrame(enterFrame);
 }
 
-render(root);
+target.render(root);
 requestAnimationFrame(enterFrame);

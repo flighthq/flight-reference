@@ -1,18 +1,22 @@
+import type { DisplayObject } from '@flighthq/sdk';
 import {
   addNodeChild,
-  appendShapeBeginFill,
-  appendShapeRectangle,
+  attachPointerInput,
   BitmapKind,
+  connectInputToInteraction,
   createBitmap,
   createDisplayContainer,
+  createInteractionManager,
+  createInputManager,
   createRectangle,
-  createRichText,
-  createShape,
   loadImageResourceFromUrl,
-  RichTextKind,
-  ShapeKind,
+  prepareDisplayObjectRender,
+  registerDefaultHitTestPoints,
+  TextLabelKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
+
+import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src/menuButton';
 
 const GameWidth = 320;
 const GameHeight = 480;
@@ -22,12 +26,6 @@ const ButtonHeight = 32;
 const GridStartY = 155;
 const GridColumnX = [10, 170];
 const GridRowSpacing = 38;
-
-interface MenuButton {
-  readonly x: number;
-  readonly y: number;
-  readonly caseId: string;
-}
 
 const buttons: [string, string][] = [
   ['Textures', 'textures'],
@@ -44,14 +42,16 @@ const buttons: [string, string][] = [
   ['Render Texture', 'render-texture'],
 ];
 
-const { render } = await createFunctionalTarget({
+const target = await createFunctionalTarget({
   width: GameWidth,
   height: GameHeight,
   background: 0xffffffff,
-  kinds: [BitmapKind, RichTextKind, ShapeKind],
+  kinds: [BitmapKind, TextLabelKind],
 });
 
 const root = createDisplayContainer();
+root.scaleX = target.scale;
+root.scaleY = target.scale;
 
 const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
 const bgBmp = createBitmap();
@@ -63,49 +63,42 @@ const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.
 const logo = createBitmap();
 logo.data.image = atlas;
 logo.data.sourceRectangle = createRectangle(1, 1, 320, 143);
-logo.x = 0;
 logo.y = 5;
 addNodeChild(root, logo);
 
-const menuButtons: MenuButton[] = [];
+registerDefaultHitTestPoints();
 
-buttons.forEach(([label, caseId], index) => {
-  const column = index % 2;
-  const row = Math.floor(index / 2);
-  const x = GridColumnX[column];
-  const y = GridStartY + row * GridRowSpacing;
+const input = createInputManager();
+attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);
 
-  const btnBg = createShape();
-  appendShapeBeginFill(btnBg, 0x444488);
-  appendShapeRectangle(btnBg, x, y, ButtonWidth, ButtonHeight);
-  addNodeChild(root, btnBg);
+const interaction = createInteractionManager<DisplayObject>(root);
+connectInputToInteraction(input, interaction, target.scale);
 
-  const btnLabel = createRichText();
-  btnLabel.data.defaultTextFormat = {
-    font: 'DejaVu Sans, sans-serif',
-    size: 14,
-    color: 0xffffff,
-  };
-  btnLabel.x = x;
-  btnLabel.y = y;
-  btnLabel.data.width = ButtonWidth;
-  btnLabel.data.height = ButtonHeight;
-  btnLabel.data.text = label;
-  addNodeChild(root, btnLabel);
+for (let i = 0; i < buttons.length; i++) {
+  const [label, caseId] = buttons[i];
+  const column = i % 2;
+  const row = Math.floor(i / 2);
 
-  menuButtons.push({ x, y, caseId });
-});
+  const btn = createMenuButton({
+    atlas,
+    regions: BUTTON_REGIONS_1X,
+    text: label,
+    width: ButtonWidth,
+    height: ButtonHeight,
+    onTriggered: () => {
+      window.parent.postMessage({ type: 'reference:navigate', caseId: `starling/demo/${caseId}` }, '*');
+    },
+  });
 
-render(root);
+  btn.root.x = GridColumnX[column]!;
+  btn.root.y = GridStartY + row * GridRowSpacing;
+  btn.connect(interaction);
+  addNodeChild(root, btn.root);
+}
 
-document.addEventListener('click', (e) => {
-  const hit = menuButtons.find(
-    (button) =>
-      e.offsetX >= button.x &&
-      e.offsetX <= button.x + ButtonWidth &&
-      e.offsetY >= button.y &&
-      e.offsetY <= button.y + ButtonHeight,
-  );
-  if (!hit) return;
-  window.parent.postMessage({ type: 'reference:navigate', caseId: `starling/demo/${hit.caseId}` }, '*');
-});
+function frame(): void {
+  prepareDisplayObjectRender(target.state, root);
+  target.render(root);
+  requestAnimationFrame(frame);
+}
+frame();

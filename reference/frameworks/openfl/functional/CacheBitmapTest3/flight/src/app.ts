@@ -9,23 +9,27 @@ import {
   appendShapeRectangle,
   BitmapKind,
   createBitmap,
+  createColorTransform,
   createDisplayContainer,
   createRichText,
   createShape,
+  createUniformColorTransformMaterial,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
+  registerGlUniformColorTransformMaterial,
   RichTextKind,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
-const { height, render, width } = await createFunctionalTarget({
+const target = await createFunctionalTarget({
   width: 800,
   height: 600,
   background: 0xff000000,
   kinds: [BitmapKind, RichTextKind, ShapeKind],
 });
+const { height, render, width } = target;
 
 function pos(i: number): number {
   return (i * height) / 720;
@@ -67,6 +71,10 @@ bmp3.data.smoothing = true;
 bmp3.x = pos(250);
 bmp3.scaleX = pos(1.0);
 bmp3.scaleY = pos(1.0);
+if (target.kind === 'webgl') {
+  registerGlUniformColorTransformMaterial(target.state);
+  bmp3.material = createUniformColorTransformMaterial(createColorTransform({ greenMultiplier: 0 }));
+}
 addNodeChild(posters, bmp3);
 
 addNodeChild(root, posters);
@@ -80,7 +88,7 @@ appendShapeEndFill(menuBg);
 addNodeChild(menuGroup, menuBg);
 
 const title = createRichText();
-title.data.defaultTextFormat = { font: 'sans-serif', size: pos(44), color: 0xe8c343 };
+title.data.defaultTextFormat = { font: 'sans-serif', size: Math.trunc(pos(44)), color: 0xe8c343 };
 title.x = pos(109);
 title.y = pos(186);
 title.data.width = pos(500);
@@ -101,7 +109,7 @@ const menuItems = [
 ];
 for (let i = 0; i < menuItems.length; i++) {
   const item = createRichText();
-  item.data.defaultTextFormat = { font: 'sans-serif', size: pos(28), color: 0xffffff };
+  item.data.defaultTextFormat = { font: 'sans-serif', size: Math.trunc(pos(28)), color: 0xffffff };
   item.x = pos(109);
   item.y = pos(291 + i * 44);
   item.data.width = pos(1000);
@@ -112,42 +120,35 @@ for (let i = 0; i < menuItems.length; i++) {
 addNodeChild(root, menuGroup);
 
 const statusLabel = createRichText();
-statusLabel.data.defaultTextFormat = { font: 'sans-serif', size: pos(28), color: 0xe8c343 };
+statusLabel.data.defaultTextFormat = { font: 'sans-serif', size: Math.trunc(pos(28)), color: 0xe8c343 };
 statusLabel.x = 0;
 statusLabel.y = 0;
 statusLabel.data.width = pos(400);
 statusLabel.data.height = pos(40);
-statusLabel.data.text = 'render cache: OFF';
+let cacheAsBitmap = true;
+statusLabel.data.text = 'CacheAsBitmap: ' + (cacheAsBitmap ? 'TRUE' : 'FALSE');
 addNodeChild(root, statusLabel);
 
 let menuX = 0;
-let menuXInc = pos(5);
-const maxX = pos(640);
-let cacheEnabled = false;
-let lastToggle = performance.now();
-const TOGGLE_MS = 3000;
+let menuXInc = 5;
 
 function enterFrame(): void {
-  const now = performance.now();
-  menuX += menuXInc;
-  if (menuX <= 0 || menuX >= maxX) menuXInc = -menuXInc;
+  menuX += Math.trunc(pos(menuXInc));
+  if (menuX <= 0 || menuX >= 640) {
+    menuXInc = -menuXInc;
+    cacheAsBitmap = !cacheAsBitmap;
+    statusLabel.data.text = 'CacheAsBitmap: ' + (cacheAsBitmap ? 'TRUE' : 'FALSE');
+    invalidateNodeAppearance(statusLabel);
+  }
 
-  const alpha = (maxX - menuX) / maxX;
   posters.x = menuX;
   menuGroup.x = menuX;
-  menuGroup.alpha = alpha;
-  posters.alpha = alpha;
+  menuGroup.alpha = (pos(640) - menuX) / pos(640);
+  posters.alpha = menuGroup.alpha;
   invalidateNodeLocalTransform(posters);
   invalidateNodeLocalTransform(menuGroup);
   invalidateNodeAppearance(menuGroup);
   invalidateNodeAppearance(posters);
-
-  if (now - lastToggle >= TOGGLE_MS) {
-    lastToggle = now;
-    cacheEnabled = !cacheEnabled;
-    statusLabel.data.text = cacheEnabled ? 'render cache: ON' : 'render cache: OFF';
-    invalidateNodeAppearance(statusLabel);
-  }
 
   render(root);
   requestAnimationFrame(enterFrame);

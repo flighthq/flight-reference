@@ -38,7 +38,7 @@ infoText.data.width = 300;
 infoText.data.height = 100;
 infoText.data.multiline = true;
 infoText.data.wordWrap = true;
-infoText.data.text = 'Pushing the bird button below will only work when the touch is within a circle.';
+infoText.data.text = 'Pushing the bird button below\nwill only work when the touch\nis within a circle.';
 addNodeChild(root, infoText);
 
 const buttonWidth = 169;

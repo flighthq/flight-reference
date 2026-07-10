@@ -1,4 +1,4 @@
-import Shape from 'openfl/display/Shape';
+import Sprite from 'openfl/display/Sprite';
 import Event from 'openfl/events/Event';
 
 import { createReferenceStage } from '../../../../harness/stage';
@@ -7,7 +7,6 @@ const WIDTH = 800;
 const HEIGHT = 600;
 
 // Multiply-with-carry PRNG seeded at startup so results are deterministic per session.
-// Algorithm from https://en.wikipedia.org/wiki/Multiply-with-carry
 const RESIDUES = 4096;
 const PHI = 0x9e3779b9 | 0;
 let _c = 362436;
@@ -38,42 +37,36 @@ function pos(i: number): number {
 
 const { root } = createReferenceStage(WIDTH, HEIGHT, 0x000000);
 
-const bg = new Shape();
-bg.graphics.beginFill(0x000000);
-bg.graphics.drawRect(0, 0, WIDTH, HEIGHT);
-bg.graphics.endFill();
-root.addChild(bg);
+// Draw initial shapes on root.graphics (not as separate children).
+// Upstream draws black bg + colored squares all on content.graphics.
+root.graphics.beginFill(0x000000);
+root.graphics.drawRect(0, 0, WIDTH, HEIGHT);
 
-const redSquare = new Shape();
-redSquare.graphics.beginFill(0xff0000);
-redSquare.graphics.drawRect(pos(148), pos(67), pos(370), pos(273));
-redSquare.graphics.endFill();
-root.addChild(redSquare);
+root.graphics.beginFill(0xff0000);
+root.graphics.drawRect(pos(148), pos(67), pos(370), pos(273));
 
-const blueSquare = new Shape();
-blueSquare.graphics.beginFill(0x0000ff);
-blueSquare.graphics.drawRect(pos(281), pos(201), pos(501), pos(447));
-blueSquare.graphics.endFill();
-root.addChild(blueSquare);
+root.graphics.beginFill(0x0000ff);
+root.graphics.drawRect(pos(281), pos(201), pos(501), pos(447));
 
-const greenSquare = new Shape();
-greenSquare.graphics.beginFill(0x00ff00);
-greenSquare.graphics.drawRect(pos(420), pos(224), pos(182), pos(97));
-greenSquare.graphics.endFill();
-root.addChild(greenSquare);
+root.graphics.beginFill(0x00ff00);
+root.graphics.drawRect(pos(420), pos(224), pos(182), pos(97));
 
-const randomRect = new Shape();
-root.addChild(randomRect);
+const rectangle = new Sprite();
+root.addChild(rectangle);
 
 root.addEventListener(Event.ENTER_FRAME, () => {
+  // Clear and redraw only the black background on root.graphics.
+  root.graphics.clear();
+  root.graphics.beginFill(0x000000);
+  root.graphics.drawRect(0, 0, WIDTH, HEIGHT);
+
   const w = seededRandom(1279);
   const h = seededRandom(719);
   const x = seededRandom(1280 - w);
   const y = seededRandom(720 - h);
   const color = seededRandom(0x100_0000);
 
-  randomRect.graphics.clear();
-  randomRect.graphics.beginFill(color);
-  randomRect.graphics.drawRect(pos(x), pos(y), pos(w), pos(h));
-  randomRect.graphics.endFill();
+  rectangle.graphics.clear();
+  rectangle.graphics.beginFill(color);
+  rectangle.graphics.drawRect(pos(x), pos(y), pos(w), pos(h));
 });

@@ -1,26 +1,21 @@
 import { createReferenceStage } from '../../../../harness/stage';
-// Requires: assets/wabbit_alpha.png
-// Port of ClipTest1. Tests scrollRect clipping on bitmaps and rich text.
 import Bitmap from 'openfl/display/Bitmap';
 import type BitmapData from 'openfl/display/BitmapData';
 import Loader from 'openfl/display/Loader';
-import Shape from 'openfl/display/Shape';
 import Event from 'openfl/events/Event';
 import Rectangle from 'openfl/geom/Rectangle';
 import UrlRequest from 'openfl/net/URLRequest';
 import TextField from 'openfl/text/TextField';
 import TextFormat from 'openfl/text/TextFormat';
+import TextFormatAlign from 'openfl/text/TextFormatAlign';
 
 const WIDTH = 800;
 const HEIGHT = 600;
 
 const { root } = createReferenceStage(WIDTH, HEIGHT, 0xffffff);
 
-const bg = new Shape();
-bg.graphics.beginFill(0xffffff);
-bg.graphics.drawRect(0, 0, WIDTH, HEIGHT);
-bg.graphics.endFill();
-root.addChild(bg);
+root.graphics.beginFill(0xffffff);
+root.graphics.drawRect(0, 0, WIDTH, HEIGHT);
 
 function loadBitmapData(url: string): Promise<BitmapData> {
   return new Promise<BitmapData>((resolve) => {
@@ -33,48 +28,70 @@ function loadBitmapData(url: string): Promise<BitmapData> {
 }
 
 (async () => {
-  const bd = await loadBitmapData('assets/wabbit_alpha.png');
-  const iw = bd.width;
-  const ih = bd.height;
+  const image = await loadBitmapData('assets/openfl.png');
+  const iw = image.width;
+  const ih = image.height;
 
-  // Ghost row (dim background at original positions)
-  for (let i = 0; i < 4; i++) {
-    const ghost = new Bitmap(bd);
-    ghost.smoothing = true;
-    ghost.x = i * (WIDTH / 4) + WIDTH / 8 - iw / 2;
-    ghost.y = ih / 2;
-    ghost.alpha = 0.3;
-    root.addChild(ghost);
+  // Background ghost bitmaps - two rows of 4
+  for (let i = 0; i < 8; i++) {
+    const bitmap = new Bitmap(image);
+    bitmap.x = (i % 4) * (WIDTH / 4) + WIDTH / 8 - iw / 2;
+    bitmap.y = i < 4 ? ih / 2 : HEIGHT / 2 + ih / 2;
+    bitmap.alpha = 0.3;
+    root.addChild(bitmap);
   }
 
-  // Top row: 4 bitmaps with different scroll rect configurations
+  // Top row: 4 foreground bitmaps with scrollRect
+  const bitmaps: Bitmap[] = [];
   for (let i = 0; i < 4; i++) {
-    const bmp = new Bitmap(bd);
-    bmp.smoothing = true;
-    bmp.x = i * (WIDTH / 4) + WIDTH / 8 - iw / 2;
-    bmp.y = ih / 2;
-    root.addChild(bmp);
-
-    if (i === 1) bmp.scrollRect = new Rectangle(0, 0, iw / 2, ih / 2);
-    if (i === 2) bmp.scrollRect = new Rectangle(iw / 2, ih / 2, iw / 2, ih / 2);
-    if (i === 3) bmp.scrollRect = new Rectangle(WIDTH * 2, HEIGHT * 2, WIDTH * 10, HEIGHT * 10);
+    const bitmap = new Bitmap(image);
+    bitmap.x = (i % 4) * (WIDTH / 4) + WIDTH / 8 - iw / 2;
+    bitmap.y = ih / 2;
+    root.addChild(bitmap);
+    bitmaps.push(bitmap);
   }
 
-  // Bottom row: 4 text fields with different scroll rect configurations
-  const textColors = [0xaa1100, 0x11aa00, 0x1100aa, 0x660066];
-  const textValues = ['Text Field 1', 'Text Field 2', 'Text Field 3', 'Text Field 4'];
-  for (let i = 0; i < 4; i++) {
-    const tf = new TextField();
-    tf.defaultTextFormat = new TextFormat('_sans', 32, textColors[i]);
-    tf.x = i * (WIDTH / 4);
-    tf.y = HEIGHT / 2 + HEIGHT / 4;
-    tf.width = 400;
-    tf.height = 400;
-    tf.text = textValues[i];
-    root.addChild(tf);
+  // First: no scroll rect
+  // Second: scroll rect that just clips
+  bitmaps[1].scrollRect = new Rectangle(0, 0, iw / 2, ih / 2);
+  // Third: scroll rect that clips and translates
+  bitmaps[2].scrollRect = new Rectangle(iw / 2, ih / 2, iw / 2, ih / 2);
+  // Fourth: scroll rect that scrolls it entirely away
+  bitmaps[3].scrollRect = new Rectangle(WIDTH * 2, HEIGHT * 2, WIDTH * 10, HEIGHT * 10);
 
-    if (i === 1) tf.scrollRect = new Rectangle(0, 0, 200, 200);
-    if (i === 2) tf.scrollRect = new Rectangle(0, 40, 200, 20);
-    if (i === 3) tf.scrollRect = new Rectangle(WIDTH * 2, HEIGHT * 2, WIDTH * 10, HEIGHT * 10);
+  // Bottom row: 4 text fields with scrollRect
+  const textFormat = new TextFormat('_sans', 32, 0, false);
+  textFormat.align = TextFormatAlign.CENTER;
+  const textFields: TextField[] = [];
+
+  for (let i = 0; i < 4; i++) {
+    const textField = new TextField();
+    textField.selectable = false;
+    textField.defaultTextFormat = textFormat;
+    textField.x = (i % 4) * (WIDTH / 4);
+    textField.y = HEIGHT / 2 + HEIGHT / 4;
+    textField.width = 400;
+    textField.height = 400;
+    root.addChild(textField);
+    textFields.push(textField);
   }
+
+  // First: no scroll rect
+  textFields[0].textColor = 0xaa1100;
+  textFields[0].text = 'Text Field 1';
+
+  // Second: scroll rect that just clips
+  textFields[1].scrollRect = new Rectangle(0, 0, 200, 200);
+  textFields[1].textColor = 0x11aa00;
+  textFields[1].text = 'Text Field 2';
+
+  // Third: scroll rect that clips and translates
+  textFields[2].scrollRect = new Rectangle(0, 40, 200, 20);
+  textFields[2].textColor = 0x1100aa;
+  textFields[2].text = 'Text Field 3';
+
+  // Fourth: scroll rect that scrolls it entirely away
+  textFields[3].scrollRect = new Rectangle(WIDTH * 2, HEIGHT * 2, WIDTH * 10, HEIGHT * 10);
+  textFields[3].textColor = 0x660066;
+  textFields[3].text = 'Text Field 4';
 })();

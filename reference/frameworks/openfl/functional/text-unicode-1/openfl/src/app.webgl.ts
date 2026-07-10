@@ -1,112 +1,105 @@
 import { createReferenceStage } from '../../../../harness/stage';
-// Requires: assets/unifont-8.0.01.ttf
-// Unicode character grid browser with arrow key navigation.
+import AntiAliasType from 'openfl/text/AntiAliasType';
 import TextField from 'openfl/text/TextField';
 import TextFormat from 'openfl/text/TextFormat';
 
 const WIDTH = 1000;
 const HEIGHT = 700;
-const COLS = 16;
-const ROWS = 16;
-const CELL_SIZE = 36;
-const FONT = 'Unifont';
+const NUM_COLUMNS = 16;
+const NUM_ROWS = 20;
 
 const { root } = createReferenceStage(WIDTH, HEIGHT, 0xffffff);
 
-(async () => {
-  const ff = new FontFace(FONT, 'url(assets/unifont-8.0.01.ttf)');
-  await ff.load();
-  (document.fonts as any).add(ff);
+root.graphics.beginFill(0xffffff, 1.0);
+root.graphics.drawRect(0, 0, WIDTH, HEIGHT);
+root.graphics.endFill();
 
-  const charFmt = new TextFormat(FONT, 20, 0x000000);
-  const infoFmt = new TextFormat('_sans', 14, 0x444444);
-  const headerFmt = new TextFormat('_sans', 16, 0x000000, true);
+let lineOffset = 0;
+const rows: TextField[] = [];
+const lines: TextField[][] = [];
 
-  // Header
-  const header = new TextField();
-  header.defaultTextFormat = headerFmt;
-  header.x = 10;
-  header.y = 10;
-  header.width = WIDTH - 20;
-  header.height = 28;
-  header.text = 'Unicode Browser — Arrow keys to navigate pages';
-  root.addChild(header);
+const fmt = new TextFormat('Unifont', 18, 0, false);
 
-  // Info bar at bottom
-  const info = new TextField();
-  info.defaultTextFormat = infoFmt;
-  info.x = 10;
-  info.y = HEIGHT - 30;
-  info.width = WIDTH - 20;
-  info.height = 24;
-  root.addChild(info);
+function createTextField(format: TextFormat, x: number, y: number): TextField {
+  const tf = new TextField();
+  tf.antiAliasType = AntiAliasType.ADVANCED;
+  tf.defaultTextFormat = format;
+  tf.x = x;
+  tf.y = y;
+  return tf;
+}
 
-  let page = 0; // 0 = U+0000–U+00FF, etc.
+for (let x = 0; x < NUM_COLUMNS; x++) {
+  const tf = createTextField(fmt, 200 + 50 * x, 20);
+  tf.text = '' + x;
+  root.addChild(tf);
+}
 
-  function buildPage(): void {
-    // Remove old cells (keep header=0, info=last)
-    while (root.numChildren > 2) {
-      root.removeChildAt(1);
-    }
+for (let y = 0; y < NUM_ROWS; y++) {
+  const tf = createTextField(fmt, 100, 75 + 30 * y);
+  rows.push(tf);
+  root.addChild(tf);
+}
 
-    const baseCP = page * COLS * ROWS;
+for (let y = 0; y < NUM_ROWS; y++) {
+  const line: TextField[] = [];
+  lines.push(line);
+  for (let x = 0; x < NUM_COLUMNS; x++) {
+    const tf = createTextField(fmt, 200 + 50 * x, 75 + 30 * y);
+    root.addChild(tf);
+    line.push(tf);
+  }
+}
 
-    // Page label
-    const pageLabel = new TextField();
-    pageLabel.defaultTextFormat = infoFmt;
-    pageLabel.x = WIDTH - 160;
-    pageLabel.y = 10;
-    pageLabel.width = 150;
-    pageLabel.height = 24;
-    pageLabel.text = `Page ${page} (U+${baseCP.toString(16).toUpperCase().padStart(4, '0')}–U+${(baseCP + COLS * ROWS - 1).toString(16).toUpperCase().padStart(4, '0')})`;
-    root.addChild(pageLabel);
-
-    for (let row = 0; row < ROWS; row++) {
-      for (let col = 0; col < COLS; col++) {
-        const cp = baseCP + row * COLS + col;
-        if (cp > 0x10ffff) break;
-
-        const x = 20 + col * CELL_SIZE;
-        const y = 50 + row * CELL_SIZE;
-
-        // Skip surrogates
-        let ch: string;
-        if (cp >= 0xd800 && cp <= 0xdfff) {
-          ch = ' ';
-        } else {
-          try {
-            ch = String.fromCodePoint(cp);
-          } catch {
-            ch = ' ';
-          }
-        }
-
-        const cell = new TextField();
-        cell.defaultTextFormat = charFmt;
-        cell.x = x;
-        cell.y = y;
-        cell.width = CELL_SIZE;
-        cell.height = CELL_SIZE;
-        cell.text = ch;
-        root.addChild(cell);
+function updateAllText(): void {
+  for (let y = 0; y < NUM_ROWS; y++) {
+    for (let x = 0; x < NUM_COLUMNS; x++) {
+      const unicode = (y + lineOffset) * NUM_COLUMNS + x;
+      if (unicode <= 0x10ffff) {
+        lines[y][x].text = String.fromCharCode(unicode);
       }
     }
-
-    info.text = `Page ${page + 1} · U+${baseCP.toString(16).toUpperCase().padStart(4, '0')} – U+${(baseCP + COLS * ROWS - 1).toString(16).toUpperCase().padStart(4, '0')}`;
-  }
-
-  buildPage();
-
-  document.addEventListener('keydown', (e) => {
-    const maxPage = Math.ceil(0x110000 / (COLS * ROWS)) - 1;
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-      page = Math.min(page + 1, maxPage);
-      buildPage();
-      e.preventDefault();
-    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-      page = Math.max(page - 1, 0);
-      buildPage();
-      e.preventDefault();
+    const hex = ((y + lineOffset) * NUM_COLUMNS).toString(16);
+    let text = '0x';
+    for (let i = 0; i < 6 - hex.length; i++) {
+      text += '0';
     }
-  });
-})();
+    rows[y].text = text + hex;
+  }
+}
+
+updateAllText();
+
+document.addEventListener('keydown', (e) => {
+  const maxLineOffset = Math.trunc(0x10ffff / NUM_COLUMNS);
+
+  if (e.key === 'ArrowDown') {
+    if (lineOffset < maxLineOffset) {
+      lineOffset += 1;
+      updateAllText();
+    }
+  } else if (e.key === 'ArrowRight') {
+    let lo = lineOffset + 16;
+    if (lo > maxLineOffset) {
+      lo = maxLineOffset;
+    }
+    if (lo !== lineOffset) {
+      lineOffset = lo;
+      updateAllText();
+    }
+  } else if (e.key === 'ArrowUp') {
+    if (lineOffset > 0) {
+      lineOffset -= 1;
+      updateAllText();
+    }
+  } else if (e.key === 'ArrowLeft') {
+    let lo = lineOffset - 16;
+    if (lo < 0) {
+      lo = 0;
+    }
+    if (lo !== lineOffset) {
+      lineOffset = lo;
+      updateAllText();
+    }
+  }
+});

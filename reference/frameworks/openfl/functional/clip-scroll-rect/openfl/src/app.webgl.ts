@@ -1,25 +1,22 @@
 import { createReferenceStage } from '../../../../harness/stage';
-// Requires: assets/OwlAlpha.png
-// Port of ScrollRectTest1. Tests nested scrollRect clipping with animation.
 import Bitmap from 'openfl/display/Bitmap';
 import type BitmapData from 'openfl/display/BitmapData';
 import Loader from 'openfl/display/Loader';
-import Shape from 'openfl/display/Shape';
 import Sprite from 'openfl/display/Sprite';
 import Event from 'openfl/events/Event';
 import Rectangle from 'openfl/geom/Rectangle';
 import UrlRequest from 'openfl/net/URLRequest';
+import AntiAliasType from 'openfl/text/AntiAliasType';
+import GridFitType from 'openfl/text/GridFitType';
 import TextField from 'openfl/text/TextField';
+import TextFieldAutoSize from 'openfl/text/TextFieldAutoSize';
 import TextFormat from 'openfl/text/TextFormat';
+import TextFormatAlign from 'openfl/text/TextFormatAlign';
 
 const WIDTH = 1280;
 const HEIGHT = 720;
 const FRAMES_PER_ROTATION = 200;
 const RADIUS = 120;
-
-function pos(i: number): number {
-  return (i * HEIGHT) / 720;
-}
 
 const { root } = createReferenceStage(WIDTH, HEIGHT, 0x000000);
 
@@ -34,109 +31,125 @@ function loadBitmapData(url: string): Promise<BitmapData> {
 }
 
 (async () => {
-  const owlBd = await loadBitmapData('assets/OwlAlpha.png');
+  const owlData = await loadBitmapData('assets/openfl.png');
 
-  // Owl in its own scroll rect (shows just the eyes region)
   const owlSprite = new Sprite();
-  const owlBitmap = new Bitmap(owlBd);
-  owlBitmap.smoothing = true;
-  owlSprite.addChild(owlBitmap);
-  owlSprite.scrollRect = new Rectangle(0, 300, 200, 250);
-  owlSprite.x = 100;
-  owlSprite.y = 630;
+  owlSprite.graphics.beginBitmapFill(owlData);
+  owlSprite.graphics.drawRect(0, 0, owlData.width, owlData.height);
+  owlSprite.graphics.endFill();
 
-  // Text list
-  const textSprite = new Sprite();
-  const textFmt = new TextFormat('_sans', 28, 0xe8c343);
-  const movies = [
-    'The Shawshank Redemption (1994)',
-    'The Godfather (1972)',
-    'The Godfather: Part II (1974)',
-    'Pulp Fiction (1994)',
-    'The Good, the Bad and the Ugly (1966)',
-    'The Dark Knight (2008)',
-    '12 Angry Men (1957)',
-    "Schindler's List (1993)",
-    'The Lord of the Rings: The Return of the King (2003)',
-    'Fight Club (1999)',
-    'Star Wars: Episode V - The Empire Strikes Back (1980)',
-    'The Lord of the Rings: The Fellowship of the Ring (2001)',
-    "One Flew Over the Cuckoo's Nest (1975)",
-    'Goodfellas (1990)',
-    'Seven Samurai (1954)',
-    'Inception (2010)',
-    'Star Wars: Episode IV - A New Hope (1977)',
-    'Forrest Gump (1994)',
-    'The Matrix (1999)',
-    'The Lord of the Rings: The Two Towers (2002)',
-  ];
+  const owlRect = new Rectangle(0, 300, 200, 250);
+  // Upstream sets owlSprite.scrollRect = textRect here, but textRect is
+  // not yet defined (null), so the owl initially has no scrollRect.
+
+  const normalTextFormat = new TextFormat('_sans', 28, 0, false);
+  normalTextFormat.align = TextFormatAlign.LEFT;
+
   const textField = new TextField();
-  textField.defaultTextFormat = textFmt;
-  textField.width = pos(1280);
-  textField.height = pos(2000);
+  textField.antiAliasType = AntiAliasType.ADVANCED;
+  textField.gridFitType = GridFitType.SUBPIXEL;
+  textField.defaultTextFormat = normalTextFormat;
+  textField.width = 1280;
+  textField.height = 2000;
+  textField.textColor = 0xe8c343;
+  textField.selectable = false;
   textField.multiline = true;
   textField.wordWrap = false;
-  textField.text = movies.join('\n');
+  textField.text =
+    'The Shawshank Redemption (1994)\n' +
+    'The Godfather (1972)\n' +
+    'The Godfather: Part II (1974)\n' +
+    'Pulp Fiction (1994)\n' +
+    'The Good, the Bad and the Ugly (1966)\n' +
+    'The Dark Knight (2008)\n' +
+    '12 Angry Men (1957)\n' +
+    "Schindler's List (1993)\n" +
+    'The Lord of the Rings: The Return of the Kind (2003)\n' +
+    'Fight Club (1999)\n' +
+    'Star Wars: Episode V - The Empire Strikes Back (1980)\n' +
+    'The Lord of the Rings: The Fellowship of the Ring (2001)\n' +
+    "One Flew Over the Cuckoo's Next (1975)\n" +
+    'Goodfellas (1990)\n' +
+    'Seven Samurai (1954)\n' +
+    'Inception (2010)\n' +
+    'Star Wars: Episode IV - A New Hope (1977)\n' +
+    'Forrest Gump (1994)\n' +
+    'The Matrix (1999)\n' +
+    'The Lord of the Rings: The Two Towers (2002)';
+
+  const textSprite = new Sprite();
   textSprite.addChild(textField);
+  owlSprite.x = 100;
+  owlSprite.y = 630;
   textSprite.addChild(owlSprite);
-  textSprite.x = pos(300);
-  textSprite.y = pos(350);
 
-  const textRectW = 400;
-  const textRectH = 300;
-  textSprite.scrollRect = new Rectangle(0, 0, textRectW, textRectH);
+  textSprite.x = 300;
+  textSprite.y = 350;
+  const textRect = new Rectangle(0, 0, 400, 300);
+  textSprite.scrollRect = textRect;
 
-  // Border around text area
   const outerSprite = new Sprite();
-  const borderColor = 0xe8c343;
-  function addBorderRect(x: number, y: number, w: number, h: number): void {
-    const s = new Shape();
-    s.graphics.beginFill(borderColor);
-    s.graphics.drawRect(x, y, w, h);
-    s.graphics.endFill();
-    outerSprite.addChild(s);
-  }
-  addBorderRect(textSprite.x - 2, textSprite.y - 2, textRectW + 4, 2);
-  addBorderRect(textSprite.x - 2, textSprite.y - 2, 2, textRectH + 4);
-  addBorderRect(textSprite.x + textRectW, textSprite.y - 2, 2, textRectH + 4);
-  addBorderRect(textSprite.x - 2, textSprite.y + textRectH, textRectW + 4, 2);
-  outerSprite.addChild(textSprite);
+  outerSprite.graphics.beginFill(0xe8c343);
+  outerSprite.graphics.drawRect(textSprite.x - 2, textSprite.y - 2, textRect.width + 4, 2);
+  outerSprite.graphics.endFill();
+  outerSprite.graphics.beginFill(0xe8c343);
+  outerSprite.graphics.drawRect(textSprite.x - 2, textSprite.y - 2, 2, textRect.height + 4);
+  outerSprite.graphics.endFill();
+  outerSprite.graphics.beginFill(0xe8c343);
+  outerSprite.graphics.drawRect(textSprite.x + textRect.width, textSprite.y - 2, 2, textRect.height + 4);
+  outerSprite.graphics.endFill();
+  outerSprite.graphics.beginFill(0xe8c343);
+  outerSprite.graphics.drawRect(textSprite.x - 2, textSprite.y + textRect.height, textRect.width + 4, 2);
+  outerSprite.graphics.endFill();
 
-  outerSprite.scrollRect = new Rectangle(0, 0, WIDTH, HEIGHT);
+  outerSprite.addChild(textSprite);
   root.addChild(outerSprite);
 
-  // Status label
+  const outerRect = new Rectangle(0, 0, WIDTH, HEIGHT);
+  outerSprite.scrollRect = outerRect;
+
   const status = new TextField();
-  status.defaultTextFormat = textFmt;
+  status.antiAliasType = AntiAliasType.ADVANCED;
+  status.gridFitType = GridFitType.SUBPIXEL;
+  status.selectable = false;
+  status.defaultTextFormat = normalTextFormat;
   status.x = 0;
   status.y = 0;
-  status.width = pos(400);
-  status.height = pos(50);
-  status.text = 'scrollRect test';
+  status.autoSize = TextFieldAutoSize.LEFT;
+  status.textColor = 0xe8c343;
+
+  textSprite.cacheAsBitmap = true;
+  status.text = 'CacheAsBitmap: TRUE';
   root.addChild(status);
 
-  let inc = pos(5);
-  let owlInc = pos(5);
-  let owlRectX = 0;
-  let textRectY = 0;
+  let inc = 5;
   let outerAngle = 0;
   const outerInc = (2 * Math.PI) / FRAMES_PER_ROTATION;
-  const outerRectX = { x: 0, y: 0 };
 
   root.addEventListener(Event.ENTER_FRAME, () => {
-    textRectY += inc;
-    if (textRectY >= pos(550)) inc = -pos(5);
-    else if (textRectY <= 0) inc = pos(5);
-    textSprite.scrollRect = new Rectangle(0, textRectY, textRectW, textRectH);
+    textRect.y += inc;
 
-    owlRectX += owlInc;
-    if (owlRectX >= owlBd.width || owlRectX <= 0) owlInc = -owlInc;
-    owlSprite.scrollRect = new Rectangle(owlRectX, 300, 200, 250);
+    if (textRect.y >= 550) {
+      inc = -5;
+      textSprite.cacheAsBitmap = false;
+      status.text = 'CacheAsBitmap: FALSE';
+    } else if (textRect.y <= 0) {
+      inc = 5;
+      textSprite.cacheAsBitmap = true;
+      status.text = 'CacheAsBitmap: TRUE';
+    }
+
+    textSprite.scrollRect = textRect;
+
+    owlRect.x += inc;
+    owlSprite.scrollRect = owlRect;
 
     outerAngle += outerInc;
-    if (outerAngle > 2 * Math.PI) outerAngle -= 2 * Math.PI;
-    outerRectX.x = RADIUS + RADIUS * Math.cos(outerAngle);
-    outerRectX.y = RADIUS + RADIUS * Math.sin(outerAngle);
-    outerSprite.scrollRect = new Rectangle(outerRectX.x, outerRectX.y, WIDTH, HEIGHT);
+    if (outerAngle > 2 * Math.PI) {
+      outerAngle -= 2 * Math.PI;
+    }
+    outerRect.x = RADIUS + RADIUS * Math.cos(outerAngle);
+    outerRect.y = RADIUS + RADIUS * Math.sin(outerAngle) + (720 - HEIGHT) / 2;
+    outerSprite.scrollRect = outerRect;
   });
 })();

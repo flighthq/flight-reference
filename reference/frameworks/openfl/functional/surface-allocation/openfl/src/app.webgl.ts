@@ -1,15 +1,14 @@
 import { createReferenceStage } from '../../../../harness/stage';
-// Tests GPU surface allocation by creating/destroying bitmaps of varying sizes.
-// Arrow keys / number keys match the original OpenFL key bindings.
-// Up: add 100x100 bitmap   Down: remove oldest 100x100
-// Right: add 500x500        Left: remove oldest 500x500
-// 1: add 1000x1000          4: remove oldest 1000x1000
-// 5: remove all
 import Bitmap from 'openfl/display/Bitmap';
 import BitmapData from 'openfl/display/BitmapData';
-import Shape from 'openfl/display/Shape';
+import KeyboardEvent from 'openfl/events/KeyboardEvent';
+import Rectangle from 'openfl/geom/Rectangle';
+import AntiAliasType from 'openfl/text/AntiAliasType';
 import TextField from 'openfl/text/TextField';
+import TextFieldAutoSize from 'openfl/text/TextFieldAutoSize';
 import TextFormat from 'openfl/text/TextFormat';
+import TextFormatAlign from 'openfl/text/TextFormatAlign';
+import Keyboard from 'openfl/ui/Keyboard';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -38,101 +37,116 @@ function rand(max: number): number {
   return (((_Q[_rotation] % max) + max) % max) | 0;
 }
 
-function makeColoredBitmap(size: number): Bitmap {
-  const r = rand(256),
-    g = rand(256),
-    b = rand(256);
-  const bd = new BitmapData(size, size, false, (r << 16) | (g << 8) | b);
-  return new Bitmap(bd);
-}
-
-const { root } = createReferenceStage(WIDTH, HEIGHT, 0x000000);
-
-const stageBg = new Shape();
-stageBg.graphics.beginFill(0x000000);
-stageBg.graphics.drawRect(0, 0, WIDTH, HEIGHT);
-stageBg.graphics.endFill();
-root.addChild(stageBg);
-
-const label = new TextField();
-label.defaultTextFormat = new TextFormat('_sans', 44, 0xffffff, true);
-label.x = WIDTH / 2 - 100;
-label.y = 50;
-label.width = 400;
-label.height = 60;
-label.text = '0×100, 0×500, 0×1000';
-root.addChild(label);
-
-const instructions = new TextField();
-instructions.defaultTextFormat = new TextFormat('_sans', 16, 0xaaaaaa);
-instructions.x = 20;
-instructions.y = HEIGHT - 60;
-instructions.width = WIDTH - 40;
-instructions.height = 50;
-instructions.text = '↑ add 100 · ↓ remove 100 · → add 500 · ← remove 500 · 1 add 1000 · 4 remove 1000 · 5 clear all';
-root.addChild(instructions);
-
-const bitmaps100: Bitmap[] = [];
-const bitmaps500: Bitmap[] = [];
-const bitmaps1000: Bitmap[] = [];
+const children100: Bitmap[] = [];
+const children500: Bitmap[] = [];
+const children1000: Bitmap[] = [];
 
 let nextX = 50;
-let nextY = 100;
+let nextY = 50;
 
-function placeBitmap(bmp: Bitmap): void {
-  bmp.x = nextX;
-  bmp.y = nextY;
-  root.addChild(bmp);
-  nextX += 30;
-  nextY += 30;
-  if (nextX >= WIDTH - 100 || nextY >= HEIGHT - 100) {
+const { stage, root } = createReferenceStage(WIDTH, HEIGHT, 0x000000);
+
+root.graphics.beginFill(0);
+root.graphics.drawRect(0, 0, WIDTH, HEIGHT);
+root.graphics.endFill();
+
+const boldTextFormat = new TextFormat('_sans', 44, 0, true);
+boldTextFormat.align = TextFormatAlign.LEFT;
+
+const text = new TextField();
+text.antiAliasType = AntiAliasType.ADVANCED;
+text.selectable = false;
+text.defaultTextFormat = boldTextFormat;
+text.x = WIDTH / 2 - 100;
+text.y = 50;
+text.autoSize = TextFieldAutoSize.LEFT;
+text.textColor = 0xffffff;
+root.addChild(text);
+
+text.text = '0x100, 0x500, 0x1000';
+
+function addNewBitmap(child: Bitmap): void {
+  child.x = nextX;
+  child.y = nextY;
+
+  const red = rand(255);
+  const green = rand(255);
+  const blue = rand(255);
+  const alpha = rand(255);
+
+  child.bitmapData.fillRect(
+    new Rectangle(0, 0, child.width, child.height),
+    (alpha << 24) | (red << 16) | (green << 8) | blue,
+  );
+  root.addChild(child);
+
+  nextX += 10;
+  nextY += 10;
+
+  if (nextX >= WIDTH - 400 || nextY >= HEIGHT - 200) {
     nextX = 50;
-    nextY = 100;
+    nextY = 50;
+  } else {
+    nextX += 20;
+    nextY += 20;
   }
 }
 
-function updateLabel(): void {
-  label.text = `${bitmaps100.length}×100, ${bitmaps500.length}×500, ${bitmaps1000.length}×1000`;
-}
-
-document.addEventListener('keydown', (e) => {
-  switch (e.key) {
-    case 'ArrowUp': {
-      const b = makeColoredBitmap(100);
-      bitmaps100.push(b);
-      placeBitmap(b);
+stage.addEventListener(KeyboardEvent.KEY_DOWN, (event: KeyboardEvent) => {
+  switch (event.keyCode) {
+    case Keyboard.UP: {
+      const child = new Bitmap(new BitmapData(100, 100));
+      children100.push(child);
+      addNewBitmap(child);
       break;
     }
-    case 'ArrowRight': {
-      const b = makeColoredBitmap(500);
-      bitmaps500.push(b);
-      placeBitmap(b);
+    case Keyboard.RIGHT: {
+      const child = new Bitmap(new BitmapData(500, 500));
+      children500.push(child);
+      addNewBitmap(child);
       break;
     }
-    case '1': {
-      const b = makeColoredBitmap(1000);
-      bitmaps1000.push(b);
-      placeBitmap(b);
+    case Keyboard.NUMBER_1: {
+      const child = new Bitmap(new BitmapData(1000, 1000));
+      children1000.push(child);
+      addNewBitmap(child);
       break;
     }
-    case 'ArrowDown':
-      if (bitmaps100.length > 0) root.removeChild(bitmaps100.shift()!);
+    case Keyboard.DOWN:
+      if (children100.length > 0) {
+        root.removeChild(children100[0]);
+      }
+      children100.shift();
       break;
-    case 'ArrowLeft':
-      if (bitmaps500.length > 0) root.removeChild(bitmaps500.shift()!);
+    case Keyboard.LEFT:
+      if (children500.length > 0) {
+        root.removeChild(children500[0]);
+      }
+      children500.shift();
       break;
-    case '4':
-      if (bitmaps1000.length > 0) root.removeChild(bitmaps1000.shift()!);
+    case Keyboard.NUMBER_4:
+      if (children1000.length > 0) {
+        root.removeChild(children1000[0]);
+      }
+      children1000.shift();
       break;
-    case '5':
-      for (const b of [...bitmaps100, ...bitmaps500, ...bitmaps1000]) root.removeChild(b);
-      bitmaps100.length = 0;
-      bitmaps500.length = 0;
-      bitmaps1000.length = 0;
+    case Keyboard.NUMBER_5:
+      for (const child of children100) {
+        root.removeChild(child);
+      }
+      for (const child of children500) {
+        root.removeChild(child);
+      }
+      for (const child of children1000) {
+        root.removeChild(child);
+      }
+      children100.length = 0;
+      children500.length = 0;
+      children1000.length = 0;
       break;
     default:
       return;
   }
-  e.preventDefault();
-  updateLabel();
+
+  text.text = children100.length + 'x100, ' + children500.length + 'x500, ' + children1000.length + 'x1000';
 });

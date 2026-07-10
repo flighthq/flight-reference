@@ -1,43 +1,38 @@
 import { createReferenceStage } from '../../../../harness/stage';
-// Requires: assets/BlendSquare.png, assets/BlendCircle.png
-// Port of BlendModeTest1.
 import Bitmap from 'openfl/display/Bitmap';
 import type BitmapData from 'openfl/display/BitmapData';
 import BlendMode from 'openfl/display/BlendMode';
 import Loader from 'openfl/display/Loader';
-import Shape from 'openfl/display/Shape';
 import Event from 'openfl/events/Event';
 import UrlRequest from 'openfl/net/URLRequest';
 import TextField from 'openfl/text/TextField';
 import TextFormat from 'openfl/text/TextFormat';
+import TextFormatAlign from 'openfl/text/TextFormatAlign';
 
-const WIDTH = 1100;
-const HEIGHT = 700;
+const WIDTH = 800;
+const HEIGHT = 600;
 
-const BLEND_MODES: [BlendMode, string][] = [
-  [BlendMode.NORMAL, 'normal'],
-  [BlendMode.LAYER, 'layer'],
-  [BlendMode.MULTIPLY, 'multiply'],
-  [BlendMode.SCREEN, 'screen'],
-  [BlendMode.LIGHTEN, 'lighten'],
-  [BlendMode.DARKEN, 'darken'],
-  [BlendMode.DIFFERENCE, 'difference'],
-  [BlendMode.ADD, 'add'],
-  [BlendMode.SUBTRACT, 'subtract'],
-  [BlendMode.INVERT, 'invert'],
-  [BlendMode.ALPHA, 'alpha'],
-  [BlendMode.ERASE, 'erase'],
-  [BlendMode.OVERLAY, 'overlay'],
-  [BlendMode.HARDLIGHT, 'hardlight'],
+const blendModes = [
+  BlendMode.NORMAL,
+  BlendMode.LAYER,
+  BlendMode.MULTIPLY,
+  BlendMode.SCREEN,
+  BlendMode.LIGHTEN,
+  BlendMode.DARKEN,
+  BlendMode.DIFFERENCE,
+  BlendMode.ADD,
+  BlendMode.SUBTRACT,
+  BlendMode.INVERT,
+  BlendMode.ALPHA,
+  BlendMode.ERASE,
+  BlendMode.OVERLAY,
+  BlendMode.HARDLIGHT,
 ];
 
 const { root } = createReferenceStage(WIDTH, HEIGHT, 0xffffff);
 
-const bg = new Shape();
-bg.graphics.beginFill(0xffffff);
-bg.graphics.drawRect(0, 0, WIDTH, HEIGHT);
-bg.graphics.endFill();
-root.addChild(bg);
+root.graphics.beginFill(0xffffff);
+root.graphics.drawRect(0, 0, WIDTH, HEIGHT);
 
 function loadBitmapData(url: string): Promise<BitmapData> {
   return new Promise<BitmapData>((resolve) => {
@@ -49,6 +44,33 @@ function loadBitmapData(url: string): Promise<BitmapData> {
   });
 }
 
+function createOverlay(squareBd: BitmapData, circleBd: BitmapData, x: number, y: number, blendMode: BlendMode): void {
+  const square = new Bitmap(squareBd);
+  square.x = x - square.width / 2;
+  square.y = y - square.height / 2;
+  root.addChild(square);
+
+  const circle = new Bitmap(circleBd);
+  circle.x = x - 10;
+  circle.y = y - 10;
+  circle.blendMode = blendMode;
+  root.addChild(circle);
+
+  const textFormat = new TextFormat('_sans', 14, 0, true);
+  textFormat.align = TextFormatAlign.CENTER;
+
+  const text = new TextField();
+  text.selectable = false;
+  text.defaultTextFormat = textFormat;
+  text.x = x - square.height / 2 - 30;
+  text.y = y + square.height / 2 + 40;
+  text.width = 200;
+  text.height = 200;
+  text.textColor = 0x222222;
+  text.text = String(blendMode);
+  root.addChild(text);
+}
+
 (async () => {
   const [squareBd, circleBd] = await Promise.all([
     loadBitmapData('assets/BlendSquare.png'),
@@ -56,36 +78,20 @@ function loadBitmapData(url: string): Promise<BitmapData> {
   ]);
 
   let rows = 1;
-  while (rows * Math.floor((rows * 16) / 9) < BLEND_MODES.length) rows++;
-  const cols = Math.floor((rows * 16) / 9);
+  while (rows * ((rows * 16) / 9) < blendModes.length) {
+    rows++;
+  }
+  const columns = Math.trunc((rows * 16) / 9);
 
-  for (let i = 0; i < BLEND_MODES.length; i++) {
-    const [mode, name] = BLEND_MODES[i];
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const cx = (WIDTH * col) / cols + WIDTH / (2 * cols);
-    const cy = (HEIGHT * row) / rows + HEIGHT / (2 * rows) - 20;
-
-    const square = new Bitmap(squareBd);
-    square.smoothing = true;
-    square.x = cx - squareBd.width / 2;
-    square.y = cy - squareBd.height / 2;
-    root.addChild(square);
-
-    const circle = new Bitmap(circleBd);
-    circle.smoothing = true;
-    circle.x = cx - 10;
-    circle.y = cy - 10;
-    circle.blendMode = mode;
-    root.addChild(circle);
-
-    const lbl = new TextField();
-    lbl.defaultTextFormat = new TextFormat('_sans', 14, 0x222222, true);
-    lbl.x = cx - squareBd.width / 2 - 30;
-    lbl.y = cy + squareBd.height / 2 + 40;
-    lbl.width = 200;
-    lbl.height = 30;
-    lbl.text = name;
-    root.addChild(lbl);
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < columns; x++) {
+      const index = y * columns + x;
+      if (index >= blendModes.length) {
+        continue;
+      }
+      const xpos = (WIDTH * x) / columns + WIDTH / (2 * columns);
+      const ypos = (HEIGHT * y) / rows + HEIGHT / (2 * rows) - 20;
+      createOverlay(squareBd, circleBd, xpos, ypos, blendModes[index]);
+    }
   }
 })();

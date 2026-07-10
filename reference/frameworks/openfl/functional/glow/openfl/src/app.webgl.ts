@@ -1,27 +1,15 @@
 import { createReferenceStage } from '../../../../harness/stage';
-// Requires: assets/wabbit_alpha.png
-// Port of GlowTest. Shows 4 bitmaps with glow filter variants.
-// Variants: normal, inner, knockout, inner+knockout
 import Bitmap from 'openfl/display/Bitmap';
 import type BitmapData from 'openfl/display/BitmapData';
 import Loader from 'openfl/display/Loader';
-import Shape from 'openfl/display/Shape';
 import Event from 'openfl/events/Event';
 import GlowFilter from 'openfl/filters/GlowFilter';
 import UrlRequest from 'openfl/net/URLRequest';
-import TextField from 'openfl/text/TextField';
-import TextFormat from 'openfl/text/TextFormat';
 
 const WIDTH = 800;
-const HEIGHT = 400;
+const HEIGHT = 600;
 
 const { root } = createReferenceStage(WIDTH, HEIGHT, 0xffffff);
-
-const bg = new Shape();
-bg.graphics.beginFill(0xffffff);
-bg.graphics.drawRect(0, 0, WIDTH, HEIGHT);
-bg.graphics.endFill();
-root.addChild(bg);
 
 function loadBitmapData(url: string): Promise<BitmapData> {
   return new Promise<BitmapData>((resolve) => {
@@ -33,39 +21,34 @@ function loadBitmapData(url: string): Promise<BitmapData> {
   });
 }
 
-const glowConfigs: { inner: boolean; knockout: boolean }[] = [
-  { inner: false, knockout: false },
-  { inner: true, knockout: false },
-  { inner: false, knockout: true },
-  { inner: true, knockout: true },
-];
-const labels = ['normal', 'inner', 'knockout', 'inner + knockout'];
-
 (async () => {
-  const bd = await loadBitmapData('assets/wabbit_alpha.png');
+  const bd = await loadBitmapData('assets/openfl.png');
 
-  const SCALE = 4;
-  const bmpW = bd.width * SCALE;
-  const bmpH = bd.height * SCALE;
+  const bitmaps: Bitmap[] = [];
+  const filters: GlowFilter[] = [];
 
   for (let i = 0; i < 4; i++) {
-    const bmp = new Bitmap(bd);
-    bmp.smoothing = true;
-    bmp.scaleX = SCALE;
-    bmp.scaleY = SCALE;
-    bmp.x = 50 + i * (bmpW + 50);
-    bmp.y = 50;
-    const { inner, knockout } = glowConfigs[i];
-    bmp.filters = [new GlowFilter(0xff0000, 1, 8, 8, 2, 1, inner, knockout)];
-    root.addChild(bmp);
-
-    const lbl = new TextField();
-    lbl.defaultTextFormat = new TextFormat('_sans', 14, 0x444444);
-    lbl.x = bmp.x;
-    lbl.y = bmp.y + bmpH + 8;
-    lbl.width = bmpW + 40;
-    lbl.height = 24;
-    lbl.text = labels[i];
-    root.addChild(lbl);
+    bitmaps[i] = new Bitmap(bd);
+    bitmaps[i].x = 50 + i * (bd.width + 50);
+    bitmaps[i].y = 50;
+    root.addChild(bitmaps[i]);
+    filters[i] = new GlowFilter(0xff0000, 1.0, 6, 6, 2, 3, false, false);
+    bitmaps[i].filters = [filters[i]];
   }
+
+  filters[1].inner = true;
+
+  filters[2].knockout = true;
+
+  filters[3].inner = true;
+  filters[3].knockout = true;
+
+  root.addEventListener(Event.ENTER_FRAME, () => {
+    const sinT = Math.sin(performance.now() / 1000) * 0.5 + 0.5;
+    const blur = 2 + sinT * 8;
+    for (let i = 0; i < 4; i++) {
+      filters[i].blurX = filters[i].blurY = blur;
+      bitmaps[i].filters = [filters[i]];
+    }
+  });
 })();

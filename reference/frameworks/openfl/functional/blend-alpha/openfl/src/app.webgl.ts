@@ -1,4 +1,4 @@
-import Shape from 'openfl/display/Shape';
+import Sprite from 'openfl/display/Sprite';
 
 import { createReferenceStage } from '../../../../harness/stage';
 
@@ -11,43 +11,30 @@ const ROWS = 9;
 const cellW = WIDTH / 4;
 const cellH = HEIGHT / ROWS;
 
+function createCell(color: number, alpha: number, x: number, y: number, cab: boolean): void {
+  const sprite = new Sprite();
+  sprite.cacheAsBitmap = cab;
+  sprite.graphics.beginFill(color, alpha);
+  sprite.graphics.drawRect(0, 0, cellW, cellH);
+  sprite.graphics.endFill();
+  sprite.x = x * cellW;
+  sprite.y = y * cellH;
+  root.addChild(sprite);
+}
+
 for (let y = 0; y < ROWS; y++) {
-  const alpha = 1 - y / 8;
-  const frag = Math.round(alpha * 255);
-  const solidColor = (frag << 16) | (frag << 8) | frag;
+  const alpha = 1.0 - y / 8.0;
+  const frag = Math.trunc(alpha * 255);
+  const color = (frag << 16) | (frag << 8) | frag;
 
-  // Column 0 — solid reference
-  const ref = new Shape();
-  ref.graphics.beginFill(solidColor);
-  ref.graphics.drawRect(0, y * cellH, cellW, cellH);
-  ref.graphics.endFill();
-  root.addChild(ref);
+  createCell(color, 1.0, 0, y, false);
 
-  // Columns 1 & 2 — white base + semi-transparent black overlay
-  for (const col of [1, 2]) {
-    const base = new Shape();
-    base.graphics.beginFill(0xffffff);
-    base.graphics.drawRect(col * cellW, y * cellH, cellW, cellH);
-    base.graphics.endFill();
-    root.addChild(base);
+  createCell(0xffffff, 1.0, 1, y, false);
+  createCell(0x000000, 1.0 - alpha, 1, y, false);
 
-    const overlay = new Shape();
-    overlay.graphics.beginFill(0x000000, 1 - alpha);
-    overlay.graphics.drawRect(col * cellW, y * cellH, cellW, cellH);
-    overlay.graphics.endFill();
-    root.addChild(overlay);
-  }
+  createCell(0xffffff, 1.0, 2, y, true);
+  createCell(0x000000, 1.0 - alpha, 2, y, true);
 
-  // Column 3 — white base + color with alpha baked into fill alpha parameter
-  const base3 = new Shape();
-  base3.graphics.beginFill(0xffffff);
-  base3.graphics.drawRect(3 * cellW, y * cellH, cellW, cellH);
-  base3.graphics.endFill();
-  root.addChild(base3);
-
-  const overlay3 = new Shape();
-  overlay3.graphics.beginFill(solidColor, alpha);
-  overlay3.graphics.drawRect(3 * cellW, y * cellH, cellW, cellH);
-  overlay3.graphics.endFill();
-  root.addChild(overlay3);
+  createCell(0xffffff, 1.0, 3, y, false);
+  createCell(frag << 24, 1.0, 3, y, false);
 }

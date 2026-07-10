@@ -4,7 +4,6 @@ import {
   createBitmap,
   createDisplayContainer,
   createImageResourceFromCanvas,
-  createRectangle,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,

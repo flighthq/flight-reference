@@ -123,8 +123,8 @@ function checkWinner(): void {
 const input = createInputManager();
 attachPointerInput(input, container);
 connectSignal(input.onPointerDown, (data) => {
-  const x = data.x / scale - BOARD_X;
-  const y = data.y / scale - BOARD_Y;
+  const x = data.x - BOARD_X;
+  const y = data.y - BOARD_Y;
   if (x < 0 || y < 0 || x >= BOARD_SIZE || y >= BOARD_SIZE) return;
 
   if (hasWinner) {

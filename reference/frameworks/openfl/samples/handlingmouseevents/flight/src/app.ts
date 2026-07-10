@@ -55,35 +55,29 @@ attachPointerInput(input, container);
 
 connectSignal(input.onPointerDown, (data) => {
   if (tweening) return;
-  const x = data.x / scale;
-  const y = data.y / scale;
-  if (!hitTestLogo(x, y)) return;
+  if (!hitTestLogo(data.x, data.y)) return;
   dragging = true;
-  offsetX = logo.x - x;
-  offsetY = logo.y - y;
+  offsetX = logo.x - data.x;
+  offsetY = logo.y - data.y;
 });
 
 connectSignal(input.onPointerMove, (data) => {
-  const x = data.x / scale;
-  const y = data.y / scale;
   if (dragging) {
-    logo.x = x + offsetX;
-    logo.y = y + offsetY;
+    logo.x = data.x + offsetX;
+    logo.y = data.y + offsetY;
     invalidateNodeLocalTransform(logo);
   } else if (!tweening) {
-    container.style.cursor = hitTestLogo(x, y) ? 'pointer' : '';
+    container.style.cursor = hitTestLogo(data.x, data.y) ? 'pointer' : '';
   }
 });
 
 connectSignal(input.onPointerUp, (data) => {
   dragging = false;
-  const x = data.x / scale;
-  const y = data.y / scale;
   const hit =
-    x >= destination.x &&
-    x <= destination.x + image.width + 10 &&
-    y >= destination.y &&
-    y <= destination.y + image.height + 10;
+    data.x >= destination.x &&
+    data.x <= destination.x + image.width + 10 &&
+    data.y >= destination.y &&
+    data.y <= destination.y + image.height + 10;
   if (hit) {
     tweening = true;
     const tween = createTween(manager, logo, 1000, { x: destination.x + 5, y: destination.y + 5 });

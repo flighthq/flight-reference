@@ -26,6 +26,8 @@ const { height, render, width } = await createFunctionalTarget({
 
 const RPM = 5;
 const COLORS = [0xff4cf0, 0xfff372, 0x85ff75, 0x59ddff];
+const CHANGE_INTERVAL_MS = 2000;
+const textCycle = ['Hello, World!', 'Hi', ''];
 
 function pos(i: number): number {
   return (i * height) / 720;
@@ -80,14 +82,26 @@ for (const { color, x, y, rx, ry } of roundedRects) {
   addNodeChild(group, s);
 }
 
+// Rotating text label, orbits with the group
+const rotatingText = createRichText();
+rotatingText.data.defaultTextFormat = { font: 'sans-serif', size: pos(32), color: 0xffffff };
+rotatingText.x = -pos(100);
+rotatingText.y = -pos(75);
+rotatingText.data.width = pos(400);
+rotatingText.data.height = pos(50);
+let textIndex = 0;
+rotatingText.data.text = textCycle[textIndex];
+addNodeChild(group, rotatingText);
+
 // Status label
 const status = createRichText();
 status.data.defaultTextFormat = { font: 'sans-serif', size: pos(32), color: 0xffffff };
 status.x = pos(410);
 status.y = pos(10);
-status.data.width = pos(860);
+status.data.width = pos(1270);
 status.data.height = pos(40);
-status.data.text = 'render cache: OFF';
+let cache = true;
+status.data.text = 'cacheAsBitmap: ' + cache;
 addNodeChild(root, status);
 
 const cx = pos(527);
@@ -95,9 +109,8 @@ const cy = pos(255);
 const radius = pos(200);
 let angle = 0;
 let lastTime = performance.now();
-let cacheEnabled = false;
-let lastToggle = performance.now();
-const TOGGLE_MS = 3000;
+let switchTime = lastTime + CHANGE_INTERVAL_MS;
+let switchSwitch = false;
 
 function enterFrame(): void {
   const now = performance.now();
@@ -108,11 +121,22 @@ function enterFrame(): void {
   group.y = cy + radius * Math.sin(angle);
   invalidateNodeLocalTransform(group);
 
-  if (now - lastToggle >= TOGGLE_MS) {
-    lastToggle = now;
-    cacheEnabled = !cacheEnabled;
-    status.data.text = cacheEnabled ? 'render cache: ON' : 'render cache: OFF';
-    invalidateNodeAppearance(status);
+  if (now >= switchTime) {
+    textIndex += 1;
+    if (textIndex >= textCycle.length) {
+      textIndex = 0;
+    }
+    rotatingText.data.text = textCycle[textIndex];
+    invalidateNodeAppearance(rotatingText);
+    if (switchSwitch) {
+      cache = !cache;
+      status.data.text = 'cacheAsBitmap: ' + cache;
+      invalidateNodeAppearance(status);
+      switchSwitch = false;
+    } else {
+      switchSwitch = true;
+    }
+    switchTime = now + CHANGE_INTERVAL_MS;
   }
 
   render(root);

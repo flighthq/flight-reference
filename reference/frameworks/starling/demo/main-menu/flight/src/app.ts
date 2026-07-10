@@ -85,7 +85,6 @@ buttons.forEach(([label, caseId], index) => {
     font: 'DejaVu Sans, sans-serif',
     size: 14,
     color: 0xffffff,
-    align: 'center',
   };
   btnLabel.x = x;
   btnLabel.y = y;

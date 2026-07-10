@@ -1,13 +1,18 @@
 import {
   addNodeChild,
+  appendShapeBeginFill,
+  appendShapeEndFill,
+  appendShapeRectangle,
   BitmapKind,
   createBitmap,
   createDisplayContainer,
   createRectangle,
   createRichText,
+  createShape,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   RichTextKind,
+  ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -18,7 +23,7 @@ const { render } = await createFunctionalTarget({
   width: GameWidth,
   height: GameHeight,
   background: 0xffffffff,
-  kinds: [BitmapKind, RichTextKind],
+  kinds: [BitmapKind, RichTextKind, ShapeKind],
 });
 
 const root = createDisplayContainer();
@@ -64,6 +69,26 @@ missText.data.wordWrap = true;
 missText.data.text = 'Outside circle!';
 missText.alpha = 0;
 addNodeChild(root, missText);
+
+const backBtnW = 88;
+const backBtnH = 42;
+const backBtnX = GameWidth / 2 - backBtnW / 2;
+const backBtnY = GameHeight - backBtnH + 4;
+
+const backBtnBg = createShape();
+appendShapeBeginFill(backBtnBg, 0x444488);
+appendShapeRectangle(backBtnBg, backBtnX, backBtnY, backBtnW, backBtnH);
+appendShapeEndFill(backBtnBg);
+addNodeChild(root, backBtnBg);
+
+const backBtnLabel = createRichText();
+backBtnLabel.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0xffffff };
+backBtnLabel.x = backBtnX;
+backBtnLabel.y = backBtnY + 4;
+backBtnLabel.data.width = backBtnW;
+backBtnLabel.data.height = backBtnH;
+backBtnLabel.data.text = 'Back';
+addNodeChild(root, backBtnLabel);
 
 render(root);
 
@@ -120,6 +145,11 @@ canvas.addEventListener('click', (e) => {
   const rect = canvas.getBoundingClientRect();
   const x = ((e.clientX - rect.left) / rect.width) * GameWidth;
   const y = ((e.clientY - rect.top) / rect.height) * GameHeight;
+
+  if (x >= backBtnX && x <= backBtnX + backBtnW && y >= backBtnY && y <= backBtnY + backBtnH) {
+    window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
+    return;
+  }
 
   if (!isInsideBoundingBox(x, y)) return;
 

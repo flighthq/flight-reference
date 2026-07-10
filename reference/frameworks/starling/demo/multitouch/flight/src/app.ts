@@ -1,10 +1,14 @@
 import {
   addNodeChild,
+  appendShapeBeginFill,
+  appendShapeEndFill,
+  appendShapeRectangle,
   BitmapKind,
   createBitmap,
   createDisplayContainer,
   createRectangle,
   createRichText,
+  createShape,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   RichTextKind,
@@ -32,12 +36,12 @@ bgBmp.data.image = bgImage;
 addNodeChild(root, bgBmp);
 
 const infoText = createRichText();
-infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 12, color: 0xffffff };
+infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 12 };
 infoText.x = 10;
 infoText.y = 10;
 infoText.data.width = 300;
 infoText.data.height = 25;
-infoText.data.text = '[drag the bird image to move it]';
+infoText.data.text = '[use Ctrl/Cmd & Shift to simulate multi-touch]';
 addNodeChild(root, infoText);
 
 const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
@@ -49,6 +53,26 @@ sheet.x = CenterX - 114;
 sheet.y = CenterY - 86;
 sheet.rotation = 0.1745;
 addNodeChild(root, sheet);
+
+const backBtnW = 88;
+const backBtnH = 42;
+const backBtnX = GameWidth / 2 - backBtnW / 2;
+const backBtnY = GameHeight - backBtnH + 4;
+
+const backBtnBg = createShape();
+appendShapeBeginFill(backBtnBg, 0x444488);
+appendShapeRectangle(backBtnBg, backBtnX, backBtnY, backBtnW, backBtnH);
+appendShapeEndFill(backBtnBg);
+addNodeChild(root, backBtnBg);
+
+const backBtnLabel = createRichText();
+backBtnLabel.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0xffffff };
+backBtnLabel.x = backBtnX;
+backBtnLabel.y = backBtnY + 4;
+backBtnLabel.data.width = backBtnW;
+backBtnLabel.data.height = backBtnH;
+backBtnLabel.data.text = 'Back';
+addNodeChild(root, backBtnLabel);
 
 render(root);
 
@@ -92,4 +116,13 @@ canvas.addEventListener('pointermove', (e) => {
 
 canvas.addEventListener('pointerup', () => {
   dragging = false;
+});
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = ((e.clientX - rect.left) / rect.width) * GameWidth;
+  const my = ((e.clientY - rect.top) / rect.height) * GameHeight;
+  if (mx >= backBtnX && mx <= backBtnX + backBtnW && my >= backBtnY && my <= backBtnY + backBtnH) {
+    window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
+  }
 });

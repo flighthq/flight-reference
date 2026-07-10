@@ -1,12 +1,19 @@
 import {
   addNodeChild,
+  appendShapeBeginFill,
+  appendShapeEndFill,
+  appendShapeRectangle,
   BitmapKind,
   createBitmap,
   createDisplayContainer,
   createRectangle,
+  createRichText,
+  createShape,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
+  RichTextKind,
+  ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -48,7 +55,7 @@ const { render } = await createFunctionalTarget({
   width: GameWidth,
   height: GameHeight,
   background: 0xffffffff,
-  kinds: [BitmapKind],
+  kinds: [BitmapKind, RichTextKind, ShapeKind],
 });
 
 const root = createDisplayContainer();
@@ -80,7 +87,38 @@ function showFrame(index: number): void {
 
 let currentFrame = 0;
 showFrame(currentFrame);
+
+const backBtnW = 88;
+const backBtnH = 42;
+const backBtnX = GameWidth / 2 - backBtnW / 2;
+const backBtnY = GameHeight - backBtnH + 4;
+
+const backBtnBg = createShape();
+appendShapeBeginFill(backBtnBg, 0x444488);
+appendShapeRectangle(backBtnBg, backBtnX, backBtnY, backBtnW, backBtnH);
+appendShapeEndFill(backBtnBg);
+addNodeChild(root, backBtnBg);
+
+const backBtnLabel = createRichText();
+backBtnLabel.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0xffffff };
+backBtnLabel.x = backBtnX;
+backBtnLabel.y = backBtnY + 4;
+backBtnLabel.data.width = backBtnW;
+backBtnLabel.data.height = backBtnH;
+backBtnLabel.data.text = 'Back';
+addNodeChild(root, backBtnLabel);
+
 render(root);
+
+const canvas = document.querySelector('canvas')!;
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = ((e.clientX - rect.left) / rect.width) * GameWidth;
+  const my = ((e.clientY - rect.top) / rect.height) * GameHeight;
+  if (mx >= backBtnX && mx <= backBtnX + backBtnW && my >= backBtnY && my <= backBtnY + backBtnH) {
+    window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
+  }
+});
 
 let lastFrameTime = performance.now();
 

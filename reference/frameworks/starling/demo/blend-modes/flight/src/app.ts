@@ -1,5 +1,8 @@
 import {
   addNodeChild,
+  appendShapeBeginFill,
+  appendShapeEndFill,
+  appendShapeRectangle,
   BitmapKind,
   BlendMode,
   createBitmap,
@@ -7,8 +10,6 @@ import {
   createRectangle,
   createRichText,
   createShape,
-  appendShapeBeginFill,
-  appendShapeRectangle,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   RichTextKind,
@@ -55,7 +56,7 @@ rocket.y = 170;
 addNodeChild(root, rocket);
 
 const infoText = createRichText();
-infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 19, color: 0xffffff };
+infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 19 };
 infoText.x = 10;
 infoText.y = 330;
 infoText.data.width = 300;
@@ -66,15 +67,11 @@ addNodeChild(root, infoText);
 const btnBg = createShape();
 appendShapeBeginFill(btnBg, 0x444488);
 appendShapeRectangle(btnBg, CenterX - 64, 15, 128, 32);
+appendShapeEndFill(btnBg);
 addNodeChild(root, btnBg);
 
 const btnLabel = createRichText();
-btnLabel.data.defaultTextFormat = {
-  font: 'DejaVu Sans, sans-serif',
-  size: 14,
-  color: 0xffffff,
-  align: 'center',
-};
+btnLabel.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0xffffff };
 btnLabel.x = CenterX - 64;
 btnLabel.y = 19;
 btnLabel.data.width = 128;
@@ -82,9 +79,40 @@ btnLabel.data.height = 32;
 btnLabel.data.text = 'Switch Mode';
 addNodeChild(root, btnLabel);
 
+const backBtnW = 88;
+const backBtnH = 42;
+const backBtnX = GameWidth / 2 - backBtnW / 2;
+const backBtnY = GameHeight - backBtnH + 4;
+
+const backBtnBg = createShape();
+appendShapeBeginFill(backBtnBg, 0x444488);
+appendShapeRectangle(backBtnBg, backBtnX, backBtnY, backBtnW, backBtnH);
+appendShapeEndFill(backBtnBg);
+addNodeChild(root, backBtnBg);
+
+const backBtnLabel = createRichText();
+backBtnLabel.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0xffffff };
+backBtnLabel.x = backBtnX;
+backBtnLabel.y = backBtnY + 4;
+backBtnLabel.data.width = backBtnW;
+backBtnLabel.data.height = backBtnH;
+backBtnLabel.data.text = 'Back';
+addNodeChild(root, backBtnLabel);
+
 render(root);
 
-document.addEventListener('click', () => {
+const canvas = document.querySelector('canvas')!;
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = ((e.clientX - rect.left) / rect.width) * GameWidth;
+  const my = ((e.clientY - rect.top) / rect.height) * GameHeight;
+
+  if (mx >= backBtnX && mx <= backBtnX + backBtnW && my >= backBtnY && my <= backBtnY + backBtnH) {
+    window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
+    return;
+  }
+
   modeIndex = (modeIndex + 1) % blendModes.length;
   const [mode, name] = blendModes[modeIndex];
   rocket.blendMode = mode;

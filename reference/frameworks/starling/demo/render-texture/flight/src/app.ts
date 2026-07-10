@@ -1,13 +1,14 @@
 import {
   addNodeChild,
+  appendShapeBeginFill,
+  appendShapeEndFill,
+  appendShapeRectangle,
   BitmapKind,
   createBitmap,
   createDisplayContainer,
   createImageResourceFromCanvas,
   createRichText,
   createShape,
-  appendShapeBeginFill,
-  appendShapeRectangle,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   RichTextKind,
@@ -68,21 +69,37 @@ let eraseMode = false;
 const btnBg = createShape();
 appendShapeBeginFill(btnBg, 0x444488);
 appendShapeRectangle(btnBg, CenterX - 64, 15, 128, 32);
+appendShapeEndFill(btnBg);
 addNodeChild(root, btnBg);
 
 const btnLabel = createRichText();
-btnLabel.data.defaultTextFormat = {
-  font: 'DejaVu Sans, sans-serif',
-  size: 14,
-  color: 0xffffff,
-  align: 'center',
-};
+btnLabel.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0xffffff };
 btnLabel.x = CenterX - 64;
 btnLabel.y = 19;
 btnLabel.data.width = 128;
 btnLabel.data.height = 32;
 btnLabel.data.text = 'Mode: Draw';
 addNodeChild(root, btnLabel);
+
+const backBtnW = 88;
+const backBtnH = 42;
+const backBtnX = GameWidth / 2 - backBtnW / 2;
+const backBtnY = GameHeight - backBtnH + 4;
+
+const backBtnBg = createShape();
+appendShapeBeginFill(backBtnBg, 0x444488);
+appendShapeRectangle(backBtnBg, backBtnX, backBtnY, backBtnW, backBtnH);
+appendShapeEndFill(backBtnBg);
+addNodeChild(root, backBtnBg);
+
+const backBtnLabel = createRichText();
+backBtnLabel.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0xffffff };
+backBtnLabel.x = backBtnX;
+backBtnLabel.y = backBtnY + 4;
+backBtnLabel.data.width = backBtnW;
+backBtnLabel.data.height = backBtnH;
+backBtnLabel.data.text = 'Back';
+addNodeChild(root, backBtnLabel);
 
 render(root);
 
@@ -122,6 +139,11 @@ displayCanvas.addEventListener('pointerdown', (e) => {
   const rect = displayCanvas.getBoundingClientRect();
   const mx = ((e.clientX - rect.left) / rect.width) * GameWidth;
   const my = ((e.clientY - rect.top) / rect.height) * GameHeight;
+
+  if (mx >= backBtnX && mx <= backBtnX + backBtnW && my >= backBtnY && my <= backBtnY + backBtnH) {
+    window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
+    return;
+  }
 
   if (mx >= CenterX - 64 && mx <= CenterX + 64 && my >= 15 && my <= 47) {
     eraseMode = !eraseMode;

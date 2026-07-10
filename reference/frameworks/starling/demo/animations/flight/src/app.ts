@@ -1,6 +1,7 @@
 import {
   addNodeChild,
   appendShapeBeginFill,
+  appendShapeEndFill,
   appendShapeRectangle,
   BitmapKind,
   createBitmap,
@@ -283,11 +284,36 @@ function hitTestButton(x: number, y: number, buttonY: number): boolean {
   return x >= ButtonX && x <= ButtonX + ButtonWidth && y >= buttonY && y <= buttonY + ButtonHeight;
 }
 
+const backBtnW = 88;
+const backBtnH = 42;
+const backBtnX = GameWidth / 2 - backBtnW / 2;
+const backBtnY = GameHeight - backBtnH + 4;
+
+const backBtnBg = createShape();
+appendShapeBeginFill(backBtnBg, 0x444488);
+appendShapeRectangle(backBtnBg, backBtnX, backBtnY, backBtnW, backBtnH);
+appendShapeEndFill(backBtnBg);
+addNodeChild(root, backBtnBg);
+
+const backBtnLabel = createRichText();
+backBtnLabel.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0xffffff };
+backBtnLabel.x = backBtnX;
+backBtnLabel.y = backBtnY + 4;
+backBtnLabel.data.width = backBtnW;
+backBtnLabel.data.height = backBtnH;
+backBtnLabel.data.text = 'Back';
+addNodeChild(root, backBtnLabel);
+
 document.addEventListener('click', (event) => {
   if (!(event.target instanceof HTMLCanvasElement)) return;
 
   const x = event.offsetX;
   const y = event.offsetY;
+
+  if (x >= backBtnX && x <= backBtnX + backBtnW && y >= backBtnY && y <= backBtnY + backBtnH) {
+    window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
+    return;
+  }
 
   if (hitTestButton(x, y, StartButtonY)) {
     onStartButtonClick();

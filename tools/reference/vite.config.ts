@@ -695,67 +695,11 @@ function referencePlugin(): Plugin[] {
 }
 
 // ---------------------------------------------------------------------------
-// Serve static assets from multiple framework public directories.
-// The primary publicDir is for OpenFL; this plugin adds Starling assets
-// under the /starling/ URL prefix.
-// ---------------------------------------------------------------------------
-
-function frameworkStaticPlugin(): Plugin {
-  const staticRoots: Record<string, string> = {
-    starling: resolve(repoRoot, 'reference/assets/public/starling'),
-  };
-
-  return {
-    name: 'reference:framework-static',
-    configureServer(server) {
-      server.middlewares.use((req, res, next) => {
-        const urlPath = (req.url ?? '/').split('?')[0] ?? '/';
-        const parts = urlPath.split('/').filter(Boolean);
-        const prefix = parts[0] ?? '';
-        const root = staticRoots[prefix];
-        if (!root) return next();
-
-        const filePath = join(root, ...parts.slice(1));
-        if (!existsSync(filePath) || !statSync(filePath).isFile()) return next();
-
-        const ext = filePath.split('.').pop() ?? '';
-        const mimeTypes: Record<string, string> = {
-          png: 'image/png',
-          jpg: 'image/jpeg',
-          jpeg: 'image/jpeg',
-          gif: 'image/gif',
-          svg: 'image/svg+xml',
-          mp3: 'audio/mpeg',
-          ogg: 'audio/ogg',
-          mp4: 'video/mp4',
-          webm: 'video/webm',
-          json: 'application/json',
-          xml: 'application/xml',
-          fnt: 'application/octet-stream',
-          atf: 'application/octet-stream',
-          woff: 'font/woff',
-          woff2: 'font/woff2',
-          ttf: 'font/ttf',
-          eot: 'application/vnd.ms-fontobject',
-          js: 'application/javascript',
-          css: 'text/css',
-          html: 'text/html',
-        };
-
-        res.setHeader('Content-Type', mimeTypes[ext] ?? 'application/octet-stream');
-        res.setHeader('Cache-Control', 'no-store');
-        res.end(readFileSync(filePath));
-      });
-    },
-  };
-}
-
-// ---------------------------------------------------------------------------
 // Vite config
 // ---------------------------------------------------------------------------
 
 export default defineConfig({
-  plugins: [react(), ...referencePlugin(), frameworkStaticPlugin()],
+  plugins: [react(), ...referencePlugin()],
   publicDir: resolve(repoRoot, 'reference/assets/public/openfl'),
   optimizeDeps: {
     force: true,

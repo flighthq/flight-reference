@@ -161,8 +161,6 @@ const target = await createFunctionalTarget({
 });
 
 const root = createDisplayContainer();
-root.scaleX = target.scale;
-root.scaleY = target.scale;
 
 const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
 const bgBmp = createBitmap();
@@ -191,7 +189,7 @@ registerDefaultHitTestPoints();
 const inputMgr = createInputManager();
 attachPointerInput(inputMgr, (target.state as { canvas: HTMLCanvasElement }).canvas);
 const interaction = createInteractionManager<DisplayObject>(root);
-connectInputToInteraction(inputMgr, interaction, target.scale);
+connectInputToInteraction(inputMgr, interaction, 1);
 
 function switchFilter(): void {
   filterIndex = (filterIndex + 1) % filterInfos.length;

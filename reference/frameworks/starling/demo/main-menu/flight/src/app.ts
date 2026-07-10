@@ -50,8 +50,6 @@ const target = await createFunctionalTarget({
 });
 
 const root = createDisplayContainer();
-root.scaleX = target.scale;
-root.scaleY = target.scale;
 
 const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
 const bgBmp = createBitmap();
@@ -72,7 +70,7 @@ const input = createInputManager();
 attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);
 
 const interaction = createInteractionManager<DisplayObject>(root);
-connectInputToInteraction(input, interaction, target.scale);
+connectInputToInteraction(input, interaction, 1);
 
 for (let i = 0; i < buttons.length; i++) {
   const [label, caseId] = buttons[i];

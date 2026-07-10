@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
@@ -11,7 +11,7 @@
     "types": ["vite/client"],
     "baseUrl": ".",
     "paths": {
-      "@flighthq/capture": ["../../packages/capture/src/index.ts"]
+      "@flighthq/capture": ["./packages/capture/src/index.ts"]
     }
   },
   "include": ["src", "vite.config.ts"]

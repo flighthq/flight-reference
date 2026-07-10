@@ -36,12 +36,12 @@ const repoRoot = resolve(import.meta.dirname!, '..');
 
 let version = values.version;
 if (!version) {
-  const manifest = JSON.parse(readFileSync(resolve(repoRoot, 'tools/reference/package.json'), 'utf8')) as {
+  const manifest = JSON.parse(readFileSync(resolve(repoRoot, 'package.json'), 'utf8')) as {
     version?: string;
   };
   version = manifest.version;
   if (!version) {
-    console.error('error: could not read version from tools/reference/package.json');
+    console.error('error: could not read version from package.json');
     process.exit(1);
   }
 }
@@ -57,7 +57,7 @@ console.log(`Building reference harness v${version} (base: ${base})`);
 run('npm run build', { VITE_BASE: base });
 
 console.log(`Packaging ${tarball}`);
-run(`tar -czf ${tarball} -C tools/reference/dist/ .`);
+run(`tar -czf ${tarball} -C dist/ .`);
 const size = (statSync(resolve(repoRoot, tarball)).size / 1024).toFixed(0);
 console.log(`Created ${tarball} (${size}K)`);
 

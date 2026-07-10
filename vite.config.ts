@@ -5,9 +5,9 @@ import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 
-const repoRoot = resolve(__dirname, '../..');
-const openflReferenceDir = join(repoRoot, 'reference', 'frameworks', 'openfl');
-const starlingReferenceDir = join(repoRoot, 'reference', 'frameworks', 'starling');
+const repoRoot = resolve(__dirname);
+const openflContentDir = join(repoRoot, 'content', 'frameworks', 'openfl');
+const starlingContentDir = join(repoRoot, 'content', 'frameworks', 'starling');
 
 function resolveFlightWorkspaceRoot(): string | null {
   const candidates = [process.env.FLIGHT_REPO, join(repoRoot, '.cache', 'upstream', 'flight')].filter(
@@ -251,16 +251,16 @@ function openflImplementationSummaries(
 const excludedSamples = new Set(['custompreloader', 'gamepadinput', 'usingswfassets', 'writingcustomshaders']);
 
 function discoverOpenflCases(): ReferenceCase[] {
-  if (!existsSync(openflReferenceDir)) return [];
+  if (!existsSync(openflContentDir)) return [];
 
   const cases: ReferenceCase[] = [];
-  const corpora = readdirSync(openflReferenceDir, { withFileTypes: true })
+  const corpora = readdirSync(openflContentDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && entry.name !== 'harness')
     .sort((left, right) => left.name.localeCompare(right.name));
 
   for (const corpusEntry of corpora) {
     const corpus = corpusEntry.name;
-    const corpusDir = join(openflReferenceDir, corpus);
+    const corpusDir = join(openflContentDir, corpus);
     const caseEntries = readdirSync(corpusDir, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .sort((left, right) => left.name.localeCompare(right.name));
@@ -316,16 +316,16 @@ function discoverOpenflCases(): ReferenceCase[] {
 // ---------------------------------------------------------------------------
 
 function discoverStarlingCases(): ReferenceCase[] {
-  if (!existsSync(starlingReferenceDir)) return [];
+  if (!existsSync(starlingContentDir)) return [];
 
   const cases: ReferenceCase[] = [];
-  const corpora = readdirSync(starlingReferenceDir, { withFileTypes: true })
+  const corpora = readdirSync(starlingContentDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .sort((left, right) => left.name.localeCompare(right.name));
 
   for (const corpusEntry of corpora) {
     const corpus = corpusEntry.name;
-    const corpusDir = join(starlingReferenceDir, corpus);
+    const corpusDir = join(starlingContentDir, corpus);
     const caseEntries = readdirSync(corpusDir, { withFileTypes: true })
       .filter((entry) => entry.isDirectory() && entry.name !== '_shared')
       .sort((left, right) => left.name.localeCompare(right.name));
@@ -405,7 +405,7 @@ function discoverAllCases(): ReferenceCase[] {
 // ---------------------------------------------------------------------------
 
 function openflPreviewEntrySource(corpus: string, name: string, renderer: string): string | null {
-  const srcDir = join(openflReferenceDir, corpus, name, 'openfl', 'src');
+  const srcDir = join(openflContentDir, corpus, name, 'openfl', 'src');
   if (!existsSync(srcDir)) return null;
 
   const rendererApp = join(srcDir, `app.${renderer}.ts`);
@@ -418,13 +418,13 @@ function openflPreviewEntrySource(corpus: string, name: string, renderer: string
 }
 
 function flightPreviewSource(framework: string, corpus: string, name: string): string | null {
-  const referenceDir = framework === 'starling' ? starlingReferenceDir : openflReferenceDir;
+  const referenceDir = framework === 'starling' ? starlingContentDir : openflContentDir;
   const app = join(referenceDir, corpus, name, 'flight', 'src', 'app.ts');
   return existsSync(app) ? app : null;
 }
 
 function starlingPreviewEntrySource(corpus: string, name: string): string | null {
-  const app = join(starlingReferenceDir, corpus, name, 'starling', 'src', 'app.ts');
+  const app = join(starlingContentDir, corpus, name, 'starling', 'src', 'app.ts');
   return existsSync(app) ? app : null;
 }
 
@@ -607,8 +607,8 @@ function referencePlugin(): Plugin[] {
       name: 'reference:routes',
 
       configureServer(server) {
-        server.watcher.add(openflReferenceDir);
-        if (existsSync(starlingReferenceDir)) server.watcher.add(starlingReferenceDir);
+        server.watcher.add(openflContentDir);
+        if (existsSync(starlingContentDir)) server.watcher.add(starlingContentDir);
 
         server.middlewares.use((req, res, next) => {
           const urlPath = (req.url ?? '/').split('?')[0] ?? '/';
@@ -722,7 +722,7 @@ function referencePlugin(): Plugin[] {
 export default defineConfig({
   base: process.env.VITE_BASE || '/',
   plugins: [react(), ...referencePlugin()],
-  publicDir: resolve(repoRoot, 'reference/assets/public/openfl'),
+  publicDir: resolve(repoRoot, 'content/assets/public/openfl'),
   optimizeDeps: {
     force: true,
     esbuildOptions: {
@@ -737,9 +737,9 @@ export default defineConfig({
     alias: {
       '@flighthq/capture': resolve(repoRoot, 'packages/capture/src/index.ts'),
       ...(flightPreviewsEnabled ? { ...flightPackageAliases, ...flightHarnessAliases } : {}),
-      'motion/Actuate': resolve(repoRoot, 'tools/reference/openfl-compat/Actuate.ts'),
-      'motion/easing/Elastic': resolve(repoRoot, 'tools/reference/openfl-compat/Elastic.ts'),
-      'motion/easing/Quad': resolve(repoRoot, 'tools/reference/openfl-compat/Quad.ts'),
+      'motion/Actuate': resolve(repoRoot, 'openfl-compat/Actuate.ts'),
+      'motion/easing/Elastic': resolve(repoRoot, 'openfl-compat/Elastic.ts'),
+      'motion/easing/Quad': resolve(repoRoot, 'openfl-compat/Quad.ts'),
       openfl: resolve(repoRoot, 'node_modules/openfl/lib/openfl'),
       starling: resolve(repoRoot, 'node_modules/starling-framework/lib/starling'),
       'stats.js': resolve(repoRoot, 'node_modules/stats-js/src/Stats.js'),

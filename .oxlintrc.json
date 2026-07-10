@@ -16,11 +16,9 @@
     "**/.claude/**",
     "**/.quimby/**",
     "**/worktrees/**",
-    "reference/**",
     "**/src/wasm/**",
     "**/docs/**",
-    "incoming/**",
-    "tools/agents/**"
+    "incoming/**"
   ],
   "rules": {
     "no-console": "warn",
@@ -62,15 +60,7 @@
       }
     },
     {
-      "files": [
-        "packages/api/**/*.{ts,tsx}",
-        "functional/**",
-        "reference/**",
-        "tools/**/*.{ts,tsx}",
-        "tools/size/**",
-        "**/vite*.config*.ts",
-        "**/vitest*.config*.ts"
-      ],
+      "files": ["packages/api/**/*.{ts,tsx}", "content/**/*.{ts,tsx}", "**/vite*.config*.ts", "**/vitest*.config*.ts"],
       "rules": {
         "import/no-relative-parent-imports": "off"
       }
@@ -99,15 +89,12 @@
       }
     },
     {
-      "files": [
-        "apps/**/*.{ts,tsx}",
-        "examples/**/*.{ts,tsx}",
-        "tools/**/*.{ts,tsx}",
-        "functional/**/*.{ts,tsx}",
-        "reference/**/*.{ts,tsx}"
-      ],
+      "files": ["content/**/*.{ts,tsx}"],
       "rules": {
-        "no-restricted-imports": "off"
+        "no-restricted-imports": "off",
+        "no-console": "off",
+        "no-unused-vars": "off",
+        "typescript/consistent-type-imports": "off"
       }
     }
   ]

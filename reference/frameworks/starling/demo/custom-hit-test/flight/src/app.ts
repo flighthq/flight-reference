@@ -31,7 +31,7 @@ addNodeChild(root, bgBmp);
 const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
 
 const infoText = createRichText();
-infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 19, color: 0xffffff, align: 'center' };
+infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 19, color: 0xffffff };
 infoText.x = 10;
 infoText.y = 10;
 infoText.data.width = 300;
@@ -54,7 +54,7 @@ button.y = buttonY;
 addNodeChild(root, button);
 
 const missText = createRichText();
-missText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 19, color: 0xff3333, align: 'center' };
+missText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 19, color: 0xff3333 };
 missText.x = 10;
 missText.y = buttonY + buttonHeight + 12;
 missText.data.width = 300;

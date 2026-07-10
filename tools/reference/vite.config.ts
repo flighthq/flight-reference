@@ -346,7 +346,8 @@ function discoverStarlingCases(): ReferenceCase[] {
         },
       ];
 
-      const title = fallbackTitle(name);
+      const titlePath = join(caseDir, 'title.txt');
+      const title = existsSync(titlePath) ? readFileSync(titlePath, 'utf-8').trim() : fallbackTitle(name);
 
       cases.push({
         id: `starling/${corpus}/${name}`,

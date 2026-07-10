@@ -1,7 +1,3 @@
-// Requires: assets/wabbit_alpha.png
-// Port of CacheBitmapTest3. Bitmap + rich text sliding with alpha animation.
-// Flight render cache: call createRenderCache() + useRenderCache(state, node, cache) to opt any
-// node into bitmap caching; see the blur functional test for the full bake-once pattern.
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -45,7 +41,7 @@ appendShapeBeginFill(stageBg, 0x000000);
 appendShapeRectangle(stageBg, 0, 0, W, H);
 addNodeChild(root, stageBg);
 
-const image = await loadImageResourceFromUrl('assets/wabbit_alpha.png');
+const image = await loadImageResourceFromUrl('assets/openfl.png');
 
 const posters = createDisplayContainer();
 

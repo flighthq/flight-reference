@@ -21,6 +21,7 @@ const { height, render, width } = await createFunctionalTarget({
   width: 800,
   height: 600,
   background: 0xffffffff,
+  blend: true,
   kinds: [BitmapKind, RichTextKind, ShapeKind],
 });
 

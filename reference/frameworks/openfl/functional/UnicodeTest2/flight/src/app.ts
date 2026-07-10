@@ -6,8 +6,8 @@ import {
   createDisplayContainer,
   createRichText,
   createShape,
-  loadFontFromUrl,
   RichTextKind,
+  ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -15,10 +15,8 @@ const { height, render, width } = await createFunctionalTarget({
   width: 800,
   height: 600,
   background: 0xffffffff,
-  kinds: [RichTextKind],
+  kinds: [RichTextKind, ShapeKind],
 });
-
-const unifont = await loadFontFromUrl('assets/unifont-8.0.01.ttf', 'Unifont');
 
 const root = createDisplayContainer();
 
@@ -30,7 +28,7 @@ appendShapeBeginFill(bg, 0xffffff);
 appendShapeRectangle(bg, 0, 0, W, H);
 addNodeChild(root, bg);
 
-const fmt = { font: unifont.name, size: 18, color: 0x000000 };
+const fmt = { font: 'monospace', size: 18, color: 0x000000 };
 
 const response = await fetch('assets/data.utf8');
 const utf8str = await response.text();

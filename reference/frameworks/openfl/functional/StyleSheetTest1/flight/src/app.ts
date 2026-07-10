@@ -24,16 +24,18 @@ field.data.styleSheet = {
   'a:hover': { color: 0x0000ff, underline: true },
   b: { bold: true },
   em: { bold: true },
+  '.defaultStyle': { font: 'sans-serif' },
   '.typewriter': { font: 'monospace' },
   redText: { color: 0xff0000 },
 };
 field.data.htmlText =
+  "<span class='defaultStyle'>" +
   '<h1><b>HTML</b> Text <i>(sample <u>header</u>)</i></h1>' +
   'Here is some <em>sample</em> <strong>html text</strong> ' +
-  "filling a text box <a href='http://openfl.org'>this link to openfl.org</a> and example headers" +
-  '<br><br><h1>Header h1</h1><h2>Header h2</h2><br><br>Hello world<br><br>' +
+  "filling a text box <a href='http://www.openfl.org'>this link to openfl.org</a> and example headers" +
+  '<br><br><br><h1>Header h1</h1><h2>Header h2</h2><br><br><br>Hello world<br><br><br>' +
   '<redText>This text <i>will be red</i></redText><br><br>' +
-  "<h1><span class='typewriter'>typewriter</span></h1>";
+  "<h1><span class='typewriter'>typewriter</span></h1></span>";
 addNodeChild(root, field);
 
 render(root);

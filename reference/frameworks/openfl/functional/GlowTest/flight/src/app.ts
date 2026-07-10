@@ -92,23 +92,23 @@ for (let i = 0; i < 4; i++) {
   addNodeChild(root, bmp);
   filtered.push({
     node: bmp,
-    filter: createOuterGlowFilter({ color: 0xff0000, blurX: 3, blurY: 3, strength: 2, quality: 3 }),
+    filter: createOuterGlowFilter({ color: 0xff0000, blurX: 6, blurY: 6, strength: 2, quality: 3 }),
   });
 }
-filtered[1].filter = createInnerGlowFilter({ color: 0xff0000, blurX: 3, blurY: 3, strength: 2, quality: 3 });
+filtered[1].filter = createInnerGlowFilter({ color: 0xff0000, blurX: 6, blurY: 6, strength: 2, quality: 3 });
 filtered[2].filter = createOuterGlowFilter({
   color: 0xff0000,
-  blurX: 3,
-  blurY: 3,
+  blurX: 6,
+  blurY: 6,
   strength: 2,
   quality: 3,
   knockout: true,
 });
-filtered[3].filter = createInnerGlowFilter({ color: 0xff0000, blurX: 3, blurY: 3, strength: 2, quality: 3 });
+filtered[3].filter = createInnerGlowFilter({ color: 0xff0000, blurX: 6, blurY: 6, strength: 2, quality: 3 });
 
 const _bounds = createRectangle();
 const _identity = createMatrix();
-const MAX_PADDING = Math.ceil(5 * 3 + 4);
+const MAX_PADDING = Math.ceil(10 * 3 + 4);
 
 let frame: () => void;
 
@@ -147,7 +147,7 @@ enterFrame();
 
 function updateFilters(): void {
   const sinT = Math.sin(performance.now() / 1000) * 0.5 + 0.5;
-  const blur = 1 + sinT * 4;
+  const blur = 2 + sinT * 8;
   filtered[0].filter = createOuterGlowFilter({ color: 0xff0000, blurX: blur, blurY: blur, strength: 2, quality: 3 });
   filtered[1].filter = createInnerGlowFilter({ color: 0xff0000, blurX: blur, blurY: blur, strength: 2, quality: 3 });
   filtered[2].filter = createOuterGlowFilter({
@@ -256,6 +256,7 @@ function renderGlGlowFrame(state: GlRenderState, entries: GlowEntry[], root: Dis
     beginGlRenderTarget(state, source, _identity);
     clearGlRenderTarget(state, source);
     renderGlDisplayObject(state, node);
+    for (const s of scratch) clearGlRenderTarget(state, s);
     if (filter.kind === 'InnerGlowFilter') {
       applyInnerGlowFilterToGl(state, source, dest, scratch, filter);
     } else {

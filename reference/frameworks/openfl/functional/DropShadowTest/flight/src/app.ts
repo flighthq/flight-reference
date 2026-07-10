@@ -89,8 +89,8 @@ const factories: FilterFactory[] = [
       angle,
       color: 0x000000,
       alpha: 1,
-      blurX: blur / 2,
-      blurY: blur / 2,
+      blurX: blur,
+      blurY: blur,
       quality: 3,
     }),
   (blur, angle) =>
@@ -99,8 +99,8 @@ const factories: FilterFactory[] = [
       angle,
       color: 0x000000,
       alpha: 1,
-      blurX: blur / 2,
-      blurY: blur / 2,
+      blurX: blur,
+      blurY: blur,
       quality: 3,
     }),
   (blur, angle) =>
@@ -109,8 +109,8 @@ const factories: FilterFactory[] = [
       angle,
       color: 0x000000,
       alpha: 1,
-      blurX: blur / 2,
-      blurY: blur / 2,
+      blurX: blur,
+      blurY: blur,
       quality: 3,
       knockout: true,
     }),
@@ -120,8 +120,8 @@ const factories: FilterFactory[] = [
       angle,
       color: 0x000000,
       alpha: 1,
-      blurX: blur / 2,
-      blurY: blur / 2,
+      blurX: blur,
+      blurY: blur,
       quality: 3,
     }),
   (blur, angle) =>
@@ -130,8 +130,8 @@ const factories: FilterFactory[] = [
       angle,
       color: 0x000000,
       alpha: 1,
-      blurX: blur / 2,
-      blurY: blur / 2,
+      blurX: blur,
+      blurY: blur,
       quality: 3,
       hideObject: true,
     }),
@@ -141,8 +141,8 @@ const factories: FilterFactory[] = [
       angle,
       color: 0x000000,
       alpha: 1,
-      blurX: blur / 2,
-      blurY: blur / 2,
+      blurX: blur,
+      blurY: blur,
       quality: 3,
     }),
 ];
@@ -153,7 +153,7 @@ function createFilters(blur: number, angle: number): (DropShadowFilter | InnerSh
 
 const _bounds = createRectangle();
 const _identity = createMatrix();
-const MAX_PADDING = Math.ceil(5 * 3 + 4 + 4);
+const MAX_PADDING = Math.ceil(10 * 3 + 4 + 4);
 
 if (target.kind === 'canvas') {
   animateCanvas(target.state);
@@ -253,6 +253,7 @@ function animateGl(state: GlRenderState): void {
       beginGlRenderTarget(state, source, _identity);
       clearGlRenderTarget(state, source);
       renderGlDisplayObject(state, node);
+      for (const s of scratch) clearGlRenderTarget(state, s);
       if (filter.kind === 'InnerShadowFilter') {
         applyInnerShadowFilterToGl(state, source, dest, scratch, filter);
       } else {
@@ -263,7 +264,9 @@ function animateGl(state: GlRenderState): void {
 
     for (const entry of entries) {
       const renderProxy = getRenderProxy2D(state, entry.node);
-      if (renderProxy !== undefined) copyMatrix(renderProxy.transform2D, entry.sceneTransform);
+      if (renderProxy === undefined) continue;
+      copyMatrix(renderProxy.transform2D, entry.sceneTransform);
+      renderProxy.visible = false;
     }
 
     renderGlBackground(state);
@@ -272,6 +275,7 @@ function animateGl(state: GlRenderState): void {
     for (const entry of entries) {
       const renderProxy = getRenderProxy2D(state, entry.node);
       if (renderProxy === undefined) continue;
+      renderProxy.visible = true;
       drawGlRenderTargetResult(state, renderProxy, entry.dest, entry.cacheTransform);
     }
 

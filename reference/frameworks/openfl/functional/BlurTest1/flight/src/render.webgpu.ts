@@ -148,7 +148,7 @@ export function render(root: DisplayObject): void {
 }
 
 function blurPadding(_filter: Readonly<BlurFilter>): number {
-  return Math.ceil(32 * 3);
+  return Math.ceil(64 * 3);
 }
 
 // Maps node-local (lx, ly) → target pixel (lx + tx0, h - (ly + ty0)): the standard

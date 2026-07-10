@@ -26,7 +26,7 @@ applyBlurFilters(blurred);
 
 function enterFrame() {
   const sinT = Math.sin((performance.now() / 1000) * 0.5);
-  const amount = Math.abs(sinT) * 32;
+  const amount = Math.abs(sinT) * 64;
   for (const entry of blurred) {
     entry.filter.blurX = amount;
     entry.filter.blurY = amount;

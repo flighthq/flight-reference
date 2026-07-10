@@ -41,7 +41,7 @@ const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.
 const offset = 10;
 
 const colorTF = createRichText();
-colorTF.data.defaultTextFormat = { font: 'Ubuntu, sans-serif', size: 19, color: 0x333399 };
+colorTF.data.defaultTextFormat = { font: 'Ubuntu, sans-serif', size: 19, color: 0x033399 };
 colorTF.x = offset;
 colorTF.y = offset;
 colorTF.data.width = 300;
@@ -66,7 +66,6 @@ rightTF.data.defaultTextFormat = {
   font: 'Ubuntu, sans-serif',
   size: 19,
   color: 0x208020,
-  align: 'right',
 };
 rightTF.x = 2 * offset + 145;
 rightTF.y = offset + 80 + offset;

@@ -10,6 +10,7 @@ import {
   createBitmap,
   createClipRegionFromCircle,
   createDisplayContainer,
+  createImageResourceFromCanvas,
   createInputManager,
   createInteractionManager,
   createRectangle,
@@ -52,9 +53,23 @@ const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.
 const maskedContainer = createDisplayContainer();
 addNodeChild(root, maskedContainer);
 
+const tintedBirdImage = await (async () => {
+  const img = await new Promise<HTMLImageElement>((resolve) => {
+    const el = new Image();
+    el.onload = () => resolve(el);
+    el.src = 'starling/assets/textures/1x/atlas.png';
+  });
+  const c = document.createElement('canvas');
+  c.width = 165;
+  c.height = 163;
+  const ctx = c.getContext('2d')!;
+  ctx.filter = `hue-rotate(${((-0.5 * 180) / Math.PI).toFixed(1)}deg)`;
+  ctx.drawImage(img, 1, 145, 165, 163, 0, 0, 165, 163);
+  return createImageResourceFromCanvas(c);
+})();
+
 const birdImage = createBitmap();
-birdImage.data.image = atlas;
-birdImage.data.sourceRectangle = createRectangle(1, 145, 165, 163);
+birdImage.data.image = tintedBirdImage;
 birdImage.x = (GameWidth - 165) / 2;
 birdImage.y = 80;
 addNodeChild(maskedContainer, birdImage);

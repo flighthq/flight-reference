@@ -9,9 +9,11 @@ import {
   createInteractionManager,
   createInputManager,
   createRectangle,
+  createRichText,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
   registerDefaultHitTestPoints,
+  RichTextKind,
   TextLabelKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -22,7 +24,7 @@ const GameWidth = 320;
 const GameHeight = 480;
 
 const ButtonWidth = 128;
-const ButtonHeight = 32;
+const ButtonHeight = 42;
 const GridStartY = 155;
 const GridColumnX = [28, 167];
 const GridRowSpacing = 46;
@@ -46,7 +48,7 @@ const target = await createFunctionalTarget({
   width: GameWidth,
   height: GameHeight,
   background: 0xffffffff,
-  kinds: [BitmapKind, TextLabelKind],
+  kinds: [BitmapKind, RichTextKind, TextLabelKind],
 });
 
 const root = createDisplayContainer();
@@ -93,6 +95,14 @@ for (let i = 0; i < buttons.length; i++) {
   btn.connect(interaction);
   addNodeChild(root, btn.root);
 }
+
+const infoText = createRichText();
+infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 10 };
+infoText.x = 5;
+infoText.y = 475 - 64;
+infoText.data.width = 310;
+infoText.data.height = 64;
+addNodeChild(root, infoText);
 
 function frame(): void {
   prepareDisplayObjectRender(target.state, root);

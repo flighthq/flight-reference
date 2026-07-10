@@ -56,7 +56,7 @@ sheet.data.image = atlas;
 sheet.data.sourceRectangle = createRectangle(579, 1, 228, 171);
 sheet.x = CenterX - 114;
 sheet.y = CenterY - 86;
-sheet.rotation = 0.1745;
+sheet.rotation = 10;
 addNodeChild(root, sheet);
 
 registerDefaultHitTestPoints();

@@ -69,7 +69,13 @@ const brushSrcY = 144;
 const brushW = 62;
 const brushH = 62;
 
+const brushTintCanvas = document.createElement('canvas');
+brushTintCanvas.width = brushW;
+brushTintCanvas.height = brushH;
+const brushTintCtx = brushTintCanvas.getContext('2d')!;
+
 let eraseMode = false;
+let currentBrushColor = 0xffffff;
 
 registerDefaultHitTestPoints();
 const input = createInputManager();
@@ -127,14 +133,17 @@ function drawBrush(x: number, y: number): void {
     drawCtx.globalCompositeOperation = 'destination-out';
     drawCtx.drawImage(atlasImg, brushSrcX, brushSrcY, brushW, brushH, -brushW / 2, -brushH / 2, brushW, brushH);
   } else {
-    const r = Math.floor(Math.random() * 256);
-    const g = Math.floor(Math.random() * 256);
-    const b = Math.floor(Math.random() * 256);
+    const r = (currentBrushColor >> 16) & 0xff;
+    const g = (currentBrushColor >> 8) & 0xff;
+    const b = currentBrushColor & 0xff;
+    brushTintCtx.clearRect(0, 0, brushW, brushH);
+    brushTintCtx.globalCompositeOperation = 'source-over';
+    brushTintCtx.drawImage(atlasImg, brushSrcX, brushSrcY, brushW, brushH, 0, 0, brushW, brushH);
+    brushTintCtx.globalCompositeOperation = 'source-atop';
+    brushTintCtx.fillStyle = `rgb(${r},${g},${b})`;
+    brushTintCtx.fillRect(0, 0, brushW, brushH);
     drawCtx.globalCompositeOperation = 'source-over';
-    drawCtx.fillStyle = `rgb(${r},${g},${b})`;
-    drawCtx.beginPath();
-    drawCtx.arc(0, 0, brushW / 2, 0, Math.PI * 2);
-    drawCtx.fill();
+    drawCtx.drawImage(brushTintCanvas, -brushW / 2, -brushH / 2);
   }
 
   drawCtx.restore();
@@ -153,6 +162,7 @@ displayCanvas.addEventListener('pointerdown', (e) => {
 
   if (my < 48) return;
 
+  currentBrushColor = Math.round(Math.random() * 0xffffff);
   isDrawing = true;
   displayCanvas.setPointerCapture(e.pointerId);
   drawBrush(mx, my);

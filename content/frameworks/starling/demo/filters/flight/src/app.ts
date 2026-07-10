@@ -86,26 +86,29 @@ interface FilterEntry {
   colorMatrix?: ColorMatrixFilter;
 }
 
+const HueDegrees = (180 / Math.PI) * 1;
+
 const filterInfos: FilterEntry[] = [
   { name: 'Identity', type: 'none', cssFilter: 'none' },
   {
     name: 'Blur',
     type: 'blur',
-    cssFilter: 'blur(1px)',
-    blur: createBlurFilter({ blurX: 1, blurY: 1 }),
+    cssFilter: 'blur(4px)',
+    blur: createBlurFilter({ blurX: 4, blurY: 4 }),
   },
   {
     name: 'Drop Shadow',
     type: 'dropShadow',
-    cssFilter: 'drop-shadow(4px 4px 4px rgba(0,0,0,0.5))',
-    dropShadow: createDropShadowFilter({ distance: 4, blurX: 4, blurY: 4, quality: 3 }),
+    cssFilter: 'drop-shadow(2.8px 2.8px 4px rgba(0,0,0,0.5))',
+    dropShadow: createDropShadowFilter({ distance: 4, blurX: 4, blurY: 4, quality: 1 }),
   },
   {
     name: 'Glow',
     type: 'glow',
-    cssFilter: 'drop-shadow(0 0 8px red)',
-    glow: createOuterGlowFilter({ color: 0xff0000, blurX: 8, blurY: 8, strength: 2, quality: 3 }),
+    cssFilter: 'drop-shadow(0 0 4px yellow)',
+    glow: createOuterGlowFilter({ color: 0xffff00, blurX: 4, blurY: 4, strength: 1, quality: 1 }),
   },
+  { name: 'Displacement Map', type: 'none', cssFilter: 'none' },
   {
     name: 'Invert',
     type: 'colorMatrix',
@@ -137,16 +140,17 @@ const filterInfos: FilterEntry[] = [
     colorMatrix: createColorMatrixFilter(createBrightnessColorMatrix(-0.25)),
   },
   {
-    name: 'Hue Rotate',
+    name: 'Hue',
     type: 'colorMatrix',
-    cssFilter: 'hue-rotate(60deg)',
-    colorMatrix: createColorMatrixFilter(createHueRotateColorMatrix(60)),
+    cssFilter: `hue-rotate(${HueDegrees.toFixed(1)}deg)`,
+    colorMatrix: createColorMatrixFilter(createHueRotateColorMatrix(HueDegrees)),
   },
   {
     name: 'Hue + Shadow',
     type: 'colorMatrix',
-    cssFilter: 'hue-rotate(60deg) drop-shadow(4px 4px 4px rgba(0,0,0,0.5))',
-    colorMatrix: createColorMatrixFilter(createHueRotateColorMatrix(60)),
+    cssFilter: `hue-rotate(${HueDegrees.toFixed(1)}deg) drop-shadow(2.8px 2.8px 4px rgba(0,0,0,0.5))`,
+    colorMatrix: createColorMatrixFilter(createHueRotateColorMatrix(HueDegrees)),
+    dropShadow: createDropShadowFilter({ distance: 4, blurX: 4, blurY: 4, quality: 1 }),
   },
 ];
 
@@ -277,7 +281,12 @@ function runGl(state: GlRenderState): void {
       } else if (entry.type === 'glow' && entry.glow !== undefined) {
         applyOuterGlowFilterToGl(state, source, dest, scratch, entry.glow);
       } else if (entry.type === 'colorMatrix' && entry.colorMatrix !== undefined) {
-        applyColorMatrixFilterToGl(state, source, dest, entry.colorMatrix);
+        if (entry.dropShadow !== undefined) {
+          applyColorMatrixFilterToGl(state, source, scratch[0], entry.colorMatrix);
+          applyDropShadowFilterToGl(state, scratch[0], dest, [scratch[1], scratch[2], source], entry.dropShadow);
+        } else {
+          applyColorMatrixFilterToGl(state, source, dest, entry.colorMatrix);
+        }
       }
 
       endGlRenderTarget(state);

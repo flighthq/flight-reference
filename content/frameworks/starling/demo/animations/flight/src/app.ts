@@ -6,6 +6,7 @@ import {
   connectInputToInteraction,
   createBitmap,
   createDisplayContainer,
+  createImageResourceFromCanvas,
   createInteractionManager,
   createInputManager,
   createRectangle,
@@ -193,8 +194,28 @@ addNodeChild(root, backBtn.root);
 
 const egg = createBitmap();
 egg.data.image = atlas;
-egg.data.sourceRectangle = createRectangle(167, 359, 124, 170);
+const eggSourceRect = createRectangle(167, 359, 124, 170);
+egg.data.sourceRectangle = eggSourceRect;
 addNodeChild(root, egg);
+
+const tintedEggImage = await (async () => {
+  const atlasImg = await new Promise<HTMLImageElement>((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.src = 'starling/assets/textures/1x/atlas.png';
+  });
+  const c = document.createElement('canvas');
+  c.width = 124;
+  c.height = 170;
+  const ctx = c.getContext('2d')!;
+  ctx.drawImage(atlasImg, 167, 359, 124, 170, 0, 0, 124, 170);
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = '#ea8220';
+  ctx.fillRect(0, 0, 124, 170);
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.drawImage(atlasImg, 167, 359, 124, 170, 0, 0, 124, 170);
+  return createImageResourceFromCanvas(c);
+})();
 
 function resetEgg(): void {
   egg.x = EggStartX;
@@ -203,6 +224,8 @@ function resetEgg(): void {
   egg.scaleY = 1;
   egg.rotation = 0;
   egg.alpha = 1;
+  egg.data.image = atlas;
+  egg.data.sourceRectangle = eggSourceRect;
   invalidateNodeLocalTransform(egg);
   invalidateNodeAppearance(egg);
 }
@@ -276,16 +299,15 @@ function onDelayButtonClick(): void {
   delayBtn.enabled = false;
 
   setTimeout(() => {
-    egg.alpha = 0.5;
+    egg.data.image = tintedEggImage;
+    egg.data.sourceRectangle = null;
     invalidateNodeAppearance(egg);
   }, 1000);
 
   setTimeout(() => {
-    egg.alpha = 1;
+    egg.data.image = atlas;
+    egg.data.sourceRectangle = eggSourceRect;
     invalidateNodeAppearance(egg);
-  }, 2000);
-
-  setTimeout(() => {
     delayBusy = false;
     delayBtn.enabled = true;
   }, 2000);

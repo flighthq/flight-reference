@@ -11,6 +11,7 @@ import {
   createRectangle,
   createRichText,
   invalidateNodeAppearance,
+  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
   registerDefaultHitTestPoints,
@@ -41,14 +42,15 @@ addNodeChild(root, bgBmp);
 const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
 
 const infoText = createRichText();
-infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 12, color: 0x000000 };
+infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 12 };
 infoText.x = 10;
 infoText.y = 10;
 infoText.data.width = 300;
 infoText.data.height = 100;
-infoText.data.multiline = true;
 infoText.data.wordWrap = true;
-infoText.data.text = 'Pushing the bird button below\nwill only work when the touch\nis within a circle.';
+infoText.data.text =
+  'Pushing the bird only works when the touch occurs within a circle. ' +
+  "This can be accomplished by overriding the method 'hitTest'.";
 addNodeChild(root, infoText);
 
 const buttonWidth = 169;
@@ -118,12 +120,18 @@ let missTimeoutId: ReturnType<typeof setTimeout> | undefined;
 function flashButton(): void {
   if (hitTimeoutId !== undefined) clearTimeout(hitTimeoutId);
 
-  button.alpha = 0.7;
-  invalidateNodeAppearance(button);
+  button.scaleX = 0.9;
+  button.scaleY = 0.9;
+  button.x = buttonX + (buttonWidth * 0.1) / 2;
+  button.y = buttonY + (buttonHeight * 0.1) / 2;
+  invalidateNodeLocalTransform(button);
 
   hitTimeoutId = setTimeout(() => {
-    button.alpha = 1;
-    invalidateNodeAppearance(button);
+    button.scaleX = 1;
+    button.scaleY = 1;
+    button.x = buttonX;
+    button.y = buttonY;
+    invalidateNodeLocalTransform(button);
     hitTimeoutId = undefined;
   }, 200);
 }

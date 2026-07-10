@@ -54,37 +54,83 @@ for (let i = 0; i < 8; i++) {
 
 // Top row: 4 bitmaps with different scroll rect configurations
 for (let i = 0; i < 4; i++) {
-  const bmp = createBitmap();
-  bmp.data.image = image;
-  bmp.data.smoothing = true;
-  bmp.x = i * (W / 4) + W / 8 - iw / 2;
-  bmp.y = ih / 2;
-  addNodeChild(root, bmp);
+  const bmpX = i * (W / 4) + W / 8 - iw / 2;
+  const bmpY = ih / 2;
 
-  if (i === 1) setDisplayObjectClip(bmp, createClipRegionFromRectangle({ x: 0, y: 0, width: iw / 2, height: ih / 2 }));
-  if (i === 2)
-    setDisplayObjectClip(bmp, createClipRegionFromRectangle({ x: iw / 2, y: ih / 2, width: iw / 2, height: ih / 2 }));
-  if (i === 3)
-    setDisplayObjectClip(bmp, createClipRegionFromRectangle({ x: W * 2, y: H * 2, width: W * 10, height: H * 10 }));
+  if (i === 2 || i === 3) {
+    const container = createDisplayContainer();
+    container.x = bmpX;
+    container.y = bmpY;
+    addNodeChild(root, container);
+
+    const bmp = createBitmap();
+    bmp.data.image = image;
+    bmp.data.smoothing = true;
+    addNodeChild(container, bmp);
+
+    if (i === 2) {
+      setDisplayObjectClip(container, createClipRegionFromRectangle({ x: 0, y: 0, width: iw / 2, height: ih / 2 }));
+      bmp.x = -iw / 2;
+      bmp.y = -ih / 2;
+    } else {
+      setDisplayObjectClip(container, createClipRegionFromRectangle({ x: 0, y: 0, width: W * 10, height: H * 10 }));
+      bmp.x = -W * 2;
+      bmp.y = -H * 2;
+    }
+  } else {
+    const bmp = createBitmap();
+    bmp.data.image = image;
+    bmp.data.smoothing = true;
+    bmp.x = bmpX;
+    bmp.y = bmpY;
+    addNodeChild(root, bmp);
+
+    if (i === 1)
+      setDisplayObjectClip(bmp, createClipRegionFromRectangle({ x: 0, y: 0, width: iw / 2, height: ih / 2 }));
+  }
 }
 
 // Bottom row: 4 text fields with different scroll rect configurations
 const textColors = [0xaa1100, 0x11aa00, 0x1100aa, 0x660066];
 const textValues = ['Text Field 1', 'Text Field 2', 'Text Field 3', 'Text Field 4'];
 for (let i = 0; i < 4; i++) {
-  const tf = createRichText();
-  tf.data.defaultTextFormat = { font: 'sans-serif', size: 32, color: textColors[i], align: 'center' };
-  tf.x = i * (W / 4);
-  tf.y = H / 2 + H / 4;
-  tf.data.width = 400;
-  tf.data.height = 400;
-  tf.data.text = textValues[i];
-  addNodeChild(root, tf);
+  const tfX = i * (W / 4);
+  const tfY = H / 2 + H / 4;
 
-  if (i === 1) setDisplayObjectClip(tf, createClipRegionFromRectangle({ x: 0, y: 0, width: 200, height: 200 }));
-  if (i === 2) setDisplayObjectClip(tf, createClipRegionFromRectangle({ x: 0, y: 40, width: 200, height: 20 }));
-  if (i === 3)
-    setDisplayObjectClip(tf, createClipRegionFromRectangle({ x: W * 2, y: H * 2, width: W * 10, height: H * 10 }));
+  if (i === 2 || i === 3) {
+    const container = createDisplayContainer();
+    container.x = tfX;
+    container.y = tfY;
+    addNodeChild(root, container);
+
+    const tf = createRichText();
+    tf.data.defaultTextFormat = { font: 'sans-serif', size: 32, color: textColors[i], align: 'center' };
+    tf.data.width = 400;
+    tf.data.height = 400;
+    tf.data.text = textValues[i];
+    addNodeChild(container, tf);
+
+    if (i === 2) {
+      setDisplayObjectClip(container, createClipRegionFromRectangle({ x: 0, y: 0, width: 200, height: 20 }));
+      tf.x = 0;
+      tf.y = -40;
+    } else {
+      setDisplayObjectClip(container, createClipRegionFromRectangle({ x: 0, y: 0, width: W * 10, height: H * 10 }));
+      tf.x = -W * 2;
+      tf.y = -H * 2;
+    }
+  } else {
+    const tf = createRichText();
+    tf.data.defaultTextFormat = { font: 'sans-serif', size: 32, color: textColors[i], align: 'center' };
+    tf.x = tfX;
+    tf.y = tfY;
+    tf.data.width = 400;
+    tf.data.height = 400;
+    tf.data.text = textValues[i];
+    addNodeChild(root, tf);
+
+    if (i === 1) setDisplayObjectClip(tf, createClipRegionFromRectangle({ x: 0, y: 0, width: 200, height: 200 }));
+  }
 }
 
 render(root);

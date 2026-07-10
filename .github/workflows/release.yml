@@ -1,0 +1,44 @@
+name: Release reference bundle
+
+# Builds flight-reference at base "/reference/" against the published @flighthq/sdk and attaches the
+# compiled dist as a tarball to a GitHub release. The site repo's assemble step downloads that asset
+# and serves it at flighthq.ai/reference/. Tag a version to publish: git tag v0.1.0 && git push --tags
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+permissions:
+  contents: write # create the release and upload the asset
+
+jobs:
+  bundle:
+    name: Build and attach bundle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # ASSUMPTION: flight-reference's build honors VITE_BASE and outputs to dist/. Adjust if its build
+      # script differs (e.g. a different base env var or output dir).
+      - run: npm run build
+        env:
+          VITE_BASE: /reference/
+      - name: Tarball dist contents (root-level, no wrapper dir)
+        run: tar -czf "reference-dist-${GITHUB_REF_NAME}.tgz" -C dist .
+      - name: Create/upload the release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" "reference-dist-${GITHUB_REF_NAME}.tgz" \
+            --title "${GITHUB_REF_NAME}" --generate-notes \
+          || gh release upload "${GITHUB_REF_NAME}" "reference-dist-${GITHUB_REF_NAME}.tgz" --clobber
+      # OPTIONAL: tell the site repo to redeploy so /reference/ picks up this bundle immediately.
+      # Needs a PAT (repo scope) stored as SITE_DISPATCH_TOKEN in this repo's secrets.
+      # - name: Notify site repo
+      #   env:
+      #     GH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
+      #   run: gh api repos/flighthq/site/dispatches -f event_type=reference-updated

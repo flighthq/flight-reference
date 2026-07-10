@@ -737,9 +737,9 @@ export default defineConfig({
     alias: {
       '@flighthq/capture': resolve(repoRoot, 'packages/capture/src/index.ts'),
       ...(flightPreviewsEnabled ? { ...flightPackageAliases, ...flightHarnessAliases } : {}),
-      'motion/Actuate': resolve(repoRoot, 'openfl-compat/Actuate.ts'),
-      'motion/easing/Elastic': resolve(repoRoot, 'openfl-compat/Elastic.ts'),
-      'motion/easing/Quad': resolve(repoRoot, 'openfl-compat/Quad.ts'),
+      'motion/Actuate': resolve(repoRoot, 'content/frameworks/openfl/compat/Actuate.ts'),
+      'motion/easing/Elastic': resolve(repoRoot, 'content/frameworks/openfl/compat/Elastic.ts'),
+      'motion/easing/Quad': resolve(repoRoot, 'content/frameworks/openfl/compat/Quad.ts'),
       openfl: resolve(repoRoot, 'node_modules/openfl/lib/openfl'),
       starling: resolve(repoRoot, 'node_modules/starling-framework/lib/starling'),
       'stats.js': resolve(repoRoot, 'node_modules/stats-js/src/Stats.js'),

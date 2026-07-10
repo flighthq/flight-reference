@@ -21,9 +21,8 @@ A standalone reference harness for side-by-side comparison of external framework
 src/                    — Vite app source (React UI)
 index.html              — app entry point
 vite.config.ts          — Vite config with reference plugin
-openfl-compat/          — OpenFL compatibility shims (Actuate, easing)
 content/                — demo corpus
-  frameworks/openfl/    — OpenFL reference cases
+  frameworks/openfl/    — OpenFL reference cases (includes compat/ shims)
   frameworks/starling/  — Starling reference cases
   assets/               — shared assets (images, fonts)
   baselines/            — visual regression baselines

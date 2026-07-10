@@ -43,22 +43,22 @@ const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.
 const flight00 = createBitmap();
 flight00.data.image = atlas;
 flight00.data.sourceRectangle = createRectangle(1, 145, 165, 163);
-flight00.x = -20;
-flight00.y = 0;
+flight00.x = -20 + 42;
+flight00.y = 0 + 21;
 addNodeChild(root, flight00);
 
 const flight04 = createBitmap();
 flight04.data.image = atlas;
 flight04.data.sourceRectangle = createRectangle(808, 1, 200, 108);
-flight04.x = 90;
-flight04.y = 85;
+flight04.x = 90 + 8;
+flight04.y = 85 + 68;
 addNodeChild(root, flight04);
 
 const flight08 = createBitmap();
 flight08.data.image = atlas;
 flight08.data.sourceRectangle = createRectangle(851, 492, 165, 129);
-flight08.x = 100;
-flight08.y = -60;
+flight08.x = 100 + 42;
+flight08.y = -60 + 67;
 addNodeChild(root, flight08);
 
 const fallback = createRichText();

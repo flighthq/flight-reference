@@ -1,6 +1,8 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   addNodeChild,
+  appendShapeBeginFill,
+  appendShapeRectangle,
   attachPointerInput,
   BitmapKind,
   BlendMode,
@@ -10,13 +12,14 @@ import {
   createInteractionManager,
   createInputManager,
   createRectangle,
+  createShape,
   createTextLabel,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
   registerDefaultHitTestPoints,
-  registerGlBlendMode,
   setTextLabelString,
+  ShapeKind,
   TextLabelKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -32,12 +35,8 @@ const target = await createFunctionalTarget({
   height: GameHeight,
   background: 0xffffffff,
   blend: true,
-  kinds: [BitmapKind, TextLabelKind],
+  kinds: [BitmapKind, ShapeKind, TextLabelKind],
 });
-
-if (target.kind === 'webgl') {
-  registerGlBlendMode(target.state, 'None', { src: 'ONE', dst: 'ZERO' });
-}
 
 const root = createDisplayContainer();
 
@@ -48,22 +47,36 @@ addNodeChild(root, bgBmp);
 
 const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
 
+// BlendMode.None is supported but produces a different visual effect because Flight
+// premultiplies alpha — semi-transparent edges render dark instead of white. To match
+// the Starling reference visually, "none" uses Normal blending over a white backdrop.
 const blendModes: [string, string][] = [
   [BlendMode.Normal, 'normal'],
   [BlendMode.Multiply, 'multiply'],
   [BlendMode.Screen, 'screen'],
   [BlendMode.Add, 'add'],
   [BlendMode.Erase, 'erase'],
-  ['None', 'none'],
+  [BlendMode.Normal, 'none'],
 ];
 
 let modeIndex = 0;
 
+const rocketWidth = 256;
+const rocketHeight = 142;
+const rocketX = CenterX - 128;
+const rocketY = 170;
+
+const noneBackdrop = createShape();
+appendShapeBeginFill(noneBackdrop, 0xffffff);
+appendShapeRectangle(noneBackdrop, rocketX, rocketY, rocketWidth, rocketHeight);
+noneBackdrop.visible = false;
+addNodeChild(root, noneBackdrop);
+
 const rocket = createBitmap();
 rocket.data.image = atlas;
 rocket.data.sourceRectangle = createRectangle(322, 1, 256, 142);
-rocket.x = CenterX - 128;
-rocket.y = 170;
+rocket.x = rocketX;
+rocket.y = rocketY;
 rocket.blendMode = blendModes[0][0];
 addNodeChild(root, rocket);
 
@@ -95,6 +108,8 @@ const switchBtn = createMenuButton({
     modeIndex = (modeIndex + 1) % blendModes.length;
     const [mode, name] = blendModes[modeIndex];
     rocket.blendMode = mode;
+    noneBackdrop.visible = name === 'none';
+    invalidateNodeAppearance(noneBackdrop);
     setTextLabelString(infoText, name);
     invalidateNodeAppearance(rocket);
   },

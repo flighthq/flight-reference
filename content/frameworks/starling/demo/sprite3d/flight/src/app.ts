@@ -100,10 +100,11 @@ function rotateZ(v: Vec3, a: number): Vec3 {
   return [v[0] * c - v[1] * s, v[0] * s + v[1] * c, v[2]];
 }
 
+const FocalLength = GameWidth / (2 * Math.tan(0.5));
+const CubeZ = 100;
+
 function project(v: Vec3): [number, number] {
-  const fov = 600;
-  const z = v[2] + 500;
-  const scale = fov / z;
+  const scale = FocalLength / (FocalLength + v[2] + CubeZ);
   return [CenterX + v[0] * scale, CenterY + v[1] * scale];
 }
 

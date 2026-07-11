@@ -83,7 +83,7 @@ const startBtn = createMenuButton({
   },
 });
 startBtn.root.x = CenterX - 64;
-startBtn.root.y = 15;
+startBtn.root.y = 20;
 startBtn.connect(interaction);
 addNodeChild(root, startBtn.root);
 
@@ -201,13 +201,13 @@ const backBtn = createMenuButton({
   regions: BUTTON_REGIONS_1X,
   text: 'Back',
   width: 88,
-  height: 32,
+  height: 50,
   onTriggered: () => {
     window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
   },
 });
 backBtn.root.x = GameWidth / 2 - 88 / 2;
-backBtn.root.y = GameHeight - 42 + 4;
+backBtn.root.y = GameHeight - 50 + 4;
 backBtn.connect(interaction);
 addNodeChild(root, backBtn.root);
 
@@ -250,7 +250,7 @@ function enterFrame(now: number): void {
     }
 
     if (started && frameCount % Math.round(TargetFps / 4) === 0) {
-      statusText.data.text = `${getNodeChildCount(container)} objects, ${Math.round(measuredFps)} fps`;
+      statusText.data.text = `${getNodeChildCount(container)} objects`;
       invalidateNodeAppearance(statusText);
     }
   }

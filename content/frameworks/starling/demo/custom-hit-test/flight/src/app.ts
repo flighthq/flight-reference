@@ -10,7 +10,6 @@ import {
   createInputManager,
   createRectangle,
   createRichText,
-  invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
@@ -49,8 +48,8 @@ infoText.data.width = 300;
 infoText.data.height = 100;
 infoText.data.wordWrap = true;
 infoText.data.text =
-  'Pushing the bird only works when the touch occurs within a circle. ' +
-  "This can be accomplished by overriding the method 'hitTest'.";
+  'Pushing the bird only works when the touch occurs within a circle.' +
+  " This can be accomplished by overriding the method 'hitTest'.";
 addNodeChild(root, infoText);
 
 const buttonWidth = 169;
@@ -65,18 +64,6 @@ button.x = buttonX;
 button.y = buttonY;
 addNodeChild(root, button);
 
-const missText = createRichText();
-missText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 19, color: 0xff3333 };
-missText.x = 10;
-missText.y = buttonY + buttonHeight + 12;
-missText.data.width = 300;
-missText.data.height = 30;
-missText.data.multiline = true;
-missText.data.wordWrap = true;
-missText.data.text = 'Outside circle!';
-missText.alpha = 0;
-addNodeChild(root, missText);
-
 registerDefaultHitTestPoints();
 
 const input = createInputManager();
@@ -90,13 +77,13 @@ const backBtn = createMenuButton({
   regions: BUTTON_REGIONS_1X,
   text: 'Back',
   width: 88,
-  height: 32,
+  height: 50,
   onTriggered: () => {
     window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
   },
 });
 backBtn.root.x = GameWidth / 2 - 88 / 2;
-backBtn.root.y = GameHeight - 42 + 4;
+backBtn.root.y = GameHeight - 50 + 4;
 backBtn.connect(interaction);
 addNodeChild(root, backBtn.root);
 
@@ -115,8 +102,6 @@ function isInsideCircle(x: number, y: number): boolean {
 }
 
 let hitTimeoutId: ReturnType<typeof setTimeout> | undefined;
-let missTimeoutId: ReturnType<typeof setTimeout> | undefined;
-
 function flashButton(): void {
   if (hitTimeoutId !== undefined) clearTimeout(hitTimeoutId);
 
@@ -136,19 +121,6 @@ function flashButton(): void {
   }, 200);
 }
 
-function showMiss(): void {
-  if (missTimeoutId !== undefined) clearTimeout(missTimeoutId);
-
-  missText.alpha = 1;
-  invalidateNodeAppearance(missText);
-
-  missTimeoutId = setTimeout(() => {
-    missText.alpha = 0;
-    invalidateNodeAppearance(missText);
-    missTimeoutId = undefined;
-  }, 400);
-}
-
 const canvas = document.querySelector('canvas')!;
 
 canvas.addEventListener('click', (e) => {
@@ -160,8 +132,6 @@ canvas.addEventListener('click', (e) => {
 
   if (isInsideCircle(x, y)) {
     flashButton();
-  } else {
-    showMiss();
   }
 });
 

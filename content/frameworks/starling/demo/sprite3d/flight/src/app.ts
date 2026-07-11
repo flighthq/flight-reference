@@ -99,7 +99,7 @@ function rotateZ(v: Vec3, a: number): Vec3 {
 
 function project(v: Vec3): [number, number] {
   const fov = 600;
-  const z = v[2] + 400;
+  const z = v[2] + 500;
   const scale = fov / z;
   return [CenterX + v[0] * scale, CenterY + v[1] * scale];
 }
@@ -209,13 +209,13 @@ const backBtn = createMenuButton({
   regions: BUTTON_REGIONS_1X,
   text: 'Back',
   width: 88,
-  height: 32,
+  height: 50,
   onTriggered: () => {
     window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
   },
 });
 backBtn.root.x = GameWidth / 2 - 88 / 2;
-backBtn.root.y = GameHeight - 42 + 4;
+backBtn.root.y = GameHeight - 50 + 4;
 addNodeChild(root, backBtn.root);
 
 const startTime = performance.now();
@@ -242,7 +242,7 @@ function renderCube(now: number): void {
     const edge1 = sub(verts[1], verts[0]);
     const edge2 = sub(verts[3], verts[0]);
     const normal = cross(edge1, edge2);
-    if (normal[2] >= 0) continue;
+    if (normal[2] <= 0) continue;
 
     const projected = verts.map(project) as [number, number][];
     const depth = (verts[0][2] + verts[1][2] + verts[2][2] + verts[3][2]) / 4;

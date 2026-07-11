@@ -63,7 +63,7 @@ const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.
 const logo = createBitmap();
 logo.data.image = atlas;
 logo.data.sourceRectangle = createRectangle(1, 1, 320, 143);
-logo.y = 5;
+logo.y = 0;
 addNodeChild(root, logo);
 
 registerDefaultHitTestPoints();

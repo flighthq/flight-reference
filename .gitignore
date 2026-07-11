@@ -4,4 +4,5 @@ dist
 .vite
 .cache
 coverage
+.capture-output
 *.tsbuildinfo

@@ -114,6 +114,9 @@ backBtn.root.y = GameHeight - 50 + 4;
 backBtn.connect(interaction);
 addNodeChild(root, backBtn.root);
 
+prepareDisplayObjectRender(target.state, root);
+target.render(root);
+
 let lastFrameTime = performance.now();
 
 function enterFrame(now: number): void {
@@ -121,10 +124,9 @@ function enterFrame(now: number): void {
     lastFrameTime = now;
     currentFrame = (currentFrame + 1) % frames.length;
     showFrame(currentFrame);
-    prepareDisplayObjectRender(target.state, root);
-    target.render(root);
   }
-
+  prepareDisplayObjectRender(target.state, root);
+  target.render(root);
   requestAnimationFrame(enterFrame);
 }
 

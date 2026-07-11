@@ -9,6 +9,7 @@ import {
   createImageResourceFromCanvas,
   createInteractionManager,
   createInputManager,
+  invalidateImageResource,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
@@ -60,8 +61,9 @@ drawCtx.textBaseline = 'top';
 drawCtx.fillText('Touch the screen', CenterX, 196);
 drawCtx.fillText('to draw!', CenterX, 224);
 
+const drawImage = createImageResourceFromCanvas(drawCanvas);
 const canvasBmp = createBitmap();
-canvasBmp.data.image = createImageResourceFromCanvas(drawCanvas);
+canvasBmp.data.image = drawImage;
 addNodeChild(root, canvasBmp);
 
 const brushSrcX = 515;
@@ -147,11 +149,11 @@ function drawBrush(x: number, y: number): void {
 
   drawCtx.restore();
 
-  canvasBmp.data.image = createImageResourceFromCanvas(drawCanvas);
+  invalidateImageResource(drawImage);
   invalidateNodeAppearance(canvasBmp);
 }
 
-const displayCanvas = document.querySelector('canvas')!;
+const displayCanvas = (target.state as { canvas: HTMLCanvasElement }).canvas;
 let isDrawing = false;
 
 displayCanvas.addEventListener('pointerdown', (e) => {

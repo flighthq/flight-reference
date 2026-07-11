@@ -63,7 +63,7 @@ const tintedBirdImage = await (async () => {
   c.width = 165;
   c.height = 163;
   const ctx = c.getContext('2d')!;
-  ctx.filter = `hue-rotate(${((-0.5 * 180) / Math.PI).toFixed(1)}deg)`;
+  ctx.filter = 'hue-rotate(-90deg)';
   ctx.drawImage(img, 1, 145, 165, 163, 0, 0, 165, 163);
   return createImageResourceFromCanvas(c);
 })();

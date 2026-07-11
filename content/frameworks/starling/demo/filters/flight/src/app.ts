@@ -104,8 +104,8 @@ const filterInfos: FilterEntry[] = [
   {
     name: 'Blur',
     type: 'blur',
-    cssFilter: 'blur(1px)',
-    blur: createBlurFilter({ blurX: 1, blurY: 1 }),
+    cssFilter: 'blur(1.5px)',
+    blur: createBlurFilter({ blurX: 1.5, blurY: 1.5 }),
   },
   {
     name: 'Drop Shadow',
@@ -116,14 +116,14 @@ const filterInfos: FilterEntry[] = [
   {
     name: 'Glow',
     type: 'glow',
-    cssFilter: 'drop-shadow(0 0 1px yellow)',
-    glow: createOuterGlowFilter({ color: 0xffff00, blurX: 1, blurY: 1, quality: 1 }),
+    cssFilter: 'drop-shadow(0 0 1.5px yellow)',
+    glow: createOuterGlowFilter({ color: 0xffff00, blurX: 1.5, blurY: 1.5, quality: 1 }),
   },
   {
     name: 'Displacement Map',
     type: 'displacementMap',
     cssFilter: 'none',
-    displacementMap: createDisplacementMapFilter({ componentX: 0, componentY: 1, scaleX: 25, scaleY: 25 }),
+    displacementMap: createDisplacementMapFilter({ componentX: 0, componentY: 1, scaleX: 20, scaleY: 20 }),
   },
   {
     name: 'Invert',

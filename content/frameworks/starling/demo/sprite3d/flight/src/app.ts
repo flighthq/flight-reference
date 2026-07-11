@@ -178,34 +178,62 @@ function sub(a: Vec3, b: Vec3): Vec3 {
   return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 }
 
-function drawTexturedQuad(
-  ctx: CanvasRenderingContext2D,
-  tex: HTMLCanvasElement,
-  p0: [number, number],
-  p1: [number, number],
-  p2: [number, number],
-  p3: [number, number],
-): void {
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(p0[0], p0[1]);
-  ctx.lineTo(p1[0], p1[1]);
-  ctx.lineTo(p2[0], p2[1]);
-  ctx.lineTo(p3[0], p3[1]);
-  ctx.closePath();
-  ctx.clip();
+const SubDiv = 8;
 
+function drawTexturedQuad(ctx: CanvasRenderingContext2D, tex: HTMLCanvasElement, verts3d: Vec3[]): void {
   const w = tex.width;
   const h = tex.height;
 
-  const dx1 = p1[0] - p0[0];
-  const dy1 = p1[1] - p0[1];
-  const dx2 = p3[0] - p0[0];
-  const dy2 = p3[1] - p0[1];
+  for (let row = 0; row < SubDiv; row++) {
+    for (let col = 0; col < SubDiv; col++) {
+      const u0 = col / SubDiv;
+      const u1 = (col + 1) / SubDiv;
+      const v0 = row / SubDiv;
+      const v1 = (row + 1) / SubDiv;
 
-  ctx.setTransform(dx1 / w, dy1 / w, dx2 / h, dy2 / h, p0[0], p0[1]);
-  ctx.drawImage(tex, 0, 0);
-  ctx.restore();
+      const lerp3d = (ua: number, va: number): Vec3 => {
+        const top: Vec3 = [
+          verts3d[0][0] + (verts3d[1][0] - verts3d[0][0]) * ua,
+          verts3d[0][1] + (verts3d[1][1] - verts3d[0][1]) * ua,
+          verts3d[0][2] + (verts3d[1][2] - verts3d[0][2]) * ua,
+        ];
+        const bot: Vec3 = [
+          verts3d[3][0] + (verts3d[2][0] - verts3d[3][0]) * ua,
+          verts3d[3][1] + (verts3d[2][1] - verts3d[3][1]) * ua,
+          verts3d[3][2] + (verts3d[2][2] - verts3d[3][2]) * ua,
+        ];
+        return [top[0] + (bot[0] - top[0]) * va, top[1] + (bot[1] - top[1]) * va, top[2] + (bot[2] - top[2]) * va];
+      };
+
+      const q0 = project(lerp3d(u0, v0));
+      const q1 = project(lerp3d(u1, v0));
+      const q2 = project(lerp3d(u1, v1));
+      const q3 = project(lerp3d(u0, v1));
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(q0[0], q0[1]);
+      ctx.lineTo(q1[0], q1[1]);
+      ctx.lineTo(q2[0], q2[1]);
+      ctx.lineTo(q3[0], q3[1]);
+      ctx.closePath();
+      ctx.clip();
+
+      const sx = u0 * w;
+      const sy = v0 * h;
+      const sw = (u1 - u0) * w;
+      const sh = (v1 - v0) * h;
+
+      const dx1 = q1[0] - q0[0];
+      const dy1 = q1[1] - q0[1];
+      const dx2 = q3[0] - q0[0];
+      const dy2 = q3[1] - q0[1];
+
+      ctx.setTransform(dx1 / sw, dy1 / sw, dx2 / sh, dy2 / sh, q0[0], q0[1]);
+      ctx.drawImage(tex, sx, sy, sw, sh, 0, 0, sw, sh);
+      ctx.restore();
+    }
+  }
 }
 
 const backBtn = createMenuButton({
@@ -232,7 +260,7 @@ function renderCube(now: number): void {
 
   cubeCtx.clearRect(0, 0, GameWidth, GameHeight);
 
-  const transformed: { verts: Vec3[]; projected: [number, number][]; depth: number; textureIndex: number }[] = [];
+  const transformed: { verts: Vec3[]; depth: number; textureIndex: number }[] = [];
 
   for (const face of baseFaces) {
     const verts = face.verts.map((v) => {
@@ -248,22 +276,14 @@ function renderCube(now: number): void {
     const normal = cross(edge1, edge2);
     if (normal[2] <= 0) continue;
 
-    const projected = verts.map(project) as [number, number][];
     const depth = (verts[0][2] + verts[1][2] + verts[2][2] + verts[3][2]) / 4;
-    transformed.push({ verts, projected, depth, textureIndex: face.textureIndex });
+    transformed.push({ verts, depth, textureIndex: face.textureIndex });
   }
 
   transformed.sort((a, b) => b.depth - a.depth);
 
   for (const face of transformed) {
-    drawTexturedQuad(
-      cubeCtx,
-      tintedFaces[face.textureIndex],
-      face.projected[0],
-      face.projected[1],
-      face.projected[2],
-      face.projected[3],
-    );
+    drawTexturedQuad(cubeCtx, tintedFaces[face.textureIndex], face.verts);
   }
 
   invalidateImageResource(cubeImage);

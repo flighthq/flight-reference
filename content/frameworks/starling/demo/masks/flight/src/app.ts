@@ -70,8 +70,8 @@ const tintedBirdImage = await (async () => {
 
 const birdImage = createBitmap();
 birdImage.data.image = tintedBirdImage;
-birdImage.x = (GameWidth - 165) / 2;
-birdImage.y = 80;
+birdImage.x = (GameWidth - 220) / 2 + 42;
+birdImage.y = 80 + 21;
 addNodeChild(maskedContainer, birdImage);
 
 const maskText = createRichText();

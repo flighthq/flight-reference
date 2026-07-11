@@ -15,6 +15,7 @@ import {
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
   registerDefaultHitTestPoints,
+  registerGlBlendMode,
   RichTextKind,
   TextLabelKind,
 } from '@flighthq/sdk';
@@ -34,6 +35,13 @@ const target = await createFunctionalTarget({
   kinds: [BitmapKind, RichTextKind, TextLabelKind],
 });
 
+const canvas = (target.state as { canvas: HTMLCanvasElement }).canvas;
+canvas.style.backgroundColor = '#fff';
+
+if (target.kind === 'webgl') {
+  registerGlBlendMode(target.state, 'None', { src: 'ONE', dst: 'ZERO' });
+}
+
 const root = createDisplayContainer();
 
 const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
@@ -43,12 +51,13 @@ addNodeChild(root, bgBmp);
 
 const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
 
-const blendModes: [BlendMode, string][] = [
+const blendModes: [string, string][] = [
   [BlendMode.Normal, 'normal'],
   [BlendMode.Multiply, 'multiply'],
   [BlendMode.Screen, 'screen'],
   [BlendMode.Add, 'add'],
   [BlendMode.Erase, 'erase'],
+  ['None', 'none'],
 ];
 
 let modeIndex = 0;
@@ -67,6 +76,7 @@ infoText.y = 330;
 infoText.data.width = 300;
 infoText.data.height = 32;
 infoText.data.text = blendModes[0][1];
+infoText.blendMode = BlendMode.Normal;
 addNodeChild(root, infoText);
 
 registerDefaultHitTestPoints();

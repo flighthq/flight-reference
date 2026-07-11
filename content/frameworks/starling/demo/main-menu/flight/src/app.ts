@@ -97,14 +97,23 @@ for (let i = 0; i < buttons.length; i++) {
 }
 
 const infoText = createRichText();
-infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 10 };
+infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 10, verticalAlign: 'bottom' };
 infoText.x = 5;
 infoText.y = 475 - 64;
 infoText.data.width = 310;
 infoText.data.height = 64;
-const canvas = (target.state as { canvas: HTMLCanvasElement }).canvas;
-const gl = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
-infoText.data.text = gl ? (gl.getParameter(gl.RENDERER) as string) : 'Flight SDK';
+
+const infoCanvas = (target.state as { canvas: HTMLCanvasElement }).canvas;
+const infoGl = infoCanvas.getContext('webgl2') ?? infoCanvas.getContext('webgl');
+if (infoGl) {
+  const vendor = infoGl.getParameter(infoGl.VENDOR) as string;
+  const version = infoGl.getParameter(infoGl.VERSION) as string;
+  const renderer = infoGl.getParameter(infoGl.RENDERER) as string;
+  const glsl = infoGl.getParameter(infoGl.SHADING_LANGUAGE_VERSION) as string;
+  infoText.data.text = `OpenGL Vendor=${vendor} Version=${version} Renderer=${renderer} GLSL=${glsl}`;
+} else {
+  infoText.data.text = 'Flight SDK';
+}
 addNodeChild(root, infoText);
 
 function frame(): void {

@@ -110,13 +110,13 @@ const filterInfos: FilterEntry[] = [
     name: 'Drop Shadow',
     type: 'dropShadow',
     cssFilter: 'drop-shadow(2.8px 2.8px 1px rgba(0,0,0,0.5))',
-    dropShadow: createDropShadowFilter({ distance: 4, blurX: 1, blurY: 1, quality: 1 }),
+    dropShadow: createDropShadowFilter({ distance: 4, blurX: 1, blurY: 1, alpha: 0.5, quality: 1 }),
   },
   {
     name: 'Glow',
     type: 'glow',
     cssFilter: 'drop-shadow(0 0 1px yellow)',
-    glow: createOuterGlowFilter({ color: 0xffff00, blurX: 1, blurY: 1, strength: 1, quality: 1 }),
+    glow: createOuterGlowFilter({ color: 0xffff00, blurX: 1, blurY: 1, quality: 1 }),
   },
   {
     name: 'Displacement Map',
@@ -165,7 +165,7 @@ const filterInfos: FilterEntry[] = [
     type: 'colorMatrix',
     cssFilter: `hue-rotate(${HueDegrees.toFixed(1)}deg) drop-shadow(2.8px 2.8px 4px rgba(0,0,0,0.5))`,
     colorMatrix: createColorMatrixFilter(createHueRotateColorMatrix(HueDegrees)),
-    dropShadow: createDropShadowFilter({ distance: 4, blurX: 1, blurY: 1, quality: 1 }),
+    dropShadow: createDropShadowFilter({ distance: 4, blurX: 1, blurY: 1, alpha: 0.5, quality: 1 }),
   },
 ];
 

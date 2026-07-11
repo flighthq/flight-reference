@@ -102,6 +102,9 @@ infoText.x = 5;
 infoText.y = 475 - 64;
 infoText.data.width = 310;
 infoText.data.height = 64;
+const canvas = (target.state as { canvas: HTMLCanvasElement }).canvas;
+const gl = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
+infoText.data.text = gl ? (gl.getParameter(gl.RENDERER) as string) : 'Flight SDK';
 addNodeChild(root, infoText);
 
 function frame(): void {

@@ -68,6 +68,7 @@ import {
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
   registerDefaultHitTestPoints,
+  removeNodeChild,
   renderGlBackground,
   renderGlDisplayObject,
   RichTextKind,
@@ -341,8 +342,7 @@ function runGl(state: GlRenderState): void {
     renderGlDisplayObject(state, noiseBmp);
     endGlRenderTarget(state);
   }
-  noiseBmp.alpha = 0;
-  invalidateNodeAppearance(noiseBmp);
+  removeNodeChild(root, noiseBmp);
 
   function renderFrame(): void {
     const entry = filterInfos[filterIndex];

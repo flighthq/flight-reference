@@ -9,10 +9,7 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "types": ["vite/client"],
-    "baseUrl": ".",
-    "paths": {
-      "@flighthq/capture": ["./packages/capture/src/index.ts"]
-    }
+    "baseUrl": "."
   },
   "include": ["src", "vite.config.ts"]
 }

@@ -6,6 +6,6 @@ Prefer single-line commit messages following Conventional Commits (`type(scope):
 
 ## Commands
 
-- `npm run check` — full CI: typecheck, lint, format:check, test, build
+- `npm run check` — full CI: typecheck, lint, format:check, build
 - `npm run dev` — dev server for the reference harness
 - `npm run fix` — auto-fix lint and format issues

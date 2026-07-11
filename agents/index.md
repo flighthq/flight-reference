@@ -26,7 +26,6 @@ content/                — demo corpus
   frameworks/starling/  — Starling reference cases
   assets/               — shared assets (images, fonts)
   baselines/            — visual regression baselines
-packages/capture/       — @flighthq/capture library (fingerprint, snapshot)
 scripts/                — build and release utilities
 agents/                 — codebase map and conventions (this file)
   conventions/          — domain-specific rules
@@ -37,13 +36,12 @@ agents/                 — codebase map and conventions (this file)
 ## Commands
 
 - `npm run dev` — Vite dev server for the reference harness
-- `npm run build` — build capture package then the Vite app
+- `npm run build` — build the Vite app
 - `npm run preview` — preview the production build
-- `npm run check` — full CI: typecheck, lint, format:check, test, build
+- `npm run check` — full CI: typecheck, lint, format:check, build
 - `npm run fix` — auto-fix lint and format issues
-- `npm run test` — run capture package tests
-- `npm run typecheck` — typecheck app and capture package
-- `npm run prepush` — pre-push gate: typecheck + vitest on affected files
+- `npm run typecheck` — typecheck the app
+- `npm run prepush` — pre-push gate: typecheck
 
 ## Content
 
@@ -52,10 +50,6 @@ Reference cases live under `content/frameworks/<framework>/<corpus>/<case>/<impl
 External framework implementations are behavioral and visual references, not API templates. Flight ports should use idiomatic Flight APIs while preserving the sample's observable behavior, dimensions, assets, timing, and visual intent.
 
 Content files are linted with relaxed rules (no `consistent-type-imports`, `no-console`, `no-unused-vars`, or `no-restricted-imports` enforcement) but still get correctness checks.
-
-## Packages
-
-- **@flighthq/capture** — capture primitives: log collection, fingerprinting, snapshot comparison. The only publishable package. Has its own typecheck and test suite.
 
 ## Conventions
 

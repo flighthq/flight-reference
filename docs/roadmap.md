@@ -3,7 +3,7 @@
 ## Decision summary
 
 - The reference harness is the application for this repo, not an incidental test target.
-- `@flighthq/capture` lives in this repo as a publishable package boundary.
+- Capture tooling uses upstream `@flighthq/tool-capture` (via `.cache/flight-latest/`).
 - Static scenario assets are committed locally under `assets/`.
 - Deterministic capture stays available, but it is not the only acceptable validation path.
 - Side-by-side comparison is a core harness feature, even before the real adapters land.
@@ -12,10 +12,10 @@
 
 1. Move reference samples into `reference/frameworks/...` with committed manifests and assets.
 2. Keep the harness in `tools/reference` thin and adapter-oriented.
-3. Grow `@flighthq/capture` around three primitives:
-   - log collection for agents and harness sessions
-   - stable fingerprinting for quick comparison
-   - opt-in snapshots for runs where determinism is useful
+3. Leverage `@flighthq/tool-capture` for:
+   - deterministic browser capture (frame-halt, seeded PRNG, preserveDrawingBuffer)
+   - baseline store (sha256 comparison)
+   - log collection and structured output
 4. Keep repo tooling small: build, typecheck, test, and local dev.
 
 ## Harness direction
@@ -34,7 +34,7 @@ Driving one surface should eventually drive both surfaces. The practical path is
 
 1. Normalize user interactions into harness-level events.
 2. Feed those events into both adapters.
-3. Record the event stream in `@flighthq/capture`.
+3. Record the event stream via `@flighthq/tool-capture`.
 4. Compare fingerprints, logs, and optional snapshots instead of requiring every sample to be fully deterministic.
 
 That avoids binding the harness to DOM-level event replay too early while still keeping lockstep behavior as the goal.

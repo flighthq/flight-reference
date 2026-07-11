@@ -735,7 +735,6 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@flighthq/capture': resolve(repoRoot, 'packages/capture/src/index.ts'),
       ...(flightPreviewsEnabled ? { ...flightPackageAliases, ...flightHarnessAliases } : {}),
       'motion/Actuate': resolve(repoRoot, 'content/frameworks/openfl/compat/Actuate.ts'),
       'motion/easing/Elastic': resolve(repoRoot, 'content/frameworks/openfl/compat/Elastic.ts'),

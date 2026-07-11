@@ -4,19 +4,14 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Standalone reference harness for Flight scenarios and capture utilities.",
-  "workspaces": [
-    "packages/*"
-  ],
   "engines": {
     "node": ">=22.0.0"
   },
   "scripts": {
     "predev": "tsx scripts/openfl-shims.ts",
     "dev": "vite",
-    "prebuild:reference": "tsx scripts/openfl-shims.ts",
-    "build:capture": "npm run build --workspace @flighthq/capture",
-    "build:reference": "vite build",
-    "build": "npm run build:capture && npm run build:reference",
+    "prebuild": "tsx scripts/openfl-shims.ts",
+    "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "lint": "oxlint --max-warnings=0",
     "lint:fix": "oxlint --fix",
@@ -26,14 +21,13 @@
     "stage:openfl-sample-assets": "tsx scripts/stage-openfl-sample-assets.ts",
     "ci": "npm run check && npm run test:e2e",
     "prepare": "husky",
-    "test": "npm run test --workspace @flighthq/capture",
-    "typecheck": "tsc -p tsconfig.app.json --noEmit && npm run typecheck --workspace @flighthq/capture",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
     "prepush": "tsx scripts/prepush.ts",
     "capture": "tsx scripts/capture.ts",
     "capture:update": "tsx scripts/capture.ts --update-baseline",
     "capture:check": "tsx scripts/capture.ts --fail-on-error",
     "test:e2e": "npx playwright test",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build"
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run build"
   },
   "dependencies": {
     "openfl": "^9.4.1",
@@ -57,8 +51,7 @@
     "picocolors": "^1.1.1",
     "tsx": "^4.22.4",
     "typescript": "^5.9.2",
-    "vite": "^7.0.2",
-    "vitest": "^3.2.4"
+    "vite": "^7.0.2"
   },
   "lint-staged": {
     "**/*.{ts,tsx}": [

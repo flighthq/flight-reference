@@ -96,27 +96,27 @@ interface FilterEntry {
   displacementMap?: DisplacementMapFilter;
 }
 
-const HueDegrees = (180 / Math.PI) * 1;
+const HueDegrees = 180;
 
 const filterInfos: FilterEntry[] = [
   { name: 'Identity', type: 'none', cssFilter: 'none' },
   {
     name: 'Blur',
     type: 'blur',
-    cssFilter: 'blur(4px)',
-    blur: createBlurFilter({ blurX: 4, blurY: 4 }),
+    cssFilter: 'blur(1px)',
+    blur: createBlurFilter({ blurX: 1, blurY: 1 }),
   },
   {
     name: 'Drop Shadow',
     type: 'dropShadow',
-    cssFilter: 'drop-shadow(2.8px 2.8px 4px rgba(0,0,0,0.5))',
-    dropShadow: createDropShadowFilter({ distance: 4, blurX: 4, blurY: 4, quality: 1 }),
+    cssFilter: 'drop-shadow(2.8px 2.8px 1px rgba(0,0,0,0.5))',
+    dropShadow: createDropShadowFilter({ distance: 4, blurX: 1, blurY: 1, quality: 1 }),
   },
   {
     name: 'Glow',
     type: 'glow',
-    cssFilter: 'drop-shadow(0 0 4px yellow)',
-    glow: createOuterGlowFilter({ color: 0xffff00, blurX: 4, blurY: 4, strength: 1, quality: 1 }),
+    cssFilter: 'drop-shadow(0 0 1px yellow)',
+    glow: createOuterGlowFilter({ color: 0xffff00, blurX: 1, blurY: 1, strength: 1, quality: 1 }),
   },
   {
     name: 'Displacement Map',
@@ -146,13 +146,13 @@ const filterInfos: FilterEntry[] = [
     name: 'Contrast',
     type: 'colorMatrix',
     cssFilter: 'contrast(1.75)',
-    colorMatrix: createColorMatrixFilter(createContrastColorMatrix(0.75)),
+    colorMatrix: createColorMatrixFilter(createContrastColorMatrix(1.75)),
   },
   {
     name: 'Brightness',
     type: 'colorMatrix',
     cssFilter: 'brightness(0.75)',
-    colorMatrix: createColorMatrixFilter(createBrightnessColorMatrix(-0.25)),
+    colorMatrix: createColorMatrixFilter(createBrightnessColorMatrix(-63.75)),
   },
   {
     name: 'Hue',
@@ -165,7 +165,7 @@ const filterInfos: FilterEntry[] = [
     type: 'colorMatrix',
     cssFilter: `hue-rotate(${HueDegrees.toFixed(1)}deg) drop-shadow(2.8px 2.8px 4px rgba(0,0,0,0.5))`,
     colorMatrix: createColorMatrixFilter(createHueRotateColorMatrix(HueDegrees)),
-    dropShadow: createDropShadowFilter({ distance: 4, blurX: 4, blurY: 4, quality: 1 }),
+    dropShadow: createDropShadowFilter({ distance: 4, blurX: 1, blurY: 1, quality: 1 }),
   },
 ];
 
@@ -234,13 +234,13 @@ const backBtn = createMenuButton({
   regions: BUTTON_REGIONS_1X,
   text: 'Back',
   width: 88,
-  height: 32,
+  height: 50,
   onTriggered: () => {
     window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
   },
 });
 backBtn.root.x = GameWidth / 2 - 88 / 2;
-backBtn.root.y = GameHeight - 42 + 4;
+backBtn.root.y = GameHeight - 50 + 4;
 backBtn.connect(interaction);
 addNodeChild(root, backBtn.root);
 

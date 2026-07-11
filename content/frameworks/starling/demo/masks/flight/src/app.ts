@@ -85,8 +85,8 @@ maskText.data.text = 'Move the mouse (or a finger) over the screen to move the m
 addNodeChild(maskedContainer, maskText);
 
 const maskRadius = 100;
-const startX = GameWidth / 2;
-const startY = 80 + 163 / 2;
+const startX = 0;
+const startY = 0;
 
 setDisplayObjectClip(maskedContainer, createClipRegionFromCircle(startX, startY, maskRadius));
 
@@ -112,19 +112,19 @@ const backBtn = createMenuButton({
   regions: BUTTON_REGIONS_1X,
   text: 'Back',
   width: 88,
-  height: 32,
+  height: 50,
   onTriggered: () => {
     window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
   },
 });
 backBtn.root.x = GameWidth / 2 - 88 / 2;
-backBtn.root.y = GameHeight - 42 + 4;
+backBtn.root.y = GameHeight - 50 + 4;
 backBtn.connect(interaction);
 addNodeChild(root, backBtn.root);
 
 const canvas = document.querySelector('canvas')!;
 
-canvas.addEventListener('pointermove', (e) => {
+function updateMaskPosition(e: PointerEvent): void {
   const rect = canvas.getBoundingClientRect();
   const mx = ((e.clientX - rect.left) / rect.width) * GameWidth;
   const my = ((e.clientY - rect.top) / rect.height) * GameHeight;
@@ -135,7 +135,10 @@ canvas.addEventListener('pointermove', (e) => {
   indicator.y = my;
   invalidateNodeLocalTransform(indicator);
   invalidateNodeAppearance(maskedContainer);
-});
+}
+
+canvas.addEventListener('pointerdown', updateMaskPosition);
+canvas.addEventListener('pointermove', updateMaskPosition);
 
 function frame(): void {
   prepareDisplayObjectRender(target.state, root);

@@ -62,7 +62,7 @@ flight08.y = -60 + 67;
 addNodeChild(root, flight08);
 
 const fallback = createRichText();
-fallback.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0x000000 };
+fallback.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0x000000, align: 'center' };
 fallback.x = CenterX - 110;
 fallback.y = 280;
 fallback.data.width = 220;
@@ -83,13 +83,13 @@ const backBtn = createMenuButton({
   regions: BUTTON_REGIONS_1X,
   text: 'Back',
   width: 88,
-  height: 32,
+  height: 50,
   onTriggered: () => {
     window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
   },
 });
 backBtn.root.x = GameWidth / 2 - 88 / 2;
-backBtn.root.y = GameHeight - 42 + 4;
+backBtn.root.y = GameHeight - 50 + 4;
 backBtn.connect(interaction);
 addNodeChild(root, backBtn.root);
 

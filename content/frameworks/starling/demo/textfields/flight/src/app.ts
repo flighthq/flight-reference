@@ -41,7 +41,7 @@ const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.
 const offset = 10;
 
 const colorTF = createRichText();
-colorTF.data.defaultTextFormat = { font: 'Ubuntu, sans-serif', size: 19, color: 0x033399 };
+colorTF.data.defaultTextFormat = { font: 'Ubuntu, sans-serif', size: 19, color: 0x033399, align: 'center' };
 colorTF.x = offset;
 colorTF.y = offset;
 colorTF.data.width = 300;
@@ -52,7 +52,7 @@ colorTF.data.text = 'TextFields can have a border and a color. They can be align
 addNodeChild(root, colorTF);
 
 const leftTF = createRichText();
-leftTF.data.defaultTextFormat = { font: 'Ubuntu, sans-serif', size: 19, color: 0x996633 };
+leftTF.data.defaultTextFormat = { font: 'Ubuntu, sans-serif', size: 19, color: 0x996633, align: 'left' };
 leftTF.x = offset;
 leftTF.y = offset + 80 + offset;
 leftTF.data.width = 145;
@@ -77,7 +77,7 @@ rightTF.data.text = '... or\nbottom right ...';
 addNodeChild(root, rightTF);
 
 const fontTF = createRichText();
-fontTF.data.defaultTextFormat = { font: 'Ubuntu, sans-serif', size: 19 };
+fontTF.data.defaultTextFormat = { font: 'Ubuntu, sans-serif', size: 19, align: 'center' };
 fontTF.x = offset;
 fontTF.y = offset + 80 + offset + 80 + offset;
 fontTF.data.width = 300;
@@ -93,7 +93,7 @@ fontTF.data.htmlText =
 addNodeChild(root, fontTF);
 
 const bmpFontTF = createRichText();
-bmpFontTF.data.defaultTextFormat = { font: 'serif', size: 36, color: 0xffffff };
+bmpFontTF.data.defaultTextFormat = { font: 'serif', size: 36, color: 0xffffff, align: 'center' };
 bmpFontTF.x = offset;
 bmpFontTF.y = offset + 80 + offset + 80 + offset + 80 + offset;
 bmpFontTF.data.width = 300;
@@ -114,13 +114,13 @@ const backBtn = createMenuButton({
   regions: BUTTON_REGIONS_1X,
   text: 'Back',
   width: 88,
-  height: 32,
+  height: 50,
   onTriggered: () => {
     window.parent.postMessage({ type: 'reference:navigate', caseId: 'starling/demo/main-menu' }, '*');
   },
 });
 backBtn.root.x = GameWidth / 2 - 88 / 2;
-backBtn.root.y = GameHeight - 42 + 4;
+backBtn.root.y = GameHeight - 50 + 4;
 backBtn.connect(interaction);
 addNodeChild(root, backBtn.root);
 

@@ -175,8 +175,9 @@ const target = await createFunctionalTarget({
   width: GameWidth,
   height: GameHeight,
   background: 0xffffffff,
-  kinds: [BitmapKind, RichTextKind, TextLabelKind],
+  blend: true,
   cache: true,
+  kinds: [BitmapKind, RichTextKind, TextLabelKind],
 });
 
 const root = createDisplayContainer();

@@ -56,12 +56,12 @@ drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
 drawCtx.font = '24px DejaVu Sans, sans-serif';
 drawCtx.fillStyle = 'black';
 drawCtx.textAlign = 'center';
-drawCtx.fillText('Touch the screen', CenterX, 200);
-drawCtx.fillText('to draw!', CenterX, 230);
+drawCtx.textBaseline = 'top';
+drawCtx.fillText('Touch the screen', CenterX, 196);
+drawCtx.fillText('to draw!', CenterX, 224);
 
 const canvasBmp = createBitmap();
 canvasBmp.data.image = createImageResourceFromCanvas(drawCanvas);
-canvasBmp.y = 45;
 addNodeChild(root, canvasBmp);
 
 const brushSrcX = 515;
@@ -122,11 +122,10 @@ function frame(): void {
 frame();
 
 function drawBrush(x: number, y: number): void {
-  const adjustedY = y - 45;
-  if (adjustedY < 0 || adjustedY > 435) return;
+  if (y < 0 || y > 435) return;
 
   drawCtx.save();
-  drawCtx.translate(x, adjustedY);
+  drawCtx.translate(x, y);
   drawCtx.rotate(Math.random() * Math.PI * 2);
 
   if (eraseMode) {
@@ -159,8 +158,6 @@ displayCanvas.addEventListener('pointerdown', (e) => {
   const rect = displayCanvas.getBoundingClientRect();
   const mx = ((e.clientX - rect.left) / rect.width) * GameWidth;
   const my = ((e.clientY - rect.top) / rect.height) * GameHeight;
-
-  if (my < 48) return;
 
   currentBrushColor = Math.round(Math.random() * 0xffffff);
   isDrawing = true;

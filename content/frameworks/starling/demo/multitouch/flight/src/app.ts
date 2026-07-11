@@ -54,8 +54,10 @@ const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.
 const sheet = createBitmap();
 sheet.data.image = atlas;
 sheet.data.sourceRectangle = createRectangle(579, 1, 228, 171);
-sheet.x = CenterX - 114;
-sheet.y = CenterY - 86;
+sheet.pivotX = 114;
+sheet.pivotY = 85.5;
+sheet.x = CenterX;
+sheet.y = CenterY;
 sheet.rotation = 10;
 addNodeChild(root, sheet);
 
@@ -93,8 +95,8 @@ canvas.addEventListener('pointerdown', (e) => {
   const mx = ((e.clientX - rect.left) / rect.width) * GameWidth;
   const my = ((e.clientY - rect.top) / rect.height) * GameHeight;
 
-  const sx = sheet.x;
-  const sy = sheet.y;
+  const sx = sheet.x - sheet.pivotX;
+  const sy = sheet.y - sheet.pivotY;
   const sw = 228;
   const sh = 171;
 

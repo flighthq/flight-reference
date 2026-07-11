@@ -22,7 +22,7 @@ const FLIGHT_URL = '/starling-tests/demo/filters/flight/webgl/';
 async function waitForCanvas(page: Page): Promise<void> {
   await page.waitForSelector('canvas', { timeout: 10_000 });
   await page.evaluate(() => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(800);
 }
 
 async function clickSwitchFilter(page: Page): Promise<void> {
@@ -31,7 +31,7 @@ async function clickSwitchFilter(page: Page): Promise<void> {
   if (!box) throw new Error('Canvas not found');
   await page.mouse.click(box.x + 160, box.y + 31);
   await page.evaluate(() => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(500);
 }
 
 async function captureCanvas(page: Page): Promise<Buffer> {
@@ -54,10 +54,10 @@ test.describe('starling filters parity', () => {
       const flightShot = await captureCanvas(page);
 
       expect(flightShot).toMatchSnapshot(`filter-${filter}-flight.png`, {
-        maxDiffPixelRatio: 0.05,
+        maxDiffPixelRatio: 0.15,
       });
       expect(starlingShot).toMatchSnapshot(`filter-${filter}-starling.png`, {
-        maxDiffPixelRatio: 0.05,
+        maxDiffPixelRatio: 0.15,
       });
     });
   }

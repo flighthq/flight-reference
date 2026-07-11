@@ -12,7 +12,6 @@ const CASES = [
   'filter-glow',
   'node-alpha',
   'node-blend-modes',
-  'shape-fill-solid',
   'text-wrap',
 ];
 

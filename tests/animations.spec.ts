@@ -94,7 +94,7 @@ test.describe('starling animations parity', () => {
 
     const before = await captureCanvas(page);
     await clickDelayedCall(page);
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(1200);
     const tinted = await captureCanvas(page);
 
     expect(Buffer.compare(before, tinted), 'canvas should change after delayed call tints egg').not.toBe(0);

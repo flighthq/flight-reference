@@ -40,8 +40,9 @@ test.describe('starling custom-hit-test parity', () => {
 
     const scaleX = box.width / 320;
     const scaleY = box.height / 480;
-    await page.mouse.click(box.x + 160 * scaleX, box.y + 233 * scaleY);
-    await page.waitForTimeout(100);
+    await page.mouse.click(box.x + 160 * scaleX, box.y + 240 * scaleY);
+    await page.evaluate(() => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
+    await page.waitForTimeout(50);
 
     const after = await captureCanvas(page);
 
@@ -60,8 +61,9 @@ test.describe('starling custom-hit-test parity', () => {
 
     const scaleX = box.width / 320;
     const scaleY = box.height / 480;
-    await page.mouse.click(box.x + 10 * scaleX, box.y + 400 * scaleY);
-    await page.waitForTimeout(100);
+    await page.mouse.click(box.x + 10 * scaleX, box.y + 10 * scaleY);
+    await page.evaluate(() => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
+    await page.waitForTimeout(50);
 
     const after = await captureCanvas(page);
 

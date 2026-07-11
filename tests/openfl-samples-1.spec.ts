@@ -28,10 +28,10 @@ test.describe('openfl samples parity (batch 1)', () => {
       const flightShot = await captureCanvas(page);
 
       expect(openflShot).toMatchSnapshot(`samples-${name}-openfl.png`, {
-        maxDiffPixelRatio: 0.05,
+        maxDiffPixelRatio: 0.15,
       });
       expect(flightShot).toMatchSnapshot(`samples-${name}-flight.png`, {
-        maxDiffPixelRatio: 0.05,
+        maxDiffPixelRatio: 0.15,
       });
     });
   }

@@ -51,15 +51,15 @@ export const test = base.extend<{ deterministicPage: Page }>({
 });
 
 export async function waitForStableFrame(page: Page): Promise<void> {
-  await page.waitForSelector('canvas', { timeout: 10_000 });
+  await page.waitForSelector('canvas', { timeout: 15_000 });
   await page
     .waitForFunction(
       () => (window as unknown as { __captureFramesReached?: boolean }).__captureFramesReached === true,
       null,
-      { timeout: 10_000 },
+      { timeout: 15_000 },
     )
     .catch(() => {});
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(300);
 }
 
 export async function captureCanvas(page: Page): Promise<Buffer> {

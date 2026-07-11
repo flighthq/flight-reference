@@ -312,6 +312,9 @@ function onDelayButtonClick(): void {
   }, 2000);
 }
 
+prepareDisplayObjectRender(target.state, root);
+target.render(root);
+
 function enterFrame(now: number): void {
   updateTweens(now);
   prepareDisplayObjectRender(target.state, root);

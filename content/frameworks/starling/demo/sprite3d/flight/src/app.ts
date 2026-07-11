@@ -37,6 +37,7 @@ const target = await createFunctionalTarget({
   width: GameWidth,
   height: GameHeight,
   background: 0xffffffff,
+  blend: true,
   kinds: [BitmapKind, TextLabelKind],
 });
 
@@ -267,6 +268,10 @@ function renderCube(now: number): void {
   invalidateImageResource(cubeImage);
   invalidateNodeAppearance(cubeBmp);
 }
+
+renderCube(performance.now());
+prepareDisplayObjectRender(target.state, root);
+target.render(root);
 
 function frame(now: number): void {
   renderCube(now);

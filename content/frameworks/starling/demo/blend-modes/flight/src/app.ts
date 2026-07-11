@@ -16,6 +16,7 @@ import {
   prepareDisplayObjectRender,
   registerDefaultHitTestPoints,
   registerGlBlendMode,
+  setTextLabelString,
   TextLabelKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -30,13 +31,9 @@ const target = await createFunctionalTarget({
   width: GameWidth,
   height: GameHeight,
   background: 0xffffffff,
-  contextAttributes: { alpha: true },
   blend: true,
   kinds: [BitmapKind, TextLabelKind],
 });
-
-const canvas = (target.state as { canvas: HTMLCanvasElement }).canvas;
-canvas.style.backgroundColor = '#fff';
 
 if (target.kind === 'webgl') {
   registerGlBlendMode(target.state, 'None', { src: 'ONE', dst: 'ZERO' });
@@ -67,6 +64,7 @@ rocket.data.image = atlas;
 rocket.data.sourceRectangle = createRectangle(322, 1, 256, 142);
 rocket.x = CenterX - 128;
 rocket.y = 170;
+rocket.blendMode = blendModes[0][0];
 addNodeChild(root, rocket);
 
 const infoText = createTextLabel();
@@ -97,9 +95,8 @@ const switchBtn = createMenuButton({
     modeIndex = (modeIndex + 1) % blendModes.length;
     const [mode, name] = blendModes[modeIndex];
     rocket.blendMode = mode;
-    infoText.data.text = name;
+    setTextLabelString(infoText, name);
     invalidateNodeAppearance(rocket);
-    invalidateNodeAppearance(infoText);
   },
 });
 switchBtn.root.x = CenterX - 64;

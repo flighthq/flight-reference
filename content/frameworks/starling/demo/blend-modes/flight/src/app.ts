@@ -10,13 +10,12 @@ import {
   createInteractionManager,
   createInputManager,
   createRectangle,
-  createRichText,
+  createTextLabel,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
   registerDefaultHitTestPoints,
   registerGlBlendMode,
-  RichTextKind,
   TextLabelKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -31,8 +30,9 @@ const target = await createFunctionalTarget({
   width: GameWidth,
   height: GameHeight,
   background: 0xffffffff,
+  contextAttributes: { alpha: true },
   blend: true,
-  kinds: [BitmapKind, RichTextKind, TextLabelKind],
+  kinds: [BitmapKind, TextLabelKind],
 });
 
 const canvas = (target.state as { canvas: HTMLCanvasElement }).canvas;
@@ -69,8 +69,8 @@ rocket.x = CenterX - 128;
 rocket.y = 170;
 addNodeChild(root, rocket);
 
-const infoText = createRichText();
-infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 19, align: 'center' };
+const infoText = createTextLabel();
+infoText.data.textFormat = { font: 'DejaVu Sans, sans-serif', size: 19, align: 'center' };
 infoText.x = 10;
 infoText.y = 330;
 infoText.data.width = 300;

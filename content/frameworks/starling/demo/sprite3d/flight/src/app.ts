@@ -4,6 +4,7 @@ import {
   createBitmap,
   createDisplayContainer,
   createImageResourceFromCanvas,
+  invalidateImageResource,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
@@ -73,8 +74,9 @@ cubeCanvas.width = GameWidth;
 cubeCanvas.height = GameHeight;
 const cubeCtx = cubeCanvas.getContext('2d')!;
 
+const cubeImage = createImageResourceFromCanvas(cubeCanvas);
 const cubeBmp = createBitmap();
-cubeBmp.data.image = createImageResourceFromCanvas(cubeCanvas);
+cubeBmp.data.image = cubeImage;
 addNodeChild(root, cubeBmp);
 
 type Vec3 = [number, number, number];
@@ -262,7 +264,7 @@ function renderCube(now: number): void {
     );
   }
 
-  cubeBmp.data.image = createImageResourceFromCanvas(cubeCanvas);
+  invalidateImageResource(cubeImage);
   invalidateNodeAppearance(cubeBmp);
 }
 

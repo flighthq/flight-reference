@@ -8,7 +8,7 @@
 //             applyInnerGlowEffectToGl shader passes
 // CSS only covers non-knockout outer glow; inner glow and knockout are Gl-only.
 import type { InnerGlowEffect, OuterGlowEffect } from '@flighthq/effects';
-import { createInnerGlowEffect, createOuterGlowEffect } from '@flighthq/effects';
+import { computeGaussianSigmaFromRadius, createInnerGlowEffect, createOuterGlowEffect } from '@flighthq/effects';
 import { computeOuterGlowEffectCss } from '@flighthq/effects-canvas';
 import { applyInnerGlowEffectToGl, applyOuterGlowEffectToGl } from '@flighthq/effects-gl';
 import type {
@@ -94,19 +94,37 @@ for (let i = 0; i < 4; i++) {
   addNodeChild(root, bmp);
   filtered.push({
     node: bmp,
-    filter: createOuterGlowEffect({ color: 0xff0000, blurX: 6, blurY: 6, strength: 2, quality: 3 }),
+    filter: createOuterGlowEffect({
+      color: 0xff0000,
+      blurX: computeGaussianSigmaFromRadius(6),
+      blurY: computeGaussianSigmaFromRadius(6),
+      strength: 2,
+      quality: 3,
+    }),
   });
 }
-filtered[1].filter = createInnerGlowEffect({ color: 0xff0000, blurX: 6, blurY: 6, strength: 2, quality: 3 });
+filtered[1].filter = createInnerGlowEffect({
+  color: 0xff0000,
+  blurX: computeGaussianSigmaFromRadius(6),
+  blurY: computeGaussianSigmaFromRadius(6),
+  strength: 2,
+  quality: 3,
+});
 filtered[2].filter = createOuterGlowEffect({
   color: 0xff0000,
-  blurX: 6,
-  blurY: 6,
+  blurX: computeGaussianSigmaFromRadius(6),
+  blurY: computeGaussianSigmaFromRadius(6),
   strength: 2,
   quality: 3,
   knockout: true,
 });
-filtered[3].filter = createInnerGlowEffect({ color: 0xff0000, blurX: 6, blurY: 6, strength: 2, quality: 3 });
+filtered[3].filter = createInnerGlowEffect({
+  color: 0xff0000,
+  blurX: computeGaussianSigmaFromRadius(6),
+  blurY: computeGaussianSigmaFromRadius(6),
+  strength: 2,
+  quality: 3,
+});
 
 const _bounds = createRectangle();
 const _identity = createMatrix();
@@ -149,7 +167,7 @@ enterFrame();
 
 function updateFilters(): void {
   const sinT = Math.sin(performance.now() / 1000) * 0.5 + 0.5;
-  const blur = 2 + sinT * 8;
+  const blur = computeGaussianSigmaFromRadius(2 + sinT * 8);
   filtered[0].filter = createOuterGlowEffect({ color: 0xff0000, blurX: blur, blurY: blur, strength: 2, quality: 3 });
   filtered[1].filter = createInnerGlowEffect({ color: 0xff0000, blurX: blur, blurY: blur, strength: 2, quality: 3 });
   filtered[2].filter = createOuterGlowEffect({

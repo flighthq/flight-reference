@@ -1,9 +1,11 @@
 import { createBlurEffect } from '@flighthq/effects';
 import { addNodeChild, createBitmap, createDisplayContainer, loadImageResourceFromUrl } from '@flighthq/sdk';
 
-import { applyBlurEffects, render } from './render';
+import { applyBlurEffects, render, scale } from './render';
 
 const root = createDisplayContainer();
+root.scaleX = scale;
+root.scaleY = scale;
 
 const image = await loadImageResourceFromUrl('assets/openfl.png');
 

@@ -1,5 +1,5 @@
 import type { DropShadowEffect, InnerShadowEffect } from '@flighthq/effects';
-import { createDropShadowEffect, createInnerShadowEffect } from '@flighthq/effects';
+import { computeGaussianSigmaFromRadius, createDropShadowEffect, createInnerShadowEffect } from '@flighthq/effects';
 import { computeDropShadowEffectCss } from '@flighthq/effects-canvas';
 import { applyDropShadowEffectToGl, applyInnerShadowEffectToGl } from '@flighthq/effects-gl';
 import type {
@@ -149,7 +149,8 @@ const factories: FilterFactory[] = [
     }),
 ];
 
-function createFilters(blur: number, angle: number): (DropShadowEffect | InnerShadowEffect)[] {
+function createFilters(blurPixels: number, angle: number): (DropShadowEffect | InnerShadowEffect)[] {
+  const blur = computeGaussianSigmaFromRadius(blurPixels);
   return factories.map((f) => f(blur, angle));
 }
 

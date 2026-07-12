@@ -183,13 +183,15 @@ const SubDiv = 8;
 function drawTexturedQuad(ctx: CanvasRenderingContext2D, tex: HTMLCanvasElement, verts3d: Vec3[]): void {
   const w = tex.width;
   const h = tex.height;
+  const step = 1 / SubDiv;
+  const pad = 0.5 / SubDiv;
 
   for (let row = 0; row < SubDiv; row++) {
     for (let col = 0; col < SubDiv; col++) {
-      const u0 = col / SubDiv;
-      const u1 = (col + 1) / SubDiv;
-      const v0 = row / SubDiv;
-      const v1 = (row + 1) / SubDiv;
+      const u0 = col * step;
+      const u1 = u0 + step;
+      const v0 = row * step;
+      const v1 = v0 + step;
 
       const lerp3d = (ua: number, va: number): Vec3 => {
         const top: Vec3 = [
@@ -219,17 +221,24 @@ function drawTexturedQuad(ctx: CanvasRenderingContext2D, tex: HTMLCanvasElement,
       ctx.closePath();
       ctx.clip();
 
-      const sx = u0 * w;
-      const sy = v0 * h;
-      const sw = (u1 - u0) * w;
-      const sh = (v1 - v0) * h;
+      const eu0 = u0 - pad;
+      const eu1 = u1 + pad;
+      const ev0 = v0 - pad;
+      const ev1 = v1 + pad;
+      const sx = eu0 * w;
+      const sy = ev0 * h;
+      const sw = (eu1 - eu0) * w;
+      const sh = (ev1 - ev0) * h;
 
-      const dx1 = q1[0] - q0[0];
-      const dy1 = q1[1] - q0[1];
-      const dx2 = q3[0] - q0[0];
-      const dy2 = q3[1] - q0[1];
+      const ep0 = project(lerp3d(eu0, ev0));
+      const ep1 = project(lerp3d(eu1, ev0));
+      const ep3 = project(lerp3d(eu0, ev1));
+      const dx1 = ep1[0] - ep0[0];
+      const dy1 = ep1[1] - ep0[1];
+      const dx2 = ep3[0] - ep0[0];
+      const dy2 = ep3[1] - ep0[1];
 
-      ctx.setTransform(dx1 / sw, dy1 / sw, dx2 / sh, dy2 / sh, q0[0], q0[1]);
+      ctx.setTransform(dx1 / sw, dy1 / sw, dx2 / sh, dy2 / sh, ep0[0], ep0[1]);
       ctx.drawImage(tex, sx, sy, sw, sh, 0, 0, sw, sh);
       ctx.restore();
     }

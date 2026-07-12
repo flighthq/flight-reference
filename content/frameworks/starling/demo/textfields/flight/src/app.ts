@@ -3,17 +3,23 @@ import {
   addNodeChild,
   attachPointerInput,
   BitmapKind,
+  BitmapTextKind,
   connectInputToInteraction,
   createBitmap,
+  createBitmapText,
   createDisplayContainer,
+  createGlyphSourceFromBitmapFont,
   createInteractionManager,
   createInputManager,
   createRichText,
+  createTextureAtlasFromImageResource,
   loadImageResourceFromUrl,
+  parseBitmapFontXml,
   prepareDisplayObjectRender,
   registerDefaultHitTestPoints,
   RichTextKind,
   TextLabelKind,
+  updateBitmapText,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -26,7 +32,7 @@ const target = await createFunctionalTarget({
   width: GameWidth,
   height: GameHeight,
   background: 0xffffffff,
-  kinds: [BitmapKind, RichTextKind, TextLabelKind],
+  kinds: [BitmapKind, BitmapTextKind, RichTextKind, TextLabelKind],
 });
 
 const root = createDisplayContainer();
@@ -92,13 +98,20 @@ fontTF.data.htmlText =
   "<font color='#208020'>formatting</font>.";
 addNodeChild(root, fontTF);
 
-const bmpFontTF = createRichText();
-bmpFontTF.data.defaultTextFormat = { font: 'serif', size: 36, color: 0xffffff, align: 'center' };
+const desyrelFntText = await (await fetch('starling/assets/fonts/1x/desyrel.fnt')).text();
+const desyrelImage = await loadImageResourceFromUrl('starling/assets/fonts/1x/desyrel.png');
+const desyrelAtlas = createTextureAtlasFromImageResource(desyrelImage);
+const desyrelFont = parseBitmapFontXml(desyrelFntText, { resolvePage: () => desyrelAtlas });
+
+const bmpFontTF = createBitmapText(desyrelFont ? createGlyphSourceFromBitmapFont(desyrelFont) : null, {
+  text: 'It is very easy to use\nBitmap fonts,\nas well!',
+  align: 'center',
+  color: 0xffffffff,
+  wrapWidth: 300,
+});
 bmpFontTF.x = offset;
 bmpFontTF.y = offset + 80 + offset + 80 + offset + 80 + offset;
-bmpFontTF.data.width = 300;
-bmpFontTF.data.height = 150;
-bmpFontTF.data.text = 'It is very easy to use Bitmap fonts,\nas well!';
+updateBitmapText(bmpFontTF);
 addNodeChild(root, bmpFontTF);
 
 registerDefaultHitTestPoints();

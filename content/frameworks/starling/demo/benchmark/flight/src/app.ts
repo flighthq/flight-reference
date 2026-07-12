@@ -1,25 +1,32 @@
-import type { Bitmap, DisplayObject, RichText } from '@flighthq/sdk';
+import type { Bitmap, BitmapText, DisplayObject, RichText } from '@flighthq/sdk';
 import {
   addNodeChild,
   attachPointerInput,
   BitmapKind,
   connectInputToInteraction,
   createBitmap,
+  createBitmapText,
   createDisplayContainer,
+  createGlyphSourceFromBitmapFont,
   createInteractionManager,
   createInputManager,
   createRectangle,
   createRichText,
+  createTextureAtlasFromImageResource,
   getNodeChildCount,
   invalidateNodeAppearance,
+  invalidateNodeLocalContent,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
+  parseBitmapFontXml,
   prepareDisplayObjectRender,
+  QuadBatchKind,
   registerDefaultHitTestPoints,
   removeNodeChild,
   removeNodeChildAt,
   RichTextKind,
   TextLabelKind,
+  updateBitmapText,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -38,7 +45,7 @@ const target = await createFunctionalTarget({
   width: GameWidth,
   height: GameHeight,
   background: 0xffffffff,
-  kinds: [BitmapKind, RichTextKind, TextLabelKind],
+  kinds: [BitmapKind, QuadBatchKind, RichTextKind, TextLabelKind],
 });
 
 const root = createDisplayContainer();
@@ -56,12 +63,23 @@ container.x = CenterX;
 container.y = CenterY;
 addNodeChild(root, container);
 
-const statusText = createRichText();
-statusText.data.defaultTextFormat = { font: 'monospace', size: 10, color: 0x000000 };
+const miniFntText = await (await fetch('starling/assets/fonts/1x/mini.fnt')).text();
+const miniImage = await loadImageResourceFromUrl('starling/assets/fonts/1x/mini.png');
+const miniAtlas = createTextureAtlasFromImageResource(miniImage);
+const miniFont = parseBitmapFontXml(miniFntText, { resolvePage: () => miniAtlas });
+const miniGlyphSource = miniFont ? createGlyphSourceFromBitmapFont(miniFont) : null;
+
+const statusText = createBitmapText(miniGlyphSource, {
+  text: '',
+  align: 'center',
+  wrapWidth: 140,
+});
 statusText.x = 20;
 statusText.y = 10;
-statusText.data.width = 280;
-statusText.data.height = 30;
+statusText.scaleX = 2;
+statusText.scaleY = 2;
+updateBitmapText(statusText);
+invalidateNodeLocalContent(statusText);
 addNodeChild(root, statusText);
 
 let resultText: RichText | null = null;
@@ -146,6 +164,12 @@ let failCount = 0;
 let frameCount = 0;
 let frameTimes: number[] = [];
 
+function updateStatusText(text: string): void {
+  statusText.data.text = text;
+  updateBitmapText(statusText);
+  invalidateNodeLocalContent(statusText);
+}
+
 function startBenchmark(): void {
   if (resultText !== null) {
     removeNodeChild(root, resultText);
@@ -161,8 +185,7 @@ function startBenchmark(): void {
   frameTimes = [];
   for (let i = 0; i < FrameTimeWindow; i++) frameTimes[i] = 1 / TargetFps;
 
-  statusText.data.text = '';
-  invalidateNodeAppearance(statusText);
+  updateStatusText('');
 
   target.render(root);
 }
@@ -178,6 +201,7 @@ function benchmarkComplete(measuredFps: number): void {
     font: 'DejaVu Sans, sans-serif',
     size: 30,
     color: 0x000000,
+    align: 'center',
   };
   resultText.x = CenterX - 120;
   resultText.y = CenterY - 100;
@@ -192,8 +216,7 @@ function benchmarkComplete(measuredFps: number): void {
   container.scaleY = 1;
   invalidateNodeLocalTransform(container);
 
-  statusText.data.text = '';
-  invalidateNodeAppearance(statusText);
+  updateStatusText('');
 }
 
 const backBtn = createMenuButton({
@@ -250,8 +273,7 @@ function enterFrame(now: number): void {
     }
 
     if (started && frameCount % Math.round(TargetFps / 4) === 0) {
-      statusText.data.text = `${getNodeChildCount(container)} objects`;
-      invalidateNodeAppearance(statusText);
+      updateStatusText(`${getNodeChildCount(container)} objects`);
     }
   }
 

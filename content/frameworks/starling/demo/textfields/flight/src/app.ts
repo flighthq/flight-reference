@@ -3,7 +3,6 @@ import {
   addNodeChild,
   attachPointerInput,
   BitmapKind,
-  BitmapTextKind,
   connectInputToInteraction,
   createBitmap,
   createBitmapText,
@@ -13,9 +12,11 @@ import {
   createInputManager,
   createRichText,
   createTextureAtlasFromImageResource,
+  invalidateNodeLocalContent,
   loadImageResourceFromUrl,
   parseBitmapFontXml,
   prepareDisplayObjectRender,
+  QuadBatchKind,
   registerDefaultHitTestPoints,
   RichTextKind,
   TextLabelKind,
@@ -32,7 +33,7 @@ const target = await createFunctionalTarget({
   width: GameWidth,
   height: GameHeight,
   background: 0xffffffff,
-  kinds: [BitmapKind, BitmapTextKind, RichTextKind, TextLabelKind],
+  kinds: [BitmapKind, QuadBatchKind, RichTextKind, TextLabelKind],
 });
 
 const root = createDisplayContainer();
@@ -111,8 +112,9 @@ const bmpFontTF = createBitmapText(desyrelFont ? createGlyphSourceFromBitmapFont
 });
 bmpFontTF.x = offset;
 bmpFontTF.y = offset + 80 + offset + 80 + offset + 80 + offset;
-updateBitmapText(bmpFontTF);
 addNodeChild(root, bmpFontTF);
+updateBitmapText(bmpFontTF);
+invalidateNodeLocalContent(bmpFontTF);
 
 registerDefaultHitTestPoints();
 

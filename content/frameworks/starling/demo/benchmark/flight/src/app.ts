@@ -57,7 +57,7 @@ container.y = CenterY;
 addNodeChild(root, container);
 
 const statusText = createRichText();
-statusText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 10, color: 0x000000 };
+statusText.data.defaultTextFormat = { font: 'monospace', size: 10, color: 0x000000 };
 statusText.x = 20;
 statusText.y = 10;
 statusText.data.width = 280;

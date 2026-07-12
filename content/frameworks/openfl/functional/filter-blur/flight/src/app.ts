@@ -1,7 +1,7 @@
-import { createBlurFilter } from '@flighthq/filters';
+import { createBlurEffect } from '@flighthq/effects';
 import { addNodeChild, createBitmap, createDisplayContainer, loadImageResourceFromUrl } from '@flighthq/sdk';
 
-import { applyBlurFilters, render } from './render';
+import { applyBlurEffects, render } from './render';
 
 const root = createDisplayContainer();
 
@@ -9,7 +9,7 @@ const image = await loadImageResourceFromUrl('assets/openfl.png');
 
 const blurred: {
   node: ReturnType<typeof createBitmap>;
-  filter: { kind: 'BlurFilter'; blurX: number; blurY: number };
+  filter: { kind: 'BlurEffect'; blurX: number; blurY: number };
 }[] = [];
 for (let i = 0; i < 3; i++) {
   const bmp = createBitmap();
@@ -17,12 +17,12 @@ for (let i = 0; i < 3; i++) {
   bmp.data.smoothing = true;
   bmp.x = 50 + i * (image.width + 50);
   bmp.y = 50;
-  const filter = createBlurFilter({ blurX: 2, blurY: 2 }) as { kind: 'BlurFilter'; blurX: number; blurY: number };
+  const filter = createBlurEffect({ blurX: 2, blurY: 2 }) as { kind: 'BlurEffect'; blurX: number; blurY: number };
   blurred.push({ node: bmp, filter });
   addNodeChild(root, bmp);
 }
 
-applyBlurFilters(blurred);
+applyBlurEffects(blurred);
 
 function enterFrame() {
   const sinT = Math.sin((performance.now() / 1000) * 0.5);

@@ -9,11 +9,10 @@ import {
   createDisplayContainer,
   createRichText,
   createShape,
-  createUniformColorTransformMaterial,
+  enableGlColorAdjustment,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
-  registerGlUniformColorTransformMaterial,
   RichTextKind,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -68,8 +67,8 @@ bmp3.x = pos(250);
 bmp3.scaleX = pos(1.0);
 bmp3.scaleY = pos(1.0);
 if (target.kind === 'webgl') {
-  registerGlUniformColorTransformMaterial(target.state);
-  bmp3.material = createUniformColorTransformMaterial(createColorTransform({ greenMultiplier: 0 }));
+  enableGlColorAdjustment(target.state);
+  bmp3.colorTransform = createColorTransform({ greenMultiplier: 0 });
 }
 addNodeChild(posters, bmp3);
 

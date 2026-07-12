@@ -2,15 +2,15 @@
 // Port of the OpenFL glow functional test. Shows outer glow and inner glow filter variants.
 // Abstract filter descriptors are created here; each render layer applies them with
 // the strategy that suits its substrate:
-//   - DOM:    element CSS filter (computeOuterGlowFilterCss → setDomCssFilter)
+//   - DOM:    element CSS filter (computeOuterGlowEffectCss → setDomCssFilter)
 //   - Canvas: baked once into an offscreen render cache via CSS drop-shadow(0,0,σ,color)
-//   - Gl:  offscreen render target + applyOuterGlowFilterToGl /
-//             applyInnerGlowFilterToGl shader passes
+//   - Gl:  offscreen render target + applyOuterGlowEffectToGl /
+//             applyInnerGlowEffectToGl shader passes
 // CSS only covers non-knockout outer glow; inner glow and knockout are Gl-only.
-import type { InnerGlowFilter, OuterGlowFilter } from '@flighthq/filters';
-import { createInnerGlowFilter, createOuterGlowFilter } from '@flighthq/filters';
-import { computeOuterGlowFilterCss } from '@flighthq/filters-css';
-import { applyInnerGlowFilterToGl, applyOuterGlowFilterToGl } from '@flighthq/filters-gl';
+import type { InnerGlowEffect, OuterGlowEffect } from '@flighthq/effects';
+import { createInnerGlowEffect, createOuterGlowEffect } from '@flighthq/effects';
+import { computeOuterGlowEffectCss } from '@flighthq/effects-canvas';
+import { applyInnerGlowEffectToGl, applyOuterGlowEffectToGl } from '@flighthq/effects-gl';
 import type {
   Bitmap,
   CanvasRenderState,
@@ -19,6 +19,7 @@ import type {
   Matrix,
   GlRenderState,
   GlRenderTarget,
+  GlRenderTargetPool,
 } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -39,6 +40,7 @@ import {
   createRenderCache,
   createShape,
   createGlRenderTarget,
+  createGlRenderTargetPool,
   drawGlRenderTargetResult,
   enableDomCssFilterSupport,
   endGlRenderTarget,
@@ -80,7 +82,7 @@ const image = await loadImageResourceFromUrl('assets/openfl.png');
 
 const colSpacing = image.width + 50;
 
-type FilterEntry = { node: DisplayObject; filter: OuterGlowFilter | InnerGlowFilter };
+type FilterEntry = { node: DisplayObject; filter: OuterGlowEffect | InnerGlowEffect };
 const filtered: FilterEntry[] = [];
 
 for (let i = 0; i < 4; i++) {
@@ -92,11 +94,11 @@ for (let i = 0; i < 4; i++) {
   addNodeChild(root, bmp);
   filtered.push({
     node: bmp,
-    filter: createOuterGlowFilter({ color: 0xff0000, blurX: 6, blurY: 6, strength: 2, quality: 3 }),
+    filter: createOuterGlowEffect({ color: 0xff0000, blurX: 6, blurY: 6, strength: 2, quality: 3 }),
   });
 }
-filtered[1].filter = createInnerGlowFilter({ color: 0xff0000, blurX: 6, blurY: 6, strength: 2, quality: 3 });
-filtered[2].filter = createOuterGlowFilter({
+filtered[1].filter = createInnerGlowEffect({ color: 0xff0000, blurX: 6, blurY: 6, strength: 2, quality: 3 });
+filtered[2].filter = createOuterGlowEffect({
   color: 0xff0000,
   blurX: 6,
   blurY: 6,
@@ -104,7 +106,7 @@ filtered[2].filter = createOuterGlowFilter({
   quality: 3,
   knockout: true,
 });
-filtered[3].filter = createInnerGlowFilter({ color: 0xff0000, blurX: 6, blurY: 6, strength: 2, quality: 3 });
+filtered[3].filter = createInnerGlowEffect({ color: 0xff0000, blurX: 6, blurY: 6, strength: 2, quality: 3 });
 
 const _bounds = createRectangle();
 const _identity = createMatrix();
@@ -120,11 +122,11 @@ if (target.kind === 'canvas') {
     target.render(root);
   };
 } else if (target.kind === 'webgl') {
-  const entries = initGlGlow(target.state, filtered);
+  const { entries, pool } = initGlGlow(target.state, filtered);
   frame = () => {
     updateFilters();
     for (let i = 0; i < entries.length; i++) entries[i].filter = filtered[i].filter;
-    renderGlGlowFrame(target.state, entries, root);
+    renderGlGlowFrame(target.state, entries, pool, root);
   };
 } else if (target.kind === 'dom') {
   enableDomCssFilterSupport(target.state);
@@ -148,9 +150,9 @@ enterFrame();
 function updateFilters(): void {
   const sinT = Math.sin(performance.now() / 1000) * 0.5 + 0.5;
   const blur = 2 + sinT * 8;
-  filtered[0].filter = createOuterGlowFilter({ color: 0xff0000, blurX: blur, blurY: blur, strength: 2, quality: 3 });
-  filtered[1].filter = createInnerGlowFilter({ color: 0xff0000, blurX: blur, blurY: blur, strength: 2, quality: 3 });
-  filtered[2].filter = createOuterGlowFilter({
+  filtered[0].filter = createOuterGlowEffect({ color: 0xff0000, blurX: blur, blurY: blur, strength: 2, quality: 3 });
+  filtered[1].filter = createInnerGlowEffect({ color: 0xff0000, blurX: blur, blurY: blur, strength: 2, quality: 3 });
+  filtered[2].filter = createOuterGlowEffect({
     color: 0xff0000,
     blurX: blur,
     blurY: blur,
@@ -158,7 +160,7 @@ function updateFilters(): void {
     quality: 3,
     knockout: true,
   });
-  filtered[3].filter = createInnerGlowFilter({ color: 0xff0000, blurX: blur, blurY: blur, strength: 2, quality: 3 });
+  filtered[3].filter = createInnerGlowEffect({ color: 0xff0000, blurX: blur, blurY: blur, strength: 2, quality: 3 });
 }
 
 type CanvasGlowCache = {
@@ -171,7 +173,7 @@ function initCanvasGlow(state: CanvasRenderState, list: FilterEntry[]): CanvasGl
   const caches: CanvasGlowCache[] = [];
   for (let i = 0; i < list.length; i++) {
     const { node, filter } = list[i];
-    if (filter.kind === 'InnerGlowFilter') continue;
+    if (filter.kind === 'InnerGlowEffect') continue;
     const img = (node as Bitmap).data.image;
     if (img === null || img.source === null) continue;
     computeNodeBoundsRectangle(_bounds, node, node);
@@ -187,7 +189,7 @@ function initCanvasGlow(state: CanvasRenderState, list: FilterEntry[]): CanvasGl
 function renderCanvasGlowFrame(state: CanvasRenderState, caches: CanvasGlowCache[]): void {
   for (const { node, idx, cache } of caches) {
     const { filter } = filtered[idx];
-    const css = computeOuterGlowFilterCss(filter as OuterGlowFilter);
+    const css = computeOuterGlowEffectCss(filter as OuterGlowEffect);
     if (css === null) continue;
     const img = (node as Bitmap).data.image;
     if (img === null || img.source === null) continue;
@@ -207,15 +209,15 @@ function renderCanvasGlowFrame(state: CanvasRenderState, caches: CanvasGlowCache
 
 type GlowEntry = {
   node: DisplayObject;
-  filter: OuterGlowFilter | InnerGlowFilter;
+  filter: OuterGlowEffect | InnerGlowEffect;
   source: GlRenderTarget;
   dest: GlRenderTarget;
-  scratch: [GlRenderTarget, GlRenderTarget, GlRenderTarget];
   cacheTransform: Matrix;
   sceneTransform: Matrix;
 };
 
-function initGlGlow(state: GlRenderState, list: FilterEntry[]): GlowEntry[] {
+function initGlGlow(state: GlRenderState, list: FilterEntry[]): { entries: GlowEntry[]; pool: GlRenderTargetPool } {
+  const pool: GlRenderTargetPool = createGlRenderTargetPool();
   const entries: GlowEntry[] = [];
   for (const { node, filter } of list) {
     computeNodeBoundsRectangle(_bounds, node, node);
@@ -225,19 +227,19 @@ function initGlGlow(state: GlRenderState, list: FilterEntry[]): GlowEntry[] {
       filter,
       source: createGlRenderTarget(state, { width: w, height: h }),
       dest: createGlRenderTarget(state, { width: w, height: h }),
-      scratch: [
-        createGlRenderTarget(state, { width: w, height: h }),
-        createGlRenderTarget(state, { width: w, height: h }),
-        createGlRenderTarget(state, { width: w, height: h }),
-      ],
       cacheTransform: createMatrix(),
       sceneTransform: createMatrix(),
     });
   }
-  return entries;
+  return { entries, pool };
 }
 
-function renderGlGlowFrame(state: GlRenderState, entries: GlowEntry[], root: DisplayObject): void {
+function renderGlGlowFrame(
+  state: GlRenderState,
+  entries: GlowEntry[],
+  pool: GlRenderTargetPool,
+  root: DisplayObject,
+): void {
   prepareDisplayObjectRender(state, root);
 
   for (const entry of entries) {
@@ -246,7 +248,7 @@ function renderGlGlowFrame(state: GlRenderState, entries: GlowEntry[], root: Dis
   }
 
   for (const entry of entries) {
-    const { node, filter, source, dest, scratch } = entry;
+    const { node, filter, source, dest } = entry;
     const padding = glowPadding(filter);
     computeNodeBoundsRectangle(_bounds, node, node);
     computeRenderCacheTransform(entry.cacheTransform, _bounds, padding, padding);
@@ -257,11 +259,10 @@ function renderGlGlowFrame(state: GlRenderState, entries: GlowEntry[], root: Dis
     clearGlRenderTarget(state, source);
     renderGlDisplayObject(state, node);
     clearGlRenderTarget(state, dest);
-    for (const s of scratch) clearGlRenderTarget(state, s);
-    if (filter.kind === 'InnerGlowFilter') {
-      applyInnerGlowFilterToGl(state, source, dest, scratch, filter);
+    if (filter.kind === 'InnerGlowEffect') {
+      applyInnerGlowEffectToGl(state, source, dest, pool, filter);
     } else {
-      applyOuterGlowFilterToGl(state, source, dest, scratch, filter);
+      applyOuterGlowEffectToGl(state, source, dest, pool, filter);
     }
     endGlRenderTarget(state);
   }
@@ -283,12 +284,12 @@ function renderGlGlowFrame(state: GlRenderState, entries: GlowEntry[], root: Dis
 
 function applyDomGlow(state: DomRenderState, list: FilterEntry[]): void {
   for (const { node, filter } of list) {
-    if (filter.kind === 'InnerGlowFilter') continue;
-    setDomCssFilter(state, node, computeOuterGlowFilterCss(filter as OuterGlowFilter));
+    if (filter.kind === 'InnerGlowEffect') continue;
+    setDomCssFilter(state, node, computeOuterGlowEffectCss(filter as OuterGlowEffect));
   }
 }
 
-function glowPadding(filter: Readonly<OuterGlowFilter | InnerGlowFilter>): number {
+function glowPadding(filter: Readonly<OuterGlowEffect | InnerGlowEffect>): number {
   return Math.ceil(Math.max(filter.blurX ?? 3, filter.blurY ?? 3) * 3 + 4);
 }
 

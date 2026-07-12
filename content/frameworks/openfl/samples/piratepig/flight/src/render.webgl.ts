@@ -1,4 +1,4 @@
-﻿import { applyGaussianBlurFilterToGl } from '@flighthq/filters-gl';
+﻿import { applyGaussianBlurToGl } from '@flighthq/effects-gl';
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   beginGlRenderTarget,
@@ -92,7 +92,7 @@ export function applyBackgroundBlur(node: DisplayObject): () => void {
     beginGlRenderTarget(state, out, createMatrix());
     clearGlRenderTarget(state, out);
     clearGlRenderTarget(state, temp);
-    applyGaussianBlurFilterToGl(state, src, out, temp, { blurX: 10, blurY: 10 });
+    applyGaussianBlurToGl(state, src, out, temp, { blurX: 10, blurY: 10 });
     endGlRenderTarget(state);
     destroyGlRenderTarget(state, temp);
     copyMatrix(blurred.transform, sharp.transform);

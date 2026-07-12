@@ -1,5 +1,5 @@
-import type { BlurFilter } from '@flighthq/filters';
-import { applyGaussianBlurFilterToWgpu } from '@flighthq/filters-wgpu';
+import type { BlurEffect } from '@flighthq/effects';
+import { applyGaussianBlurToWgpu } from '@flighthq/effects-wgpu';
 import type { DisplayObject, Matrix, WgpuRenderTarget } from '@flighthq/sdk';
 import {
   beginWgpuRenderTarget,
@@ -51,7 +51,7 @@ export const width = 800;
 export const height = 600;
 
 // Wgpu offscreen filter path: render each node into a WgpuRenderTarget at its logical
-// size, run the separable Gaussian-blur passes (applyGaussianBlurFilterToWgpu, target →
+// size, run the separable Gaussian-blur passes (applyGaussianBlurToWgpu, target →
 // target), then composite the blurred target back onto the screen via
 // drawWgpuRenderTargetResult. Targets are allocated once and reused.
 //
@@ -64,7 +64,7 @@ export const height = 600;
 // and ignores state.renderTransform2D at draw time.
 type BlurEntry = {
   node: DisplayObject;
-  filter: Readonly<BlurFilter>;
+  filter: Readonly<BlurEffect>;
   source: WgpuRenderTarget;
   blurred: WgpuRenderTarget;
   scratch: WgpuRenderTarget;
@@ -72,7 +72,7 @@ type BlurEntry = {
   sceneTransform: Matrix;
 };
 
-export function applyBlurFilters(list: { node: DisplayObject; filter: BlurFilter }[]): void {
+export function applyBlurEffects(list: { node: DisplayObject; filter: BlurEffect }[]): void {
   for (const { node, filter } of list) {
     computeNodeBoundsRectangle(_bounds, node, node);
     const { width: w, height: h } = computeRenderTargetSize(_bounds, blurPadding(filter), 1, 1);
@@ -123,7 +123,7 @@ export function render(root: DisplayObject): void {
 
     beginWgpuRenderTarget(state, source, _identity);
     renderWgpuDisplayObject(state, node);
-    applyGaussianBlurFilterToWgpu(state, source, blurred, scratch, filter);
+    applyGaussianBlurToWgpu(state, source, blurred, scratch, filter);
     endWgpuRenderTarget(state);
   }
 
@@ -147,7 +147,7 @@ export function render(root: DisplayObject): void {
   submitWgpuRenderPass(state);
 }
 
-function blurPadding(_filter: Readonly<BlurFilter>): number {
+function blurPadding(_filter: Readonly<BlurEffect>): number {
   return Math.ceil(64 * 3);
 }
 

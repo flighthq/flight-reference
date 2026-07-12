@@ -1,7 +1,7 @@
-import type { DropShadowFilter, InnerShadowFilter } from '@flighthq/filters';
-import { createDropShadowFilter, createInnerShadowFilter } from '@flighthq/filters';
-import { computeDropShadowFilterCss } from '@flighthq/filters-css';
-import { applyDropShadowFilterToGl, applyInnerShadowFilterToGl } from '@flighthq/filters-gl';
+import type { DropShadowEffect, InnerShadowEffect } from '@flighthq/effects';
+import { createDropShadowEffect, createInnerShadowEffect } from '@flighthq/effects';
+import { computeDropShadowEffectCss } from '@flighthq/effects-canvas';
+import { applyDropShadowEffectToGl, applyInnerShadowEffectToGl } from '@flighthq/effects-gl';
 import type {
   Bitmap,
   CanvasRenderState,
@@ -10,6 +10,7 @@ import type {
   Matrix,
   GlRenderState,
   GlRenderTarget,
+  GlRenderTargetPool,
 } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -30,6 +31,7 @@ import {
   createRenderCache,
   createShape,
   createGlRenderTarget,
+  createGlRenderTargetPool,
   drawGlRenderTargetResult,
   enableDomCssFilterSupport,
   endGlRenderTarget,
@@ -81,10 +83,10 @@ for (let i = 0; i < 6; i++) {
   nodes.push(bmp);
 }
 
-type FilterFactory = (blur: number, angle: number) => DropShadowFilter | InnerShadowFilter;
+type FilterFactory = (blur: number, angle: number) => DropShadowEffect | InnerShadowEffect;
 const factories: FilterFactory[] = [
   (blur, angle) =>
-    createDropShadowFilter({
+    createDropShadowEffect({
       distance: 4,
       angle,
       color: 0x000000,
@@ -94,7 +96,7 @@ const factories: FilterFactory[] = [
       quality: 3,
     }),
   (blur, angle) =>
-    createInnerShadowFilter({
+    createInnerShadowEffect({
       distance: 4,
       angle,
       color: 0x000000,
@@ -104,7 +106,7 @@ const factories: FilterFactory[] = [
       quality: 3,
     }),
   (blur, angle) =>
-    createDropShadowFilter({
+    createDropShadowEffect({
       distance: 4,
       angle,
       color: 0x000000,
@@ -115,7 +117,7 @@ const factories: FilterFactory[] = [
       knockout: true,
     }),
   (blur, angle) =>
-    createInnerShadowFilter({
+    createInnerShadowEffect({
       distance: 4,
       angle,
       color: 0x000000,
@@ -125,7 +127,7 @@ const factories: FilterFactory[] = [
       quality: 3,
     }),
   (blur, angle) =>
-    createDropShadowFilter({
+    createDropShadowEffect({
       distance: 4,
       angle,
       color: 0x000000,
@@ -136,7 +138,7 @@ const factories: FilterFactory[] = [
       hideObject: true,
     }),
   (blur, angle) =>
-    createInnerShadowFilter({
+    createInnerShadowEffect({
       distance: 4,
       angle,
       color: 0x000000,
@@ -147,7 +149,7 @@ const factories: FilterFactory[] = [
     }),
 ];
 
-function createFilters(blur: number, angle: number): (DropShadowFilter | InnerShadowFilter)[] {
+function createFilters(blur: number, angle: number): (DropShadowEffect | InnerShadowEffect)[] {
   return factories.map((f) => f(blur, angle));
 }
 
@@ -178,8 +180,8 @@ function animateCanvas(state: CanvasRenderState): void {
 
     for (let i = 0; i < nodes.length; i++) {
       const filter = filters[i];
-      if (filter.kind === 'InnerShadowFilter') continue;
-      const css = computeDropShadowFilterCss(filter);
+      if (filter.kind === 'InnerShadowEffect') continue;
+      const css = computeDropShadowEffectCss(filter);
       if (css === null) continue;
       const img = (nodes[i] as Bitmap).data.image;
       if (img === null || img.source === null) continue;
@@ -206,12 +208,12 @@ type ShadowEntry = {
   node: DisplayObject;
   source: GlRenderTarget;
   dest: GlRenderTarget;
-  scratch: [GlRenderTarget, GlRenderTarget, GlRenderTarget];
   cacheTransform: Matrix;
   sceneTransform: Matrix;
 };
 
 function animateGl(state: GlRenderState): void {
+  const pool: GlRenderTargetPool = createGlRenderTargetPool();
   const entries: ShadowEntry[] = [];
   for (const node of nodes) {
     computeNodeBoundsRectangle(_bounds, node, node);
@@ -220,11 +222,6 @@ function animateGl(state: GlRenderState): void {
       node,
       source: createGlRenderTarget(state, { width: w, height: h }),
       dest: createGlRenderTarget(state, { width: w, height: h }),
-      scratch: [
-        createGlRenderTarget(state, { width: w, height: h }),
-        createGlRenderTarget(state, { width: w, height: h }),
-        createGlRenderTarget(state, { width: w, height: h }),
-      ],
       cacheTransform: createMatrix(),
       sceneTransform: createMatrix(),
     });
@@ -244,7 +241,7 @@ function animateGl(state: GlRenderState): void {
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
       const filter = filters[i];
-      const { node, source, dest, scratch } = entry;
+      const { node, source, dest } = entry;
       computeNodeBoundsRectangle(_bounds, node, node);
       computeRenderCacheTransform(entry.cacheTransform, _bounds, MAX_PADDING, MAX_PADDING);
       const renderProxy = getRenderProxy2D(state, node);
@@ -254,11 +251,10 @@ function animateGl(state: GlRenderState): void {
       clearGlRenderTarget(state, source);
       renderGlDisplayObject(state, node);
       clearGlRenderTarget(state, dest);
-      for (const s of scratch) clearGlRenderTarget(state, s);
-      if (filter.kind === 'InnerShadowFilter') {
-        applyInnerShadowFilterToGl(state, source, dest, scratch, filter);
+      if (filter.kind === 'InnerShadowEffect') {
+        applyInnerShadowEffectToGl(state, source, dest, pool, filter);
       } else {
-        applyDropShadowFilterToGl(state, source, dest, scratch, filter);
+        applyDropShadowEffectToGl(state, source, dest, pool, filter);
       }
       endGlRenderTarget(state);
     }
@@ -295,8 +291,8 @@ function animateDom(state: DomRenderState): void {
 
     for (let i = 0; i < nodes.length; i++) {
       const filter = filters[i];
-      if (filter.kind === 'InnerShadowFilter') continue;
-      setDomCssFilter(state, nodes[i], computeDropShadowFilterCss(filter));
+      if (filter.kind === 'InnerShadowEffect') continue;
+      setDomCssFilter(state, nodes[i], computeDropShadowEffectCss(filter));
     }
 
     target.render(root);

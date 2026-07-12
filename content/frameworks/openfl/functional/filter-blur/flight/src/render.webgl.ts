@@ -1,5 +1,5 @@
-import type { BlurFilter } from '@flighthq/filters';
-import { applyGaussianBlurFilterToGl } from '@flighthq/filters-gl';
+import type { BlurEffect } from '@flighthq/effects';
+import { applyGaussianBlurToGl } from '@flighthq/effects-gl';
 import type { DisplayObject, Matrix, GlRenderTarget } from '@flighthq/sdk';
 import {
   beginGlRenderTarget,
@@ -45,15 +45,15 @@ export const height = 600;
 
 // Gl has no CSS filter binding, so it realizes the blur with the offscreen filter path:
 // render each node into a GlRenderTarget at its logical size, run the separable box-blur
-// passes (applyBlurFilterToGl, target → target), then composite the blurred target back
+// passes (applyBlurEffectToGl, target → target), then composite the blurred target back
 // onto the screen with drawGlRenderTargetResult. Targets are allocated once and reused.
 //
 // The composite applies the node's scene transform (which carries the stage's pixelRatio
 // scale), so a Gaussian σ in target pixels lands on screen as σ CSS pixels — matching the
-// canvas/DOM computeBlurFilterCss paths.
+// canvas/DOM computeBlurEffectCss paths.
 type BlurEntry = {
   node: DisplayObject;
-  filter: Readonly<BlurFilter>;
+  filter: Readonly<BlurEffect>;
   source: GlRenderTarget;
   blurred: GlRenderTarget;
   scratch: GlRenderTarget;
@@ -61,7 +61,7 @@ type BlurEntry = {
   sceneTransform: Matrix;
 };
 
-export function applyBlurFilters(list: { node: DisplayObject; filter: BlurFilter }[]): void {
+export function applyBlurEffects(list: { node: DisplayObject; filter: BlurEffect }[]): void {
   for (const { node, filter } of list) {
     computeNodeBoundsRectangle(_bounds, node, node);
     const { width: w, height: h } = computeRenderTargetSize(_bounds, blurPadding(filter), 1, 1);
@@ -105,7 +105,7 @@ export function render(root: DisplayObject): void {
     renderGlDisplayObject(state, node);
     clearGlRenderTarget(state, blurred);
     clearGlRenderTarget(state, scratch);
-    applyGaussianBlurFilterToGl(state, source, blurred, scratch, filter);
+    applyGaussianBlurToGl(state, source, blurred, scratch, filter);
     endGlRenderTarget(state);
   }
 
@@ -130,7 +130,7 @@ export function render(root: DisplayObject): void {
 
 // Box blur of standard deviation σ spreads a few σ past the bounds; pad generously so the
 // tail is not clipped at the target edge.
-function blurPadding(_filter: Readonly<BlurFilter>): number {
+function blurPadding(_filter: Readonly<BlurEffect>): number {
   return Math.ceil(64 * 3);
 }
 

@@ -79,10 +79,9 @@ maskText.data.defaultTextFormat = {
   font: 'DejaVu Sans, sans-serif',
   size: 20,
   align: 'center',
-  verticalAlign: 'center',
 };
 maskText.x = (GameWidth - 256) / 2;
-maskText.y = 260;
+maskText.y = 290;
 maskText.data.width = 256;
 maskText.data.height = 128;
 maskText.data.wordWrap = true;

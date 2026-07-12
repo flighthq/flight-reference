@@ -97,7 +97,7 @@ for (let i = 0; i < buttons.length; i++) {
 }
 
 const infoText = createRichText();
-infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 10, verticalAlign: 'bottom' };
+infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 10 };
 infoText.x = 5;
 infoText.y = 430;
 infoText.data.width = 310;

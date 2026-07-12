@@ -72,6 +72,7 @@ const miniGlyphSource = miniFont ? createGlyphSourceFromBitmapFont(miniFont) : n
 const statusText = createBitmapText(miniGlyphSource, {
   text: '',
   align: 'center',
+  color: 0xffffffff,
   wrapWidth: 140,
 });
 statusText.x = 20;

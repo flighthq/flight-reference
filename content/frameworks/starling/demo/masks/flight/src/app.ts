@@ -75,7 +75,12 @@ birdImage.y = 80 + 21;
 addNodeChild(maskedContainer, birdImage);
 
 const maskText = createRichText();
-maskText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 20 };
+maskText.data.defaultTextFormat = {
+  font: 'DejaVu Sans, sans-serif',
+  size: 20,
+  align: 'center',
+  verticalAlign: 'center',
+};
 maskText.x = (GameWidth - 256) / 2;
 maskText.y = 260;
 maskText.data.width = 256;

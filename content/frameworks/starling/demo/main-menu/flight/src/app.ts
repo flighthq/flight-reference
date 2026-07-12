@@ -99,9 +99,10 @@ for (let i = 0; i < buttons.length; i++) {
 const infoText = createRichText();
 infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 10, verticalAlign: 'bottom' };
 infoText.x = 5;
-infoText.y = 475 - 64;
+infoText.y = 430;
 infoText.data.width = 310;
-infoText.data.height = 64;
+infoText.data.height = 475 - 430;
+infoText.data.wordWrap = true;
 
 const infoCanvas = (target.state as { canvas: HTMLCanvasElement }).canvas;
 const infoGl = infoCanvas.getContext('webgl2') ?? infoCanvas.getContext('webgl');

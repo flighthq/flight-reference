@@ -591,15 +591,11 @@ export default function App() {
                 </div>
               ) : (
                 <div className="pane__empty">
-                  <strong>
-                    {hasFlightImplementation
-                      ? 'Configure a local Flight checkout to enable preview'
-                      : 'No Flight implementation'}
-                  </strong>
+                  <strong>{hasFlightImplementation ? 'Flight preview unavailable' : 'No Flight implementation'}</strong>
                   <p>
                     {hasFlightImplementation
-                      ? 'Clone Flight under .cache/upstream/flight or set FLIGHT_REPO, install its dependencies, then restart the dev server.'
-                      : 'This imported case currently only exposes the upstream preview or source directories.'}
+                      ? 'Flight source is present but no runnable preview entry was found.'
+                      : 'This case does not have a Flight implementation.'}
                   </p>
                 </div>
               )}

@@ -10,20 +10,17 @@ const openflContentDir = join(repoRoot, 'content', 'frameworks', 'openfl');
 const starlingContentDir = join(repoRoot, 'content', 'frameworks', 'starling');
 
 function resolveFlightWorkspaceRoot(): string | null {
-  const candidates = [process.env.FLIGHT_REPO, join(repoRoot, '.cache', 'upstream', 'flight')].filter(
-    (value): value is string => Boolean(value),
-  );
+  const candidate = process.env.FLIGHT_REPO;
+  if (!candidate) return null;
 
-  for (const candidate of candidates) {
-    const packageJson = join(candidate, 'package.json');
-    if (!existsSync(packageJson)) continue;
+  const packageJson = join(candidate, 'package.json');
+  if (!existsSync(packageJson)) return null;
 
-    try {
-      const manifest = JSON.parse(readFileSync(packageJson, 'utf8')) as { name?: string };
-      if (manifest.name === 'flight') return candidate;
-    } catch {
-      // Ignore malformed manifests while walking upward.
-    }
+  try {
+    const manifest = JSON.parse(readFileSync(packageJson, 'utf8')) as { name?: string };
+    if (manifest.name === 'flight') return candidate;
+  } catch {
+    // Ignore malformed manifest.
   }
 
   return null;
@@ -72,18 +69,6 @@ const flightLocalSource =
   flightWorkspaceRoot !== null &&
   existsSync(join(flightWorkspaceRoot, 'node_modules')) &&
   typeof flightPackageAliases['@flighthq/sdk'] === 'string';
-const flightNpmAvailable = existsSync(join(repoRoot, 'node_modules', '@flighthq', 'sdk'));
-const flightPreviewsEnabled = flightLocalSource || flightNpmAvailable;
-
-const flightHarnessFallbackAliases: Record<string, string> = {};
-if (!flightHarnessAliases['@ft/render']) {
-  const localRender = join(repoRoot, 'content', 'harness', 'render.ts');
-  if (existsSync(localRender)) flightHarnessFallbackAliases['@ft/render'] = localRender;
-}
-if (!flightHarnessAliases['@ft/verify']) {
-  const localVerify = join(repoRoot, 'content', 'harness', 'verify.ts');
-  if (existsSync(localVerify)) flightHarnessFallbackAliases['@ft/verify'] = localVerify;
-}
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -288,13 +273,11 @@ function discoverOpenflCases(): ReferenceCase[] {
         label: renderer,
         url: `openfl-tests/${corpus}/${name}/${routeSegment(renderer)}/`,
       }));
-      const enabledFlightPreviewRenderers = flightPreviewsEnabled
-        ? flightPreviewRenderers(caseDir).map((renderer) => ({
-            id: renderer,
-            label: renderer,
-            url: flightPreviewUrl('openfl', corpus, name, renderer),
-          }))
-        : [];
+      const enabledFlightPreviewRenderers = flightPreviewRenderers(caseDir).map((renderer) => ({
+        id: renderer,
+        label: renderer,
+        url: flightPreviewUrl('openfl', corpus, name, renderer),
+      }));
       const title = readTitle(caseDir, fallbackTitle(name));
 
       cases.push({
@@ -358,13 +341,11 @@ function discoverStarlingCases(): ReferenceCase[] {
         },
       ];
 
-      const enabledFlightPreviewRenderers = flightPreviewsEnabled
-        ? flightPreviewRenderers(caseDir).map((renderer) => ({
-            id: renderer,
-            label: renderer,
-            url: flightPreviewUrl('starling', corpus, name, renderer),
-          }))
-        : [];
+      const enabledFlightPreviewRenderers = flightPreviewRenderers(caseDir).map((renderer) => ({
+        id: renderer,
+        label: renderer,
+        url: flightPreviewUrl('starling', corpus, name, renderer),
+      }));
 
       const titlePath = join(caseDir, 'title.txt');
       const title = existsSync(titlePath) ? readFileSync(titlePath, 'utf-8').trim() : fallbackTitle(name);
@@ -747,8 +728,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@ft/render': join(repoRoot, 'content', 'harness', 'render.ts'),
+      '@ft/verify': join(repoRoot, 'content', 'harness', 'verify.ts'),
       ...(flightLocalSource ? { ...flightPackageAliases, ...flightHarnessAliases } : {}),
-      ...(flightPreviewsEnabled ? flightHarnessFallbackAliases : {}),
       'motion/Actuate': resolve(repoRoot, 'content/frameworks/openfl/compat/Actuate.ts'),
       'motion/easing/Elastic': resolve(repoRoot, 'content/frameworks/openfl/compat/Elastic.ts'),
       'motion/easing/Quad': resolve(repoRoot, 'content/frameworks/openfl/compat/Quad.ts'),

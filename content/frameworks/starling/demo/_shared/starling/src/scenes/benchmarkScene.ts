@@ -1,6 +1,5 @@
 import Vector from 'openfl/Vector';
 
-import Starling from 'starling/core/Starling';
 import Button from 'starling/display/Button';
 import DisplayObject from 'starling/display/DisplayObject';
 import Image from 'starling/display/Image';
@@ -83,12 +82,10 @@ class BenchmarkScene extends Scene {
 
     this._startButton.visible = false;
     this._started = true;
-    this._targetFps = Starling.current.nativeStage.frameRate;
+    this._targetFps = 30;
     this._frameCount = 0;
     this._failCount = 0;
     this._phase = 0;
-
-    if (this._targetFps <= 0) this._targetFps = 30;
 
     for (var i = 0; i < BenchmarkScene.FRAME_TIME_WINDOW_SIZE; i++) this._frameTimes[i] = 1.0 / this._targetFps;
 

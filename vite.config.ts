@@ -68,10 +68,22 @@ function buildFlightHarnessAliases(workspaceRoot: string): Record<string, string
 const flightWorkspaceRoot = resolveFlightWorkspaceRoot();
 const flightPackageAliases = flightWorkspaceRoot ? buildFlightPackageAliases(flightWorkspaceRoot) : {};
 const flightHarnessAliases = flightWorkspaceRoot ? buildFlightHarnessAliases(flightWorkspaceRoot) : {};
-const flightPreviewsEnabled =
+const flightLocalSource =
   flightWorkspaceRoot !== null &&
   existsSync(join(flightWorkspaceRoot, 'node_modules')) &&
   typeof flightPackageAliases['@flighthq/sdk'] === 'string';
+const flightNpmAvailable = existsSync(join(repoRoot, 'node_modules', '@flighthq', 'sdk'));
+const flightPreviewsEnabled = flightLocalSource || flightNpmAvailable;
+
+const flightHarnessFallbackAliases: Record<string, string> = {};
+if (!flightHarnessAliases['@ft/render']) {
+  const localRender = join(repoRoot, 'content', 'harness', 'render.ts');
+  if (existsSync(localRender)) flightHarnessFallbackAliases['@ft/render'] = localRender;
+}
+if (!flightHarnessAliases['@ft/verify']) {
+  const localVerify = join(repoRoot, 'content', 'harness', 'verify.ts');
+  if (existsSync(localVerify)) flightHarnessFallbackAliases['@ft/verify'] = localVerify;
+}
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -731,11 +743,12 @@ export default defineConfig({
         $_: 'globalThis.$_',
       },
     },
-    exclude: flightPreviewsEnabled ? ['@flighthq/sdk'] : [],
+    exclude: flightLocalSource ? ['@flighthq/sdk'] : [],
   },
   resolve: {
     alias: {
-      ...(flightPreviewsEnabled ? { ...flightPackageAliases, ...flightHarnessAliases } : {}),
+      ...(flightLocalSource ? { ...flightPackageAliases, ...flightHarnessAliases } : {}),
+      ...(flightPreviewsEnabled ? flightHarnessFallbackAliases : {}),
       'motion/Actuate': resolve(repoRoot, 'content/frameworks/openfl/compat/Actuate.ts'),
       'motion/easing/Elastic': resolve(repoRoot, 'content/frameworks/openfl/compat/Elastic.ts'),
       'motion/easing/Quad': resolve(repoRoot, 'content/frameworks/openfl/compat/Quad.ts'),

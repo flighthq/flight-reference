@@ -56,6 +56,7 @@ colorTF.y = offset;
 colorTF.data.width = 300;
 colorTF.data.height = 80;
 colorTF.data.border = true;
+colorTF.data.borderColor = 0x033399;
 colorTF.data.wordWrap = true;
 colorTF.data.text = 'TextFields can have a border and a color. They can be aligned in different ways, ...';
 addNodeChild(root, colorTF);
@@ -67,6 +68,7 @@ leftTF.y = offset + 80 + offset;
 leftTF.data.width = 145;
 leftTF.data.height = 80;
 leftTF.data.border = true;
+leftTF.data.borderColor = 0x996633;
 leftTF.data.text = '... e.g.\ntop-left ...';
 addNodeChild(root, leftTF);
 
@@ -82,6 +84,7 @@ rightTF.y = offset + 80 + offset;
 rightTF.data.width = 145;
 rightTF.data.height = 80;
 rightTF.data.border = true;
+rightTF.data.borderColor = 0x208020;
 rightTF.data.text = '... or\nbottom right ...';
 addNodeChild(root, rightTF);
 

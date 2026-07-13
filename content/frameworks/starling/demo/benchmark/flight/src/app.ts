@@ -37,7 +37,7 @@ const GameHeight = 480;
 const CenterX = 160;
 const CenterY = 240;
 
-const TargetFps = 60;
+const TargetFps = 30;
 const FrameTimeWindow = 10;
 const MaxFailCount = 100;
 

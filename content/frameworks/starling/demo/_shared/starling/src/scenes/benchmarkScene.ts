@@ -88,7 +88,7 @@ class BenchmarkScene extends Scene {
     this._failCount = 0;
     this._phase = 0;
 
-    if (this._targetFps <= 0) this._targetFps = 60;
+    if (this._targetFps <= 0) this._targetFps = 30;
 
     for (var i = 0; i < BenchmarkScene.FRAME_TIME_WINDOW_SIZE; i++) this._frameTimes[i] = 1.0 / this._targetFps;
 
@@ -180,9 +180,8 @@ class BenchmarkScene extends Scene {
     this._started = false;
     this._startButton.visible = true;
 
-    var fps: number = Starling.current.nativeStage.frameRate;
     var numChildren: number = this._container.numChildren;
-    var resultString: string = StringUtil.format('Result:\n{0} objects\nwith {1} fps', [numChildren, fps]);
+    var resultString: string = StringUtil.format('Result:\n{0} objects\nwith {1} fps', [numChildren, this._targetFps]);
     console.log(resultString.replace('\n', ' '));
 
     this._resultText = new TextField(240, 200, resultString);

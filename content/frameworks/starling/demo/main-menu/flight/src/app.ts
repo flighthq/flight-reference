@@ -102,6 +102,7 @@ infoText.x = 5;
 infoText.y = 430;
 infoText.data.width = 310;
 infoText.data.height = 475 - 430;
+infoText.data.textFormat.align = 'center';
 infoText.data.wordWrap = true;
 
 const infoCanvas = (target.state as { canvas: HTMLCanvasElement }).canvas;

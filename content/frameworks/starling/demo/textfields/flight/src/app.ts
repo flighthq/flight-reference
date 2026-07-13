@@ -15,10 +15,12 @@ import {
   invalidateNodeLocalContent,
   loadImageResourceFromUrl,
   parseBitmapFontXml,
+  parseTextMarkup,
   prepareDisplayObjectRender,
   QuadBatchKind,
   registerDefaultHitTestPoints,
   RichTextKind,
+  setRichTextContent,
   TextLabelKind,
   updateBitmapText,
 } from '@flighthq/sdk';
@@ -91,12 +93,16 @@ fontTF.data.width = 300;
 fontTF.data.height = 80;
 fontTF.data.border = true;
 fontTF.data.wordWrap = true;
-fontTF.data.htmlText =
-  '... or centered. Embedded fonts are detected automatically and ' +
-  "<font color='#208080'>support</font> " +
-  "<font color='#996633'>basic</font> " +
-  "<font color='#333399'>HTML</font> " +
-  "<font color='#208020'>formatting</font>.";
+setRichTextContent(
+  fontTF,
+  parseTextMarkup(
+    '... or centered. Embedded fonts are detected automatically and ' +
+      "<font color='#208080'>support</font> " +
+      "<font color='#996633'>basic</font> " +
+      "<font color='#333399'>HTML</font> " +
+      "<font color='#208020'>formatting</font>.",
+  ),
+);
 addNodeChild(root, fontTF);
 
 const desyrelFntText = await (await fetch('starling/assets/fonts/1x/desyrel.fnt')).text();
@@ -105,7 +111,7 @@ const desyrelAtlas = createTextureAtlasFromImageResource(desyrelImage);
 const desyrelFont = parseBitmapFontXml(desyrelFntText, { resolvePage: () => desyrelAtlas });
 
 const bmpFontTF = createBitmapText(desyrelFont ? createGlyphSourceFromBitmapFont(desyrelFont) : null, {
-  text: 'It is very easy to use\nBitmap fonts,\nas well!',
+  text: 'It is very easy to use Bitmap fonts,\nas well!',
   align: 'center',
   color: 0xffffffff,
   wrapWidth: 300,

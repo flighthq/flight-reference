@@ -1,25 +1,113 @@
-// Flight port of AwayJS CubePrimitive
-//
-// Missing Flight APIs needed:
-//   - 3D mesh primitives (PrimitiveCubePrefab, PrimitiveTorusPrefab)
-//   - Perspective projection camera (PerspectiveProjection)
-//   - Camera rotation around arbitrary axis (transform.rotate)
-//   - Method materials with blend modes (MethodMaterial, BlendMode.ADD)
-//   - Directional lighting (DirectionalLight, StaticLightPicker)
-//   - Blob-based image loading (URLLoader with BLOB data format)
+import { createScene } from '@flighthq/scene';
 
-import { appendShapeBeginFill, appendShapeRectangle, createShape, ShapeKind } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import {
+  addNodeChild,
+  BlendMode,
+  createAmbientLight,
+  createBlinnPhongMaterial,
+  createBoxMeshGeometry,
+  createCamera,
+  createDirectionalLight,
+  createMesh,
+  createPerspectiveProjection,
+  createSceneLights,
+  createTexture,
+  createTorusMeshGeometry,
+  createVector3,
+  invalidateNodeLocalTransform,
+  loadImageResourceFromUrl,
+  rotateMatrix4,
+  setCameraViewMatrix4FromLookAt,
+  setMatrix4Identity,
+  translateMatrix4,
+} from '@flighthq/sdk';
 
-const target = await createFunctionalTarget({
+import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+
+const DEG = Math.PI / 180;
+
+const { render } = createScene3DContext({
   width: 800,
   height: 600,
-  background: 0xff000000,
-  kinds: [ShapeKind],
+  backgroundColor: 0xff000000,
 });
 
-const placeholder = createShape();
-appendShapeBeginFill(placeholder, 0x333366);
-appendShapeRectangle(placeholder, 200, 150, 400, 300);
+const scene = createScene();
 
-target.render(placeholder);
+const camera = createCamera({
+  near: 0.1,
+  far: 5000,
+  projection: createPerspectiveProjection({ fovY: 120 * DEG, aspect: 800 / 600 }),
+});
+
+const directional = createDirectionalLight({
+  direction: { x: 1, y: 0, z: 0 },
+  color: 0xffffff,
+  intensity: 2.8,
+});
+
+const ambient = createAmbientLight({ color: 0x85b2cd, intensity: 0.4 });
+const lights = createSceneLights({ ambient, directional });
+
+const image = await loadImageResourceFromUrl('awayjs/assets/spacy_texture.png');
+const texture = createTexture({ image });
+
+const material = createBlinnPhongMaterial({
+  diffuse: 1,
+  shininess: 20,
+  specular: 1.8,
+  diffuseMap: texture,
+});
+material.blendMode = BlendMode.Add;
+material.alphaMode = 'blend';
+material.doubleSided = true;
+
+const torusGeometry = createTorusMeshGeometry(150, 80, 32, 16);
+const torus = createMesh(torusGeometry, [material]);
+addNodeChild(scene, torus);
+
+const cubeGeometry = createBoxMeshGeometry(20, 20, 20);
+const cube = createMesh(cubeGeometry, [material]);
+setMatrix4Identity(cube.localMatrix);
+translateMatrix4(cube.localMatrix, cube.localMatrix, 130, 0, 40);
+invalidateNodeLocalTransform(cube);
+addNodeChild(scene, cube);
+
+const eye = createVector3(130, 0, 0);
+const target = createVector3(0, 0, 0);
+const up = createVector3(0, 0, 1);
+const xAxis = createVector3(1, 0, 0);
+const yAxis = createVector3(0, 1, 0);
+
+let cameraAngle = 0;
+let torusAngleY = 0;
+let cubeAngleX = 0;
+let cubeAngleY = 0;
+
+setCameraViewMatrix4FromLookAt(camera, eye, target, up);
+
+function frame(): void {
+  cameraAngle += DEG;
+  torusAngleY += DEG;
+  cubeAngleX += 0.4 * DEG;
+  cubeAngleY += 0.4 * DEG;
+
+  eye.x = 130 * Math.cos(cameraAngle);
+  eye.y = 130 * Math.sin(cameraAngle);
+  setCameraViewMatrix4FromLookAt(camera, eye, target, up);
+
+  setMatrix4Identity(torus.localMatrix);
+  rotateMatrix4(torus.localMatrix, torus.localMatrix, yAxis, torusAngleY);
+  invalidateNodeLocalTransform(torus);
+
+  setMatrix4Identity(cube.localMatrix);
+  translateMatrix4(cube.localMatrix, cube.localMatrix, 130, 0, 40);
+  rotateMatrix4(cube.localMatrix, cube.localMatrix, yAxis, cubeAngleY);
+  rotateMatrix4(cube.localMatrix, cube.localMatrix, xAxis, cubeAngleX);
+  invalidateNodeLocalTransform(cube);
+
+  render(scene, camera, lights);
+  requestAnimationFrame(frame);
+}
+
+frame();

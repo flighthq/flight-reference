@@ -30,6 +30,14 @@
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run build"
   },
   "dependencies": {
+    "@awayjs/core": "^0.9.60",
+    "@awayjs/graphics": "^0.5.101",
+    "@awayjs/materials": "^0.6.24",
+    "@awayjs/parsers": "^0.8.3",
+    "@awayjs/renderer": "^0.11.99",
+    "@awayjs/scene": "^0.13.322",
+    "@awayjs/stage": "^0.11.170",
+    "@awayjs/view": "^0.6.90",
     "@flighthq/adjustments": "*",
     "@flighthq/effects": "*",
     "@flighthq/effects-canvas": "*",
@@ -49,7 +57,8 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "starling-framework": "^2.8.0",
-    "stats-js": "^1.0.1"
+    "stats-js": "^1.0.1",
+    "tslib": "^2.8.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.1",

@@ -1,0 +1,8 @@
+{
+  "name": "awayjs-examples-basic-shading-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

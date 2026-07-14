@@ -1,0 +1,8 @@
+{
+  "name": "awayjs-examples-hello-awayjs-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

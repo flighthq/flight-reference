@@ -8,6 +8,7 @@ import { defineConfig } from 'vite';
 const repoRoot = resolve(__dirname);
 const openflContentDir = join(repoRoot, 'content', 'frameworks', 'openfl');
 const starlingContentDir = join(repoRoot, 'content', 'frameworks', 'starling');
+const awayjsContentDir = join(repoRoot, 'content', 'frameworks', 'awayjs');
 
 function resolveFlightWorkspaceRoot(): string | null {
   const candidate = process.env.FLIGHT_REPO;
@@ -386,11 +387,90 @@ function discoverStarlingCases(): ReferenceCase[] {
 }
 
 // ---------------------------------------------------------------------------
+// AwayJS case discovery
+// ---------------------------------------------------------------------------
+
+function discoverAwayjsCases(): ReferenceCase[] {
+  if (!existsSync(awayjsContentDir)) return [];
+
+  const cases: ReferenceCase[] = [];
+  const corpora = readdirSync(awayjsContentDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .sort((left, right) => left.name.localeCompare(right.name));
+
+  for (const corpusEntry of corpora) {
+    const corpus = corpusEntry.name;
+    const corpusDir = join(awayjsContentDir, corpus);
+    const caseEntries = readdirSync(corpusDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && entry.name !== '_shared')
+      .sort((left, right) => left.name.localeCompare(right.name));
+
+    for (const caseEntry of caseEntries) {
+      const name = caseEntry.name;
+      const caseDir = join(corpusDir, name);
+      if (!hasImplementationDir(caseDir, 'awayjs')) continue;
+
+      const srcDir = join(caseDir, 'awayjs', 'src');
+      if (!existsSync(join(srcDir, 'app.ts'))) continue;
+
+      const previewRenderers: PreviewRenderer[] = [
+        {
+          id: 'webgl',
+          label: 'webgl',
+          url: `awayjs-tests/${corpus}/${name}/webgl/`,
+        },
+      ];
+
+      const enabledFlightPreviewRenderers = flightPreviewRenderers(caseDir).map((renderer) => ({
+        id: renderer,
+        label: renderer,
+        url: flightPreviewUrl('awayjs', corpus, name, renderer),
+      }));
+
+      const titlePath = join(caseDir, 'title.txt');
+      const title = existsSync(titlePath) ? readFileSync(titlePath, 'utf-8').trim() : fallbackTitle(name);
+
+      cases.push({
+        id: `awayjs/${corpus}/${name}`,
+        framework: 'awayjs',
+        corpus,
+        name,
+        title,
+        summary: `${title} from the AwayJS ${corpus}.`,
+        previewRenderers,
+        ...(enabledFlightPreviewRenderers.length > 0 ? { flightPreviewRenderers: enabledFlightPreviewRenderers } : {}),
+        implementations: [
+          {
+            id: 'awayjs',
+            mode: 'preview',
+            path: join(caseDir, 'awayjs').replace(repoRoot + '/', ''),
+            fileCount: countFiles(join(caseDir, 'awayjs')),
+          },
+          ...(enabledFlightPreviewRenderers.length > 0
+            ? [
+                {
+                  id: 'flight' as const,
+                  mode: 'preview' as const,
+                  path: join(caseDir, 'flight').replace(repoRoot + '/', ''),
+                  fileCount: countFiles(join(caseDir, 'flight')),
+                  previewUrl: enabledFlightPreviewRenderers[0]!.url,
+                },
+              ]
+            : []),
+        ],
+      });
+    }
+  }
+
+  return cases;
+}
+
+// ---------------------------------------------------------------------------
 // Combined discovery
 // ---------------------------------------------------------------------------
 
 function discoverAllCases(): ReferenceCase[] {
-  return [...discoverOpenflCases(), ...discoverStarlingCases()];
+  return [...discoverOpenflCases(), ...discoverStarlingCases(), ...discoverAwayjsCases()];
 }
 
 // ---------------------------------------------------------------------------
@@ -411,8 +491,14 @@ function openflPreviewEntrySource(corpus: string, name: string, renderer: string
 }
 
 function flightPreviewSource(framework: string, corpus: string, name: string): string | null {
-  const referenceDir = framework === 'starling' ? starlingContentDir : openflContentDir;
+  const referenceDir =
+    framework === 'starling' ? starlingContentDir : framework === 'awayjs' ? awayjsContentDir : openflContentDir;
   const app = join(referenceDir, corpus, name, 'flight', 'src', 'app.ts');
+  return existsSync(app) ? app : null;
+}
+
+function awayjsPreviewEntrySource(corpus: string, name: string): string | null {
+  const app = join(awayjsContentDir, corpus, name, 'awayjs', 'src', 'app.ts');
   return existsSync(app) ? app : null;
 }
 
@@ -442,7 +528,11 @@ function referencePlugin(): Plugin[] {
 
           for (const renderer of referenceCase.previewRenderers) {
             const virtualPrefix =
-              referenceCase.framework === 'starling' ? 'virtual:starling-preview' : 'virtual:openfl-preview';
+              referenceCase.framework === 'awayjs'
+                ? 'virtual:awayjs-preview'
+                : referenceCase.framework === 'starling'
+                  ? 'virtual:starling-preview'
+                  : 'virtual:openfl-preview';
             input[`${routePrefix}/${referenceCase.corpus}/${referenceCase.name}/${routeSegment(renderer.id)}/index`] =
               `${virtualPrefix}:${referenceCase.corpus}:${referenceCase.name}:${renderer.id}`;
           }
@@ -472,6 +562,11 @@ function referencePlugin(): Plugin[] {
                       ? `${framework}-tests/${corpus}/${name}/flight/index.js`
                       : `${framework}-tests/${corpus}/${name}/flight/${routeSegment(renderer)}/index.js`;
                   }
+                  if (id?.startsWith('\0virtual:awayjs-preview:')) {
+                    const [corpus, rest] = splitFirst(id.slice('\0virtual:awayjs-preview:'.length), ':');
+                    const [name, renderer] = splitFirst(rest, ':');
+                    return `awayjs-tests/${corpus}/${name}/${routeSegment(renderer)}/index.js`;
+                  }
                   if (id?.startsWith('\0virtual:starling-preview:')) {
                     const [corpus, rest] = splitFirst(id.slice('\0virtual:starling-preview:'.length), ':');
                     const [name, renderer] = splitFirst(rest, ':');
@@ -499,6 +594,7 @@ function referencePlugin(): Plugin[] {
         if (source.startsWith('virtual:flight-preview:')) return '\0' + source;
         if (source.startsWith('virtual:openfl-preview:')) return '\0' + source;
         if (source.startsWith('virtual:starling-preview:')) return '\0' + source;
+        if (source.startsWith('virtual:awayjs-preview:')) return '\0' + source;
       },
 
       load(id) {
@@ -518,6 +614,14 @@ function referencePlugin(): Plugin[] {
           const [corpus, rest] = splitFirst(id.slice('\0virtual:starling-preview:'.length), ':');
           const [name] = splitFirst(rest, ':');
           const source = starlingPreviewEntrySource(corpus, name);
+          if (!source) return null;
+          return `await import(${JSON.stringify(source)});`;
+        }
+
+        if (id.startsWith('\0virtual:awayjs-preview:')) {
+          const [corpus, rest] = splitFirst(id.slice('\0virtual:awayjs-preview:'.length), ':');
+          const [name] = splitFirst(rest, ':');
+          const source = awayjsPreviewEntrySource(corpus, name);
           if (!source) return null;
           return `await import(${JSON.stringify(source)});`;
         }
@@ -552,7 +656,11 @@ function referencePlugin(): Plugin[] {
 
           for (const renderer of referenceCase.previewRenderers) {
             const virtualPrefix =
-              referenceCase.framework === 'starling' ? '\0virtual:starling-preview' : '\0virtual:openfl-preview';
+              referenceCase.framework === 'awayjs'
+                ? '\0virtual:awayjs-preview'
+                : referenceCase.framework === 'starling'
+                  ? '\0virtual:starling-preview'
+                  : '\0virtual:openfl-preview';
             const entryId = `${virtualPrefix}:${referenceCase.corpus}:${referenceCase.name}:${renderer.id}`;
             const chunk = Object.values(bundle).find(
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -602,15 +710,16 @@ function referencePlugin(): Plugin[] {
       configureServer(server) {
         server.watcher.add(openflContentDir);
         if (existsSync(starlingContentDir)) server.watcher.add(starlingContentDir);
+        if (existsSync(awayjsContentDir)) server.watcher.add(awayjsContentDir);
 
         server.middlewares.use((req, res, next) => {
           const urlPath = (req.url ?? '/').split('?')[0] ?? '/';
           const parts = urlPath.split('/').filter(Boolean);
 
           const prefix = parts[0] ?? '';
-          if (prefix !== 'openfl-tests' && prefix !== 'starling-tests') return next();
+          if (prefix !== 'openfl-tests' && prefix !== 'starling-tests' && prefix !== 'awayjs-tests') return next();
 
-          const framework = prefix === 'starling-tests' ? 'starling' : 'openfl';
+          const framework = prefix === 'starling-tests' ? 'starling' : prefix === 'awayjs-tests' ? 'awayjs' : 'openfl';
 
           let corpus = '';
           let name = '';
@@ -677,7 +786,12 @@ function referencePlugin(): Plugin[] {
           );
           if (!renderer) return next();
 
-          const virtualPrefix = framework === 'starling' ? 'virtual:starling-preview' : 'virtual:openfl-preview';
+          const virtualPrefix =
+            framework === 'awayjs'
+              ? 'virtual:awayjs-preview'
+              : framework === 'starling'
+                ? 'virtual:starling-preview'
+                : 'virtual:openfl-preview';
           const html = `<!DOCTYPE html>
 <html lang="en">
 <head>

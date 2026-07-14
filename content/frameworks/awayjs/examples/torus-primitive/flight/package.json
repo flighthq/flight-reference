@@ -1,0 +1,8 @@
+{
+  "name": "awayjs-examples-torus-primitive-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

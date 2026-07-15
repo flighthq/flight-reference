@@ -25,7 +25,7 @@ class Hello_AwayJS {
     this._material = new BasicMaterial();
 
     this._mouseContainer = new DisplayObjectContainer();
-    this._scene.root.addChild(this._mouseContainer);
+    (this._scene.container as DisplayObjectContainer).addChild(this._mouseContainer);
 
     const prefab = new PrimitiveSpherePrefab(this._material);
     for (let i = 0; i < 100; i++) {

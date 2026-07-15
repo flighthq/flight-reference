@@ -23,7 +23,7 @@ import {
 } from '@awayjs/graphics';
 import type { ParticleProperties } from '@awayjs/graphics';
 import { ElementsType, ImageTexture2D } from '@awayjs/renderer';
-import { HoverController, Sprite, Scene, Camera, PrimitivePlanePrefab } from '@awayjs/scene';
+import { HoverController, Sprite, Scene, Camera, PrimitivePlanePrefab, DisplayObjectContainer } from '@awayjs/scene';
 import { MethodMaterial, MethodMaterialMode, PointLight, DirectionalLight, StaticLightPicker } from '@awayjs/materials';
 
 class FireVO {
@@ -133,15 +133,9 @@ class BasicFire {
 
     this._fireAnimationSet.initParticleFunc = this.initParticleFunc;
 
-    const particle = new PrimitivePlanePrefab(
-      null,
-      ElementsType.TRIANGLE,
-      10,
-      10,
-      1,
-      1,
-      false,
-    ).getNewObject() as Sprite;
+    const particlePrefab = new PrimitivePlanePrefab(null, ElementsType.TRIANGLE, 10, 10, 1, 1, false);
+    particlePrefab._iValidate();
+    const particle = particlePrefab.getNewObject() as Sprite;
 
     const graphicsSet: Array<Graphics> = new Array<Graphics>();
     for (let i = 0; i < 500; i++) graphicsSet.push(particle.graphics);
@@ -161,7 +155,7 @@ class BasicFire {
     this._plane.graphics.scaleUV(2, 2);
     this._plane.y = -20;
 
-    this._scene.root.addChild(this._plane);
+    (this._scene.container as DisplayObjectContainer).addChild(this._plane);
 
     for (let i = 0; i < BasicFire.NUM_FIRES; i++) {
       const particleSprite = this._particleSprite.clone();
@@ -174,7 +168,7 @@ class BasicFire {
       particleSprite.y = 5;
 
       this._fireObjects.push(new FireVO(particleSprite, animator));
-      this._scene.root.addChild(particleSprite);
+      (this._scene.container as DisplayObjectContainer).addChild(particleSprite);
     }
 
     this._fireTimer = new Timer(1000, this._fireObjects.length);

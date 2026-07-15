@@ -5,6 +5,9 @@ import { MethodMaterial } from '@awayjs/materials';
 import { Font, TextField, TextFormat, TextFieldType, Scene, DisplayObjectContainer } from '@awayjs/scene';
 import { FontParser } from '@awayjs/parsers/dist/lib/FontParser';
 
+// @awayjs/parsers 0.8 overrides _pProceedParsing, but @awayjs/core 0.9 expects proceedParsing
+(FontParser.prototype as any).proceedParsing = (FontParser.prototype as any)._pProceedParsing;
+
 const colorMaterials: Record<string, MethodMaterial> = {};
 const textureMaterials: Record<string, MethodMaterial> = {};
 
@@ -100,7 +103,7 @@ class BasicText {
           const tf = textfield.clone();
           tf.x = (Math.random() - 0.5) * 1000 * (window.innerWidth / window.innerHeight);
           tf.y = (Math.random() - 0.5) * 1000;
-          this._scene.root.addChild(tf);
+          (this._scene.container as DisplayObjectContainer).addChild(tf);
         }
       }
     }

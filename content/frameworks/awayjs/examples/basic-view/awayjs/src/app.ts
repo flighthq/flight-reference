@@ -2,7 +2,7 @@ import { LoaderEvent, Vector3D, AssetLibrary, URLRequest, RequestAnimationFrame 
 import type { IAsset } from '@awayjs/core';
 import { BitmapImage2D } from '@awayjs/stage';
 import { BasicMaterial } from '@awayjs/materials';
-import { Sprite, PrimitivePlanePrefab, Scene } from '@awayjs/scene';
+import { Sprite, PrimitivePlanePrefab, Scene, DisplayObjectContainer } from '@awayjs/scene';
 import { ElementsType, ImageTexture2D } from '@awayjs/renderer';
 
 class Basic_View {
@@ -26,7 +26,7 @@ class Basic_View {
       700,
       700,
     ).getNewObject() as Sprite;
-    this._scene.root.addChild(this._plane);
+    (this._scene.container as DisplayObjectContainer).addChild(this._plane);
 
     window.onresize = () => this.onResize();
 

@@ -9,7 +9,7 @@ import {
 } from '@awayjs/core';
 import { BitmapImageCube, ImageSampler } from '@awayjs/stage';
 import { ElementsType, ImageTextureCube } from '@awayjs/renderer';
-import { Sprite, Skybox, PrimitiveTorusPrefab, Scene } from '@awayjs/scene';
+import { Sprite, Skybox, PrimitiveTorusPrefab, Scene, DisplayObjectContainer } from '@awayjs/scene';
 import { MethodMaterial, EffectEnvMapMethod } from '@awayjs/materials';
 
 class BasicSkyBox {
@@ -63,7 +63,7 @@ class BasicSkyBox {
       20,
     ).getNewObject() as Sprite;
     this._torus.boundsVisible = true;
-    this._scene.root.addChild(this._torus);
+    (this._scene.container as DisplayObjectContainer).addChild(this._torus);
   }
 
   private initListeners(): void {
@@ -98,7 +98,7 @@ class BasicSkyBox {
         this._cubeTexture = new ImageTextureCube(event.assets[0] as BitmapImageCube);
 
         this._skyBox = new Skybox(event.assets[0] as BitmapImageCube);
-        this._scene.root.addChild(this._skyBox);
+        (this._scene.container as DisplayObjectContainer).addChild(this._skyBox);
 
         this._torusMaterial.addEffectMethod(new EffectEnvMapMethod(this._cubeTexture, 1));
         break;

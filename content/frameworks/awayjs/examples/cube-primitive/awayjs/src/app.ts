@@ -10,7 +10,7 @@ import {
 } from '@awayjs/core';
 import { ImageSampler, ImageUtils, BlendMode } from '@awayjs/stage';
 import { ElementsType } from '@awayjs/renderer';
-import { Sprite, PrimitiveCubePrefab, PrimitiveTorusPrefab, Scene } from '@awayjs/scene';
+import { Sprite, PrimitiveCubePrefab, PrimitiveTorusPrefab, Scene, DisplayObjectContainer } from '@awayjs/scene';
 import { MethodMaterial, DirectionalLight, StaticLightPicker } from '@awayjs/materials';
 
 class CubePrimitive {
@@ -90,8 +90,8 @@ class CubePrimitive {
     this._sprite2.x = 130;
     this._sprite2.z = 40;
 
-    this._scene.root.addChild(this._sprite);
-    this._scene.root.addChild(this._sprite2);
+    (this._scene.container as DisplayObjectContainer).addChild(this._sprite);
+    (this._scene.container as DisplayObjectContainer).addChild(this._sprite2);
 
     this._raf = new RequestAnimationFrame(this.render, this);
     this._raf.start();

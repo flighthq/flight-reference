@@ -8,7 +8,7 @@ import {
 } from '@awayjs/core';
 import { ElementsType } from '@awayjs/renderer';
 import { ImageSampler, ImageUtils } from '@awayjs/stage';
-import { Sprite, PrimitiveTorusPrefab, Scene } from '@awayjs/scene';
+import { Sprite, PrimitiveTorusPrefab, Scene, DisplayObjectContainer } from '@awayjs/scene';
 import { MethodMaterial, DirectionalLight, StaticLightPicker } from '@awayjs/materials';
 
 class TorusPrimitive {
@@ -69,7 +69,7 @@ class TorusPrimitive {
 
     this._sprite = <Sprite>this._torus.getNewObject();
 
-    this._scene.root.addChild(this._sprite);
+    (this._scene.container as DisplayObjectContainer).addChild(this._sprite);
   }
 
   private imageCompleteHandler(event: Event) {

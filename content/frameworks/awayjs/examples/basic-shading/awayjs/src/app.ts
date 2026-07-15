@@ -64,7 +64,7 @@ class Basic_Shading {
 
     this._scene.camera = this._camera;
 
-    this._root = this._scene.root;
+    this._root = this._scene.container as DisplayObjectContainer;
     this._view = this._scene.view;
 
     this._cameraController = new HoverController(this._camera);

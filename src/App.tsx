@@ -71,7 +71,6 @@ function rendererLabel(id: string): string {
 
 const frameworkViewports: Record<string, NativeViewport> = {
   openfl: { width: 800, height: 600 },
-  starling: { width: 320, height: 480 },
 };
 
 function nativeViewportFor(c: ReferenceCase, layout: LayoutMode): NativeViewport | undefined {

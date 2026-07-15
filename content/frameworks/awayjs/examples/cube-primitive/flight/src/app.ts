@@ -25,9 +25,9 @@ import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const DEG = Math.PI / 180;
 
-const { render } = createScene3DContext({
-  width: 800,
-  height: 600,
+const ctx = createScene3DContext({
+  width: window.innerWidth,
+  height: window.innerHeight,
   backgroundColor: 0xff000000,
 });
 
@@ -36,7 +36,7 @@ const scene = createScene();
 const camera = createCamera({
   near: 0.1,
   far: 5000,
-  projection: createPerspectiveProjection({ fovY: 120 * DEG, aspect: 800 / 600 }),
+  projection: createPerspectiveProjection({ fovY: 120 * DEG, aspect: window.innerWidth / window.innerHeight }),
 });
 
 const directional = createDirectionalLight({
@@ -52,9 +52,9 @@ const image = await loadImageResourceFromUrl('awayjs/assets/spacy_texture.png');
 const texture = createTexture({ image });
 
 const material = createBlinnPhongMaterial({
-  diffuse: 1,
+  diffuse: 0xffffffff,
   shininess: 50,
-  specular: 1.8,
+  specular: 0xffffffff,
 });
 material.diffuseMap = texture;
 material.blendMode = BlendMode.Add;
@@ -105,8 +105,20 @@ function frame(): void {
   rotateMatrix4(cube.localMatrix, cube.localMatrix, xAxis, cubeAngleX);
   invalidateNodeLocalTransform(cube);
 
-  render(scene, camera, lights);
+  ctx.render(scene, camera, lights);
   requestAnimationFrame(frame);
 }
+
+window.addEventListener('resize', () => {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const pixelRatio = window.devicePixelRatio || 1;
+  ctx.canvas.width = w * pixelRatio;
+  ctx.canvas.height = h * pixelRatio;
+  ctx.canvas.style.width = `${w}px`;
+  ctx.canvas.style.height = `${h}px`;
+  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
+  camera.projection.aspect = w / h;
+});
 
 frame();

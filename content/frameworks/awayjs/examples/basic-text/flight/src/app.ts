@@ -40,13 +40,12 @@ invalidateNodeLocalTransform(root);
 
 const textFields: RichText[] = [];
 
-for (let i = 0; i < 300; i++) {
+for (let i = 0; i < 30; i++) {
   const tf = createRichText();
-  const fontSize = Math.round(10 + Math.random() * 100);
   tf.data.defaultTextFormat = {
     font: font.name,
     color: 0xff0000,
-    size: fontSize,
+    size: 40,
   };
   tf.data.text = '12345\n67890';
   tf.data.background = true;

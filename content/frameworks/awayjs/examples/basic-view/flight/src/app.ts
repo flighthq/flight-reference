@@ -19,7 +19,7 @@ import {
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
-const { render } = createScene3DContext({ width: 800, height: 600, backgroundColor: 0xff000000 });
+const ctx = createScene3DContext({ width: window.innerWidth, height: window.innerHeight, backgroundColor: 0xff000000 });
 
 const scene = createScene();
 
@@ -31,7 +31,7 @@ addNodeChild(scene, mesh);
 const camera = createCamera({
   near: 1,
   far: 10000,
-  projection: createPerspectiveProjection({ fovY: 45 * DEG_TO_RAD, aspect: 800 / 600 }),
+  projection: createPerspectiveProjection({ fovY: 60 * DEG_TO_RAD, aspect: window.innerWidth / window.innerHeight }),
 });
 
 const eye = createVector3(0, 500, -600);
@@ -55,8 +55,20 @@ function frame(): void {
   rotateMatrix4(mesh.localMatrix, mesh.localMatrix, yAxis, angle);
   invalidateNodeLocalTransform(mesh);
 
-  render(scene, camera, lights);
+  ctx.render(scene, camera, lights);
   requestAnimationFrame(frame);
 }
+
+window.addEventListener('resize', () => {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const pixelRatio = window.devicePixelRatio || 1;
+  ctx.canvas.width = w * pixelRatio;
+  ctx.canvas.height = h * pixelRatio;
+  ctx.canvas.style.width = `${w}px`;
+  ctx.canvas.style.height = `${h}px`;
+  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
+  camera.projection.aspect = w / h;
+});
 
 frame();

@@ -28,6 +28,7 @@ const target = await createFunctionalTarget({
   height,
   background: 0xff000000,
   kinds: [ShapeKind, ParticleEmitterKind],
+  blend: true,
 });
 
 const root = createDisplayContainer();

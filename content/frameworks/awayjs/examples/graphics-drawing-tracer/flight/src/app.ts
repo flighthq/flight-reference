@@ -16,8 +16,8 @@ import {
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
-const WIDTH = 800;
-const HEIGHT = 600;
+const WIDTH = window.innerWidth;
+const HEIGHT = window.innerHeight;
 const DEG_TO_RAD = Math.PI / 180;
 const MAX_PATH_LENGTH = 500;
 

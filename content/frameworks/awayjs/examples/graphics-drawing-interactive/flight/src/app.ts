@@ -31,8 +31,8 @@ interface DrawingPathEntry {
 }
 
 const target = await createFunctionalTarget({
-  width: 800,
-  height: 600,
+  width: window.innerWidth,
+  height: window.innerHeight,
   background: 0xffdddddd,
   kinds: [ShapeKind],
 });
@@ -44,7 +44,7 @@ const root = createDisplayContainer();
 
 const bgShape = createShape();
 appendShapeBeginFill(bgShape, 0xdddddd);
-appendShapeRectangle(bgShape, 0, 0, 800, 600);
+appendShapeRectangle(bgShape, 0, 0, window.innerWidth, window.innerHeight);
 appendShapeEndFill(bgShape);
 addNodeChild(root, bgShape);
 

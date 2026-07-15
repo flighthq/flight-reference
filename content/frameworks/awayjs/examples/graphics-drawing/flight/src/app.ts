@@ -22,10 +22,11 @@ import {
 import { createFunctionalTarget } from '@ft/render';
 
 const target = await createFunctionalTarget({
-  width: 800,
-  height: 600,
+  width: window.innerWidth,
+  height: window.innerHeight,
   background: 0xff777777,
   kinds: [ShapeKind],
+  clip: true,
 });
 
 const root = createDisplayContainer();

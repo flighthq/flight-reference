@@ -96,6 +96,18 @@ const image = await loadImageResourceFromUrl('awayjs/assets/floor_diffuse.jpg');
 const texture = createTexture({ image });
 material.baseColorMap = texture;
 
+window.addEventListener('resize', () => {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const pixelRatio = window.devicePixelRatio || 1;
+  ctx.canvas.width = w * pixelRatio;
+  ctx.canvas.height = h * pixelRatio;
+  ctx.canvas.style.width = `${w}px`;
+  ctx.canvas.style.height = `${h}px`;
+  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
+  camera.projection.aspect = w / h;
+});
+
 function frame(): void {
   ctx.render(scene, camera, lights);
   requestAnimationFrame(frame);

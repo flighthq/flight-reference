@@ -27,7 +27,7 @@ import {
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
-const { canvas, render } = createScene3DContext({
+const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
   backgroundColor: 0xff000000,
@@ -53,12 +53,12 @@ const directional = createDirectionalLight({
 const ambient = createAmbientLight({ color: 0xffffff, intensity: 0.1 });
 const lights = createSceneLights({ ambient, directional });
 
-const planeMaterial = createBlinnPhongMaterial({ diffuse: 1, shininess: 20, specular: 0.5 });
+const planeMaterial = createBlinnPhongMaterial({ diffuse: 0xffffffff, shininess: 20, specular: 0x808080ff });
 planeMaterial.doubleSided = true;
 
-const sphereMaterial = createBlinnPhongMaterial({ diffuse: 1, shininess: 20, specular: 0.5 });
-const cubeMaterial = createBlinnPhongMaterial({ diffuse: 1, shininess: 20, specular: 0.5 });
-const torusMaterial = createBlinnPhongMaterial({ diffuse: 1, shininess: 20, specular: 0.5 });
+const sphereMaterial = createBlinnPhongMaterial({ diffuse: 0xffffffff, shininess: 20, specular: 0x808080ff });
+const cubeMaterial = createBlinnPhongMaterial({ diffuse: 0xffffffff, shininess: 20, specular: 0x808080ff });
+const torusMaterial = createBlinnPhongMaterial({ diffuse: 0xffffffff, shininess: 20, specular: 0x808080ff });
 
 const planeGeometry = createPlaneMeshGeometry(1000, 1000, 1, 1);
 const plane = createMesh(planeGeometry, [planeMaterial]);
@@ -189,7 +189,7 @@ function updateCamera(): void {
   setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 }
 
-canvas.addEventListener('mousedown', (event: MouseEvent) => {
+ctx.canvas.addEventListener('mousedown', (event: MouseEvent) => {
   dragging = true;
   lastMouseX = event.clientX;
   lastMouseY = event.clientY;
@@ -197,7 +197,7 @@ canvas.addEventListener('mousedown', (event: MouseEvent) => {
   lastTiltAngle = tiltAngle;
 });
 
-canvas.addEventListener('mousemove', (event: MouseEvent) => {
+ctx.canvas.addEventListener('mousemove', (event: MouseEvent) => {
   if (!dragging) return;
   panAngle = 0.3 * DEG_TO_RAD * (event.clientX - lastMouseX) + lastPanAngle;
   tiltAngle = 0.3 * DEG_TO_RAD * (event.clientY - lastMouseY) + lastTiltAngle;
@@ -207,7 +207,7 @@ window.addEventListener('mouseup', () => {
   dragging = false;
 });
 
-canvas.addEventListener('wheel', (event: WheelEvent) => {
+ctx.canvas.addEventListener('wheel', (event: WheelEvent) => {
   distance -= event.deltaY / 2;
   if (distance < 100) distance = 100;
   else if (distance > 2000) distance = 2000;
@@ -215,18 +215,26 @@ canvas.addEventListener('wheel', (event: WheelEvent) => {
 
 updateCamera();
 
-let time = 0;
-
-function frame(dt: number): void {
-  time += dt;
-
-  const lightX = Math.sin(time / 10000) * 150000;
-  const lightZ = Math.cos(time / 10000) * 150000;
+function frame(ts: number): void {
+  const lightX = Math.sin(ts / 10000) * 150000;
+  const lightZ = Math.cos(ts / 10000) * 150000;
   setDirectionalLightDirection(directional, lightX, -1000, lightZ);
 
   updateCamera();
-  render(scene, camera, lights);
+  ctx.render(scene, camera, lights);
   requestAnimationFrame(frame);
 }
+
+window.addEventListener('resize', () => {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const pixelRatio = window.devicePixelRatio || 1;
+  ctx.canvas.width = w * pixelRatio;
+  ctx.canvas.height = h * pixelRatio;
+  ctx.canvas.style.width = `${w}px`;
+  ctx.canvas.style.height = `${h}px`;
+  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
+  camera.projection.aspect = w / h;
+});
 
 requestAnimationFrame(frame);

@@ -57,8 +57,8 @@ const image = await loadImageResourceFromUrl('awayjs/assets/dots.png');
 const texture = createTexture({ image });
 
 const material = createBlinnPhongMaterial({
-  diffuse: 1,
-  specular: 1,
+  diffuse: 0xffffffff,
+  specular: 0xffffffff,
   shininess: 20,
   diffuseMap: texture,
 });

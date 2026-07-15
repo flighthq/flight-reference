@@ -306,23 +306,13 @@ code {
   border-radius: 4px;
 }
 
-.pane-grid--compare[data-framework='openfl'] .pane__iframe {
-  width: min(100cqw, calc(100cqh * 4 / 3));
-  height: min(100cqh, calc(100cqw * 3 / 4));
-}
-
-.pane-grid--compare[data-framework='starling'] .pane__iframe {
-  width: min(100cqw, calc(100cqh * 2 / 3));
-  height: min(100cqh, calc(100cqw * 3 / 2));
-}
-
 .pane__mini-stage {
   width: 100%;
   height: 100%;
   display: grid;
   place-items: center;
   overflow: hidden;
-  background: #ffffff;
+  background: var(--panel);
 }
 
 .pane__mini-crop {

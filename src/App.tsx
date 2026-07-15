@@ -69,6 +69,16 @@ function rendererLabel(id: string): string {
   return id.toUpperCase();
 }
 
+const frameworkViewports: Record<string, NativeViewport> = {
+  openfl: { width: 800, height: 600 },
+  starling: { width: 320, height: 480 },
+};
+
+function nativeViewportFor(c: ReferenceCase, layout: LayoutMode): NativeViewport | undefined {
+  if (layout !== 'split') return undefined;
+  return frameworkViewports[c.framework];
+}
+
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
 
@@ -144,24 +154,32 @@ function readUrlState(): {
   };
 }
 
-const splitViewport = { width: 670, height: 400 };
+interface NativeViewport {
+  width: number;
+  height: number;
+}
 
-function PreviewFrame({ src, title, miniaturized }: { src: string; title: string; miniaturized: boolean }) {
+function PreviewFrame({
+  src,
+  title,
+  nativeViewport,
+}: {
+  src: string;
+  title: string;
+  nativeViewport?: NativeViewport | undefined;
+}) {
   const frameRef = useRef<HTMLIFrameElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
-  const teardownMeasurementRef = useRef<(() => void) | null>(null);
-  const [cropSize, setCropSize] = useState(splitViewport);
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
     return () => {
-      teardownMeasurementRef.current?.();
       if (frameRef.current) frameRef.current.src = 'about:blank';
     };
   }, []);
 
   useEffect(() => {
-    if (!miniaturized) {
+    if (!nativeViewport) {
       setScale(1);
       return;
     }
@@ -169,87 +187,35 @@ function PreviewFrame({ src, title, miniaturized }: { src: string; title: string
     const updateScale = () => {
       const wrap = wrapRef.current;
       if (!wrap) return;
-
       const bounds = wrap.getBoundingClientRect();
       if (bounds.width <= 0 || bounds.height <= 0) return;
-
-      const nextScale = Math.min(bounds.width / cropSize.width, bounds.height / cropSize.height, 1);
-      setScale(Number.isFinite(nextScale) && nextScale > 0 ? nextScale : 1);
+      const next = Math.min(bounds.width / nativeViewport.width, bounds.height / nativeViewport.height, 1);
+      setScale(Number.isFinite(next) && next > 0 ? next : 1);
     };
 
     updateScale();
-
     const observer = new ResizeObserver(updateScale);
     if (wrapRef.current) observer.observe(wrapRef.current);
-
     return () => observer.disconnect();
-  }, [cropSize.height, cropSize.width, miniaturized]);
+  }, [nativeViewport]);
 
-  const handleLoad = () => {
-    const frame = frameRef.current;
-    const doc = frame?.contentDocument;
-    if (!doc) return;
-
-    teardownMeasurementRef.current?.();
-
-    if (!miniaturized) return;
-
-    const measure = () => {
-      let maxRight = 0;
-      let maxBottom = 0;
-
-      for (const child of Array.from(doc.body.querySelectorAll<HTMLElement>('*'))) {
-        const rect = child.getBoundingClientRect();
-        maxRight = Math.max(maxRight, rect.right);
-        maxBottom = Math.max(maxBottom, rect.bottom);
-      }
-
-      const measuredWidth =
-        maxRight > 64 ? maxRight : Math.max(doc.documentElement.scrollWidth, doc.body.scrollWidth, splitViewport.width);
-      const measuredHeight =
-        maxBottom > 64
-          ? maxBottom
-          : Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight, splitViewport.height);
-
-      setCropSize({
-        width: Math.max(64, Math.ceil(measuredWidth)),
-        height: Math.max(64, Math.ceil(measuredHeight)),
-      });
-    };
-
-    const timers = [0, 50, 150, 400, 1000].map((delay) => window.setTimeout(measure, delay));
-    const mutationObserver = new MutationObserver(() => {
-      window.requestAnimationFrame(measure);
-    });
-    mutationObserver.observe(doc.body, { attributes: true, childList: true, subtree: true });
-
-    const resizeObserver = new ResizeObserver(measure);
-    resizeObserver.observe(doc.documentElement);
-    resizeObserver.observe(doc.body);
-
-    teardownMeasurementRef.current = () => {
-      mutationObserver.disconnect();
-      resizeObserver.disconnect();
-      for (const timer of timers) window.clearTimeout(timer);
-    };
-  };
-
-  if (!miniaturized) {
-    return <iframe ref={frameRef} className="pane__iframe" src={src} title={title} onLoad={handleLoad} />;
+  if (!nativeViewport) {
+    return <iframe ref={frameRef} className="pane__iframe" src={src} title={title} />;
   }
 
   return (
     <div ref={wrapRef} className="pane__mini-stage">
-      <div className="pane__mini-crop" style={{ width: cropSize.width * scale, height: cropSize.height * scale }}>
+      <div
+        className="pane__mini-crop"
+        style={{ width: nativeViewport.width * scale, height: nativeViewport.height * scale }}>
         <iframe
           ref={frameRef}
           className="pane__iframe pane__iframe--mini"
           src={src}
           title={title}
-          onLoad={handleLoad}
           style={{
-            width: cropSize.width,
-            height: cropSize.height,
+            width: nativeViewport.width,
+            height: nativeViewport.height,
             transform: `scale(${scale})`,
           }}
         />
@@ -547,7 +513,7 @@ export default function App() {
                   key={selectedRenderer.url}
                   src={`${baseUrl}${selectedRenderer.url}`}
                   title={`${selectedCase.title} preview`}
-                  miniaturized={false}
+                  nativeViewport={nativeViewportFor(selectedCase, layoutMode)}
                 />
               </div>
             ) : (
@@ -586,7 +552,7 @@ export default function App() {
                     key={selectedFlightRenderer.url}
                     src={`${baseUrl}${selectedFlightRenderer.url}`}
                     title={`${selectedCase.title} flight preview`}
-                    miniaturized={false}
+                    nativeViewport={nativeViewportFor(selectedCase, layoutMode)}
                   />
                 </div>
               ) : (

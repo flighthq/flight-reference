@@ -1,7 +1,6 @@
-import { createScene } from '@flighthq/scene';
-
 import type { BlinnPhongMaterial } from '@flighthq/sdk';
 import {
+  createScene,
   addNodeChild,
   createAmbientLight,
   createBlinnPhongMaterial,

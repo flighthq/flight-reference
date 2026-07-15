@@ -1,6 +1,6 @@
-import type { Camera, GlRenderState, SceneLights, SceneNode } from '@flighthq/types';
-import { drawGlScene } from '@flighthq/scene-gl';
+import type { Camera, GlRenderState, SceneLights, SceneNode } from '@flighthq/sdk';
 import {
+  drawGlScene,
   createGlCanvasElement,
   createGlRenderState,
   registerBlinnPhongGlMaterial,

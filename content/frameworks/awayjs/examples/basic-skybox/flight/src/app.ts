@@ -1,8 +1,8 @@
-import { createScene } from '@flighthq/scene';
-import { drawGlEnvironmentSkybox, drawGlScene } from '@flighthq/scene-gl';
-
-import type { SceneLights } from '@flighthq/types';
+import type { SceneLights } from '@flighthq/sdk';
 import {
+  createScene,
+  drawGlEnvironmentSkybox,
+  drawGlScene,
   addNodeChild,
   createAmbientLight,
   createBlinnPhongMaterial,

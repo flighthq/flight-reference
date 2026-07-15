@@ -1,6 +1,5 @@
-import { createScene } from '@flighthq/scene';
-
 import {
+  createScene,
   addNodeChild,
   BlendMode,
   createAmbientLight,

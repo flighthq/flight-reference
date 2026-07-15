@@ -1,7 +1,6 @@
-import { createScene } from '@flighthq/scene';
-
 import type { SceneLights } from '@flighthq/sdk';
 import {
+  createScene,
   addNodeChild,
   createCamera,
   createMesh,

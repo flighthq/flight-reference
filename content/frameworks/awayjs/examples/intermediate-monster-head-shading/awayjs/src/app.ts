@@ -17,7 +17,6 @@ import type { Camera, DisplayObjectContainer } from '@awayjs/scene';
 import {
   ImageTexture2D,
   MethodMaterial,
-  MethodMaterialMode,
   SpecularFresnelMethod,
   ShadowSoftMethod,
   PointLight,
@@ -272,7 +271,6 @@ class Intermediate_MonsterHeadShading {
 
     this._headMaterial = new MethodMaterial();
     this._headMaterial.ambientMethod.texture = this._textureDictionary['monsterhead_diffuse.jpg'];
-    this._headMaterial.mode = MethodMaterialMode.MULTI_PASS;
     this._headMaterial.style.sampler = new ImageSampler(true, true);
     this._headMaterial.normalMethod.texture = this._textureDictionary['monsterhead_normals.jpg'];
     this._headMaterial.lightPicker = this._lightPicker;

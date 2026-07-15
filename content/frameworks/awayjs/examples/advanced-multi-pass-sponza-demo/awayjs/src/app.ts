@@ -28,14 +28,11 @@ import {
 import {
   MethodMaterial,
   ImageTexture2D,
-  MethodMaterialMode,
-  CascadeShadowMapper,
   ShadowSoftMethod,
   EffectFogMethod,
   PointLight,
   DirectionalLight,
   StaticLightPicker,
-  DirectionalShadowMapper,
 } from '@awayjs/materials';
 import { AWDParser } from '@awayjs/parsers';
 
@@ -189,7 +186,6 @@ class Advanced_MultiPassSponzaDemo {
 
   private _textureDictionary: object = new Object();
   private _multiMaterialDictionary: object = new Object();
-  private _singleMaterialDictionary: object = new Object();
 
   private vaseSprites: Array<Sprite> = new Array<Sprite>();
   private poleSprites: Array<Sprite> = new Array<Sprite>();
@@ -198,18 +194,12 @@ class Advanced_MultiPassSponzaDemo {
   private _scene: Scene;
   private _cameraController: FirstPersonController;
 
-  private _singlePassMaterial: boolean = false;
-  private _multiPassMaterial: boolean = true;
-  private _cascadeLevels: number = 3;
-  private _shadowOptions: string = 'PCF';
-  private _depthMapSize: number = 2048;
   private _lightDirection: number = Math.PI / 2;
   private _lightElevation: number = Math.PI / 18;
 
   private _lightPicker: StaticLightPicker;
   private _baseShadowMethod: ShadowSoftMethod;
   private _fogMethod: EffectFogMethod;
-  private _cascadeShadowMapper: DirectionalShadowMapper;
   private _directionalLight: DirectionalLight;
   private _lights: Array<any> = new Array<any>();
 
@@ -549,7 +539,6 @@ class Advanced_MultiPassSponzaDemo {
       if (!multiMaterial) {
         multiMaterial = new MethodMaterial();
         multiMaterial.ambientMethod.texture = this._textureDictionary[textureName];
-        multiMaterial.mode = MethodMaterialMode.MULTI_PASS;
         multiMaterial.name = name;
         multiMaterial.lightPicker = this._lightPicker;
         multiMaterial.shadowMethod = this._baseShadowMethod;

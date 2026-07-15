@@ -24,14 +24,7 @@ import {
 import type { ParticleProperties } from '@awayjs/graphics';
 import { ElementsType } from '@awayjs/graphics';
 import { HoverController, Sprite, Scene, Camera, PrimitivePlanePrefab } from '@awayjs/scene';
-import {
-  MethodMaterial,
-  MethodMaterialMode,
-  PointLight,
-  DirectionalLight,
-  StaticLightPicker,
-  ImageTexture2D,
-} from '@awayjs/materials';
+import { MethodMaterial, PointLight, DirectionalLight, StaticLightPicker, ImageTexture2D } from '@awayjs/materials';
 
 class FireVO {
   public sprite: Sprite;
@@ -107,7 +100,6 @@ class BasicFire {
 
   private initMaterials(): void {
     this._planeMaterial = new MethodMaterial();
-    this._planeMaterial.mode = MethodMaterialMode.MULTI_PASS;
     this._planeMaterial.lightPicker = this._lightPicker;
     this._planeMaterial.style.sampler = new ImageSampler(true, true, false);
     this._planeMaterial.specularMethod.strength = 10;

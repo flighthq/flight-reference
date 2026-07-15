@@ -546,7 +546,9 @@ export default function App() {
                   src={`${baseUrl}${selectedRenderer.url}`}
                   title={`${selectedCase.title} preview`}
                   miniaturized={
-                    layoutMode === 'split' && !!(hasFlightImplementation || selectedCase.flightPreviewRenderers?.length)
+                    layoutMode === 'split' &&
+                    selectedCase.framework !== 'awayjs' &&
+                    !!(hasFlightImplementation || selectedCase.flightPreviewRenderers?.length)
                   }
                 />
               </div>

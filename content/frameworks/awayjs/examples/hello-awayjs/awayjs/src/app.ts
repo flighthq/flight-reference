@@ -12,14 +12,13 @@ class Hello_AwayJS {
 
   constructor() {
     this._scene = new Scene();
-    this._scene.view.x = 0;
-    this._scene.view.y = 0;
-    this._scene.view.width = 500;
-    this._scene.view.height = 500;
 
     this._scene.camera.z = -600;
     this._scene.camera.y = 500;
     this._scene.camera.lookAt(new Vector3D());
+
+    window.onresize = () => this.onResize();
+    this.onResize();
 
     this._material = new BasicMaterial();
 
@@ -66,6 +65,13 @@ class Hello_AwayJS {
 
   private onAssetComplete(event: AssetEvent): void {
     this._material.texture = new ImageTexture2D(event.asset as BitmapImage2D);
+  }
+
+  private onResize(): void {
+    this._scene.view.y = 0;
+    this._scene.view.x = 0;
+    this._scene.view.width = window.innerWidth;
+    this._scene.view.height = window.innerHeight;
   }
 }
 

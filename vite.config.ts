@@ -154,7 +154,7 @@ function previewHtml(title: string, scriptSrc: string, baseHref: string): string
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #ffffff; }
     body { font-family: sans-serif; }
-    #app, #openfl-content { width: 100%; height: 100%; }
+    #openfl-content { width: 100%; height: 100%; }
     canvas { display: block; }
   </style>
   <script>requestAnimationFrame(function(){requestAnimationFrame(function(){window.dispatchEvent(new Event("resize"))})})</script>
@@ -772,7 +772,7 @@ function referencePlugin(): Plugin[] {
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #ffffff; }
     body { font-family: sans-serif; }
-    #app, #openfl-content { width: 100%; height: 100%; }
+    #openfl-content { width: 100%; height: 100%; }
     canvas { display: block; }
   </style>
   <script>requestAnimationFrame(function(){requestAnimationFrame(function(){window.dispatchEvent(new Event("resize"))})})</script>
@@ -813,7 +813,7 @@ function referencePlugin(): Plugin[] {
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #ffffff; }
     body { font-family: sans-serif; }
-    #app, #openfl-content { width: 100%; height: 100%; }
+    #openfl-content { width: 100%; height: 100%; }
     canvas { display: block; }
   </style>
   <script>requestAnimationFrame(function(){requestAnimationFrame(function(){window.dispatchEvent(new Event("resize"))})})</script>

@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "license": "MIT",
   "description": "Standalone reference harness for Flight scenarios and capture utilities.",
   "engines": {
     "node": ">=22.0.0"

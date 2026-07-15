@@ -6,7 +6,7 @@ A standalone reference harness for side-by-side visual comparison of [Flight SDK
 
 This repository contains a browser-based comparison tool and a corpus of demo implementations. Each demo case provides an original framework implementation alongside a Flight implementation that reproduces the same observable behavior — same assets, same dimensions, same visual output.
 
-**Flight is an independent project.** The reference implementations here are behavioral comparisons, not the origin of Flight's features or API design. Flight's rendering capabilities were designed and developed prior to and independently from the frameworks shown here. The reference demos were created afterward to validate and showcase behavioral parity. The presence of a framework in this repository does not imply that Flight derives from, depends on, or is licensed under that framework.
+**Flight is an independent project.** The frameworks compared here predate Flight, but Flight's features were developed independently — not derived from these frameworks' codebases. The reference implementations are behavioral comparisons that validate Flight can produce equivalent visual output, not the origin of Flight's API design. The presence of a framework in this repository does not imply that Flight is licensed under that framework.
 
 Each framework's sample code is redistributed under its own license — see `content/frameworks/<framework>/LICENSE` for details.
 

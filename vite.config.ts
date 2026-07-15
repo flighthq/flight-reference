@@ -174,6 +174,9 @@ function hasUpstreamOpenflImplementation(caseDir: string): boolean {
 }
 
 function readTitle(caseDir: string, fallback: string): string {
+  const titlePath = join(caseDir, 'title.txt');
+  if (existsSync(titlePath)) return readFileSync(titlePath, 'utf-8').trim();
+
   const projectXmlPath = join(caseDir, 'openfl-haxe', 'project.xml');
   if (!existsSync(projectXmlPath)) return fallback;
 

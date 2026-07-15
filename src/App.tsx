@@ -523,7 +523,8 @@ export default function App() {
               ? 'pane-grid pane-grid--compare'
               : 'pane-grid pane-grid--single'
           }
-          data-framework={selectedCase.framework}>
+          data-framework={selectedCase.framework}
+          data-corpus={selectedCase.corpus}>
           <section className="pane">
             <header className="pane__header">
               <div>

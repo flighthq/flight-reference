@@ -26,7 +26,7 @@ const height = window.innerHeight;
 const target = await createFunctionalTarget({
   width,
   height,
-  background: 0xff000000,
+  background: 0x000000ff,
   kinds: [ShapeKind, ParticleEmitterKind],
   blend: true,
 });

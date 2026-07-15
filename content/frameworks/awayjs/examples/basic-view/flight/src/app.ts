@@ -19,7 +19,7 @@ import {
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
-const ctx = createScene3DContext({ width: window.innerWidth, height: window.innerHeight, backgroundColor: 0xff000000 });
+const ctx = createScene3DContext({ width: window.innerWidth, height: window.innerHeight, backgroundColor: 0x000000ff });
 
 const scene = createScene();
 

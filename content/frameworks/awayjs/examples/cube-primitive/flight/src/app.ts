@@ -28,7 +28,7 @@ const DEG = Math.PI / 180;
 const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
-  backgroundColor: 0xff000000,
+  backgroundColor: 0x000000ff,
 });
 
 const scene = createScene();

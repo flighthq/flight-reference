@@ -25,7 +25,7 @@ const height = window.innerHeight;
 const target = await createFunctionalTarget({
   width,
   height,
-  background: 0xffcccccc,
+  background: 0xccccccff,
   kinds: [RichTextKind],
 });
 

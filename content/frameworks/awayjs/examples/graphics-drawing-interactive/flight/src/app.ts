@@ -33,7 +33,7 @@ interface DrawingPathEntry {
 const target = await createFunctionalTarget({
   width: window.innerWidth,
   height: window.innerHeight,
-  background: 0xffdddddd,
+  background: 0xddddddff,
   kinds: [ShapeKind],
 });
 

@@ -29,7 +29,7 @@ interface PathPoint {
 const target = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
-  background: 0xff777777,
+  background: 0x777777ff,
   kinds: [ShapeKind],
 });
 

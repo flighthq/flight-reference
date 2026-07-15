@@ -24,7 +24,7 @@ import { createFunctionalTarget } from '@ft/render';
 const target = await createFunctionalTarget({
   width: window.innerWidth,
   height: window.innerHeight,
-  background: 0xff777777,
+  background: 0x777777ff,
   kinds: [ShapeKind],
   clip: true,
 });

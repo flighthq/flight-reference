@@ -1,0 +1,8 @@
+{
+  "name": "awayjs-examples-graphics-drawing-tracer-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

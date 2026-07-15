@@ -1,7 +1,6 @@
 import { Vector3D, RequestAnimationFrame, AssetLibrary, URLRequest, AssetEvent } from '@awayjs/core';
 import { PrimitiveSpherePrefab, DisplayObject, DisplayObjectContainer, MouseEvent, Scene } from '@awayjs/scene';
-import { BasicMaterial } from '@awayjs/materials';
-import { ImageTexture2D } from '@awayjs/renderer';
+import { BasicMaterial, ImageTexture2D } from '@awayjs/materials';
 import { BitmapImage2D } from '@awayjs/stage';
 
 class Hello_AwayJS {
@@ -25,7 +24,7 @@ class Hello_AwayJS {
     this._material = new BasicMaterial();
 
     this._mouseContainer = new DisplayObjectContainer();
-    (this._scene.container as DisplayObjectContainer).addChild(this._mouseContainer);
+    this._scene.root.addChild(this._mouseContainer);
 
     const prefab = new PrimitiveSpherePrefab(this._material);
     for (let i = 0; i < 100; i++) {

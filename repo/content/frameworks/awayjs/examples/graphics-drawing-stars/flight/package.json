@@ -1,0 +1,8 @@
+{
+  "name": "awayjs-examples-graphics-drawing-stars-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

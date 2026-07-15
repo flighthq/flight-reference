@@ -1,6 +1,6 @@
 import { PerspectiveProjection, CoordinateSystem } from '@awayjs/core';
 import { Graphics, TextureAtlas, GradientFillStyle } from '@awayjs/graphics';
-import { Camera, Scene, DisplayObjectContainer } from '@awayjs/scene';
+import { Camera, Scene, SceneGraphPartition, DisplayObjectContainer } from '@awayjs/scene';
 import { View } from '@awayjs/view';
 import { MethodMaterial } from '@awayjs/materials';
 
@@ -51,7 +51,7 @@ export function createGraphics2DScene(backgroundColor: number = 0x777777): Graph
   initGraphicsMaterials();
 
   const root = new DisplayObjectContainer();
-  const scene = new Scene(root);
+  const scene = new Scene(new SceneGraphPartition(root));
   (scene as any).renderer.renderableSorter = null;
 
   const view = scene.view;

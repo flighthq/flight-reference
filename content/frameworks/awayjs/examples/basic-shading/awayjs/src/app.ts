@@ -1,7 +1,7 @@
 import { LoaderEvent, Vector3D, AssetLibrary, URLRequest, RequestAnimationFrame } from '@awayjs/core';
 import type { IAsset } from '@awayjs/core';
 import { BitmapImage2D, ImageSampler, ImageUtils } from '@awayjs/stage';
-import { ElementsType, ImageTexture2D } from '@awayjs/renderer';
+import { ElementsType } from '@awayjs/graphics';
 import {
   HoverController,
   Sprite,
@@ -13,7 +13,7 @@ import {
   PrimitiveTorusPrefab,
   DisplayObjectContainer,
 } from '@awayjs/scene';
-import { MethodMaterial, DirectionalLight, StaticLightPicker } from '@awayjs/materials';
+import { MethodMaterial, DirectionalLight, StaticLightPicker, ImageTexture2D } from '@awayjs/materials';
 import { View } from '@awayjs/view';
 
 class Basic_Shading {
@@ -64,7 +64,7 @@ class Basic_Shading {
 
     this._scene.camera = this._camera;
 
-    this._root = this._scene.container as DisplayObjectContainer;
+    this._root = this._scene.root;
     this._view = this._scene.view;
 
     this._cameraController = new HoverController(this._camera);

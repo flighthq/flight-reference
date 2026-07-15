@@ -2,11 +2,16 @@ import { LoaderEvent, AssetLibrary, URLRequest, RequestAnimationFrame, Coordinat
 import type { IAsset } from '@awayjs/core';
 import { Graphics, TextureAtlas, GradientFillStyle } from '@awayjs/graphics';
 import { MethodMaterial } from '@awayjs/materials';
-import { Font, TextField, TextFormat, TextFieldType, Scene, DisplayObjectContainer } from '@awayjs/scene';
-import { FontParser } from '@awayjs/parsers/dist/lib/FontParser';
-
-// @awayjs/parsers 0.8 overrides _pProceedParsing, but @awayjs/core 0.9 expects proceedParsing
-(FontParser.prototype as any).proceedParsing = (FontParser.prototype as any)._pProceedParsing;
+import {
+  Font,
+  TextField,
+  TextFormat,
+  TextFieldType,
+  Scene,
+  SceneGraphPartition,
+  DisplayObjectContainer,
+} from '@awayjs/scene';
+import { Parsers, FontParser } from '@awayjs/parsers';
 
 const colorMaterials: Record<string, MethodMaterial> = {};
 const textureMaterials: Record<string, MethodMaterial> = {};
@@ -48,7 +53,8 @@ class BasicText {
       return texObj;
     };
 
-    this._scene = new Scene(new DisplayObjectContainer());
+    Parsers.enableAllBundled();
+    this._scene = new Scene(new SceneGraphPartition(new DisplayObjectContainer()));
     (this._scene as any).renderer.renderableSorter = null;
 
     this._scene.view.projection.scale = 1;
@@ -65,7 +71,6 @@ class BasicText {
     this._timer.start();
 
     AssetLibrary.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onResourceComplete(event));
-
     AssetLibrary.load(new URLRequest('awayjs/assets/georgia.ttf'), null, null, new FontParser(true));
   }
 
@@ -103,7 +108,7 @@ class BasicText {
           const tf = textfield.clone();
           tf.x = (Math.random() - 0.5) * 1000 * (window.innerWidth / window.innerHeight);
           tf.y = (Math.random() - 0.5) * 1000;
-          (this._scene.container as DisplayObjectContainer).addChild(tf);
+          this._scene.root.addChild(tf);
         }
       }
     }

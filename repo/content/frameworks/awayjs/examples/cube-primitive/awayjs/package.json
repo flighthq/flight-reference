@@ -1,0 +1,14 @@
+{
+  "name": "awayjs-examples-cube-primitive-awayjs",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@awayjs/core": "*",
+    "@awayjs/graphics": "*",
+    "@awayjs/materials": "*",
+    "@awayjs/scene": "*",
+    "@awayjs/stage": "*",
+    "@awayjs/view": "*",
+    "@awayjs/renderer": "*"
+  }
+}

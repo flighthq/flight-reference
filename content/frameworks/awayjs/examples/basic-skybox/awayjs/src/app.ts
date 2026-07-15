@@ -8,9 +8,9 @@ import {
   PerspectiveProjection,
 } from '@awayjs/core';
 import { BitmapImageCube, ImageSampler } from '@awayjs/stage';
-import { ElementsType, ImageTextureCube } from '@awayjs/renderer';
-import { Sprite, Skybox, PrimitiveTorusPrefab, Scene, DisplayObjectContainer } from '@awayjs/scene';
-import { MethodMaterial, EffectEnvMapMethod } from '@awayjs/materials';
+import { ElementsType } from '@awayjs/graphics';
+import { Sprite, Skybox, PrimitiveTorusPrefab, Scene } from '@awayjs/scene';
+import { MethodMaterial, ImageTextureCube, EffectEnvMapMethod } from '@awayjs/materials';
 
 class BasicSkyBox {
   private _scene: Scene;
@@ -54,16 +54,11 @@ class BasicSkyBox {
   }
 
   private initObjects(): void {
-    this._torus = new PrimitiveTorusPrefab(
-      this._torusMaterial,
-      ElementsType.TRIANGLE,
-      150,
-      60,
-      40,
-      20,
-    ).getNewObject() as Sprite;
+    this._torus = <Sprite>(
+      new PrimitiveTorusPrefab(this._torusMaterial, ElementsType.TRIANGLE, 150, 60, 40, 20).getNewObject()
+    );
     this._torus.boundsVisible = true;
-    (this._scene.container as DisplayObjectContainer).addChild(this._torus);
+    this._scene.root.addChild(this._torus);
   }
 
   private initListeners(): void {
@@ -76,7 +71,7 @@ class BasicSkyBox {
 
     AssetLibrary.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onResourceComplete(event));
 
-    const loaderContext = new LoaderContext();
+    var loaderContext = new LoaderContext();
     loaderContext.dependencyBaseUrl = 'awayjs/assets/skybox/';
 
     AssetLibrary.load(new URLRequest('awayjs/assets/skybox/snow_texture.cube'), loaderContext);
@@ -95,10 +90,10 @@ class BasicSkyBox {
   private onResourceComplete(event: LoaderEvent): void {
     switch (event.url) {
       case 'awayjs/assets/skybox/snow_texture.cube':
-        this._cubeTexture = new ImageTextureCube(event.assets[0] as BitmapImageCube);
+        this._cubeTexture = new ImageTextureCube(<BitmapImageCube>event.assets[0]);
 
-        this._skyBox = new Skybox(event.assets[0] as BitmapImageCube);
-        (this._scene.container as DisplayObjectContainer).addChild(this._skyBox);
+        this._skyBox = new Skybox(<BitmapImageCube>event.assets[0]);
+        this._scene.root.addChild(this._skyBox);
 
         this._torusMaterial.addEffectMethod(new EffectEnvMapMethod(this._cubeTexture, 1));
         break;

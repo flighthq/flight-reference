@@ -1,9 +1,9 @@
 import { LoaderEvent, Vector3D, AssetLibrary, URLRequest, RequestAnimationFrame } from '@awayjs/core';
 import type { IAsset } from '@awayjs/core';
 import { BitmapImage2D } from '@awayjs/stage';
-import { BasicMaterial } from '@awayjs/materials';
-import { Sprite, PrimitivePlanePrefab, Scene, DisplayObjectContainer } from '@awayjs/scene';
-import { ElementsType, ImageTexture2D } from '@awayjs/renderer';
+import { ElementsType } from '@awayjs/graphics';
+import { BasicMaterial, ImageTexture2D } from '@awayjs/materials';
+import { Sprite, PrimitivePlanePrefab, Scene } from '@awayjs/scene';
 
 class Basic_View {
   private _scene: Scene;
@@ -20,13 +20,8 @@ class Basic_View {
 
     this._planeMaterial = new BasicMaterial();
 
-    this._plane = new PrimitivePlanePrefab(
-      this._planeMaterial,
-      ElementsType.TRIANGLE,
-      700,
-      700,
-    ).getNewObject() as Sprite;
-    (this._scene.container as DisplayObjectContainer).addChild(this._plane);
+    this._plane = <Sprite>new PrimitivePlanePrefab(this._planeMaterial, ElementsType.TRIANGLE, 700, 700).getNewObject();
+    this._scene.root.addChild(this._plane);
 
     window.onresize = () => this.onResize();
 
@@ -56,7 +51,7 @@ class Basic_View {
 
       switch (event.url) {
         case 'awayjs/assets/floor_diffuse.jpg':
-          this._planeMaterial.texture = new ImageTexture2D(asset as BitmapImage2D);
+          this._planeMaterial.texture = new ImageTexture2D(<BitmapImage2D>asset);
           break;
       }
     }

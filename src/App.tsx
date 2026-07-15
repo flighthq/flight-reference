@@ -545,11 +545,7 @@ export default function App() {
                   key={selectedRenderer.url}
                   src={`${baseUrl}${selectedRenderer.url}`}
                   title={`${selectedCase.title} preview`}
-                  miniaturized={
-                    layoutMode === 'split' &&
-                    selectedCase.framework !== 'awayjs' &&
-                    !!(hasFlightImplementation || selectedCase.flightPreviewRenderers?.length)
-                  }
+                  miniaturized={false}
                 />
               </div>
             ) : (
@@ -588,7 +584,7 @@ export default function App() {
                     key={selectedFlightRenderer.url}
                     src={`${baseUrl}${selectedFlightRenderer.url}`}
                     title={`${selectedCase.title} flight preview`}
-                    miniaturized
+                    miniaturized={false}
                   />
                 </div>
               ) : (

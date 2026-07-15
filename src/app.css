@@ -292,6 +292,20 @@ code {
   background: #ffffff;
 }
 
+.pane-grid--compare .pane__iframe-wrap {
+  container-type: size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel);
+}
+
+.pane-grid--compare .pane__iframe {
+  width: min(100cqw, calc(100cqh * 16 / 9));
+  height: min(100cqh, calc(100cqw * 9 / 16));
+  border-radius: 4px;
+}
+
 .pane__mini-stage {
   width: 100%;
   height: 100%;

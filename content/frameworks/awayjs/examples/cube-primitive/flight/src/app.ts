@@ -54,10 +54,10 @@ const texture = createTexture({ image });
 
 const material = createBlinnPhongMaterial({
   diffuse: 1,
-  shininess: 20,
+  shininess: 50,
   specular: 1.8,
-  diffuseMap: texture,
 });
+material.diffuseMap = texture;
 material.blendMode = BlendMode.Add;
 material.alphaMode = 'blend';
 material.doubleSided = true;

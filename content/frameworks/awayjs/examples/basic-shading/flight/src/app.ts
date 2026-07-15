@@ -16,21 +16,21 @@ import {
   createTexture,
   createTorusMeshGeometry,
   createVector3,
+  DEG_TO_RAD,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   setCameraViewMatrix4FromLookAt,
   setDirectionalLightDirection,
   setMatrix4Identity,
+  setTextureUvScale,
   translateMatrix4,
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
-const DEG = Math.PI / 180;
-
 const { canvas, render } = createScene3DContext({
-  width: 800,
-  height: 600,
+  width: window.innerWidth,
+  height: window.innerHeight,
   backgroundColor: 0xff000000,
 });
 
@@ -39,7 +39,10 @@ const scene = createScene();
 const camera = createCamera({
   near: 0.1,
   far: 5000,
-  projection: createPerspectiveProjection({ fovY: (45 * Math.PI) / 180, aspect: 800 / 600 }),
+  projection: createPerspectiveProjection({
+    fovY: 45 * DEG_TO_RAD,
+    aspect: window.innerWidth / window.innerHeight,
+  }),
 });
 
 const directional = createDirectionalLight({
@@ -48,7 +51,7 @@ const directional = createDirectionalLight({
   intensity: 0.7,
 });
 
-const ambient = createAmbientLight({ color: 0xffffff, intensity: 0.15 });
+const ambient = createAmbientLight({ color: 0xffffff, intensity: 0.1 });
 const lights = createSceneLights({ ambient, directional });
 
 const planeMaterial = createBlinnPhongMaterial({ diffuse: 1, shininess: 20, specular: 0.5 });
@@ -88,14 +91,27 @@ addNodeChild(scene, torus);
 
 function applyTextures(
   material: BlinnPhongMaterial,
-  maps: { normal?: string; specular?: string; diffuse?: string },
+  maps: { diffuse?: string; normal?: string; specular?: string },
+  uvScale?: { x: number; y: number },
 ): Promise<void[]> {
   const jobs: Promise<void>[] = [];
+  if (maps.diffuse) {
+    const url = maps.diffuse;
+    jobs.push(
+      loadImageResourceFromUrl(url).then((image) => {
+        const tex = createTexture({ image });
+        if (uvScale) setTextureUvScale(tex, uvScale.x, uvScale.y);
+        material.diffuseMap = tex;
+      }),
+    );
+  }
   if (maps.normal) {
     const url = maps.normal;
     jobs.push(
       loadImageResourceFromUrl(url).then((image) => {
-        material.normalMap = createTexture({ image });
+        const tex = createTexture({ image });
+        if (uvScale) setTextureUvScale(tex, uvScale.x, uvScale.y);
+        material.normalMap = tex;
       }),
     );
   }
@@ -103,27 +119,34 @@ function applyTextures(
     const url = maps.specular;
     jobs.push(
       loadImageResourceFromUrl(url).then((image) => {
-        material.specularMap = createTexture({ image });
-      }),
-    );
-  }
-  if (maps.diffuse) {
-    const url = maps.diffuse;
-    jobs.push(
-      loadImageResourceFromUrl(url).then((image) => {
-        material.diffuseMap = createTexture({ image });
+        const tex = createTexture({ image });
+        if (uvScale) setTextureUvScale(tex, uvScale.x, uvScale.y);
+        material.specularMap = tex;
       }),
     );
   }
   return Promise.all(jobs);
 }
 
+const torusWeaveNormalImage = await loadImageResourceFromUrl('awayjs/assets/weave_normal.jpg');
+const torusNormalTex = createTexture({ image: torusWeaveNormalImage });
+setTextureUvScale(torusNormalTex, 10, 5);
+torusMaterial.normalMap = torusNormalTex;
+
+const torusSpecTex = createTexture({ image: torusWeaveNormalImage });
+setTextureUvScale(torusSpecTex, 10, 5);
+torusMaterial.specularMap = torusSpecTex;
+
 await Promise.all([
-  applyTextures(planeMaterial, {
-    diffuse: 'awayjs/assets/floor_diffuse.jpg',
-    normal: 'awayjs/assets/floor_normal.jpg',
-    specular: 'awayjs/assets/floor_specular.jpg',
-  }),
+  applyTextures(
+    planeMaterial,
+    {
+      diffuse: 'awayjs/assets/floor_diffuse.jpg',
+      normal: 'awayjs/assets/floor_normal.jpg',
+      specular: 'awayjs/assets/floor_specular.jpg',
+    },
+    { x: 2, y: 2 },
+  ),
   applyTextures(sphereMaterial, {
     diffuse: 'awayjs/assets/beachball_diffuse.jpg',
     specular: 'awayjs/assets/beachball_specular.jpg',
@@ -133,17 +156,18 @@ await Promise.all([
     normal: 'awayjs/assets/trinket_normal.jpg',
     specular: 'awayjs/assets/trinket_specular.jpg',
   }),
-  applyTextures(torusMaterial, {
-    diffuse: 'awayjs/assets/weave_diffuse.jpg',
-    normal: 'awayjs/assets/weave_normal.jpg',
+  loadImageResourceFromUrl('awayjs/assets/weave_diffuse.jpg').then((image) => {
+    const tex = createTexture({ image });
+    setTextureUvScale(tex, 10, 5);
+    torusMaterial.diffuseMap = tex;
   }),
 ]);
 
-let panAngle = 45 * DEG;
-let tiltAngle = 20 * DEG;
-const distance = 1000;
+let panAngle = 45 * DEG_TO_RAD;
+let tiltAngle = 20 * DEG_TO_RAD;
+let distance = 1000;
 const minTiltAngle = 0;
-const maxTiltAngle = 90 * DEG;
+const maxTiltAngle = 90 * DEG_TO_RAD;
 
 let dragging = false;
 let lastMouseX = 0;
@@ -163,10 +187,6 @@ function updateCamera(): void {
   eye.y = distance * Math.sin(clampedTilt);
   eye.z = distance * Math.cos(panAngle) * Math.cos(clampedTilt);
 
-  target.x = 0;
-  target.y = 0;
-  target.z = 0;
-
   setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 }
 
@@ -180,12 +200,18 @@ canvas.addEventListener('mousedown', (event: MouseEvent) => {
 
 canvas.addEventListener('mousemove', (event: MouseEvent) => {
   if (!dragging) return;
-  panAngle = 0.3 * DEG * (event.clientX - lastMouseX) + lastPanAngle;
-  tiltAngle = 0.3 * DEG * (event.clientY - lastMouseY) + lastTiltAngle;
+  panAngle = 0.3 * DEG_TO_RAD * (event.clientX - lastMouseX) + lastPanAngle;
+  tiltAngle = 0.3 * DEG_TO_RAD * (event.clientY - lastMouseY) + lastTiltAngle;
 });
 
 window.addEventListener('mouseup', () => {
   dragging = false;
+});
+
+canvas.addEventListener('wheel', (event: WheelEvent) => {
+  distance -= event.deltaY / 2;
+  if (distance < 100) distance = 100;
+  else if (distance > 2000) distance = 2000;
 });
 
 updateCamera();

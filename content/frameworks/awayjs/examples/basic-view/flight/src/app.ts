@@ -10,6 +10,7 @@ import {
   createTexture,
   createUnlitMaterial,
   createVector3,
+  DEG_TO_RAD,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   rotateMatrix4,
@@ -31,7 +32,7 @@ addNodeChild(scene, mesh);
 const camera = createCamera({
   near: 1,
   far: 10000,
-  projection: createPerspectiveProjection({ fovY: (45 * Math.PI) / 180, aspect: 800 / 600 }),
+  projection: createPerspectiveProjection({ fovY: 45 * DEG_TO_RAD, aspect: 800 / 600 }),
 });
 
 const eye = createVector3(0, 500, -600);
@@ -49,7 +50,7 @@ material.baseColorMap = texture;
 let angle = 0;
 
 function frame(): void {
-  angle += (1 * Math.PI) / 180;
+  angle += DEG_TO_RAD;
 
   setMatrix4Identity(mesh.localMatrix);
   rotateMatrix4(mesh.localMatrix, mesh.localMatrix, yAxis, angle);

@@ -1,22 +1,26 @@
 import { createScene } from '@flighthq/scene';
 import { drawGlEnvironmentSkybox, drawGlScene } from '@flighthq/scene-gl';
 
-import type { SceneLights } from '@flighthq/sdk';
+import type { SceneLights } from '@flighthq/types';
 import {
   addNodeChild,
+  createAmbientLight,
+  createBlinnPhongMaterial,
   createCamera,
   createCubeTexture,
+  createDirectionalLight,
   createEnvironment,
   createGlCanvasElement,
   createGlRenderState,
   createMesh,
   createPerspectiveProjection,
+  createSceneLights,
   createTorusMeshGeometry,
-  createUnlitMaterial,
   createVector3,
+  DEG_TO_RAD,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
-  registerUnlitGlMaterial,
+  registerBlinnPhongGlMaterial,
   renderGlBackground,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
@@ -24,8 +28,8 @@ import {
   setMatrix4Identity,
 } from '@flighthq/sdk';
 
-const width = 800;
-const height = 600;
+const width = window.innerWidth;
+const height = window.innerHeight;
 const pixelRatio = window.devicePixelRatio || 1;
 
 const mount = document.getElementById('app');
@@ -40,26 +44,39 @@ if (mount) {
 document.body.style.margin = '0';
 
 const state = createGlRenderState(canvas, {
-  backgroundColor: 0xff000000,
+  backgroundColor: 0xffff00ff,
   contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: true },
   pixelRatio,
 });
 
-registerUnlitGlMaterial(state);
+registerBlinnPhongGlMaterial(state);
 
 const scene = createScene();
-const geometry = createTorusMeshGeometry(150, 50, 40, 20);
-const material = createUnlitMaterial({ baseColor: 0xffffffff });
-const torus = createMesh(geometry, [material]);
+
+const torusMaterial = createBlinnPhongMaterial({
+  diffuse: 0x111199ff,
+  shininess: 20,
+  specular: 0x808080ff,
+});
+
+const geometry = createTorusMeshGeometry(150, 60, 40, 20);
+const torus = createMesh(geometry, [torusMaterial]);
 addNodeChild(scene, torus);
 
 const camera = createCamera({
-  far: 5000,
   near: 0.1,
-  projection: createPerspectiveProjection({ fovY: Math.PI / 2 }),
+  far: 5000,
+  projection: createPerspectiveProjection({ fovY: 90 * DEG_TO_RAD }),
 });
 
-const lights: SceneLights = { ambient: null, directional: null };
+const directional = createDirectionalLight({
+  direction: { x: 0, y: -1, z: 1 },
+  color: 0xffffff,
+  intensity: 0.7,
+});
+
+const ambient = createAmbientLight({ color: 0xffffff, intensity: 1 });
+const lights: SceneLights = createSceneLights({ ambient, directional });
 
 const cubeTexture = createCubeTexture();
 
@@ -80,57 +97,42 @@ for (let i = 0; i < 6; i++) {
 
 const environment = createEnvironment({ environment: cubeTexture, intensity: 1 });
 
-let panAngle = 0;
-let tiltAngle = 0;
-let lastMouseX = 0;
-let lastMouseY = 0;
-let dragging = false;
-const distance = 600;
+let mouseX = width / 2;
+let cameraRotationY = 0;
 
-const eye = createVector3(0, 0, -distance);
+const eye = createVector3(0, 0, -600);
 const target = createVector3(0, 0, 0);
 const up = createVector3(0, 1, 0);
 
 const xAxis = createVector3(1, 0, 0);
 const yAxis = createVector3(0, 1, 0);
 
-canvas.addEventListener('pointerdown', (event: PointerEvent) => {
-  dragging = true;
-  lastMouseX = event.clientX;
-  lastMouseY = event.clientY;
+document.addEventListener('mousemove', (event: MouseEvent) => {
+  mouseX = event.clientX;
 });
-
-window.addEventListener('pointermove', (event: PointerEvent) => {
-  if (!dragging) return;
-  panAngle += (event.clientX - lastMouseX) * 0.3;
-  tiltAngle += (event.clientY - lastMouseY) * 0.3;
-  tiltAngle = Math.max(-89, Math.min(89, tiltAngle));
-  lastMouseX = event.clientX;
-  lastMouseY = event.clientY;
-});
-
-window.addEventListener('pointerup', () => {
-  dragging = false;
-});
-
-function updateCamera(): void {
-  const panRad = (panAngle * Math.PI) / 180;
-  const tiltRad = (tiltAngle * Math.PI) / 180;
-  eye.x = distance * Math.sin(panRad) * Math.cos(tiltRad);
-  eye.y = distance * Math.sin(tiltRad);
-  eye.z = distance * Math.cos(panRad) * Math.cos(tiltRad);
-  setCameraViewMatrix4FromLookAt(camera, eye, target, up);
-}
 
 const aspect = width / height;
 
+let torusRotX = 0;
+let torusRotY = 0;
+
 function frame(): void {
+  torusRotX += 2 * DEG_TO_RAD;
+  torusRotY += 1 * DEG_TO_RAD;
+
   setMatrix4Identity(torus.localMatrix);
-  rotateMatrix4(torus.localMatrix, torus.localMatrix, xAxis, (performance.now() / 500) * Math.PI);
-  rotateMatrix4(torus.localMatrix, torus.localMatrix, yAxis, (performance.now() / 1000) * Math.PI);
+  rotateMatrix4(torus.localMatrix, torus.localMatrix, xAxis, torusRotX);
+  rotateMatrix4(torus.localMatrix, torus.localMatrix, yAxis, torusRotY);
   invalidateNodeLocalTransform(torus);
 
-  updateCamera();
+  cameraRotationY += (0.5 * (mouseX - window.innerWidth / 2)) / 800;
+  const rotRad = cameraRotationY * DEG_TO_RAD;
+
+  eye.x = -600 * Math.sin(rotRad);
+  eye.y = 0;
+  eye.z = -600 * Math.cos(rotRad);
+
+  setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 
   renderGlBackground(state);
   const gl = state.gl;

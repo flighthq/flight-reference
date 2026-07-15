@@ -55,10 +55,8 @@ const logoHeight = 450 - 50;
 const logoPivotX = logoWidth / 2 + 50;
 const logoPivotY = logoHeight / 2 + 50;
 
-const numSpritesH = 5;
 const numSpritesV = 5;
-const spacingX = 150;
-const spacingY = 125;
+const numSpritesH = 5;
 
 const gridScale = 0.1;
 const maskRadius = 100;
@@ -70,11 +68,11 @@ if (target.kind === 'webgl') {
   enableGlColorAdjustment(target.state);
 }
 
-for (let i = 0; i < numSpritesH; i++) {
-  for (let j = 0; j < numSpritesV; j++) {
+for (let i = 0; i < numSpritesV; i++) {
+  for (let j = 0; j < numSpritesH; j++) {
     const container = createDisplayContainer();
-    container.x = i * spacingX + 25;
-    container.y = j * spacingY;
+    container.x = i * 50;
+    container.y = j * 25;
     container.scaleX = gridScale;
     container.scaleY = gridScale;
     invalidateNodeLocalTransform(container);
@@ -84,9 +82,9 @@ for (let i = 0; i < numSpritesH; i++) {
     sprite.pivotX = logoPivotX;
     sprite.pivotY = logoPivotY;
     sprite.colorTransform = createColorTransform({
-      redMultiplier: i / numSpritesH,
-      greenMultiplier: 1 - i / numSpritesH,
-      blueMultiplier: 1 - j / numSpritesV,
+      redMultiplier: i / numSpritesV,
+      greenMultiplier: 1 - i / numSpritesV,
+      blueMultiplier: 1 - j / numSpritesH,
       alphaMultiplier: 1,
     });
     invalidateNodeAppearance(sprite);

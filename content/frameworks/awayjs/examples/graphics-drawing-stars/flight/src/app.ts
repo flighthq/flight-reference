@@ -6,6 +6,7 @@ import {
   appendShapeLineStyle,
   appendShapeLineTo,
   appendShapeMoveTo,
+  appendShapeRectangle,
   attachKeyboardInput,
   attachPointerInput,
   clearShapeCommands,
@@ -24,7 +25,7 @@ import { createFunctionalTarget } from '@ft/render';
 const target = await createFunctionalTarget({
   width: window.innerWidth,
   height: window.innerHeight,
-  background: 0xffdddddd,
+  background: 0xff777777,
   kinds: [ShapeKind],
 });
 
@@ -35,26 +36,40 @@ let activeStar: Shape | null = null;
 let startX = 0;
 let startY = 0;
 let activeSpikes = 5;
-let activeInnerRatio = 0.5;
 let activeFillColor = 0;
 let activeStrokeColor = 0;
 let activeAlpha = 1;
 let activeThickness = 2;
 
-function drawStar(star: Shape, outerRadius: number): void {
-  const innerRadius = outerRadius * activeInnerRatio;
+function addBackground(): void {
+  const bg = createShape();
+  appendShapeBeginFill(bg, 0xdddddd, 1);
+  appendShapeRectangle(bg, 0, 0, window.innerWidth, window.innerHeight);
+  appendShapeEndFill(bg);
+  addNodeChild(root, bg);
+}
+
+addBackground();
+
+function packColor(r: number, g: number, b: number): number {
+  return ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
+}
+
+function drawStar(star: Shape, radiusOuter: number): void {
+  const radiusInner = radiusOuter / 2 + Math.random() * (radiusOuter / 2);
 
   clearShapeCommands(star);
   appendShapeBeginFill(star, activeFillColor, activeAlpha);
   appendShapeLineStyle(star, activeThickness, activeStrokeColor, activeAlpha, false, undefined, 'round', 'miter', 1.8);
-  appendShapeMoveTo(star, outerRadius, 0);
+  appendShapeMoveTo(star, radiusOuter * Math.cos(0), radiusOuter * Math.sin(0));
 
-  const step = Math.PI / activeSpikes;
+  const aDelta = (360 / activeSpikes) * 0.5;
+  let a = 0;
   for (let i = 0; i < activeSpikes; i++) {
-    const innerAngle = step * (2 * i + 1);
-    const outerAngle = step * (2 * i + 2);
-    appendShapeLineTo(star, innerRadius * Math.cos(innerAngle), innerRadius * Math.sin(innerAngle));
-    appendShapeLineTo(star, outerRadius * Math.cos(outerAngle), outerRadius * Math.sin(outerAngle));
+    a += aDelta;
+    appendShapeLineTo(star, radiusInner * Math.cos(a * (Math.PI / 180)), radiusInner * Math.sin(a * (Math.PI / 180)));
+    a += aDelta;
+    appendShapeLineTo(star, radiusOuter * Math.cos(a * (Math.PI / 180)), radiusOuter * Math.sin(a * (Math.PI / 180)));
   }
   appendShapeEndFill(star);
   invalidateNodeRender(star);
@@ -67,15 +82,16 @@ attachKeyboardInput(input, window);
 connectSignal(input.onPointerDown, (data) => {
   startX = data.x;
   startY = data.y;
-  activeSpikes = 3 + Math.floor(Math.random() * 10);
-  activeInnerRatio = 0.3 + Math.random() * 0.4;
-  const r = Math.floor(Math.random() * 256);
-  const g = Math.floor(Math.random() * 256);
-  const b = Math.floor(Math.random() * 256);
-  activeFillColor = (r << 16) | (g << 8) | b;
-  activeStrokeColor = ((255 - r) << 16) | ((255 - g) << 8) | (255 - b);
+
+  const r = Math.floor(Math.random() * 255);
+  const g = Math.floor(Math.random() * 255);
+  const b = Math.floor(Math.random() * 255);
+
+  activeSpikes = Math.round(2 + Math.random() * 100);
+  activeFillColor = packColor(r, g, b);
+  activeStrokeColor = packColor(255 - r, 255 - g, 255 - b);
+  activeThickness = 1 + Math.random() * 3;
   activeAlpha = 0.5 + Math.random() * 0.5;
-  activeThickness = 1 + Math.random() * 4;
 
   activeStar = createShape();
   activeStar.x = startX;
@@ -89,7 +105,8 @@ connectSignal(input.onPointerMove, (data) => {
   if (!activeStar) return;
   const dx = data.x - startX;
   const dy = data.y - startY;
-  const distance = Math.max(10, Math.sqrt(dx * dx + dy * dy));
+  let distance = Math.sqrt(dx * dx + dy * dy);
+  if (distance < 10) distance = 10;
   drawStar(activeStar, distance);
 });
 
@@ -100,6 +117,7 @@ connectSignal(input.onPointerUp, () => {
 connectSignal(input.onKeyDown, (data) => {
   if (data.key === 'c') {
     removeNodeChildren(root);
+    addBackground();
   }
 });
 

@@ -21,6 +21,8 @@ import {
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
+const DEG = Math.PI / 180;
+
 const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
@@ -33,39 +35,32 @@ const camera = createCamera({
   near: 0.1,
   far: 2000,
   projection: createPerspectiveProjection({
-    fovY: (60 * Math.PI) / 180,
+    fovY: 60 * DEG,
     aspect: ctx.width / ctx.height,
   }),
 });
 
-const cameraEye = createVector3(0, 0, 600);
-const cameraTarget = createVector3(0, 0, 0);
-const cameraUp = createVector3(0, 1, 0);
-setCameraViewMatrix4FromLookAt(camera, cameraEye, cameraTarget, cameraUp);
+const eye = createVector3(0, 0, 600);
+const target = createVector3(0, 0, 0);
+const up = createVector3(0, 1, 0);
+setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 
 const directional = createDirectionalLight({
-  direction: { x: 0, y: -1, z: -1 },
+  direction: { x: 0, y: -1, z: 1 },
   color: 0xffffff,
   intensity: 0.7,
 });
 
-const ambient = createAmbientLight({
-  color: 0xffffff,
-  intensity: 0.3,
-});
-
-const lights = createSceneLights({
-  ambient,
-  directional,
-});
+const ambient = createAmbientLight({ color: 0xffffff, intensity: 0 });
+const lights = createSceneLights({ ambient, directional });
 
 const image = await loadImageResourceFromUrl('awayjs/assets/dots.png');
 const texture = createTexture({ image });
 
 const material = createBlinnPhongMaterial({
-  diffuse: 0.7,
+  diffuse: 1,
   specular: 1,
-  shininess: 50,
+  shininess: 20,
   diffuseMap: texture,
 });
 
@@ -73,11 +68,11 @@ const geometry = createTorusMeshGeometry(220, 80, 32, 16);
 const torus = createMesh(geometry, [material]);
 addNodeChild(scene, torus);
 
-const yAxis = { x: 0, y: 1, z: 0 };
+const yAxis = createVector3(0, 1, 0);
 let rotationY = 0;
 
 function frame(): void {
-  rotationY += (1 * Math.PI) / 180;
+  rotationY += DEG;
 
   setMatrix4Identity(torus.localMatrix);
   rotateMatrix4(torus.localMatrix, torus.localMatrix, yAxis, rotationY);
@@ -90,8 +85,9 @@ function frame(): void {
 window.addEventListener('resize', () => {
   const width = window.innerWidth;
   const height = window.innerHeight;
-  ctx.canvas.width = width * (window.devicePixelRatio || 1);
-  ctx.canvas.height = height * (window.devicePixelRatio || 1);
+  const pixelRatio = window.devicePixelRatio || 1;
+  ctx.canvas.width = width * pixelRatio;
+  ctx.canvas.height = height * pixelRatio;
   ctx.canvas.style.width = `${width}px`;
   ctx.canvas.style.height = `${height}px`;
   ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);

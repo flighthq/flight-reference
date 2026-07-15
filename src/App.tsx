@@ -522,7 +522,8 @@ export default function App() {
             layoutMode === 'split' && (hasFlightImplementation || selectedCase.flightPreviewRenderers?.length)
               ? 'pane-grid pane-grid--compare'
               : 'pane-grid pane-grid--single'
-          }>
+          }
+          data-framework={selectedCase.framework}>
           <section className="pane">
             <header className="pane__header">
               <div>

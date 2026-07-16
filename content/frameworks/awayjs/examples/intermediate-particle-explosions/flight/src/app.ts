@@ -62,10 +62,10 @@ const camera: Camera = createCamera({
   projection: createPerspectiveProjection({ fovY: 60 * DEG_TO_RAD, aspect: width / height }),
 });
 
-const greenLight = createPointLight({ color: 0x00ff00ff, intensity: 2, falloff: 600, radius: 100 });
-const blueLight = createPointLight({ color: 0x0000ffff, intensity: 2, falloff: 600, radius: 100 });
+const greenLight = createPointLight({ color: 0x00ff00ff, intensity: 2, range: 100 });
+const blueLight = createPointLight({ color: 0x0000ffff, intensity: 2, range: 100 });
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1 });
-const lights: SceneLights = createSceneLights({ ambient, pointLights: [greenLight, blueLight] });
+const lights: SceneLights = createSceneLights({ ambient, point: [greenLight, blueLight] });
 
 let panAngle = 225 * DEG_TO_RAD;
 let tiltAngle = 10 * DEG_TO_RAD;
@@ -198,18 +198,12 @@ function frame(ts: number): void {
   updateCamera();
 
   angle += (Math.PI * dt) / 180;
-  setMatrix4Identity(greenLight.localMatrix);
-  translateMatrix4(greenLight.localMatrix, greenLight.localMatrix, Math.sin(angle) * 600, 0, -Math.cos(angle) * 600);
-  invalidateNodeLocalTransform(greenLight);
-  setMatrix4Identity(blueLight.localMatrix);
-  translateMatrix4(
-    blueLight.localMatrix,
-    blueLight.localMatrix,
-    Math.sin(angle + Math.PI) * 600,
-    0,
-    -Math.cos(angle + Math.PI) * 600,
-  );
-  invalidateNodeLocalTransform(blueLight);
+  greenLight.position.x = Math.sin(angle) * 600;
+  greenLight.position.y = 0;
+  greenLight.position.z = -Math.cos(angle) * 600;
+  blueLight.position.x = Math.sin(angle + Math.PI) * 600;
+  blueLight.position.y = 0;
+  blueLight.position.z = -Math.cos(angle + Math.PI) * 600;
 
   for (let g = 0; g < NUM_LOGOS; g++) {
     const entry = logoEmitters[g]!;

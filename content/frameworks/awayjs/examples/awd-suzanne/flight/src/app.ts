@@ -124,9 +124,9 @@ const hit: SceneHit = createSceneHit();
 
 ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
   const rect = ctx.canvas.getBoundingClientRect();
-  const screenX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-  const screenY = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-  const result = pickScene(scene, camera, screenX, screenY, hit);
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  const result = pickScene(scene, camera, sx, sy, hit);
 
   if (lastHovered && lastHovered !== result?.node) {
     lastHovered.materials[0] = defaultMaterial;

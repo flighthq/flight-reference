@@ -8,6 +8,9 @@ import {
   renderGlBackground,
 } from '@flighthq/sdk';
 
+import type { GammaTarget } from './gamma';
+import { beginGammaPass, createGammaTarget, endGammaPass, resizeGammaTarget } from './gamma';
+
 export interface Scene3DContext {
   canvas: HTMLCanvasElement;
   height: number;
@@ -46,17 +49,30 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
   registerUnlitGlMaterial(state);
   registerBlinnPhongGlMaterial(state);
 
+  let gammaTarget: GammaTarget | null = null;
+
   return {
     canvas,
     height,
     render(scene, camera, lights) {
-      renderGlBackground(state);
       const gl = state.gl;
+      const w = canvas.width;
+      const h = canvas.height;
+
+      if (gammaTarget === null) {
+        gammaTarget = createGammaTarget(gl, w, h);
+      } else {
+        resizeGammaTarget(gl, gammaTarget, w, h);
+      }
+
+      beginGammaPass(gl, gammaTarget);
+      renderGlBackground(state);
       gl.enable(gl.DEPTH_TEST);
       gl.depthMask(true);
       gl.clearDepth(1);
       gl.clear(gl.DEPTH_BUFFER_BIT);
       drawGlScene(state, scene, camera, lights);
+      endGammaPass(gl, gammaTarget);
     },
     state,
     width,

@@ -15,7 +15,6 @@ import {
   enableGlColorAdjustment,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
-  prepareDisplayObjectRender,
   setDisplayObjectClip,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -109,7 +108,6 @@ function frame(): void {
     invalidateNodeLocalTransform(animShapes[i]);
   }
 
-  prepareDisplayObjectRender(target.state, root);
   target.render(root);
   requestAnimationFrame(frame);
 }

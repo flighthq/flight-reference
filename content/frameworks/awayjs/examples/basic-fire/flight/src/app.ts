@@ -13,7 +13,6 @@ import {
   createShape,
   invalidateNodeLocalTransform,
   ParticleEmitterKind,
-  prepareDisplayObjectRender,
   prewarmParticleEmitter,
   ShapeKind,
   stepParticleEmitter,
@@ -103,7 +102,6 @@ function frame(): void {
     stepParticleEmitter(fire.emitter, fire.state, fire.config, dt);
   }
 
-  prepareDisplayObjectRender(target.state, root);
   target.render(root);
   requestAnimationFrame(frame);
 }

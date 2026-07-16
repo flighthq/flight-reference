@@ -14,7 +14,6 @@ import {
   focusTextInput,
   invalidateNodeLocalTransform,
   loadFontFromUrl,
-  prepareDisplayObjectRender,
   RichTextKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -103,7 +102,6 @@ connectSignal(input.onWheel, (data) => {
 });
 
 function frame(): void {
-  prepareDisplayObjectRender(target.state, root);
   target.render(root);
   requestAnimationFrame(frame);
 }

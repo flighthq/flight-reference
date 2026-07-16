@@ -14,7 +14,6 @@ import {
   invalidateNodeLocalContent,
   invalidateNodeLocalTransform,
   loadFontFromUrl,
-  prepareDisplayObjectRender,
   QuadBatchKind,
   setGlyphRasterizerBackend,
   updateBitmapText,
@@ -104,7 +103,6 @@ connectSignal(input.onWheel, (data) => {
 });
 
 function frame(): void {
-  prepareDisplayObjectRender(target.state, root);
   target.render(root);
   requestAnimationFrame(frame);
 }

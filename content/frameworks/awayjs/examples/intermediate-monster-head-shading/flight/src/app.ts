@@ -57,20 +57,20 @@ const directional = createDirectionalLight({
 
 const ambient = createAmbientLight({ color: 0x101025ff, intensity: 1 });
 
-const blueLight = createPointLight({ color: 0x4080ffff, intensity: 1, falloff: 5000 });
-blueLight.x = 3000;
-blueLight.z = -700;
-blueLight.y = 20;
+const blueLight = createPointLight({ color: 0x4080ffff, intensity: 1, range: 5000 });
+blueLight.position.x = 3000;
+blueLight.position.z = -700;
+blueLight.position.y = 20;
 
-const redLight = createPointLight({ color: 0x802010ff, intensity: 1, falloff: 5000 });
-redLight.x = -2000;
-redLight.z = -800;
-redLight.y = -400;
+const redLight = createPointLight({ color: 0x802010ff, intensity: 1, range: 5000 });
+redLight.position.x = -2000;
+redLight.position.z = -800;
+redLight.position.y = -400;
 
 const lights = createSceneLights({
   ambient,
   directional,
-  pointLights: [blueLight, redLight],
+  point: [blueLight, redLight],
 });
 
 const headMaterial: BlinnPhongMaterial = createBlinnPhongMaterial({

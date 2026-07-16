@@ -49,14 +49,13 @@ const camera = createCamera({
 const pointLight = createPointLight({
   color: 0xffffffff,
   intensity: 1.0,
-  falloff: 0,
-  radius: 10000,
+  range: 10000,
 });
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 0.2 });
 const lights = createSceneLights({
   ambient,
   directional: null,
-  pointLights: [pointLight],
+  point: [pointLight],
 });
 
 const whiteMaterial = createBlinnPhongMaterial({ diffuse: 0xffffffff, shininess: 20 });

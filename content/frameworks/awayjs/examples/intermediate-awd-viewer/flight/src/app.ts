@@ -14,6 +14,7 @@ import {
   createSceneFromAwd,
   createVector3,
   DEG_TO_RAD,
+  getNodeChildren,
   parseAwdSkeletonAnimation,
   setCameraViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
@@ -49,7 +50,7 @@ const awdBytes = new Uint8Array(awdBuffer);
 
 // Parse mesh geometry from the AWD file
 const awdScene = createSceneFromAwd(awdBytes);
-for (const child of awdScene.children) {
+for (const child of getNodeChildren(awdScene)) {
   addNodeChild(scene, child);
 }
 

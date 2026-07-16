@@ -18,7 +18,6 @@ import {
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
-  translateMatrix4,
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
@@ -43,20 +42,18 @@ const camera = createCamera({
 const sunLight = createPointLight({
   color: 0xffffffff,
   intensity: 2,
-  radius: 100000,
-  falloff: 0,
+  range: 100000,
 });
 
 const lights = createSceneLights({
   ambient: undefined,
   directional: undefined,
-  pointLights: [sunLight],
+  point: [sunLight],
 });
 
-setMatrix4Identity(sunLight.localMatrix);
-translateMatrix4(sunLight.localMatrix, sunLight.localMatrix, 10000, 0, 0);
-invalidateNodeLocalTransform(sunLight);
-addNodeChild(scene, sunLight);
+sunLight.position.x = 10000;
+sunLight.position.y = 0;
+sunLight.position.z = 0;
 
 const tiltContainer = createSceneNode();
 const axisX = createVector3(1, 0, 0);
@@ -84,9 +81,6 @@ addNodeChild(tiltContainer, earth);
 const cloudGeometry = createSphereMeshGeometry(202, 200, 100);
 const clouds = createMesh(cloudGeometry, [cloudMaterial]);
 addNodeChild(tiltContainer, clouds);
-
-const orbitContainer = createSceneNode();
-addNodeChild(scene, orbitContainer);
 
 async function applyTexture(
   material: BlinnPhongMaterial,
@@ -161,6 +155,7 @@ ctx.canvas.addEventListener('wheel', (event: WheelEvent) => {
 updateCamera();
 
 const axisY = createVector3(0, 1, 0);
+let sunAngle = 0;
 let lastTime = 0;
 
 function frame(ts: number): void {
@@ -177,8 +172,9 @@ function frame(ts: number): void {
   rotateMatrix4(clouds.localMatrix, clouds.localMatrix, axisY, cloudSpeed);
   invalidateNodeLocalTransform(clouds);
 
-  rotateMatrix4(orbitContainer.localMatrix, orbitContainer.localMatrix, axisY, orbitSpeed);
-  invalidateNodeLocalTransform(orbitContainer);
+  sunAngle += orbitSpeed;
+  sunLight.position.x = 10000 * Math.sin(sunAngle);
+  sunLight.position.z = 10000 * Math.cos(sunAngle);
 
   updateCamera();
   ctx.render(scene, camera, lights);

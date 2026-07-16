@@ -1,0 +1,201 @@
+import type { Camera, CubeTexture, Mesh, SceneLights, WaterMaterial } from '@flighthq/sdk';
+import {
+  addNodeChild,
+  createAmbientLight,
+  createBlinnPhongMaterial,
+  createBoxMeshGeometry,
+  createCamera,
+  createCubeTexture,
+  createDirectionalLight,
+  createEnvironment,
+  createGlCanvasElement,
+  createGlRenderState,
+  createMesh,
+  createPerspectiveProjection,
+  createPlaneMeshGeometry,
+  createScene,
+  createSceneLights,
+  createTexture,
+  createVector3,
+  createWaterMaterial,
+  DEG_TO_RAD,
+  drawGlEnvironmentSkybox,
+  drawGlScene,
+  invalidateNodeLocalTransform,
+  loadImageResourceFromUrl,
+  registerBlinnPhongGlMaterial,
+  renderGlBackground,
+  rotateMatrix4,
+  setCameraViewMatrix4FromLookAt,
+  setCubeTextureFace,
+  setMatrix4Identity,
+  translateMatrix4,
+} from '@flighthq/sdk';
+
+// createWaterMaterial is new in SDK 0.3.0 (materials/types). It provides an animated-normal-map
+// water surface with optional Fresnel-based cube-map environment reflection, corresponding to the
+// AwayJS NormalSimpleWaterMethod + EffectEnvMapMethod + SpecularFresnelMethod combination.
+
+const width = window.innerWidth;
+const height = window.innerHeight;
+const pixelRatio = window.devicePixelRatio || 1;
+
+const mount = document.getElementById('app');
+const canvas = createGlCanvasElement(width, height, pixelRatio);
+if (mount) {
+  mount.replaceWith(canvas);
+} else {
+  document.body.appendChild(canvas);
+}
+document.body.style.margin = '0';
+
+const glState = createGlRenderState(canvas, {
+  backgroundColor: 0x2c2c32ff,
+  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: true },
+  pixelRatio,
+});
+registerBlinnPhongGlMaterial(glState);
+
+const scene = createScene();
+
+const camera: Camera = createCamera({
+  near: 0.5,
+  far: 14000,
+  projection: createPerspectiveProjection({
+    fovY: 60 * DEG_TO_RAD,
+    aspect: width / height,
+  }),
+});
+
+const directional = createDirectionalLight({
+  direction: { x: -300, y: -300, z: -5000 },
+  color: 0x974523,
+  intensity: 1.2,
+});
+const ambient = createAmbientLight({ color: 0x7196ac, intensity: 1 });
+const lights: SceneLights = createSceneLights({ ambient, directional });
+
+// Environment cube map — individual face images derived from CubeTextureTest.cube asset
+const cubeFaceUrls = [
+  'awayjs/assets/skybox/CubeTextureTest_posX.jpg',
+  'awayjs/assets/skybox/CubeTextureTest_negX.jpg',
+  'awayjs/assets/skybox/CubeTextureTest_posY.jpg',
+  'awayjs/assets/skybox/CubeTextureTest_negY.jpg',
+  'awayjs/assets/skybox/CubeTextureTest_posZ.jpg',
+  'awayjs/assets/skybox/CubeTextureTest_negZ.jpg',
+];
+const cubeImages = await Promise.all(cubeFaceUrls.map((url) => loadImageResourceFromUrl(url)));
+const cubeTexture: CubeTexture = createCubeTexture();
+for (let i = 0; i < 6; i++) setCubeTextureFace(cubeTexture, i, cubeImages[i]);
+const environment = createEnvironment({ environment: cubeTexture, intensity: 1 });
+
+// Water sea plane with animated normal map and environment reflection
+const seaNormalImage = await loadImageResourceFromUrl('awayjs/assets/sea_normals.jpg');
+const seaNormalTex = createTexture({ image: seaNormalImage });
+
+const waterMat: WaterMaterial = createWaterMaterial({
+  normalMap: seaNormalTex,
+  envMap: cubeTexture,
+  normalReflectance: 0.3,
+  shininess: 10,
+  uvScale: { x: 100, y: 100 },
+});
+waterMat.doubleSided = true;
+
+const seaGeometry = createPlaneMeshGeometry(50000, 50000, 1, 1);
+const seaMesh: Mesh = createMesh(seaGeometry, [waterMat]);
+setMatrix4Identity(seaMesh.localMatrix);
+invalidateNodeLocalTransform(seaMesh);
+addNodeChild(scene, seaMesh);
+
+// F14 aircraft mesh — placeholder geometry (box) until an OBJ parser lands in scene-formats.
+// Replace with parseObjMesh(buffer) when available; the rest of the animation logic is unchanged.
+const f14Material = createBlinnPhongMaterial({ diffuse: 0x888888ff, shininess: 40, specular: 0x606060ff });
+const f14Geometry = createBoxMeshGeometry(6, 2, 12);
+const f14Mesh: Mesh = createMesh(f14Geometry, [f14Material]);
+setMatrix4Identity(f14Mesh.localMatrix);
+translateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, 0, 200, 0);
+invalidateNodeLocalTransform(f14Mesh);
+addNodeChild(scene, f14Mesh);
+
+// Camera orbits the aircraft
+const eye = createVector3(0, 250, -500);
+const cameraTarget = createVector3(0, 200, 0);
+const up = createVector3(0, 1, 0);
+
+let cameraIncrement = 0;
+let rollIncrement = 0;
+let loopIncrement = 0;
+let flightState = 0;
+let uvScrollY = 0;
+
+const zAxis = createVector3(0, 0, 1);
+
+function updateCameraLookAt(): void {
+  cameraTarget.x = f14Mesh.localMatrix[12];
+  cameraTarget.y = f14Mesh.localMatrix[13];
+  cameraTarget.z = f14Mesh.localMatrix[14];
+  setCameraViewMatrix4FromLookAt(camera, eye, cameraTarget, up);
+}
+
+canvas.addEventListener('mousedown', () => {
+  flightState = (flightState + 1) % 2;
+  loopIncrement = 0;
+});
+
+function frame(): void {
+  rollIncrement += 0.02;
+  cameraIncrement += 0.01;
+
+  setMatrix4Identity(f14Mesh.localMatrix);
+
+  if (flightState === 0) {
+    translateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, 0, 200, 0);
+    rotateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, zAxis, Math.sin(rollIncrement) * 25 * DEG_TO_RAD);
+  } else {
+    loopIncrement += 0.05;
+    const lz = Math.cos(loopIncrement) * 20;
+    const ly = 200 + Math.sin(loopIncrement) * 20;
+    translateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, 0, ly, lz);
+    rotateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, zAxis, Math.sin(rollIncrement) * 25 * DEG_TO_RAD);
+    if (loopIncrement > Math.PI * 2) {
+      loopIncrement = 0;
+      flightState = 0;
+    }
+  }
+
+  invalidateNodeLocalTransform(f14Mesh);
+
+  eye.x = Math.cos(cameraIncrement) * 400;
+  eye.y = 250;
+  eye.z = Math.sin(cameraIncrement) * 400;
+  updateCameraLookAt();
+
+  uvScrollY -= 0.04;
+  waterMat.uvScrollY = uvScrollY;
+
+  renderGlBackground(glState);
+  const gl = glState.gl;
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthMask(true);
+  gl.clearDepth(1);
+  gl.clear(gl.DEPTH_BUFFER_BIT);
+  drawGlEnvironmentSkybox(glState, environment, camera, width / height);
+  drawGlScene(glState, scene, camera, lights);
+
+  requestAnimationFrame(frame);
+}
+
+window.addEventListener('resize', () => {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const pr = window.devicePixelRatio || 1;
+  canvas.width = w * pr;
+  canvas.height = h * pr;
+  canvas.style.width = `${w}px`;
+  canvas.style.height = `${h}px`;
+  glState.gl.viewport(0, 0, canvas.width, canvas.height);
+  camera.projection.aspect = w / h;
+});
+
+requestAnimationFrame(frame);

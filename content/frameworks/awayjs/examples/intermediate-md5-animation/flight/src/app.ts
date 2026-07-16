@@ -99,14 +99,14 @@ function updateCamera(spriteRotY: number): void {
   setCameraViewMatrix4FromLookAt(camera, eye, placeHolder, up);
 }
 
-const redLight = createPointLight({ color: 0xff1111ff, intensity: 1.5, falloff: 3000 });
-const blueLight = createPointLight({ color: 0x1111ffff, intensity: 1.5, falloff: 3000 });
+const redLight = createPointLight({ color: 0xff1111ff, intensity: 1.5, range: 3000 });
+const blueLight = createPointLight({ color: 0x1111ffff, intensity: 1.5, range: 3000 });
 const whiteLight = createDirectionalLight({ direction: { x: -50, y: -20, z: -10 }, color: 0xffffeeff, intensity: 1 });
 const ambient = createAmbientLight({ color: 0x303040ff, intensity: 1 });
 const lights: SceneLights = createSceneLights({
   ambient,
   directional: whiteLight,
-  pointLights: [redLight, blueLight],
+  point: [redLight, blueLight],
 });
 
 const bodyMaterial: BlinnPhongMaterial = createBlinnPhongMaterial({
@@ -171,8 +171,13 @@ for (let i = 0; i < ANIM_NAMES.length; i++) {
   if (clip) clips.set(ANIM_NAMES[i]!, clip);
 }
 
-const idleClip = clips.get(IDLE_NAME)!;
-let activePlayer: AnimationPlayer = createAnimationPlayer(idleClip, { loop: true, speed: 1 });
+const idleClip = clips.get(IDLE_NAME);
+if (!idleClip) {
+  console.warn(`idle animation "${IDLE_NAME}" failed to parse or was not found`);
+}
+let activePlayer: AnimationPlayer = idleClip
+  ? createAnimationPlayer(idleClip, { loop: true, speed: 1 })
+  : (null as unknown as AnimationPlayer);
 let currentAnim = IDLE_NAME;
 let onceAnim: string | null = null;
 let isMoving = false;
@@ -317,12 +322,12 @@ function frame(ts: number): void {
     placeHolder.z += Math.cos(spriteRotY) * movementDir * (isRunning ? RUN_SPEED : WALK_SPEED) * 50 * dt;
   }
 
-  redLight.x = Math.sin(count) * 1500;
-  redLight.y = 250 + Math.sin(count * 0.54) * 200;
-  redLight.z = -Math.cos(count * 0.7) * 1500;
-  blueLight.x = -Math.sin(count * 0.8) * 1500;
-  blueLight.y = 250 - Math.sin(count * 0.65) * 200;
-  blueLight.z = Math.cos(count * 0.9) * 1500;
+  redLight.position.x = Math.sin(count) * 1500;
+  redLight.position.y = 250 + Math.sin(count * 0.54) * 200;
+  redLight.position.z = -Math.cos(count * 0.7) * 1500;
+  blueLight.position.x = -Math.sin(count * 0.8) * 1500;
+  blueLight.position.y = 250 - Math.sin(count * 0.65) * 200;
+  blueLight.position.z = Math.cos(count * 0.9) * 1500;
 
   updateCamera(spriteRotY);
 

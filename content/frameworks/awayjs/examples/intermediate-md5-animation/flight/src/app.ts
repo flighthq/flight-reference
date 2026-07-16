@@ -36,6 +36,9 @@ import {
   translateMatrix4,
 } from '@flighthq/sdk';
 
+import type { GammaTarget } from '../../../_shared/flight/src/gamma';
+import { beginGammaPass, createGammaTarget, endGammaPass, resizeGammaTarget } from '../../../_shared/flight/src/gamma';
+
 const ANIM_NAMES = [
   'idle2',
   'walk7',
@@ -186,6 +189,7 @@ let movementDir = 1;
 let spriteRotY = Math.PI;
 let rotationInc = 0;
 let count = 0;
+let gammaTarget: GammaTarget | null = null;
 
 function play(name: string): void {
   if (currentAnim === name) return;
@@ -331,13 +335,24 @@ function frame(ts: number): void {
 
   updateCamera(spriteRotY);
 
-  renderGlBackground(glState);
   const gl = glState.gl;
+  const w = canvas.width;
+  const h = canvas.height;
+
+  if (gammaTarget === null) {
+    gammaTarget = createGammaTarget(gl, w, h);
+  } else {
+    resizeGammaTarget(gl, gammaTarget, w, h);
+  }
+
+  beginGammaPass(gl, gammaTarget);
+  renderGlBackground(glState);
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   drawGlScene(glState, scene, camera, lights);
+  endGammaPass(gl, gammaTarget);
 
   requestAnimationFrame(frame);
 }

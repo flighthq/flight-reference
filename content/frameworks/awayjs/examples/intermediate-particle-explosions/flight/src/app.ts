@@ -31,6 +31,9 @@ import {
   translateMatrix4,
 } from '@flighthq/sdk';
 
+import type { GammaTarget } from '../../../_shared/flight/src/gamma';
+import { beginGammaPass, createGammaTarget, endGammaPass, resizeGammaTarget } from '../../../_shared/flight/src/gamma';
+
 const PARTICLE_SIZE = 2;
 const NUM_LOGOS = 4;
 
@@ -186,6 +189,7 @@ const logoEmitters: LogoEmitter[] = pixelSets.map((pixels, i) => {
 });
 
 let time = 0;
+let gammaTarget: GammaTarget | null = null;
 let angle = 0;
 let lastTs = 0;
 
@@ -221,13 +225,24 @@ function frame(ts: number): void {
     }
   }
 
-  renderGlBackground(glState);
   const gl = glState.gl;
+  const w = canvas.width;
+  const h = canvas.height;
+
+  if (gammaTarget === null) {
+    gammaTarget = createGammaTarget(gl, w, h);
+  } else {
+    resizeGammaTarget(gl, gammaTarget, w, h);
+  }
+
+  beginGammaPass(gl, gammaTarget);
+  renderGlBackground(glState);
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   drawGlScene(glState, scene, camera, lights);
+  endGammaPass(gl, gammaTarget);
 
   requestAnimationFrame(frame);
 }

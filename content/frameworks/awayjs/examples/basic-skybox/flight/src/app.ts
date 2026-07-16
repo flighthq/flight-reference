@@ -28,6 +28,9 @@ import {
   setMatrix4Identity,
 } from '@flighthq/sdk';
 
+import type { GammaTarget } from '../../../_shared/flight/src/gamma';
+import { beginGammaPass, createGammaTarget, endGammaPass, resizeGammaTarget } from '../../../_shared/flight/src/gamma';
+
 const width = window.innerWidth;
 const height = window.innerHeight;
 const pixelRatio = window.devicePixelRatio || 1;
@@ -97,6 +100,8 @@ for (let i = 0; i < 6; i++) {
 
 const environment = createEnvironment({ environment: cubeTexture, intensity: 1 });
 
+let gammaTarget: GammaTarget | null = null;
+
 let mouseX = width / 2;
 let cameraRotationY = 0;
 
@@ -134,14 +139,25 @@ function frame(): void {
 
   setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 
-  renderGlBackground(state);
   const gl = state.gl;
+  const w = canvas.width;
+  const h = canvas.height;
+
+  if (gammaTarget === null) {
+    gammaTarget = createGammaTarget(gl, w, h);
+  } else {
+    resizeGammaTarget(gl, gammaTarget, w, h);
+  }
+
+  beginGammaPass(gl, gammaTarget);
+  renderGlBackground(state);
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   drawGlEnvironmentSkybox(state, environment, camera, aspect);
   drawGlScene(state, scene, camera, lights);
+  endGammaPass(gl, gammaTarget);
 
   requestAnimationFrame(frame);
 }

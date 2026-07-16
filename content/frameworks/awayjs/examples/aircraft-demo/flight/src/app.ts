@@ -33,6 +33,9 @@ import {
   translateMatrix4,
 } from '@flighthq/sdk';
 
+import type { GammaTarget } from '../../../_shared/flight/src/gamma';
+import { beginGammaPass, createGammaTarget, endGammaPass, resizeGammaTarget } from '../../../_shared/flight/src/gamma';
+
 // The original AwayJS demo uses NormalSimpleWaterMethod + EffectEnvMapMethod + SpecularFresnelMethod
 // on the sea surface. In Flight we approximate this with:
 //   - A StandardPbrMaterial with metallic=1, roughness=0 (mirror-like env-map reflection) for the
@@ -150,10 +153,12 @@ let flightState = 0;
 
 const zAxis = createVector3(0, 0, 1);
 
+let gammaTarget: GammaTarget | null = null;
+
 function updateCameraLookAt(): void {
-  cameraTarget.x = f14Mesh.localMatrix[12];
-  cameraTarget.y = f14Mesh.localMatrix[13];
-  cameraTarget.z = f14Mesh.localMatrix[14];
+  cameraTarget.x = f14Mesh.localMatrix.m[12];
+  cameraTarget.y = f14Mesh.localMatrix.m[13];
+  cameraTarget.z = f14Mesh.localMatrix.m[14];
   setCameraViewMatrix4FromLookAt(camera, eye, cameraTarget, up);
 }
 
@@ -193,14 +198,25 @@ function frame(): void {
   // Scroll the water normal map to simulate surface flow
   seaNormalTex.uvOffset.y -= 0.04;
 
-  renderGlBackground(glState);
   const gl = glState.gl;
+  const w = canvas.width;
+  const h = canvas.height;
+
+  if (gammaTarget === null) {
+    gammaTarget = createGammaTarget(gl, w, h);
+  } else {
+    resizeGammaTarget(gl, gammaTarget, w, h);
+  }
+
+  beginGammaPass(gl, gammaTarget);
+  renderGlBackground(glState);
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   drawGlEnvironmentSkybox(glState, environment, camera, width / height);
   drawGlScene(glState, scene, camera, lights);
+  endGammaPass(gl, gammaTarget);
 
   requestAnimationFrame(frame);
 }

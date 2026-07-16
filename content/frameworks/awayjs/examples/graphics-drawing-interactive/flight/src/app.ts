@@ -17,7 +17,6 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   invalidateNodeRender,
-  prepareDisplayObjectRender,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -142,7 +141,6 @@ function enterFrame(): void {
     invalidateNodeLocalTransform(circleGraphic);
   }
 
-  prepareDisplayObjectRender(target.state, root);
   target.render(root);
   requestAnimationFrame(enterFrame);
 }

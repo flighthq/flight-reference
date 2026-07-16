@@ -11,7 +11,6 @@ import {
   createShape,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
-  prepareDisplayObjectRender,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -135,7 +134,6 @@ function enterFrame(): void {
   invalidateNodeLocalTransform(movingRect);
 
   drawTracerShape();
-  prepareDisplayObjectRender(target.state, root);
   target.render(root);
   requestAnimationFrame(enterFrame);
 }

@@ -16,7 +16,6 @@ import {
   createShape,
   invalidateNodeLocalTransform,
   invalidateNodeRender,
-  prepareDisplayObjectRender,
   removeNodeChildren,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -122,7 +121,6 @@ connectSignal(input.onKeyDown, (data) => {
 });
 
 function frame(): void {
-  prepareDisplayObjectRender(target.state, root);
   target.render(root);
   requestAnimationFrame(frame);
 }

@@ -1,4 +1,4 @@
-import type { Camera, CubeTexture, Mesh, SceneLights, WaterMaterial } from '@flighthq/sdk';
+import type { Camera, CubeTexture, Mesh, SceneLights, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
@@ -15,15 +15,16 @@ import {
   createPlaneMeshGeometry,
   createScene,
   createSceneLights,
+  createStandardPbrMaterial,
   createTexture,
   createVector3,
-  createWaterMaterial,
   DEG_TO_RAD,
   drawGlEnvironmentSkybox,
   drawGlScene,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   registerBlinnPhongGlMaterial,
+  registerStandardPbrGlMaterial,
   renderGlBackground,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
@@ -32,9 +33,13 @@ import {
   translateMatrix4,
 } from '@flighthq/sdk';
 
-// createWaterMaterial is new in SDK 0.3.0 (materials/types). It provides an animated-normal-map
-// water surface with optional Fresnel-based cube-map environment reflection, corresponding to the
-// AwayJS NormalSimpleWaterMethod + EffectEnvMapMethod + SpecularFresnelMethod combination.
+// The original AwayJS demo uses NormalSimpleWaterMethod + EffectEnvMapMethod + SpecularFresnelMethod
+// on the sea surface. In Flight we approximate this with:
+//   - A StandardPbrMaterial with metallic=1, roughness=0 (mirror-like env-map reflection) for the
+//     aircraft (EnvMapMaterial equivalent, per upstream agent guidance).
+//   - A water StandardPbrMaterial (metallic=0.05, roughness=0.25) with a scrolling normal map as
+//     an in-sample implementation of the WaterMaterial effect, keeping the behaviour self-contained
+//     until a dedicated WaterMaterial type is added to the SDK.
 
 const width = window.innerWidth;
 const height = window.innerHeight;
@@ -55,6 +60,7 @@ const glState = createGlRenderState(canvas, {
   pixelRatio,
 });
 registerBlinnPhongGlMaterial(glState);
+registerStandardPbrGlMaterial(glState);
 
 const scene = createScene();
 
@@ -75,7 +81,7 @@ const directional = createDirectionalLight({
 const ambient = createAmbientLight({ color: 0x7196ac, intensity: 1 });
 const lights: SceneLights = createSceneLights({ ambient, directional });
 
-// Environment cube map — individual face images derived from CubeTextureTest.cube asset
+// Environment cube map — individual face images derived from the CubeTextureTest.cube asset
 const cubeFaceUrls = [
   'awayjs/assets/skybox/CubeTextureTest_posX.jpg',
   'awayjs/assets/skybox/CubeTextureTest_negX.jpg',
@@ -89,28 +95,39 @@ const cubeTexture: CubeTexture = createCubeTexture();
 for (let i = 0; i < 6; i++) setCubeTextureFace(cubeTexture, i, cubeImages[i]);
 const environment = createEnvironment({ environment: cubeTexture, intensity: 1 });
 
-// Water sea plane with animated normal map and environment reflection
+// Sea normal map — shared between water surface material and the aircraft's MethodMaterial
+// in the original. Here used only for the water, matching the original intent.
 const seaNormalImage = await loadImageResourceFromUrl('awayjs/assets/sea_normals.jpg');
 const seaNormalTex = createTexture({ image: seaNormalImage });
+seaNormalTex.uvScale = { x: 100, y: 100 };
 
-const waterMat: WaterMaterial = createWaterMaterial({
+// Water surface — in-sample WaterMaterial implementation using StandardPbrMaterial:
+// low metallic, low roughness gives Fresnel-like specular + some env reflection.
+// The scrolling normalMap simulates the animated water surface normal flow.
+const seaMaterial: StandardPbrMaterial = createStandardPbrMaterial({
+  baseColor: 0x4488aaff,
+  metallic: 0.05,
+  roughness: 0.25,
   normalMap: seaNormalTex,
-  envMap: cubeTexture,
-  normalReflectance: 0.3,
-  shininess: 10,
-  uvScale: { x: 100, y: 100 },
+  normalScale: 1.5,
 });
-waterMat.doubleSided = true;
+seaMaterial.doubleSided = true;
 
 const seaGeometry = createPlaneMeshGeometry(50000, 50000, 1, 1);
-const seaMesh: Mesh = createMesh(seaGeometry, [waterMat]);
+const seaMesh: Mesh = createMesh(seaGeometry, [seaMaterial]);
 setMatrix4Identity(seaMesh.localMatrix);
 invalidateNodeLocalTransform(seaMesh);
 addNodeChild(scene, seaMesh);
 
-// F14 aircraft mesh — placeholder geometry (box) until an OBJ parser lands in scene-formats.
-// Replace with parseObjMesh(buffer) when available; the rest of the animation logic is unchanged.
-const f14Material = createBlinnPhongMaterial({ diffuse: 0x888888ff, shininess: 40, specular: 0x606060ff });
+// F14 aircraft — EnvMapMaterial equivalent: StandardPbrMaterial with metallic=1, roughness=0
+// gives a perfect mirror env-map reflection. Placeholder box geometry until OBJ parsing lands
+// in scene-formats; replace createBoxMeshGeometry with parseObjMesh(buffer) when available.
+const f14Material: StandardPbrMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 1,
+  roughness: 0,
+});
+
 const f14Geometry = createBoxMeshGeometry(6, 2, 12);
 const f14Mesh: Mesh = createMesh(f14Geometry, [f14Material]);
 setMatrix4Identity(f14Mesh.localMatrix);
@@ -118,7 +135,10 @@ translateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, 0, 200, 0);
 invalidateNodeLocalTransform(f14Mesh);
 addNodeChild(scene, f14Mesh);
 
-// Camera orbits the aircraft
+// Fallback blinn-phong material for objects that don't need env-map
+const _fallbackMat = createBlinnPhongMaterial({ diffuse: 0x888888ff, shininess: 20 });
+
+// Camera orbits the aircraft continuously
 const eye = createVector3(0, 250, -500);
 const cameraTarget = createVector3(0, 200, 0);
 const up = createVector3(0, 1, 0);
@@ -127,7 +147,6 @@ let cameraIncrement = 0;
 let rollIncrement = 0;
 let loopIncrement = 0;
 let flightState = 0;
-let uvScrollY = 0;
 
 const zAxis = createVector3(0, 0, 1);
 
@@ -171,8 +190,8 @@ function frame(): void {
   eye.z = Math.sin(cameraIncrement) * 400;
   updateCameraLookAt();
 
-  uvScrollY -= 0.04;
-  waterMat.uvScrollY = uvScrollY;
+  // Scroll the water normal map to simulate surface flow
+  seaNormalTex.uvOffset.y -= 0.04;
 
   renderGlBackground(glState);
   const gl = glState.gl;

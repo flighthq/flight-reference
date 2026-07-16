@@ -1,8 +1,8 @@
 import type {
   Camera,
   ParticleEmitter3D,
-  ParticleEmitterConfig3D,
-  ParticleEmitterState3D,
+  ParticleEmitterConfig,
+  ParticleEmitterState,
   SceneLights,
 } from '@flighthq/sdk';
 import {
@@ -12,8 +12,8 @@ import {
   createGlCanvasElement,
   createGlRenderState,
   createParticleEmitter3D,
-  createParticleEmitterConfig3D,
-  createParticleEmitterState3D,
+  createParticleEmitterConfig,
+  createParticleEmitterState,
   createPointLight,
   createPerspectiveProjection,
   createScene,
@@ -24,23 +24,12 @@ import {
   emitParticleBurst3D,
   invalidateNodeLocalTransform,
   registerBlinnPhongGlMaterial,
-  registerParticleEmitter3DGlRenderer,
   renderGlBackground,
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
   stepParticleEmitter3D,
   translateMatrix4,
 } from '@flighthq/sdk';
-
-// stepParticleEmitter3D / emitParticleBurst3D / prewarmParticleEmitter3D are new in SDK 0.3.0
-// (particleemitter package). They mirror the 2D variants but operate in 3D scene space: positions
-// carry x/y/z, particles are billboarded toward the camera, and the emitter is a SceneNode rather
-// than a DisplayObject.
-//
-// This demo samples browser logo images for non-transparent pixel positions, then fires one
-// particle per pixel at the corresponding 3D coordinate. Four logos occupy the four cardinal
-// horizontal quadrants (left, right, front, back) in 3D space. A sinusoidal time offset per
-// group produces the staggered "breathing" explosion effect from the original.
 
 const PARTICLE_SIZE = 2;
 const NUM_LOGOS = 4;
@@ -64,7 +53,6 @@ const glState = createGlRenderState(canvas, {
   pixelRatio,
 });
 registerBlinnPhongGlMaterial(glState);
-registerParticleEmitter3DGlRenderer(glState);
 
 const scene = createScene();
 
@@ -74,13 +62,11 @@ const camera: Camera = createCamera({
   projection: createPerspectiveProjection({ fovY: 60 * DEG_TO_RAD, aspect: width / height }),
 });
 
-// Two orbiting colored point lights — green and blue
 const greenLight = createPointLight({ color: 0x00ff00, intensity: 2, falloff: 600, radius: 100 });
 const blueLight = createPointLight({ color: 0x0000ff, intensity: 2, falloff: 600, radius: 100 });
 const ambient = createAmbientLight({ color: 0xffffff, intensity: 1 });
 const lights: SceneLights = createSceneLights({ ambient, pointLights: [greenLight, blueLight] });
 
-// Hover camera
 let panAngle = 225 * DEG_TO_RAD;
 let tiltAngle = 10 * DEG_TO_RAD;
 let distance = 1000;
@@ -118,8 +104,6 @@ window.addEventListener('mouseup', () => {
   dragging = false;
 });
 
-// Sample non-transparent pixels from a loaded image. Returns an array of [x, y, r, g, b] tuples
-// where x/y are pixel coordinates relative to the image centre.
 function samplePixels(img: HTMLImageElement): Array<[number, number, number, number, number]> {
   const offscreen = document.createElement('canvas');
   offscreen.width = img.naturalWidth;
@@ -157,7 +141,6 @@ const logoUrls = [
   'awayjs/assets/ie.png',
 ];
 
-// 3D offsets: chrome=left, firefox=right, safari=front, ie=back
 const logoOffsets: [number, number, number][] = [
   [-100 * PARTICLE_SIZE, 0, 0],
   [100 * PARTICLE_SIZE, 0, 0],
@@ -165,28 +148,19 @@ const logoOffsets: [number, number, number][] = [
   [0, 0, 100 * PARTICLE_SIZE],
 ];
 
-// Bezier end positions: each group explodes in its own direction
-const logoBlastDirs: [number, number, number][] = [
-  [300 * PARTICLE_SIZE, 0, 0],
-  [-300 * PARTICLE_SIZE, 0, 0],
-  [0, 0, 300 * PARTICLE_SIZE],
-  [0, 0, -300 * PARTICLE_SIZE],
-];
-
 const images = await Promise.all(logoUrls.map(loadImage));
 const pixelSets = images.map(samplePixels);
 
 interface LogoEmitter {
   emitter: ParticleEmitter3D;
-  state: ParticleEmitterState3D;
-  config: ParticleEmitterConfig3D;
+  state: ParticleEmitterState;
+  config: ParticleEmitterConfig;
   pixels: Array<[number, number, number, number, number]>;
   offset: [number, number, number];
-  blastDir: [number, number, number];
 }
 
 const logoEmitters: LogoEmitter[] = pixelSets.map((pixels, i) => {
-  const config = createParticleEmitterConfig3D({
+  const config: ParticleEmitterConfig = createParticleEmitterConfig({
     maxParticles: pixels.length,
     spawnRate: 0,
     duration: 1,
@@ -200,7 +174,7 @@ const logoEmitters: LogoEmitter[] = pixelSets.map((pixels, i) => {
     blendMode: 'add',
   });
 
-  const state = createParticleEmitterState3D();
+  const state: ParticleEmitterState = createParticleEmitterState();
   const emitter: ParticleEmitter3D = createParticleEmitter3D();
 
   setMatrix4Identity(emitter.localMatrix);
@@ -208,7 +182,7 @@ const logoEmitters: LogoEmitter[] = pixelSets.map((pixels, i) => {
   invalidateNodeLocalTransform(emitter);
   addNodeChild(scene, emitter);
 
-  return { emitter, state, config, pixels, offset: logoOffsets[i]!, blastDir: logoBlastDirs[i]! };
+  return { emitter, state, config, pixels, offset: logoOffsets[i]! };
 });
 
 let time = 0;
@@ -220,11 +194,9 @@ function frame(ts: number): void {
   lastTs = ts;
   time += dt;
 
-  // Auto-rotate camera
   panAngle += 0.2 * DEG_TO_RAD;
   updateCamera();
 
-  // Orbit the coloured lights
   angle += (Math.PI * dt) / 180;
   setMatrix4Identity(greenLight.localMatrix);
   translateMatrix4(greenLight.localMatrix, greenLight.localMatrix, Math.sin(angle) * 600, 0, Math.cos(angle) * 600);
@@ -239,7 +211,6 @@ function frame(ts: number): void {
   );
   invalidateNodeLocalTransform(blueLight);
 
-  // Advance each group's oscillation, re-emit pixels each cycle
   for (let g = 0; g < NUM_LOGOS; g++) {
     const entry = logoEmitters[g]!;
     const groupTime = 1000 * (Math.sin(time / 5 + (Math.PI * g) / 4) + 1);
@@ -247,19 +218,11 @@ function frame(ts: number): void {
     stepParticleEmitter3D(entry.emitter, entry.state, entry.config, dt);
 
     if (groupTime < 50) {
-      // Explosion start — burst all pixels outward from their 3D positions
-      for (const [px, py, r, g2, b] of entry.pixels) {
+      for (const [px, py] of entry.pixels) {
         const x = entry.offset[0] + px * PARTICLE_SIZE;
         const y = entry.offset[1] + py * PARTICLE_SIZE;
         const z = entry.offset[2];
-        emitParticleBurst3D(entry.emitter, entry.state, entry.config, 1, x, y, z, {
-          color: [r, g2, b],
-          velocity: [
-            entry.blastDir[0] * 0.001 + (Math.random() - 0.5) * 20,
-            (Math.random() - 0.5) * 20,
-            entry.blastDir[2] * 0.001 + (Math.random() - 0.5) * 20,
-          ],
-        });
+        emitParticleBurst3D(entry.emitter, entry.state, entry.config, 1, x, y, z);
       }
     }
   }

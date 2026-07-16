@@ -1,24 +1,23 @@
-import type { Camera, Mesh, SceneLights, Skeleton, SkeletonAnimator, SkeletonClip } from '@flighthq/sdk';
+import type { AnimationClip, AnimationPlayer, Camera, SceneLights, Skeleton3D } from '@flighthq/sdk';
 import {
   addNodeChild,
-  applySkeletonClip,
-  computeSkeletonJointMatrices,
+  advanceAnimationPlayer,
+  applyAnimationClipToScene,
+  computeSkeleton3DJointMatrices,
   createAmbientLight,
+  createAnimationPlayer,
   createCamera,
   createDirectionalLight,
+  createPerspectiveProjection,
   createScene,
   createSceneLights,
-  createSkeletonAnimator,
+  createSceneFromAwd,
   createVector3,
   DEG_TO_RAD,
   parseAwdSkeletonAnimation,
   setCameraViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
-
-// parseAwdSkeletonAnimation parses an AWD binary file that embeds a skinned mesh, skeleton, and
-// named animation clips. Returns { mesh, skeleton, clips } where clips carry their name and
-// duration. Added in @flighthq/skeleton3d (merged into SDK 0.3.0).
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -31,7 +30,10 @@ const scene = createScene();
 const camera: Camera = createCamera({
   near: 1,
   far: 5000,
-  projection: { fovY: 70 * DEG_TO_RAD, aspect: window.innerWidth / window.innerHeight },
+  projection: createPerspectiveProjection({
+    fovY: 70 * DEG_TO_RAD,
+    aspect: window.innerWidth / window.innerHeight,
+  }),
 });
 
 const directional = createDirectionalLight({
@@ -43,22 +45,24 @@ const ambient = createAmbientLight({ color: 0xffffff, intensity: 0.3 });
 const lights: SceneLights = createSceneLights({ ambient, directional });
 
 const awdBuffer = await fetch('awayjs/assets/shambler.awd').then((r) => r.arrayBuffer());
-const awdScene = parseAwdSkeletonAnimation(awdBuffer);
+const awdBytes = new Uint8Array(awdBuffer);
 
-const model: Mesh = awdScene.mesh;
-const skeleton: Skeleton = awdScene.skeleton;
-const clips: SkeletonClip[] = awdScene.clips;
-addNodeChild(scene, model);
-
-const IDLE_NAME = 'idle';
-for (const clip of clips) {
-  clip.looping = clip.name === IDLE_NAME;
+// Parse mesh geometry from the AWD file
+const awdScene = createSceneFromAwd(awdBytes);
+for (const child of awdScene.children) {
+  addNodeChild(scene, child);
 }
 
-const animator: SkeletonAnimator = createSkeletonAnimator(skeleton, clips);
-animator.play(IDLE_NAME);
+// Parse skeleton animation from the same AWD file
+const skelAnim = parseAwdSkeletonAnimation(awdBytes);
+if (!skelAnim) throw new Error('Failed to parse AWD skeleton animation');
 
-// Hover camera — pan and tilt with drag, zoom with wheel. LookAt the character's centre of mass.
+const skeleton: Skeleton3D = skelAnim.skeleton;
+const clip: AnimationClip = skelAnim.clip;
+
+const player: AnimationPlayer = createAnimationPlayer(clip, { loop: true, speed: 1 });
+
+// Hover camera
 let panAngle = 0;
 let tiltAngle = 0;
 let distance = 150;
@@ -100,31 +104,17 @@ ctx.canvas.addEventListener('wheel', (e: WheelEvent) => {
   distance = Math.max(100, Math.min(2000, distance - e.deltaY / 2));
 });
 
-const attackNames: Record<string, string> = {
-  '1': 'attack01',
-  '2': 'attack02',
-  '3': 'attack03',
-  '4': 'attack04',
-  '5': 'attack05',
-};
-
-document.addEventListener('keydown', (e: KeyboardEvent) => {
-  const attack = attackNames[e.key];
-  if (attack) animator.play(attack, 0, () => animator.play(IDLE_NAME));
-});
-
 updateCamera();
 
-const CROSSFADE_DURATION = 0.5;
 let lastTs = 0;
 
 function frame(ts: number): void {
   const dt = Math.min((ts - lastTs) / 1000, 0.1);
   lastTs = ts;
 
-  const { clip, time } = animator.step(dt, CROSSFADE_DURATION);
-  applySkeletonClip(skeleton, clip, time);
-  computeSkeletonJointMatrices(skeleton);
+  advanceAnimationPlayer(player, dt);
+  applyAnimationClipToScene(clip, player.time);
+  computeSkeleton3DJointMatrices(skeleton);
 
   updateCamera();
   ctx.render(scene, camera, lights);

@@ -83,12 +83,12 @@ const lights: SceneLights = createSceneLights({ ambient, directional });
 
 // Environment cube map — individual face images derived from the CubeTextureTest.cube asset
 const cubeFaceUrls = [
-  'awayjs/assets/skybox/CubeTextureTest_posX.jpg',
-  'awayjs/assets/skybox/CubeTextureTest_negX.jpg',
-  'awayjs/assets/skybox/CubeTextureTest_posY.jpg',
-  'awayjs/assets/skybox/CubeTextureTest_negY.jpg',
-  'awayjs/assets/skybox/CubeTextureTest_posZ.jpg',
-  'awayjs/assets/skybox/CubeTextureTest_negZ.jpg',
+  'awayjs/assets/skybox/sky_posX.jpg',
+  'awayjs/assets/skybox/sky_negX.jpg',
+  'awayjs/assets/skybox/sky_posY.jpg',
+  'awayjs/assets/skybox/sky_negY.jpg',
+  'awayjs/assets/skybox/sky_posZ.jpg',
+  'awayjs/assets/skybox/sky_negZ.jpg',
 ];
 const cubeImages = await Promise.all(cubeFaceUrls.map((url) => loadImageResourceFromUrl(url)));
 const cubeTexture: CubeTexture = createCubeTexture();

@@ -38,11 +38,11 @@ const camera = createCamera({
 
 const directional = createDirectionalLight({
   direction: { x: -1, y: -15, z: 1 },
-  color: 0xeedddd,
+  color: 0xeeddddff,
   intensity: 0.7,
 });
 
-const ambient = createAmbientLight({ color: 0x808090, intensity: 0.35 });
+const ambient = createAmbientLight({ color: 0x808090ff, intensity: 0.35 });
 const lights = createSceneLights({ ambient, directional });
 
 const materialNameToTextureFile: Record<string, string> = {

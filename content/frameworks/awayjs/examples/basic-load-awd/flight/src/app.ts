@@ -40,11 +40,11 @@ const camera = createCamera({
 
 const directional = createDirectionalLight({
   direction: { x: 1, y: 0, z: 0 },
-  color: 0x683019,
+  color: 0x683019ff,
   intensity: 2.8,
 });
 
-const ambient = createAmbientLight({ color: 0x30353b, intensity: 0.5 });
+const ambient = createAmbientLight({ color: 0x30353bff, intensity: 0.5 });
 const lights = createSceneLights({ ambient, directional });
 
 const buffer = await fetch('awayjs/assets/suzanne.awd').then((r) => r.arrayBuffer());

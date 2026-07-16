@@ -51,18 +51,18 @@ const directional = createDirectionalLight({
     y: -Math.cos(lightElevation),
     z: Math.sin(lightElevation) * Math.sin(lightDirection),
   },
-  color: 0xffeedd,
+  color: 0xffeeddff,
   intensity: 1,
 });
 
-const ambient = createAmbientLight({ color: 0x101025, intensity: 1 });
+const ambient = createAmbientLight({ color: 0x101025ff, intensity: 1 });
 
-const blueLight = createPointLight({ color: 0x4080ff, intensity: 1, falloff: 5000 });
+const blueLight = createPointLight({ color: 0x4080ffff, intensity: 1, falloff: 5000 });
 blueLight.x = 3000;
 blueLight.z = 700;
 blueLight.y = 20;
 
-const redLight = createPointLight({ color: 0x802010, intensity: 1, falloff: 5000 });
+const redLight = createPointLight({ color: 0x802010ff, intensity: 1, falloff: 5000 });
 redLight.x = -2000;
 redLight.z = 800;
 redLight.y = -400;

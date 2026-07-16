@@ -41,11 +41,11 @@ const camera = createCamera({
 
 const directional = createDirectionalLight({
   direction: { x: 1, y: 0, z: 0 },
-  color: 0xffffff,
+  color: 0xffffffff,
   intensity: 2.8,
 });
 
-const ambient = createAmbientLight({ color: 0x85b2cd, intensity: 0.4 });
+const ambient = createAmbientLight({ color: 0x85b2cdff, intensity: 0.4 });
 const lights = createSceneLights({ ambient, directional });
 
 const image = await loadImageResourceFromUrl('awayjs/assets/spacy_texture.png');

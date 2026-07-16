@@ -71,11 +71,11 @@ const camera = createCamera({
 
 const directional = createDirectionalLight({
   direction: { x: 0, y: -1, z: 1 },
-  color: 0xffffff,
+  color: 0xffffffff,
   intensity: 0.7,
 });
 
-const ambient = createAmbientLight({ color: 0xffffff, intensity: 1 });
+const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1 });
 const lights: SceneLights = createSceneLights({ ambient, directional });
 
 const cubeTexture = createCubeTexture();

@@ -47,12 +47,12 @@ const camera = createCamera({
 });
 
 const pointLight = createPointLight({
-  color: 0xffffff,
+  color: 0xffffffff,
   intensity: 1.0,
   falloff: 0,
   radius: 10000,
 });
-const ambient = createAmbientLight({ color: 0xffffff, intensity: 0.2 });
+const ambient = createAmbientLight({ color: 0xffffffff, intensity: 0.2 });
 const lights = createSceneLights({
   ambient,
   directional: null,

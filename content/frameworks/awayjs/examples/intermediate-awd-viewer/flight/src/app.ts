@@ -39,10 +39,10 @@ const camera: Camera = createCamera({
 
 const directional = createDirectionalLight({
   direction: { x: 0, y: -1, z: 1 },
-  color: 0xffffff,
+  color: 0xffffffff,
   intensity: 0.7,
 });
-const ambient = createAmbientLight({ color: 0xffffff, intensity: 0.3 });
+const ambient = createAmbientLight({ color: 0xffffffff, intensity: 0.3 });
 const lights: SceneLights = createSceneLights({ ambient, directional });
 
 const awdBuffer = await fetch('awayjs/assets/shambler.awd').then((r) => r.arrayBuffer());

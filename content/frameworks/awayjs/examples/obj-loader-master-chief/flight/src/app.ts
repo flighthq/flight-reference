@@ -49,11 +49,11 @@ setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 
 const directional = createDirectionalLight({
   direction: { x: 1, y: 0, z: 0 },
-  color: 0xc1582d,
+  color: 0xc1582dff,
   intensity: 1.0,
 });
 
-const ambient = createAmbientLight({ color: 0x85b2cd, intensity: 0.4 });
+const ambient = createAmbientLight({ color: 0x85b2cdff, intensity: 0.4 });
 const lights = createSceneLights({ ambient, directional });
 
 const spartanContainer = createSceneNode();

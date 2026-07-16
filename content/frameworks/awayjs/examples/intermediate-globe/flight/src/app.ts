@@ -41,7 +41,7 @@ const camera = createCamera({
 });
 
 const sunLight = createPointLight({
-  color: 0xffffff,
+  color: 0xffffffff,
   intensity: 2,
   radius: 100000,
   falloff: 0,

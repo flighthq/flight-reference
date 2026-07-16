@@ -46,11 +46,11 @@ const camera = createCamera({
 
 const directional = createDirectionalLight({
   direction: { x: -1, y: -1, z: 1 },
-  color: 0xffffff,
+  color: 0xffffffff,
   intensity: 0.7,
 });
 
-const ambient = createAmbientLight({ color: 0xffffff, intensity: 0.2 });
+const ambient = createAmbientLight({ color: 0xffffffff, intensity: 0.2 });
 const lights = createSceneLights({ ambient, directional });
 
 const groundMaterial = createBlinnPhongMaterial({

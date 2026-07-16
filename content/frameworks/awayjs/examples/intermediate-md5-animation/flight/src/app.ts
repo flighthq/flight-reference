@@ -99,10 +99,10 @@ function updateCamera(spriteRotY: number): void {
   setCameraViewMatrix4FromLookAt(camera, eye, placeHolder, up);
 }
 
-const redLight = createPointLight({ color: 0xff1111, intensity: 1.5, falloff: 3000 });
-const blueLight = createPointLight({ color: 0x1111ff, intensity: 1.5, falloff: 3000 });
-const whiteLight = createDirectionalLight({ direction: { x: -50, y: -20, z: 10 }, color: 0xffffee, intensity: 1 });
-const ambient = createAmbientLight({ color: 0x303040, intensity: 1 });
+const redLight = createPointLight({ color: 0xff1111ff, intensity: 1.5, falloff: 3000 });
+const blueLight = createPointLight({ color: 0x1111ffff, intensity: 1.5, falloff: 3000 });
+const whiteLight = createDirectionalLight({ direction: { x: -50, y: -20, z: 10 }, color: 0xffffeeff, intensity: 1 });
+const ambient = createAmbientLight({ color: 0x303040ff, intensity: 1 });
 const lights: SceneLights = createSceneLights({
   ambient,
   directional: whiteLight,

@@ -47,11 +47,11 @@ setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 
 const directional = createDirectionalLight({
   direction: { x: 0, y: -1, z: 1 },
-  color: 0xffffff,
+  color: 0xffffffff,
   intensity: 0.7,
 });
 
-const ambient = createAmbientLight({ color: 0xffffff, intensity: 0 });
+const ambient = createAmbientLight({ color: 0xffffffff, intensity: 0 });
 const lights = createSceneLights({ ambient, directional });
 
 const image = await loadImageResourceFromUrl('awayjs/assets/dots.png');

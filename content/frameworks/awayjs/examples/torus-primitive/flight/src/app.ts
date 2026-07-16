@@ -16,6 +16,7 @@ import {
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
+  PerspectiveProjection,
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
@@ -90,7 +91,7 @@ window.addEventListener('resize', () => {
   ctx.canvas.style.width = `${width}px`;
   ctx.canvas.style.height = `${height}px`;
   ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
-  camera.projection.aspect = width / height;
+  (camera.projection as PerspectiveProjection).aspect = width / height;
 });
 
 frame();

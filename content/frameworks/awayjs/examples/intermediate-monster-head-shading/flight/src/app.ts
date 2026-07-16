@@ -1,4 +1,4 @@
-import type { BlinnPhongMaterial, Mesh } from '@flighthq/sdk';
+import type { BlinnPhongMaterial, Mesh, SceneNode } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
@@ -15,6 +15,7 @@ import {
   DEG_TO_RAD,
   getNodeChildren,
   invalidateNodeLocalTransform,
+  isMesh,
   loadImageResourceFromUrl,
   scaleMatrix4,
   setCameraViewMatrix4FromLookAt,
@@ -91,18 +92,25 @@ headMaterial.normalMap = createTexture({ image: normalImage });
 
 const awdScene = createSceneFromAwd(new Uint8Array(awdBuffer));
 
-for (const child of getNodeChildren(awdScene)) {
-  const mesh = child as Mesh;
-  if (mesh.materials) {
-    for (let i = 0; i < mesh.materials.length; i++) {
-      mesh.materials[i] = headMaterial;
+function assignMaterialToMeshes(node: SceneNode): void {
+  if (isMesh(node)) {
+    for (let i = 0; i < node.materials.length; i++) {
+      node.materials[i] = headMaterial;
     }
   }
-  setMatrix4Identity(mesh.localMatrix);
-  scaleMatrix4(mesh.localMatrix, mesh.localMatrix, 4, 4, 4);
-  translateMatrix4(mesh.localMatrix, mesh.localMatrix, 0, -20, 0);
-  invalidateNodeLocalTransform(mesh);
-  addNodeChild(scene, mesh);
+  for (const child of getNodeChildren(node)) {
+    assignMaterialToMeshes(child);
+  }
+}
+
+assignMaterialToMeshes(awdScene);
+
+for (const child of getNodeChildren(awdScene)) {
+  setMatrix4Identity(child.localMatrix);
+  scaleMatrix4(child.localMatrix, child.localMatrix, 4, 4, 4);
+  translateMatrix4(child.localMatrix, child.localMatrix, 0, -20, 0);
+  invalidateNodeLocalTransform(child);
+  addNodeChild(scene, child);
 }
 
 let panAngle = 225 * DEG_TO_RAD;

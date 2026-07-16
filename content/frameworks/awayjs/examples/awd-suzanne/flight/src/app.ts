@@ -1,4 +1,4 @@
-import type { BlinnPhongMaterial, Mesh, SceneHit } from '@flighthq/sdk';
+import type { BlinnPhongMaterial, Mesh, SceneHit, SceneNode } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
@@ -66,13 +66,17 @@ const hoverMaterial: BlinnPhongMaterial = createBlinnPhongMaterial({
 const buffer = await fetch('awayjs/assets/suzanne.awd').then((r) => r.arrayBuffer());
 const modelScene = createSceneFromAwd(new Uint8Array(buffer));
 
-let templateGeometry: Mesh['geometry'] | null = null;
-for (const child of getNodeChildren(modelScene)) {
-  if (isMesh(child)) {
-    templateGeometry = child.geometry;
-    break;
+function findFirstMesh(root: SceneNode): Mesh | null {
+  for (const child of getNodeChildren(root)) {
+    if (isMesh(child)) return child;
+    const found = findFirstMesh(child);
+    if (found) return found;
   }
+  return null;
 }
+
+const templateMesh = findFirstMesh(modelScene);
+const templateGeometry = templateMesh?.geometry ?? null;
 
 if (!templateGeometry) throw new Error('No mesh found in suzanne.awd');
 

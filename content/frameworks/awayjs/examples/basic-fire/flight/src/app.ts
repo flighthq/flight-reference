@@ -3,6 +3,7 @@ import type { ParticleEmitterConfig } from '@flighthq/sdk';
 import type { ParticleEmitterState } from '@flighthq/sdk';
 import {
   addNodeChild,
+  addTextureAtlasRegion,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
@@ -11,7 +12,10 @@ import {
   createParticleEmitterConfig,
   createParticleEmitterState,
   createShape,
+  createTextureAtlas,
+  invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  loadImageResourceFromUrl,
   ParticleEmitterKind,
   prewarmParticleEmitter,
   ShapeKind,
@@ -29,6 +33,10 @@ const target = await createFunctionalTarget({
   kinds: [ShapeKind, ParticleEmitterKind],
   blend: true,
 });
+
+const fireImage = await loadImageResourceFromUrl('awayjs/assets/blue.png');
+const fireAtlas = createTextureAtlas({ image: fireImage });
+addTextureAtlasRegion(fireAtlas, 0, 0, fireImage.width, fireImage.height);
 
 const root = createDisplayContainer();
 
@@ -64,9 +72,9 @@ for (let i = 0; i < NUM_FIRES; i++) {
     spread: 0.4,
     speedMin: 50,
     speedMax: 100,
-    scaleMin: 4,
-    scaleMax: 5,
-    scaleEnd: 1,
+    scaleMin: 0.16,
+    scaleMax: 0.2,
+    scaleEnd: 0.04,
     colorStartR: 1,
     colorStartG: 0.2,
     colorStartB: 0.004,
@@ -79,11 +87,13 @@ for (let i = 0; i < NUM_FIRES; i++) {
   });
 
   const emitter = createParticleEmitter();
+  emitter.data.atlas = fireAtlas;
   const state = createParticleEmitterState();
 
   emitter.x = spacing * (i + 1);
   emitter.y = height - 40;
   invalidateNodeLocalTransform(emitter);
+  invalidateNodeAppearance(emitter);
 
   prewarmParticleEmitter(emitter, state, config, 5, 1 / 60);
 

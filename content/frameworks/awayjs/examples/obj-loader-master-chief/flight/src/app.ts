@@ -42,8 +42,8 @@ const camera = createCamera({
   }),
 });
 
-const eye = createVector3(0, 20, -50);
-const target = createVector3(0, 0, 0);
+const eye = createVector3(0, 20, 50);
+const target = createVector3(0, 20, 0);
 const up = createVector3(0, 1, 0);
 setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 
@@ -118,8 +118,8 @@ let spartanRotationY = 0;
 let terrainRotationY = 0;
 
 function frame(): void {
-  spartanRotationY += 0.4 * DEG_TO_RAD;
-  terrainRotationY += 0.4 * DEG_TO_RAD;
+  spartanRotationY -= 0.4 * DEG_TO_RAD;
+  terrainRotationY -= 0.4 * DEG_TO_RAD;
 
   setMatrix4Identity(spartanContainer.localMatrix);
   scaleMatrix4(spartanContainer.localMatrix, spartanContainer.localMatrix, 0.25, 0.25, 0.25);

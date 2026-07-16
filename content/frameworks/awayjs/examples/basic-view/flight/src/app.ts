@@ -34,7 +34,7 @@ const camera = createCamera({
   projection: createPerspectiveProjection({ fovY: 60 * DEG_TO_RAD, aspect: window.innerWidth / window.innerHeight }),
 });
 
-const eye = createVector3(0, 500, -600);
+const eye = createVector3(0, 500, 600);
 const target = createVector3(0, 0, 0);
 const up = createVector3(0, 1, 0);
 setCameraViewMatrix4FromLookAt(camera, eye, target, up);
@@ -49,7 +49,7 @@ material.baseColorMap = texture;
 let angle = 0;
 
 function frame(): void {
-  angle += DEG_TO_RAD;
+  angle -= DEG_TO_RAD;
 
   setMatrix4Identity(mesh.localMatrix);
   rotateMatrix4(mesh.localMatrix, mesh.localMatrix, yAxis, angle);

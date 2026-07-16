@@ -101,7 +101,7 @@ function updateCamera(spriteRotY: number): void {
 
 const redLight = createPointLight({ color: 0xff1111ff, intensity: 1.5, falloff: 3000 });
 const blueLight = createPointLight({ color: 0x1111ffff, intensity: 1.5, falloff: 3000 });
-const whiteLight = createDirectionalLight({ direction: { x: -50, y: -20, z: 10 }, color: 0xffffeeff, intensity: 1 });
+const whiteLight = createDirectionalLight({ direction: { x: -50, y: -20, z: -10 }, color: 0xffffeeff, intensity: 1 });
 const ambient = createAmbientLight({ color: 0x303040ff, intensity: 1 });
 const lights: SceneLights = createSceneLights({
   ambient,
@@ -228,11 +228,11 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
     case 'ArrowLeft':
     case 'KeyA':
     case 'KeyQ':
-      rotationInc = -ROTATION_SPEED * DEG_TO_RAD;
+      rotationInc = ROTATION_SPEED * DEG_TO_RAD;
       break;
     case 'ArrowRight':
     case 'KeyD':
-      rotationInc = ROTATION_SPEED * DEG_TO_RAD;
+      rotationInc = -ROTATION_SPEED * DEG_TO_RAD;
       break;
     case 'Digit1':
       playAction(1);
@@ -319,10 +319,10 @@ function frame(ts: number): void {
 
   redLight.x = Math.sin(count) * 1500;
   redLight.y = 250 + Math.sin(count * 0.54) * 200;
-  redLight.z = Math.cos(count * 0.7) * 1500;
+  redLight.z = -Math.cos(count * 0.7) * 1500;
   blueLight.x = -Math.sin(count * 0.8) * 1500;
   blueLight.y = 250 - Math.sin(count * 0.65) * 200;
-  blueLight.z = -Math.cos(count * 0.9) * 1500;
+  blueLight.z = Math.cos(count * 0.9) * 1500;
 
   updateCamera(spriteRotY);
 

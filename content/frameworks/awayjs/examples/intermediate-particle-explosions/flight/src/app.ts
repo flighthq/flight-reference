@@ -84,7 +84,7 @@ function updateCamera(): void {
   const tilt = Math.max(-89 * DEG_TO_RAD, Math.min(89 * DEG_TO_RAD, tiltAngle));
   eye.x = distance * Math.sin(panAngle) * Math.cos(tilt);
   eye.y = distance * Math.sin(tilt);
-  eye.z = distance * Math.cos(panAngle) * Math.cos(tilt);
+  eye.z = -distance * Math.cos(panAngle) * Math.cos(tilt);
   setCameraViewMatrix4FromLookAt(camera, eye, lookAt, up);
 }
 
@@ -144,8 +144,8 @@ const logoUrls = [
 const logoOffsets: [number, number, number][] = [
   [-100 * PARTICLE_SIZE, 0, 0],
   [100 * PARTICLE_SIZE, 0, 0],
-  [0, 0, -100 * PARTICLE_SIZE],
   [0, 0, 100 * PARTICLE_SIZE],
+  [0, 0, -100 * PARTICLE_SIZE],
 ];
 
 const images = await Promise.all(logoUrls.map(loadImage));
@@ -199,7 +199,7 @@ function frame(ts: number): void {
 
   angle += (Math.PI * dt) / 180;
   setMatrix4Identity(greenLight.localMatrix);
-  translateMatrix4(greenLight.localMatrix, greenLight.localMatrix, Math.sin(angle) * 600, 0, Math.cos(angle) * 600);
+  translateMatrix4(greenLight.localMatrix, greenLight.localMatrix, Math.sin(angle) * 600, 0, -Math.cos(angle) * 600);
   invalidateNodeLocalTransform(greenLight);
   setMatrix4Identity(blueLight.localMatrix);
   translateMatrix4(
@@ -207,7 +207,7 @@ function frame(ts: number): void {
     blueLight.localMatrix,
     Math.sin(angle + Math.PI) * 600,
     0,
-    Math.cos(angle + Math.PI) * 600,
+    -Math.cos(angle + Math.PI) * 600,
   );
   invalidateNodeLocalTransform(blueLight);
 

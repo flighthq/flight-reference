@@ -61,7 +61,7 @@ addNodeChild(scene, sunLight);
 const tiltContainer = createSceneNode();
 const axisX = createVector3(1, 0, 0);
 setMatrix4Identity(tiltContainer.localMatrix);
-rotateMatrix4(tiltContainer.localMatrix, tiltContainer.localMatrix, axisX, 23 * DEG_TO_RAD);
+rotateMatrix4(tiltContainer.localMatrix, tiltContainer.localMatrix, axisX, -23 * DEG_TO_RAD);
 invalidateNodeLocalTransform(tiltContainer);
 addNodeChild(scene, tiltContainer);
 
@@ -129,7 +129,7 @@ function updateCamera(): void {
 
   eye.x = target.x + distance * Math.sin(panAngle) * Math.cos(clamped);
   eye.y = target.y + distance * Math.sin(clamped);
-  eye.z = target.z + distance * Math.cos(panAngle) * Math.cos(clamped);
+  eye.z = target.z - distance * Math.cos(panAngle) * Math.cos(clamped);
 
   setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 }
@@ -171,13 +171,13 @@ function frame(ts: number): void {
   const cloudSpeed = 0.21 * DEG_TO_RAD * (dt / 16);
   const orbitSpeed = 0.02 * DEG_TO_RAD * (dt / 16);
 
-  rotateMatrix4(earth.localMatrix, earth.localMatrix, axisY, -earthSpeed);
+  rotateMatrix4(earth.localMatrix, earth.localMatrix, axisY, earthSpeed);
   invalidateNodeLocalTransform(earth);
 
-  rotateMatrix4(clouds.localMatrix, clouds.localMatrix, axisY, -cloudSpeed);
+  rotateMatrix4(clouds.localMatrix, clouds.localMatrix, axisY, cloudSpeed);
   invalidateNodeLocalTransform(clouds);
 
-  rotateMatrix4(orbitContainer.localMatrix, orbitContainer.localMatrix, axisY, -orbitSpeed);
+  rotateMatrix4(orbitContainer.localMatrix, orbitContainer.localMatrix, axisY, orbitSpeed);
   invalidateNodeLocalTransform(orbitContainer);
 
   updateCamera();

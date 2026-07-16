@@ -68,12 +68,12 @@ addNodeChild(scene, torus);
 const cubeGeometry = createBoxMeshGeometry(20, 20, 20);
 const cube = createMesh(cubeGeometry, [material]);
 setMatrix4Identity(cube.localMatrix);
-translateMatrix4(cube.localMatrix, cube.localMatrix, 130, 0, 40);
+translateMatrix4(cube.localMatrix, cube.localMatrix, 130, 0, -40);
 invalidateNodeLocalTransform(cube);
 addNodeChild(scene, cube);
 
 const eye = createVector3(130, 0, 0);
-const lookTarget = createVector3(130, 0, 40);
+const lookTarget = createVector3(130, 0, -40);
 const up = createVector3(0, 1, 0);
 const xAxis = createVector3(1, 0, 0);
 const yAxis = createVector3(0, 1, 0);
@@ -87,15 +87,9 @@ setCameraViewMatrix4FromLookAt(camera, eye, lookTarget, up);
 
 function frame(): void {
   cameraAngle += DEG;
-  torusAngleY += DEG;
-  cubeAngleX += 0.4 * DEG;
-  cubeAngleY += 0.4 * DEG;
-
-  eye.x = 130 * Math.cos(cameraAngle);
-  eye.y = 130 * Math.sin(cameraAngle);
-
-  lookTarget.x = eye.x;
-  lookTarget.y = eye.y;
+  torusAngleY -= DEG;
+  cubeAngleX -= 0.4 * DEG;
+  cubeAngleY -= 0.4 * DEG;
 
   up.x = -Math.sin(cameraAngle);
   up.y = Math.cos(cameraAngle);
@@ -108,7 +102,7 @@ function frame(): void {
   invalidateNodeLocalTransform(torus);
 
   setMatrix4Identity(cube.localMatrix);
-  translateMatrix4(cube.localMatrix, cube.localMatrix, 130, 0, 40);
+  translateMatrix4(cube.localMatrix, cube.localMatrix, 130, 0, -40);
   rotateMatrix4(cube.localMatrix, cube.localMatrix, yAxis, cubeAngleY);
   rotateMatrix4(cube.localMatrix, cube.localMatrix, xAxis, cubeAngleX);
   invalidateNodeLocalTransform(cube);

@@ -37,7 +37,7 @@ const camera = createCamera({
 });
 
 const directional = createDirectionalLight({
-  direction: { x: -1, y: -15, z: 1 },
+  direction: { x: -1, y: -15, z: -1 },
   color: 0xeeddddff,
   intensity: 0.7,
 });
@@ -156,8 +156,8 @@ function updateCamera(): void {
   pitch = Math.max(-80 * DEG_TO_RAD, Math.min(80 * DEG_TO_RAD, pitch));
 
   eye.x = pos.x + Math.sin(yaw) * Math.cos(pitch);
-  eye.y = pos.y + Math.sin(pitch);
-  eye.z = pos.z + Math.cos(yaw) * Math.cos(pitch);
+  eye.y = pos.y - Math.sin(pitch);
+  eye.z = pos.z - Math.cos(yaw) * Math.cos(pitch);
 
   setCameraViewMatrix4FromLookAt(camera, pos, eye, up);
 }
@@ -208,9 +208,9 @@ function frame(): void {
   if (Math.abs(strafeSpeed) < 0.01) strafeSpeed = 0;
 
   const forwardX = Math.sin(yaw);
-  const forwardZ = Math.cos(yaw);
+  const forwardZ = -Math.cos(yaw);
   const rightX = Math.cos(yaw);
-  const rightZ = -Math.sin(yaw);
+  const rightZ = Math.sin(yaw);
 
   pos.x += forwardX * walkSpeed + rightX * strafeSpeed;
   pos.z += forwardZ * walkSpeed + rightZ * strafeSpeed;

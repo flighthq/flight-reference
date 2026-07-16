@@ -100,7 +100,7 @@ const environment = createEnvironment({ environment: cubeTexture, intensity: 1 }
 let mouseX = width / 2;
 let cameraRotationY = 0;
 
-const eye = createVector3(0, 0, -600);
+const eye = createVector3(0, 0, 600);
 const target = createVector3(0, 0, 0);
 const up = createVector3(0, 1, 0);
 
@@ -117,8 +117,8 @@ let torusRotX = 0;
 let torusRotY = 0;
 
 function frame(): void {
-  torusRotX += 2 * DEG_TO_RAD;
-  torusRotY += 1 * DEG_TO_RAD;
+  torusRotX -= 2 * DEG_TO_RAD;
+  torusRotY -= 1 * DEG_TO_RAD;
 
   setMatrix4Identity(torus.localMatrix);
   rotateMatrix4(torus.localMatrix, torus.localMatrix, xAxis, torusRotX);
@@ -130,7 +130,7 @@ function frame(): void {
 
   eye.x = -600 * Math.sin(rotRad);
   eye.y = 0;
-  eye.z = -600 * Math.cos(rotRad);
+  eye.z = 600 * Math.cos(rotRad);
 
   setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 

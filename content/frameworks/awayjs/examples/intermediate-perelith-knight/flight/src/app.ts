@@ -45,7 +45,7 @@ const camera = createCamera({
 });
 
 const directional = createDirectionalLight({
-  direction: { x: -0.5, y: -1, z: -1 },
+  direction: { x: -0.5, y: -1, z: 1 },
   color: 0xffffffff,
   intensity: 0.7,
 });
@@ -140,7 +140,7 @@ function updateCamera(): void {
   tiltAngle = tilt;
   eye.x = lookAt.x + distance * Math.sin(panAngle) * Math.cos(tilt);
   eye.y = lookAt.y + distance * Math.sin(tilt);
-  eye.z = lookAt.z + distance * Math.cos(panAngle) * Math.cos(tilt);
+  eye.z = lookAt.z - distance * Math.cos(panAngle) * Math.cos(tilt);
   setCameraViewMatrix4FromLookAt(camera, eye, lookAt, up);
 }
 
@@ -219,8 +219,8 @@ updateCamera();
 function frame(): void {
   if (keyUp) lookAt.x -= 10;
   if (keyDown) lookAt.x += 10;
-  if (keyLeft) lookAt.z -= 10;
-  if (keyRight) lookAt.z += 10;
+  if (keyLeft) lookAt.z += 10;
+  if (keyRight) lookAt.z -= 10;
 
   updateCamera();
   ctx.render(scene, camera, lights);

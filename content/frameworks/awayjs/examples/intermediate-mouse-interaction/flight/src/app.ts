@@ -219,7 +219,7 @@ function updateCamera(): void {
 
   eye.x = target.x + distance * Math.sin(panAngle) * Math.cos(tiltAngle);
   eye.y = target.y + distance * Math.sin(tiltAngle);
-  eye.z = target.z + distance * Math.cos(panAngle) * Math.cos(tiltAngle);
+  eye.z = target.z - distance * Math.cos(panAngle) * Math.cos(tiltAngle);
 
   setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 

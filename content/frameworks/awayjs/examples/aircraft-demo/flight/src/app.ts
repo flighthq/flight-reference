@@ -74,7 +74,7 @@ const camera: Camera = createCamera({
 });
 
 const directional = createDirectionalLight({
-  direction: { x: -300, y: -300, z: -5000 },
+  direction: { x: -300, y: -300, z: 5000 },
   color: 0x974523ff,
   intensity: 1.2,
 });
@@ -139,7 +139,7 @@ addNodeChild(scene, f14Mesh);
 const _fallbackMat = createBlinnPhongMaterial({ diffuse: 0x888888ff, shininess: 20 });
 
 // Camera orbits the aircraft continuously
-const eye = createVector3(0, 250, -500);
+const eye = createVector3(0, 250, 500);
 const cameraTarget = createVector3(0, 200, 0);
 const up = createVector3(0, 1, 0);
 
@@ -173,7 +173,7 @@ function frame(): void {
     rotateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, zAxis, Math.sin(rollIncrement) * 25 * DEG_TO_RAD);
   } else {
     loopIncrement += 0.05;
-    const lz = Math.cos(loopIncrement) * 20;
+    const lz = -Math.cos(loopIncrement) * 20;
     const ly = 200 + Math.sin(loopIncrement) * 20;
     translateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, 0, ly, lz);
     rotateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, zAxis, Math.sin(rollIncrement) * 25 * DEG_TO_RAD);
@@ -187,7 +187,7 @@ function frame(): void {
 
   eye.x = Math.cos(cameraIncrement) * 400;
   eye.y = 250;
-  eye.z = Math.sin(cameraIncrement) * 400;
+  eye.z = -Math.sin(cameraIncrement) * 400;
   updateCameraLookAt();
 
   // Scroll the water normal map to simulate surface flow

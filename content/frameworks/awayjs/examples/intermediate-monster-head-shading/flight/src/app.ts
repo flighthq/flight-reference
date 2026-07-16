@@ -49,7 +49,7 @@ const directional = createDirectionalLight({
   direction: {
     x: Math.sin(lightElevation) * Math.cos(lightDirection),
     y: -Math.cos(lightElevation),
-    z: Math.sin(lightElevation) * Math.sin(lightDirection),
+    z: -Math.sin(lightElevation) * Math.sin(lightDirection),
   },
   color: 0xffeeddff,
   intensity: 1,
@@ -59,12 +59,12 @@ const ambient = createAmbientLight({ color: 0x101025ff, intensity: 1 });
 
 const blueLight = createPointLight({ color: 0x4080ffff, intensity: 1, falloff: 5000 });
 blueLight.x = 3000;
-blueLight.z = 700;
+blueLight.z = -700;
 blueLight.y = 20;
 
 const redLight = createPointLight({ color: 0x802010ff, intensity: 1, falloff: 5000 });
 redLight.x = -2000;
-redLight.z = 800;
+redLight.z = -800;
 redLight.y = -400;
 
 const lights = createSceneLights({
@@ -134,7 +134,7 @@ function updateCamera(): void {
   tiltAngle = tilt;
   eye.x = target.x + distance * Math.sin(panAngle) * Math.cos(tilt);
   eye.y = target.y + distance * Math.sin(tilt);
-  eye.z = target.z + distance * Math.cos(panAngle) * Math.cos(tilt);
+  eye.z = target.z - distance * Math.cos(panAngle) * Math.cos(tilt);
   setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 }
 

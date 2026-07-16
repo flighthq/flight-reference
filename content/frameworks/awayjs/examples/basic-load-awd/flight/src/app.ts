@@ -111,7 +111,7 @@ const yAxis = createVector3(0, 1, 0);
 
 function frame(): void {
   for (const child of modelChildren) {
-    rotateMatrix4(child.localMatrix, child.localMatrix, yAxis, 1 * DEG_TO_RAD);
+    rotateMatrix4(child.localMatrix, child.localMatrix, yAxis, -1 * DEG_TO_RAD);
     invalidateNodeLocalTransform(child);
   }
 

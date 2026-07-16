@@ -119,7 +119,7 @@ const eye = createVector3(0, 0, 0);
 function updateCamera(): void {
   eye.x = Math.cos(cameraAngle) * distance;
   eye.y = 0;
-  eye.z = Math.sin(cameraAngle) * distance;
+  eye.z = -Math.sin(cameraAngle) * distance;
   setCameraViewMatrix4FromLookAt(camera, eye, lookAt, up);
 }
 
@@ -150,7 +150,7 @@ function frame(): void {
   cameraAngle += 0.01;
   updateCamera();
 
-  setDirectionalLightDirection(directional, -Math.cos(-cameraAngle) * 1400, 0, -Math.sin(cameraAngle) * 1400);
+  setDirectionalLightDirection(directional, -Math.cos(-cameraAngle) * 1400, 0, Math.sin(cameraAngle) * 1400);
 
   ctx.render(scene, camera, lights);
   requestAnimationFrame(frame);

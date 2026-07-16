@@ -70,21 +70,21 @@ addNodeChild(scene, plane);
 const sphereGeometry = createSphereMeshGeometry(150, 40, 20);
 const sphere = createMesh(sphereGeometry, [sphereMaterial]);
 setMatrix4Identity(sphere.localMatrix);
-translateMatrix4(sphere.localMatrix, sphere.localMatrix, 300, 160, 300);
+translateMatrix4(sphere.localMatrix, sphere.localMatrix, 300, 160, -300);
 invalidateNodeLocalTransform(sphere);
 addNodeChild(scene, sphere);
 
 const cubeGeometry = createBoxMeshGeometry(200, 200, 200);
 const cube = createMesh(cubeGeometry, [cubeMaterial]);
 setMatrix4Identity(cube.localMatrix);
-translateMatrix4(cube.localMatrix, cube.localMatrix, 300, 160, -250);
+translateMatrix4(cube.localMatrix, cube.localMatrix, 300, 160, 250);
 invalidateNodeLocalTransform(cube);
 addNodeChild(scene, cube);
 
 const torusGeometry = createTorusMeshGeometry(150, 60, 40, 20);
 const torus = createMesh(torusGeometry, [torusMaterial]);
 setMatrix4Identity(torus.localMatrix);
-translateMatrix4(torus.localMatrix, torus.localMatrix, -250, 160, -250);
+translateMatrix4(torus.localMatrix, torus.localMatrix, -250, 160, 250);
 invalidateNodeLocalTransform(torus);
 addNodeChild(scene, torus);
 
@@ -184,7 +184,7 @@ function updateCamera(): void {
 
   eye.x = distance * Math.sin(panAngle) * Math.cos(clampedTilt);
   eye.y = distance * Math.sin(clampedTilt);
-  eye.z = distance * Math.cos(panAngle) * Math.cos(clampedTilt);
+  eye.z = -distance * Math.cos(panAngle) * Math.cos(clampedTilt);
 
   setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 }
@@ -217,7 +217,7 @@ updateCamera();
 
 function frame(ts: number): void {
   const lightX = Math.sin(ts / 10000) * 150000;
-  const lightZ = Math.cos(ts / 10000) * 150000;
+  const lightZ = -Math.cos(ts / 10000) * 150000;
   setDirectionalLightDirection(directional, lightX, -1000, lightZ);
 
   updateCamera();

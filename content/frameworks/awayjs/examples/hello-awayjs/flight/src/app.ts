@@ -36,7 +36,7 @@ const camera = createCamera({
   }),
 });
 
-const eye = createVector3(0, 500, -600);
+const eye = createVector3(0, 500, 600);
 const target = createVector3(0, 0, 0);
 const up = createVector3(0, 1, 0);
 setCameraViewMatrix4FromLookAt(camera, eye, target, up);

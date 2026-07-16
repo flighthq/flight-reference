@@ -45,7 +45,7 @@ const camera = createCamera({
 });
 
 const directional = createDirectionalLight({
-  direction: { x: -1, y: -1, z: 1 },
+  direction: { x: -1, y: -1, z: -1 },
   color: 0xffffffff,
   intensity: 0.7,
 });
@@ -87,7 +87,7 @@ for (const child of getNodeChildren(modelScene)) {
 }
 
 setMatrix4Identity(modelContainer.localMatrix);
-translateMatrix4(modelContainer.localMatrix, modelContainer.localMatrix, 0, 0, -200);
+translateMatrix4(modelContainer.localMatrix, modelContainer.localMatrix, 0, 0, 200);
 scaleMatrix4(modelContainer.localMatrix, modelContainer.localMatrix, 300, 300, 300);
 invalidateNodeLocalTransform(modelContainer);
 addNodeChild(scene, modelContainer);
@@ -114,7 +114,7 @@ function updateCamera(): void {
 
   eye.x = distance * Math.sin(panAngle) * Math.cos(clampedTilt);
   eye.y = distance * Math.sin(clampedTilt);
-  eye.z = distance * Math.cos(panAngle) * Math.cos(clampedTilt);
+  eye.z = -distance * Math.cos(panAngle) * Math.cos(clampedTilt);
 
   setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 }
@@ -146,7 +146,7 @@ function frame(ts: number): void {
   const elapsed = ts - startTime;
 
   const dirX = -Math.sin(elapsed / 4000);
-  const dirZ = -Math.cos(elapsed / 4000);
+  const dirZ = Math.cos(elapsed / 4000);
   setDirectionalLightDirection(directional, dirX, -1, dirZ);
 
   updateCamera();

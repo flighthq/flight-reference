@@ -82,7 +82,7 @@ function updateCamera(): void {
   tiltAngle = tilt;
   eye.x = lookAt.x + distance * Math.sin(panAngle) * Math.cos(tilt);
   eye.y = lookAt.y + distance * Math.sin(tilt);
-  eye.z = lookAt.z + distance * Math.cos(panAngle) * Math.cos(tilt);
+  eye.z = lookAt.z - distance * Math.cos(panAngle) * Math.cos(tilt);
   setCameraViewMatrix4FromLookAt(camera, eye, lookAt, up);
 }
 

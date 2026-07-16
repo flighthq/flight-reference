@@ -46,7 +46,7 @@ const up = createVector3(0, 1, 0);
 setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 
 const directional = createDirectionalLight({
-  direction: { x: 0, y: -1, z: 1 },
+  direction: { x: 0, y: 0, z: -1 },
   color: 0xffffffff,
   intensity: 0.7,
 });
@@ -72,7 +72,7 @@ const yAxis = createVector3(0, 1, 0);
 let rotationY = 0;
 
 function frame(): void {
-  rotationY += DEG;
+  rotationY -= DEG;
 
   setMatrix4Identity(torus.localMatrix);
   rotateMatrix4(torus.localMatrix, torus.localMatrix, yAxis, rotationY);

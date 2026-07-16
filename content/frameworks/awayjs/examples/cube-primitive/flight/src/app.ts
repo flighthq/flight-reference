@@ -1,5 +1,4 @@
 import {
-  createScene,
   addNodeChild,
   BlendMode,
   createAmbientLight,
@@ -9,6 +8,7 @@ import {
   createDirectionalLight,
   createMesh,
   createPerspectiveProjection,
+  createScene,
   createSceneLights,
   createTexture,
   createTorusMeshGeometry,
@@ -73,8 +73,8 @@ invalidateNodeLocalTransform(cube);
 addNodeChild(scene, cube);
 
 const eye = createVector3(130, 0, 0);
-const target = createVector3(0, 0, 0);
-const up = createVector3(0, 0, 1);
+const lookTarget = createVector3(130, 0, 40);
+const up = createVector3(0, 1, 0);
 const xAxis = createVector3(1, 0, 0);
 const yAxis = createVector3(0, 1, 0);
 
@@ -83,7 +83,7 @@ let torusAngleY = 0;
 let cubeAngleX = 0;
 let cubeAngleY = 0;
 
-setCameraViewMatrix4FromLookAt(camera, eye, target, up);
+setCameraViewMatrix4FromLookAt(camera, eye, lookTarget, up);
 
 function frame(): void {
   cameraAngle += DEG;
@@ -93,7 +93,15 @@ function frame(): void {
 
   eye.x = 130 * Math.cos(cameraAngle);
   eye.y = 130 * Math.sin(cameraAngle);
-  setCameraViewMatrix4FromLookAt(camera, eye, target, up);
+
+  lookTarget.x = eye.x;
+  lookTarget.y = eye.y;
+
+  up.x = -Math.sin(cameraAngle);
+  up.y = Math.cos(cameraAngle);
+  up.z = 0;
+
+  setCameraViewMatrix4FromLookAt(camera, eye, lookTarget, up);
 
   setMatrix4Identity(torus.localMatrix);
   rotateMatrix4(torus.localMatrix, torus.localMatrix, yAxis, torusAngleY);

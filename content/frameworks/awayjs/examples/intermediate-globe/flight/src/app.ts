@@ -1,11 +1,13 @@
 import type { BlinnPhongMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
+  BlendMode,
+  createAmbientLight,
   createBlinnPhongMaterial,
   createCamera,
+  createDirectionalLight,
   createMesh,
   createPerspectiveProjection,
-  createPointLight,
   createScene,
   createSceneLights,
   createSceneNode,
@@ -39,21 +41,20 @@ const camera = createCamera({
   }),
 });
 
-const sunLight = createPointLight({
+let sunAngle = 0;
+
+const sunLight = createDirectionalLight({
+  direction: { x: Math.sin(sunAngle), y: 0, z: Math.cos(sunAngle) },
   color: 0xffffffff,
-  intensity: 2,
-  range: 100000,
+  intensity: 5,
 });
+
+const ambient = createAmbientLight({ color: 0x303040ff, intensity: 1 });
 
 const lights = createSceneLights({
-  ambient: undefined,
-  directional: undefined,
-  point: [sunLight],
+  ambient,
+  directional: sunLight,
 });
-
-sunLight.position.x = 10000;
-sunLight.position.y = 0;
-sunLight.position.z = 0;
 
 const tiltContainer = createSceneNode();
 const axisX = createVector3(1, 0, 0);
@@ -69,10 +70,13 @@ const earthMaterial = createBlinnPhongMaterial({
 });
 
 const cloudMaterial = createBlinnPhongMaterial({
-  diffuse: 0x1b2048ff,
+  diffuse: 0xffffffff,
   shininess: 0,
   specular: 0x000000ff,
 });
+cloudMaterial.alphaMode = 'blend';
+cloudMaterial.blendMode = BlendMode.Add;
+cloudMaterial.doubleSided = true;
 
 const earthGeometry = createSphereMeshGeometry(200, 200, 100);
 const earth = createMesh(earthGeometry, [earthMaterial]);
@@ -95,9 +99,6 @@ await Promise.all([
   applyTexture(earthMaterial, 'diffuseMap', 'awayjs/assets/globe/land_ocean_ice_2048_match.jpg'),
   applyTexture(earthMaterial, 'normalMap', 'awayjs/assets/globe/EarthNormal.png'),
   applyTexture(earthMaterial, 'specularMap', 'awayjs/assets/globe/earth_specular_2048.jpg'),
-  loadImageResourceFromUrl('awayjs/assets/globe/land_lights_16384.jpg').then((image) => {
-    earthMaterial.diffuseMap = earthMaterial.diffuseMap ?? createTexture({ image });
-  }),
   applyTexture(cloudMaterial, 'diffuseMap', 'awayjs/assets/globe/cloud_combined_2048.jpg'),
 ]);
 
@@ -155,7 +156,6 @@ ctx.canvas.addEventListener('wheel', (event: WheelEvent) => {
 updateCamera();
 
 const axisY = createVector3(0, 1, 0);
-let sunAngle = 0;
 let lastTime = 0;
 
 function frame(ts: number): void {
@@ -173,8 +173,8 @@ function frame(ts: number): void {
   invalidateNodeLocalTransform(clouds);
 
   sunAngle += orbitSpeed;
-  sunLight.position.x = 10000 * Math.sin(sunAngle);
-  sunLight.position.z = 10000 * Math.cos(sunAngle);
+  sunLight.direction.x = Math.sin(sunAngle);
+  sunLight.direction.z = Math.cos(sunAngle);
 
   updateCamera();
   ctx.render(scene, camera, lights);

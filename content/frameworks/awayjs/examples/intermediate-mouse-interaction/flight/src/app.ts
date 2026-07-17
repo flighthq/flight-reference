@@ -20,6 +20,7 @@ import {
   packOpaqueColor,
   pickScene,
   rotateMatrix4,
+  scaleMatrix4,
   setMatrix4Identity,
   setSceneNodePosition,
   translateMatrix4,
@@ -135,7 +136,7 @@ function createRandomObject(): ObjectInfo {
   } else if (rand > 0.25) {
     mesh = createMesh(createCylinderMeshGeometry(12, 12, 25, 16, 1), [grayMaterial]);
   } else {
-    mesh = createMesh(createTorusMeshGeometry(12, 4, 16, 12), [grayMaterial]);
+    mesh = createMesh(createTorusMeshGeometry(12, 12, 16, 12), [grayMaterial]);
   }
 
   const isMouseEnabled = Math.random() > 0.25;
@@ -191,6 +192,11 @@ try {
   for (const child of children) {
     addNodeChild(scene, child);
     const m = child as Mesh;
+    // AwayJS loads head.obj through new OBJParser(25), which scales the geometry 25x;
+    // createSceneFromObj applies no scale, so match it here or the head renders 1/25 size.
+    setMatrix4Identity(m.localMatrix);
+    scaleMatrix4(m.localMatrix, m.localMatrix, 25, 25, 25);
+    invalidateNodeLocalTransform(m);
     if (m.materials) {
       m.materials = [headMaterial];
       headMesh = m;

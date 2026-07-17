@@ -52,7 +52,7 @@ document.body.style.margin = '0';
 
 const state = createGlRenderState(canvas, {
   backgroundColor: 0xffff00ff,
-  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: true },
+  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
   pixelRatio,
 });
 

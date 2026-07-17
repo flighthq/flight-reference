@@ -50,7 +50,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
     backgroundColor: options.background,
     // preserveDrawingBuffer so the verifier (and the differential/fingerprint runner) can read the
     // frame back after rendering — harmless for tests, where throughput does not matter.
-    contextAttributes: { alpha: false, preserveDrawingBuffer: true, ...options.contextAttributes },
+    contextAttributes: { alpha: false, preserveDrawingBuffer: false, ...options.contextAttributes },
     sceneGraphSyncPolicy: options.syncPolicy,
   });
 

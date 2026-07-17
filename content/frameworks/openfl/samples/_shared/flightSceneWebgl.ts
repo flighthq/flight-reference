@@ -45,7 +45,7 @@ export function createSceneWebglPreview(options: Readonly<SceneWebglPreviewOptio
 
   const state = createGlRenderState(canvas, {
     backgroundColor: options.backgroundColor ?? 0xffffffff,
-    contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: true },
+    contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
     pixelRatio,
   });
 

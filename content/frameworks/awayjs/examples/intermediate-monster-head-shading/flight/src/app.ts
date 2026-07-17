@@ -1,8 +1,8 @@
-import type { BlinnPhongMaterial, SceneNode } from '@flighthq/sdk';
+import type { SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
+  applyLightExposure,
   createAmbientLight,
-  createBlinnPhongMaterial,
   createCamera,
   createDirectionalLight,
   createPerspectiveProjection,
@@ -10,10 +10,13 @@ import {
   createScene,
   createSceneFromAwd,
   createSceneLights,
+  createStandardPbrMaterial,
   createTexture,
   createVector3,
   DEG_TO_RAD,
   getNodeChildren,
+  getPhongToPbrLightExposure,
+  getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
@@ -24,6 +27,9 @@ import {
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
+
+const pbrExposure = getPhongToPbrLightExposure();
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -51,18 +57,29 @@ const directional = createDirectionalLight({
     y: -Math.cos(lightElevation),
     z: -Math.sin(lightElevation) * Math.sin(lightDirection),
   },
-  color: 0xffeeddff,
-  intensity: 12,
+  color: packOpaqueColor(0xffeedd),
+  intensity: applyLightExposure(12, pbrExposure),
 });
 
-const ambient = createAmbientLight({ color: 0x606080ff, intensity: 1.5 });
+const ambient = createAmbientLight({
+  color: packOpaqueColor(0x606080),
+  intensity: applyLightExposure(1.5, pbrExposure),
+});
 
-const blueLight = createPointLight({ color: 0x4080ffff, intensity: 5, range: 5000 });
+const blueLight = createPointLight({
+  color: packOpaqueColor(0x4080ff),
+  intensity: applyLightExposure(5, pbrExposure),
+  range: 5000,
+});
 blueLight.position.x = 3000;
 blueLight.position.z = -700;
 blueLight.position.y = 20;
 
-const redLight = createPointLight({ color: 0x802010ff, intensity: 5, range: 5000 });
+const redLight = createPointLight({
+  color: packOpaqueColor(0x802010),
+  intensity: applyLightExposure(5, pbrExposure),
+  range: 5000,
+});
 redLight.position.x = -2000;
 redLight.position.z = -800;
 redLight.position.y = -400;
@@ -73,10 +90,10 @@ const lights = createSceneLights({
   point: [blueLight, redLight],
 });
 
-const headMaterial: BlinnPhongMaterial = createBlinnPhongMaterial({
-  diffuse: 0xffffffff,
-  shininess: 10,
-  specular: 0xffffffff,
+const headMaterial: StandardPbrMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(10),
 });
 
 async function tryLoadImage(url: string): Promise<Awaited<ReturnType<typeof loadImageResourceFromUrl>> | null> {
@@ -94,8 +111,8 @@ const [diffuseImage, specularImage, normalImage, awdBuffer] = await Promise.all(
   fetch('awayjs/assets/monsterhead/MonsterHead.awd').then((r) => r.arrayBuffer()),
 ]);
 
-if (diffuseImage) headMaterial.diffuseMap = createTexture({ image: diffuseImage });
-if (specularImage) headMaterial.specularMap = createTexture({ image: specularImage });
+if (diffuseImage) headMaterial.baseColorMap = createTexture({ image: diffuseImage });
+if (specularImage) headMaterial.metallicRoughnessMap = createTexture({ image: specularImage });
 if (normalImage) headMaterial.normalMap = createTexture({ image: normalImage });
 
 const awdScene = createSceneFromAwd(new Uint8Array(awdBuffer));

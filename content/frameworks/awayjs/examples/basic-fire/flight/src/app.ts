@@ -1,16 +1,15 @@
 import type {
-  BlinnPhongMaterial,
   Camera,
   ParticleEmitter3D,
   ParticleEmitterConfig,
   ParticleEmitterState,
   SceneLights,
+  StandardPbrMaterial,
 } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
   createAmbientLight,
-  createBlinnPhongMaterial,
   createCamera,
   createDirectionalLight,
   createGlCanvasElement,
@@ -24,14 +23,18 @@ import {
   createPointLight,
   createScene,
   createSceneLights,
+  createStandardPbrMaterial,
   createTexture,
   createTextureAtlas,
   createVector3,
   DEG_TO_RAD,
   drawGlScene,
+  getPhongToPbrLightExposure,
+  getPbrRoughnessFromPhongShininess,
+  applyLightExposure,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
-  registerBlinnPhongGlMaterial,
+  registerStandardPbrGlMaterial,
   renderGlBackground,
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
@@ -42,6 +45,8 @@ import {
 
 import type { GammaTarget } from '../../../_shared/flight/src/gamma';
 import { beginGammaPass, createGammaTarget, endGammaPass, resizeGammaTarget } from '../../../_shared/flight/src/gamma';
+
+const pbrExposure = getPhongToPbrLightExposure();
 
 const NUM_FIRES = 10;
 const FIRE_RADIUS = 400;
@@ -65,7 +70,7 @@ const glState = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: true },
   pixelRatio,
 });
-registerBlinnPhongGlMaterial(glState);
+registerStandardPbrGlMaterial(glState);
 
 const scene = createScene();
 
@@ -78,10 +83,10 @@ const camera: Camera = createCamera({
 const directional = createDirectionalLight({
   direction: { x: 0, y: -1, z: 0 },
   color: 0xeeddddff,
-  intensity: 0.5,
+  intensity: applyLightExposure(0.5, pbrExposure),
 });
 
-const ambient = createAmbientLight({ color: 0x808090ff, intensity: 0.5 });
+const ambient = createAmbientLight({ color: 0x808090ff, intensity: applyLightExposure(0.5, pbrExposure) });
 
 const firePointLights = Array.from({ length: NUM_FIRES }, () =>
   createPointLight({ color: 0xff3301ff, intensity: 0, range: 400 }),
@@ -93,10 +98,10 @@ const lights: SceneLights = createSceneLights({
   point: firePointLights,
 });
 
-const planeMaterial: BlinnPhongMaterial = createBlinnPhongMaterial({
-  diffuse: 0xffffffff,
-  shininess: 10,
-  specular: 0x808080ff,
+const planeMaterial: StandardPbrMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(10),
 });
 planeMaterial.doubleSided = true;
 
@@ -115,7 +120,7 @@ async function loadPlaneTextures(): Promise<void> {
   ]);
   const diffuseTex = createTexture({ image: diffuseImg });
   setTextureUvScale(diffuseTex, 2, 2);
-  planeMaterial.diffuseMap = diffuseTex;
+  planeMaterial.baseColorMap = diffuseTex;
 
   const normalTex = createTexture({ image: normalImg });
   setTextureUvScale(normalTex, 2, 2);
@@ -123,7 +128,7 @@ async function loadPlaneTextures(): Promise<void> {
 
   const specularTex = createTexture({ image: specularImg });
   setTextureUvScale(specularTex, 2, 2);
-  planeMaterial.specularMap = specularTex;
+  planeMaterial.metallicRoughnessMap = specularTex;
 }
 
 const fireImage = await loadImageResourceFromUrl('awayjs/assets/blue.png');
@@ -259,7 +264,7 @@ function frame(ts: number): void {
 
     if (fire.strength < 1) fire.strength += 0.1;
     const light = firePointLights[fire.lightIndex];
-    light.intensity = fire.strength + Math.random() * 0.2;
+    light.intensity = applyLightExposure(fire.strength + Math.random() * 0.2, pbrExposure);
     light.range = 380 + Math.random() * 20;
   }
 

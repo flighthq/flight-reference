@@ -4,6 +4,7 @@ import {
   createGlCanvasElement,
   createGlRenderState,
   registerBlinnPhongGlMaterial,
+  registerStandardPbrGlMaterial,
   registerUnlitGlMaterial,
   renderGlBackground,
 } from '@flighthq/sdk';
@@ -48,6 +49,7 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
 
   registerUnlitGlMaterial(state);
   registerBlinnPhongGlMaterial(state);
+  registerStandardPbrGlMaterial(state);
 
   let gammaTarget: GammaTarget | null = null;
 

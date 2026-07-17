@@ -1,28 +1,34 @@
-import type { BlinnPhongMaterial, Mesh, SceneNode } from '@flighthq/sdk';
+import type { Mesh, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
+  applyLightExposure,
   createAmbientLight,
-  createBlinnPhongMaterial,
   createCamera,
   createDirectionalLight,
   createPerspectiveProjection,
   createScene,
   createSceneFromAwd,
   createSceneLights,
+  createStandardPbrMaterial,
   createTexture,
   createVector3,
   DEG_TO_RAD,
   getNodeChildren,
+  getPhongToPbrLightExposure,
+  getPbrRoughnessFromPhongShininess,
   loadImageResourceFromUrl,
   setCameraViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
+
+const pbrExposure = getPhongToPbrLightExposure();
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
-  backgroundColor: 0x9090e7ff,
+  backgroundColor: packOpaqueColor(0x9090e7),
 });
 
 const scene = createScene();
@@ -38,11 +44,14 @@ const camera = createCamera({
 
 const directional = createDirectionalLight({
   direction: { x: -1, y: -15, z: -1 },
-  color: 0xeeddddff,
-  intensity: 6,
+  color: packOpaqueColor(0xeedddd),
+  intensity: applyLightExposure(6, pbrExposure),
 });
 
-const ambient = createAmbientLight({ color: 0x808090ff, intensity: 1.5 });
+const ambient = createAmbientLight({
+  color: packOpaqueColor(0x808090),
+  intensity: applyLightExposure(1.5, pbrExposure),
+});
 const lights = createSceneLights({ ambient, directional });
 
 const materialNameToTextureFile: Record<string, string> = {
@@ -68,28 +77,32 @@ for (let i = 0; i < textureFiles.length; i++) {
   textureMap.set(textureFiles[i], createTexture({ image: textureImages[i] }));
 }
 
-const materialCache = new Map<string, BlinnPhongMaterial>();
+const materialCache = new Map<string, StandardPbrMaterial>();
 
-function getOrCreateMaterial(name: string): BlinnPhongMaterial {
+function getOrCreateMaterial(name: string): StandardPbrMaterial {
   let mat = materialCache.get(name);
   if (mat) return mat;
 
-  mat = createBlinnPhongMaterial({ diffuse: 0xffffffff, shininess: 20, specular: 0x404040ff });
+  mat = createStandardPbrMaterial({
+    baseColor: 0xffffffff,
+    metallic: 0,
+    roughness: getPbrRoughnessFromPhongShininess(20),
+  });
 
   const textureFile = materialNameToTextureFile[name];
   if (textureFile) {
     const tex = textureMap.get(textureFile);
-    if (tex) mat.diffuseMap = tex;
+    if (tex) mat.baseColorMap = tex;
   }
 
   materialCache.set(name, mat);
   return mat;
 }
 
-const defaultMaterial = createBlinnPhongMaterial({
-  diffuse: 0xccccccff,
-  shininess: 10,
-  specular: 0x202020ff,
+const defaultMaterial = createStandardPbrMaterial({
+  baseColor: packOpaqueColor(0xcccccc),
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(10),
 });
 
 function walkAndAssignMaterials(node: SceneNode): void {
@@ -111,8 +124,8 @@ function walkAndAssignMaterials(node: SceneNode): void {
       if (mesh.materials.length === 0) {
         mesh.materials.push(defaultMaterial);
       } else {
-        const existingMat = mesh.materials[0] as BlinnPhongMaterial;
-        if (!existingMat.diffuseMap) {
+        const existingMat = mesh.materials[0] as StandardPbrMaterial;
+        if (!existingMat.baseColorMap) {
           mesh.materials[0] = defaultMaterial;
         }
       }

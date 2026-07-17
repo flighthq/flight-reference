@@ -1,8 +1,8 @@
-import type { BlinnPhongMaterial, Mesh, SceneHit } from '@flighthq/sdk';
+import type { Mesh, SceneHit, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
+  applyLightExposure,
   createAmbientLight,
-  createBlinnPhongMaterial,
   createBoxMeshGeometry,
   createCamera,
   createCylinderMeshGeometry,
@@ -14,10 +14,13 @@ import {
   createSceneHit,
   createSceneLights,
   createSphereMeshGeometry,
+  createStandardPbrMaterial,
   createTorusMeshGeometry,
   createVector3,
   DEG_TO_RAD,
   getNodeChildren,
+  getPbrRoughnessFromPhongShininess,
+  getPhongToPbrLightExposure,
   invalidateNodeLocalTransform,
   pickScene,
   rotateMatrix4,
@@ -28,6 +31,9 @@ import {
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
+
+const pbrExposure = getPhongToPbrLightExposure();
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -48,7 +54,7 @@ const camera = createCamera({
 
 const pointLight = createPointLight({
   color: 0xffffffff,
-  intensity: 5,
+  intensity: applyLightExposure(5, pbrExposure),
   range: 10000,
 });
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
@@ -58,13 +64,41 @@ const lights = createSceneLights({
   point: [pointLight],
 });
 
-const whiteMaterial = createBlinnPhongMaterial({ diffuse: 0xffffffff, shininess: 20 });
-const blackMaterial = createBlinnPhongMaterial({ diffuse: 0x333333ff, shininess: 20 });
-const grayMaterial = createBlinnPhongMaterial({ diffuse: 0xccccccff, shininess: 20 });
-const blueMaterial = createBlinnPhongMaterial({ diffuse: 0x0000ffff, shininess: 20 });
-const redMaterial = createBlinnPhongMaterial({ diffuse: 0xff0000ff, shininess: 20 });
-const greenTracerMaterial = createBlinnPhongMaterial({ diffuse: 0x00ff00ff, shininess: 10 });
-const blueTracerMaterial = createBlinnPhongMaterial({ diffuse: 0x0000ffff, shininess: 10 });
+const whiteMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
+});
+const blackMaterial = createStandardPbrMaterial({
+  baseColor: packOpaqueColor(0x333333),
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
+});
+const grayMaterial = createStandardPbrMaterial({
+  baseColor: packOpaqueColor(0xcccccc),
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
+});
+const blueMaterial = createStandardPbrMaterial({
+  baseColor: 0x0000ffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
+});
+const redMaterial = createStandardPbrMaterial({
+  baseColor: 0xff0000ff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
+});
+const greenTracerMaterial = createStandardPbrMaterial({
+  baseColor: 0x00ff00ff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(10),
+});
+const blueTracerMaterial = createStandardPbrMaterial({
+  baseColor: 0x0000ffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(10),
+});
 
 const pickingTracer = createMesh(createSphereMeshGeometry(2, 8, 6), [greenTracerMaterial]);
 setSceneNodePosition(pickingTracer, 0, 0, 0);
@@ -92,13 +126,13 @@ interface ObjectInfo {
   mouseEnabled: boolean;
   hasListeners: boolean;
   shapeFlag: boolean;
-  baseMaterial: BlinnPhongMaterial;
+  baseMaterial: StandardPbrMaterial;
 }
 
 const objectInfos: ObjectInfo[] = [];
 const meshToInfo = new Map<Mesh, ObjectInfo>();
 
-function chooseMaterial(info: ObjectInfo): BlinnPhongMaterial {
+function chooseMaterial(info: ObjectInfo): StandardPbrMaterial {
   if (!info.mouseEnabled) return blackMaterial;
   if (!info.hasListeners) return grayMaterial;
   return info.shapeFlag ? redMaterial : blueMaterial;
@@ -157,7 +191,11 @@ for (let i = 0; i < 40; i++) {
 }
 
 let headMesh: Mesh | null = null;
-const headMaterial = createBlinnPhongMaterial({ diffuse: 0xccccccff, shininess: 20 });
+const headMaterial = createStandardPbrMaterial({
+  baseColor: packOpaqueColor(0xcccccc),
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
+});
 
 try {
   const objText = await fetch('awayjs/assets/head.obj').then((r) => r.text());

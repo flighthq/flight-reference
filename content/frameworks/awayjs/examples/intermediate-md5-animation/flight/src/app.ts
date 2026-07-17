@@ -1,11 +1,11 @@
 import type {
   AnimationClip,
   AnimationPlayer,
-  BlinnPhongMaterial,
   Camera,
   Mesh,
   SceneLights,
   SceneNode,
+  StandardPbrMaterial,
 } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -14,7 +14,6 @@ import {
   createAmbientLight,
   createAnimationPlayer,
   computeMeshGeometryNormals,
-  createBlinnPhongMaterial,
   createCamera,
   createDirectionalLight,
   createGlCanvasElement,
@@ -26,17 +25,21 @@ import {
   createScene,
   createSceneFromMd5Mesh,
   createSceneLights,
+  createStandardPbrMaterial,
   createTexture,
   createVector3,
   DEG_TO_RAD,
   drawGlScene,
+  applyLightExposure,
+  getPhongToPbrLightExposure,
+  getPbrRoughnessFromPhongShininess,
   getNodeChildByName,
   getNodeChildren,
   invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
   parseMd5Anim,
-  registerBlinnPhongGlMaterial,
+  registerStandardPbrGlMaterial,
   renderGlBackground,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
@@ -47,6 +50,9 @@ import {
 
 import type { GammaTarget } from '../../../_shared/flight/src/gamma';
 import { beginGammaPass, createGammaTarget, endGammaPass, resizeGammaTarget } from '../../../_shared/flight/src/gamma';
+import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
+
+const pbrExposure = getPhongToPbrLightExposure();
 
 const ANIM_NAMES = [
   'idle2',
@@ -86,7 +92,7 @@ const glState = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: true },
   pixelRatio,
 });
-registerBlinnPhongGlMaterial(glState);
+registerStandardPbrGlMaterial(glState);
 
 const scene = createScene();
 
@@ -111,22 +117,30 @@ function updateCamera(spriteRotY: number): void {
   setCameraViewMatrix4FromLookAt(camera, eye, placeHolder, up);
 }
 
-const redLight = createPointLight({ color: 0xff1111ff, intensity: 1.5, range: 3000 });
-const blueLight = createPointLight({ color: 0x1111ffff, intensity: 1.5, range: 3000 });
-const whiteLight = createDirectionalLight({ direction: { x: -50, y: -20, z: -10 }, color: 0xffffeeff, intensity: 5 });
-const ambient = createAmbientLight({ color: 0x606080ff, intensity: 1 });
+const redLight = createPointLight({ color: 0xff1111ff, intensity: applyLightExposure(1.5, pbrExposure), range: 3000 });
+const blueLight = createPointLight({ color: 0x1111ffff, intensity: applyLightExposure(1.5, pbrExposure), range: 3000 });
+const whiteLight = createDirectionalLight({
+  direction: { x: -50, y: -20, z: -10 },
+  color: packOpaqueColor(0xffffee),
+  intensity: applyLightExposure(5, pbrExposure),
+});
+const ambient = createAmbientLight({ color: packOpaqueColor(0x606080), intensity: applyLightExposure(1, pbrExposure) });
 const lights: SceneLights = createSceneLights({
   ambient,
   directional: whiteLight,
   point: [redLight, blueLight],
 });
 
-const bodyMaterial: BlinnPhongMaterial = createBlinnPhongMaterial({
-  diffuse: 0xffffffff,
-  shininess: 20,
-  specular: 0x808080ff,
+const bodyMaterial: StandardPbrMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
 });
-const groundMaterial: BlinnPhongMaterial = createBlinnPhongMaterial({ diffuse: 0xffffffff, shininess: 10 });
+const groundMaterial: StandardPbrMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(10),
+});
 groundMaterial.doubleSided = false;
 
 const [rockDiffuse, rockNormal, rockSpecular, bodyDiffuse, bodyNormal, bodySpecular] = await Promise.all([
@@ -138,20 +152,19 @@ const [rockDiffuse, rockNormal, rockSpecular, bodyDiffuse, bodyNormal, bodySpecu
   loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_specular.png'),
 ]);
 
-groundMaterial.diffuseMap = createTexture({ image: rockDiffuse, uvScaleX: 200, uvScaleY: 200 });
+groundMaterial.baseColorMap = createTexture({ image: rockDiffuse, uvScaleX: 200, uvScaleY: 200 });
 groundMaterial.normalMap = createTexture({ image: rockNormal, uvScaleX: 200, uvScaleY: 200 });
-groundMaterial.specularMap = createTexture({ image: rockSpecular, uvScaleX: 200, uvScaleY: 200 });
+groundMaterial.metallicRoughnessMap = createTexture({ image: rockSpecular, uvScaleX: 200, uvScaleY: 200 });
 
-bodyMaterial.diffuseMap = createTexture({ image: bodyDiffuse });
+bodyMaterial.baseColorMap = createTexture({ image: bodyDiffuse });
 bodyMaterial.normalMap = createTexture({ image: bodyNormal });
-bodyMaterial.specularMap = createTexture({ image: bodySpecular });
+bodyMaterial.metallicRoughnessMap = createTexture({ image: bodySpecular });
 
 const groundMesh = createMesh(createPlaneMeshGeometry(50000, 50000, 1, 1), [groundMaterial]);
 setMatrix4Identity(groundMesh.localMatrix);
 invalidateNodeLocalTransform(groundMesh);
 addNodeChild(scene, groundMesh);
 
-// Parse the MD5 mesh — returns a Scene with a "skeleton" group node and mesh children
 const meshText = await fetch('awayjs/assets/hellknight/hellknight.md5mesh').then((r) => r.text());
 const md5Scene = createSceneFromMd5Mesh(meshText);
 
@@ -185,7 +198,6 @@ setMatrix4Identity(characterNode.localMatrix);
 invalidateNodeLocalTransform(characterNode);
 addNodeChild(scene, characterNode);
 
-// Parse all animation clips
 const animTexts = await Promise.all(
   ANIM_NAMES.map((name) => fetch(`awayjs/assets/hellknight/${name}.md5anim`).then((r) => r.text())),
 );
@@ -328,7 +340,6 @@ function frame(ts: number): void {
 
   advanceAnimationPlayer(activePlayer, dt);
 
-  // Check if one-shot animation finished
   if (onceAnim && !activePlayer.playing) {
     onceAnim = null;
     play(isMoving ? WALK_NAME : IDLE_NAME);

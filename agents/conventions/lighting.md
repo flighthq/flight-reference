@@ -34,17 +34,28 @@ Map AwayJS `fallOff` (the outer attenuation radius) to Flight's `range`. Do **no
 
 ### Colors
 
-Keep RGB hex values as-is. Both AwayJS and Flight specify light and material colors as sRGB-encoded integers.
+AwayJS stores light and ambient colors as 24-bit sRGB hex (`0xRRGGBB`). Flight light colors are 32-bit RGBA (`0xRRGGBBAA`) and the Blinn-Phong shader consumes them in linear space.
 
-For `ambientColor`, move it to the Flight `AmbientLight`'s `color` property. If the AwayJS ambient color is very dark (e.g., `0x101025`), consider lightening it slightly (e.g., `0x303040`) since linear-space lighting dims dark ambient colors more than sRGB-space lighting does.
+The SDK provides conversion functions via `@flighthq/sdk`:
+
+- `unpackColorToLinear(out, color)` — unpack 0xRRGGBBAA to linear [R,G,B,A]
+- `packLinearToColor(linear)` — pack linear [R,G,B,A] to 0xRRGGBBAA
+- `computeSrgbToLinear(x)` — single-channel sRGB → linear
+- `computeLinearToSrgb(x)` — single-channel linear → sRGB
+
+For `ambientColor`, move it to the Flight `AmbientLight`'s `color` property (appending `ff` for full alpha). If the AwayJS ambient color is very dark (e.g., `0x101025`), consider lightening it slightly (e.g., `0x303040`) since linear-space lighting dims dark ambient colors more than sRGB-space lighting does.
+
+The `_shared/flight/src/lighting.ts` helper also provides `srgbColorToLinearPacked(srgbHex)` which converts a 24-bit AwayJS sRGB color to a properly linearized 32-bit packed color for Flight light properties.
 
 ### Specular
 
 AwayJS `specular` multiplier on lights doesn't have a direct Flight equivalent. Flight's Blinn-Phong materials control specular via `shininess` and `specular` (a color). A higher directional intensity naturally produces brighter specular highlights.
 
-## Conversion helper
+## Conversion helpers
 
-`_shared/flight/src/lighting.ts` provides `srgbToLinear`, `linearToSrgb`, and `srgbIntensityToLinear` for programmatic conversion.
+**SDK (via `@flighthq/sdk`):** `computeSrgbToLinear`, `computeLinearToSrgb`, `unpackColorToLinear`, `packLinearToColor`, `createLinearColor`.
+
+**Porting utility (`_shared/flight/src/lighting.ts`):** `srgbIntensityToLinear` (intensity × π), `srgbColorToLinearPacked` (24-bit sRGB hex → 32-bit linear packed RGBA).
 
 ## Quick checklist
 

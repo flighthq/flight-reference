@@ -1,5 +1,4 @@
-// sRGB ↔ linear conversion helpers for porting lighting values from
-// sRGB-space engines (AwayJS) to Flight's linear HDR pipeline.
+// Lighting-value porting helpers for AwayJS → Flight.
 //
 // Flight computes lighting in linear space and applies a linearToSrgb
 // gamma-correction pass (see gamma.ts). AwayJS computes lighting
@@ -7,24 +6,49 @@
 // intensity values in Flight produces visually different (usually dimmer)
 // results because the gamma pass compresses highlights.
 //
-// See agents/conventions/lighting.md for porting guidance.
-
-export function srgbToLinear(v: number): number {
-  return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-}
-
-export function linearToSrgb(v: number): number {
-  return v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055;
-}
-
-// Convert AwayJS-style sRGB diffuse/specular multipliers to a starting
-// linear intensity for Flight.  The factor of π compensates for the
-// energy-conservation denominator present in Flight's Blinn-Phong BRDF
-// but absent from AwayJS's sRGB-space lighting model.
+// The SDK already provides the low-level color-space primitives via
+// @flighthq/sdk (re-exported from @flighthq/materials and @flighthq/effects):
 //
-// The result is a reasonable starting point — visual tuning may still be
-// needed for scenes with colored lights, environment maps, or PBR
-// materials (which typically need a smaller boost, around 2–3×).
+//   computeSrgbToLinear(x)      — single channel sRGB → linear
+//   computeLinearToSrgb(x)      — single channel linear → sRGB
+//   unpackColorToLinear(out, c) — 0xRRGGBBAA → linear [R, G, B, A]
+//   packLinearToColor(linear)   — linear [R, G, B, A] → 0xRRGGBBAA
+//   createLinearColor()         — allocate a zeroed [0, 0, 0, 0]
+//
+// This module adds AwayJS-specific porting utilities on top.
+// See agents/conventions/lighting.md for the full porting guide.
+
+import type { LinearColor } from '@flighthq/sdk';
+import { computeSrgbToLinear, createLinearColor, packLinearToColor, unpackColorToLinear } from '@flighthq/sdk';
+
+// Convert an AwayJS sRGB diffuse/specular multiplier to a starting linear
+// intensity for Flight.  The factor of π compensates for the
+// energy-conservation denominator in Flight's Blinn-Phong BRDF that
+// AwayJS's sRGB-space model omits.
+//
+// Visual tuning is still needed — this is a starting point.
+// For PBR materials, use a smaller boost (2–3×).
 export function srgbIntensityToLinear(srgbIntensity: number): number {
   return srgbIntensity * Math.PI;
 }
+
+// Convert an AwayJS 0xRRGGBB sRGB color to a Flight 0xRRGGBBAA linear-encoded
+// packed color suitable for light color properties.  AwayJS stores light and
+// ambient colors as 24-bit sRGB hex; Flight light colors are 32-bit RGBA and
+// the Blinn-Phong shader consumes them in linear space.
+export function srgbColorToLinearPacked(srgbHex: number, alpha = 1): number {
+  const r = computeSrgbToLinear(((srgbHex >>> 16) & 0xff) / 255);
+  const g = computeSrgbToLinear(((srgbHex >>> 8) & 0xff) / 255);
+  const b = computeSrgbToLinear((srgbHex & 0xff) / 255);
+  const out: LinearColor = createLinearColor();
+  out[0] = r;
+  out[1] = g;
+  out[2] = b;
+  out[3] = alpha;
+  return packLinearToColor(out);
+}
+
+// Unpack a Flight 0xRRGGBBAA packed color to a linear [R,G,B,A] array.
+// Re-export for convenience — identical to the SDK function.
+export { computeSrgbToLinear, createLinearColor, packLinearToColor, unpackColorToLinear };
+export type { LinearColor };

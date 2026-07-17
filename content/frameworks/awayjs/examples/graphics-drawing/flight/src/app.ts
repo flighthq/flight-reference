@@ -7,13 +7,9 @@ import {
   appendShapeLineStyle,
   appendShapeLineTo,
   appendShapeMoveTo,
-  copyShapeCommands,
   createClipRegionFromCircle,
-  createColorTransform,
   createDisplayContainer,
   createShape,
-  enableGlColorAdjustment,
-  invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   setDisplayObjectClip,
   ShapeKind,
@@ -30,25 +26,32 @@ const target = await createFunctionalTarget({
 
 const root = createDisplayContainer();
 
-const batmanLogo = createShape();
-appendShapeBeginFill(batmanLogo, 0xffffff, 1);
-appendShapeLineStyle(batmanLogo, 5, 0xff0000, 1, false, null, 'round', 'miter', 1.8);
-appendShapeMoveTo(batmanLogo, 50, 50);
-appendShapeLineTo(batmanLogo, 50, 50);
-appendShapeLineTo(batmanLogo, 50, 50);
-appendShapeLineTo(batmanLogo, 290, 50);
-appendShapeCurveTo(batmanLogo, 290, 150, 450, 150);
-appendShapeLineTo(batmanLogo, 460, 60);
-appendShapeLineTo(batmanLogo, 470, 100);
-appendShapeLineTo(batmanLogo, 530, 100);
-appendShapeLineTo(batmanLogo, 540, 60);
-appendShapeLineTo(batmanLogo, 550, 150);
-appendShapeCurveTo(batmanLogo, 710, 150, 710, 50);
-appendShapeLineTo(batmanLogo, 950, 50);
-appendShapeCurveTo(batmanLogo, 800, 120, 825, 250);
-appendShapeCurveTo(batmanLogo, 630, 280, 500, 450);
-appendShapeCurveTo(batmanLogo, 370, 280, 175, 250);
-appendShapeEndFill(batmanLogo);
+function packColor(r: number, g: number, b: number): number {
+  return ((Math.round(r * 255) & 0xff) << 16) | ((Math.round(g * 255) & 0xff) << 8) | (Math.round(b * 255) & 0xff);
+}
+
+function buildBatmanLogo(fillColor: number, strokeColor: number): Shape {
+  const shape = createShape();
+  appendShapeBeginFill(shape, fillColor, 1);
+  appendShapeLineStyle(shape, 5, strokeColor, 1, false, null, 'round', 'miter', 1.8);
+  appendShapeMoveTo(shape, 50, 50);
+  appendShapeLineTo(shape, 50, 50);
+  appendShapeLineTo(shape, 50, 50);
+  appendShapeLineTo(shape, 290, 50);
+  appendShapeCurveTo(shape, 290, 150, 450, 150);
+  appendShapeLineTo(shape, 460, 60);
+  appendShapeLineTo(shape, 470, 100);
+  appendShapeLineTo(shape, 530, 100);
+  appendShapeLineTo(shape, 540, 60);
+  appendShapeLineTo(shape, 550, 150);
+  appendShapeCurveTo(shape, 710, 150, 710, 50);
+  appendShapeLineTo(shape, 950, 50);
+  appendShapeCurveTo(shape, 800, 120, 825, 250);
+  appendShapeCurveTo(shape, 630, 280, 500, 450);
+  appendShapeCurveTo(shape, 370, 280, 175, 250);
+  appendShapeEndFill(shape);
+  return shape;
+}
 
 const logoWidth = 950 - 50;
 const logoHeight = 450 - 50;
@@ -64,10 +67,6 @@ const maskRadius = 100;
 const animShapes: Shape[] = [];
 const animSpeeds: number[] = [];
 
-if (target.kind === 'webgl') {
-  enableGlColorAdjustment(target.state);
-}
-
 for (let i = 0; i < numSpritesV; i++) {
   for (let j = 0; j < numSpritesH; j++) {
     const container = createDisplayContainer();
@@ -77,17 +76,16 @@ for (let i = 0; i < numSpritesV; i++) {
     container.scaleY = gridScale;
     invalidateNodeLocalTransform(container);
 
-    const sprite = createShape();
-    copyShapeCommands(sprite, batmanLogo);
+    const rMult = i / numSpritesV;
+    const gMult = 1 - i / numSpritesV;
+    const bMult = 1 - j / numSpritesH;
+
+    const fillColor = packColor(rMult, gMult, bMult);
+    const strokeColor = packColor(rMult, 0, 0);
+
+    const sprite = buildBatmanLogo(fillColor, strokeColor);
     sprite.pivotX = logoPivotX;
     sprite.pivotY = logoPivotY;
-    sprite.colorTransform = createColorTransform({
-      redMultiplier: i / numSpritesV,
-      greenMultiplier: 1 - i / numSpritesV,
-      blueMultiplier: 1 - j / numSpritesH,
-      alphaMultiplier: 1,
-    });
-    invalidateNodeAppearance(sprite);
     invalidateNodeLocalTransform(sprite);
 
     setDisplayObjectClip(sprite, createClipRegionFromCircle(logoPivotX, logoPivotY, maskRadius));

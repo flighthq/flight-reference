@@ -2,6 +2,7 @@ import type { Camera, CubeTexture, Mesh, SceneLights, StandardPbrMaterial } from
 import {
   addNodeChild,
   bakeEnvironmentIbl,
+  computeMeshGeometryNormals,
   createAmbientLight,
   createCamera,
   createCubeTexture,
@@ -21,6 +22,7 @@ import {
   DEG_TO_RAD,
   drawGlEnvironmentSkybox,
   drawGlScene,
+  forEachNodeDescendant,
   getNodeChildren,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
@@ -137,22 +139,28 @@ f14Material.baseColorMap = createTexture({ image: f14FuselageImage });
 
 const f14Scene = createSceneFromObj(f14ObjText);
 
+forEachNodeDescendant(f14Scene, (node) => {
+  const mesh = node as Mesh;
+  if (mesh.geometry) {
+    computeMeshGeometryNormals(mesh.geometry, mesh.geometry);
+    if (mesh.materials) {
+      if (mesh.materials.length === 0) {
+        mesh.materials.push(f14Material);
+      } else {
+        for (let i = 0; i < mesh.materials.length; i++) {
+          mesh.materials[i] = f14Material;
+        }
+      }
+    }
+  }
+});
+
 const f14Container = createScene();
 setMatrix4Identity(f14Container.localMatrix);
 translateMatrix4(f14Container.localMatrix, f14Container.localMatrix, 0, 200, 0);
 invalidateNodeLocalTransform(f14Container);
 
 for (const child of getNodeChildren(f14Scene)) {
-  const mesh = child as Mesh;
-  if (mesh.materials) {
-    if (mesh.materials.length === 0) {
-      mesh.materials.push(f14Material);
-    } else {
-      for (let i = 0; i < mesh.materials.length; i++) {
-        mesh.materials[i] = f14Material;
-      }
-    }
-  }
   addNodeChild(f14Container, child);
 }
 addNodeChild(scene, f14Container);

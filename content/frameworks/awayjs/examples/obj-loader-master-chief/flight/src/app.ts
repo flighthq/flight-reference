@@ -1,6 +1,7 @@
 import type { BlinnPhongMaterial, Mesh, SceneNode } from '@flighthq/sdk';
 import {
   addNodeChild,
+  computeMeshGeometryNormals,
   createAmbientLight,
   createBlinnPhongMaterial,
   createCamera,
@@ -13,6 +14,7 @@ import {
   createTexture,
   createVector3,
   DEG_TO_RAD,
+  forEachNodeDescendant,
   getNodeChildren,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
@@ -83,36 +85,36 @@ const stoneMaterial = createBlinnPhongMaterial({
 });
 stoneMaterial.diffuseMap = createTexture({ image: stoneImage });
 
-const spartanScene = createSceneFromObj(spartanObjText);
-for (const child of getNodeChildren(spartanScene)) {
-  const mesh = child as Mesh;
-  if (mesh.materials) {
-    if (mesh.materials.length === 0) {
-      mesh.materials.push(masterchiefMaterial);
-    } else {
-      for (let i = 0; i < mesh.materials.length; i++) {
-        mesh.materials[i] = masterchiefMaterial;
+function applyMaterialToObjScene(objScene: SceneNode, material: BlinnPhongMaterial): void {
+  forEachNodeDescendant(objScene, (node) => {
+    const mesh = node as Mesh;
+    if (mesh.geometry) {
+      computeMeshGeometryNormals(mesh.geometry, mesh.geometry);
+      if (mesh.materials) {
+        if (mesh.materials.length === 0) {
+          mesh.materials.push(material);
+        } else {
+          for (let i = 0; i < mesh.materials.length; i++) {
+            mesh.materials[i] = material;
+          }
+        }
       }
     }
-  }
-  addNodeChild(spartanContainer, mesh);
+  });
+}
+
+const spartanScene = createSceneFromObj(spartanObjText);
+applyMaterialToObjScene(spartanScene as unknown as SceneNode, masterchiefMaterial);
+for (const child of getNodeChildren(spartanScene)) {
+  addNodeChild(spartanContainer, child);
 }
 
 const terrainScene = createSceneFromObj(terrainObjText);
+applyMaterialToObjScene(terrainScene as unknown as SceneNode, stoneMaterial);
 let terrainNode: SceneNode | undefined;
 for (const child of getNodeChildren(terrainScene)) {
-  const mesh = child as Mesh;
-  if (mesh.materials) {
-    if (mesh.materials.length === 0) {
-      mesh.materials.push(stoneMaterial);
-    } else {
-      for (let i = 0; i < mesh.materials.length; i++) {
-        mesh.materials[i] = stoneMaterial;
-      }
-    }
-  }
-  addNodeChild(scene, mesh);
-  if (!terrainNode) terrainNode = mesh;
+  addNodeChild(scene, child);
+  if (!terrainNode) terrainNode = child;
 }
 
 if (terrainNode) {

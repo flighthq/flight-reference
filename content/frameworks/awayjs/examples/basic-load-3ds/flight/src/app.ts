@@ -1,6 +1,7 @@
 import type { BlinnPhongMaterial, Mesh } from '@flighthq/sdk';
 import {
   addNodeChild,
+  computeMeshGeometryNormals,
   createAmbientLight,
   createBlinnPhongMaterial,
   createCamera,
@@ -15,6 +16,7 @@ import {
   createTexture,
   createVector3,
   DEG_TO_RAD,
+  forEachNodeDescendant,
   getNodeChildren,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
@@ -25,6 +27,7 @@ import {
   translateMatrix4,
 } from '@flighthq/sdk';
 
+import type { SceneNode } from '@flighthq/sdk';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const ctx = createScene3DContext({
@@ -82,19 +85,25 @@ const antMaterial = createBlinnPhongMaterial({
 });
 antMaterial.diffuseMap = antTexture;
 
-const modelContainer = createSceneNode();
-for (const child of getNodeChildren(modelScene)) {
-  const mesh = child as Mesh;
-  if (mesh.materials) {
-    if (mesh.materials.length === 0) {
-      mesh.materials.push(antMaterial);
-    } else {
-      for (let i = 0; i < mesh.materials.length; i++) {
-        mesh.materials[i] = antMaterial;
+forEachNodeDescendant(modelScene as unknown as SceneNode, (node) => {
+  const mesh = node as Mesh;
+  if (mesh.geometry) {
+    computeMeshGeometryNormals(mesh.geometry, mesh.geometry);
+    if (mesh.materials) {
+      if (mesh.materials.length === 0) {
+        mesh.materials.push(antMaterial);
+      } else {
+        for (let i = 0; i < mesh.materials.length; i++) {
+          mesh.materials[i] = antMaterial;
+        }
       }
     }
   }
-  addNodeChild(modelContainer, mesh);
+});
+
+const modelContainer = createSceneNode();
+for (const child of getNodeChildren(modelScene)) {
+  addNodeChild(modelContainer, child);
 }
 
 setMatrix4Identity(modelContainer.localMatrix);

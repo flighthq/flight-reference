@@ -21,6 +21,7 @@ import {
   createVector3,
   DEG_TO_RAD,
   drawGlScene,
+  drawGlSceneParticleEmitters,
   emitParticleBurst3D,
   invalidateNodeLocalTransform,
   registerBlinnPhongGlMaterial,
@@ -188,6 +189,16 @@ const logoEmitters: LogoEmitter[] = pixelSets.map((pixels, i) => {
   return { emitter, state, config, pixels, offset: logoOffsets[i]! };
 });
 
+for (let g = 0; g < NUM_LOGOS; g++) {
+  const entry = logoEmitters[g]!;
+  for (const [px, py] of entry.pixels) {
+    const x = entry.offset[0] + px * PARTICLE_SIZE;
+    const y = entry.offset[1] + py * PARTICLE_SIZE;
+    const z = entry.offset[2];
+    emitParticleBurst3D(entry.emitter, entry.state, entry.config, 1, x, y, z);
+  }
+}
+
 let time = 0;
 let gammaTarget: GammaTarget | null = null;
 let angle = 0;
@@ -242,6 +253,7 @@ function frame(ts: number): void {
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   drawGlScene(glState, scene, camera, lights);
+  drawGlSceneParticleEmitters(glState, scene, camera, lights);
   endGammaPass(gl, gammaTarget);
 
   requestAnimationFrame(frame);

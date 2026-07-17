@@ -6,6 +6,7 @@ import {
   computeSkeleton3DJointMatrices,
   createAmbientLight,
   createAnimationPlayer,
+  computeMeshGeometryNormals,
   createBlinnPhongMaterial,
   createCamera,
   createDirectionalLight,
@@ -23,9 +24,11 @@ import {
   createVector3,
   DEG_TO_RAD,
   drawGlScene,
+  forEachNodeDescendant,
   getNodeChildByName,
   getNodeChildren,
   invalidateNodeLocalTransform,
+  isMesh,
   loadImageResourceFromUrl,
   parseMd5Anim,
   registerBlinnPhongGlMaterial,
@@ -104,8 +107,8 @@ function updateCamera(spriteRotY: number): void {
 
 const redLight = createPointLight({ color: 0xff1111ff, intensity: 1.5, range: 3000 });
 const blueLight = createPointLight({ color: 0x1111ffff, intensity: 1.5, range: 3000 });
-const whiteLight = createDirectionalLight({ direction: { x: -50, y: -20, z: -10 }, color: 0xffffeeff, intensity: 1 });
-const ambient = createAmbientLight({ color: 0x303040ff, intensity: 1 });
+const whiteLight = createDirectionalLight({ direction: { x: -50, y: -20, z: -10 }, color: 0xffffeeff, intensity: 5 });
+const ambient = createAmbientLight({ color: 0x606080ff, intensity: 1 });
 const lights: SceneLights = createSceneLights({
   ambient,
   directional: whiteLight,
@@ -146,17 +149,25 @@ addNodeChild(scene, groundMesh);
 const meshText = await fetch('awayjs/assets/hellknight/hellknight.md5mesh').then((r) => r.text());
 const md5Scene = createSceneFromMd5Mesh(meshText);
 
-// Extract skeleton joint nodes from the parsed scene
+// Extract skeleton joint nodes from the parsed scene — must flatten the full tree in pre-order
+// (matching the index order the parser used) rather than only direct children.
 const skeletonNode = getNodeChildByName(md5Scene, 'skeleton');
-const jointNodes: SceneNode[] = skeletonNode ? (getNodeChildren(skeletonNode) as SceneNode[]) : [];
+const jointNodes: SceneNode[] = [];
+if (skeletonNode) {
+  forEachNodeDescendant(skeletonNode, (node) => jointNodes.push(node as SceneNode));
+}
 
 // Build a Skeleton3D for joint matrix computation
 const skeleton = createSkeleton3D(jointNodes);
 
-// Add all mesh children from the parsed scene to our render scene
+// Add all mesh children from the parsed scene to our render scene and assign materials
 const md5Children = getNodeChildren(md5Scene);
 const characterNode = createScene();
 for (const child of md5Children) {
+  if (isMesh(child)) {
+    child.materials[0] = bodyMaterial;
+    computeMeshGeometryNormals(child.geometry, child.geometry);
+  }
   addNodeChild(characterNode, child);
 }
 setMatrix4Identity(characterNode.localMatrix);

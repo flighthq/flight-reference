@@ -51,6 +51,45 @@ External framework implementations are behavioral and visual references, not API
 
 Content files are linted with relaxed rules (no `consistent-type-imports`, `no-console`, `no-unused-vars`, or `no-restricted-imports` enforcement) but still get correctness checks.
 
+## Upstream Flight SDK (`FLIGHT_REPO`)
+
+The reference harness can build against an unreleased local checkout of the Flight SDK instead of the published `@flighthq/*` npm packages. This is how agents test Flight ports against development features that haven't shipped yet.
+
+### How it works
+
+Set the `FLIGHT_REPO` environment variable to the root of a local Flight SDK checkout (the directory containing its `package.json` with `"name": "flight"`). The Vite config (`vite.config.ts`) detects this and:
+
+1. Aliases every `@flighthq/<package>` import to `$FLIGHT_REPO/packages/<package>/src/index.ts` — the harness compiles directly from Flight source, bypassing the published npm builds.
+2. Aliases `@ft/render` and `@ft/verify` to the Flight repo's `tools/harness/` utilities when present.
+3. Adds `$FLIGHT_REPO` to the Vite dev server's allowed filesystem roots.
+4. Excludes `@flighthq/sdk` from Vite's dependency pre-bundling so the local source is used as-is.
+
+### Requirements
+
+- The Flight repo must have its own `node_modules` installed (`npm install` in `$FLIGHT_REPO`) so that Flight's internal dependencies resolve.
+- The Flight repo's `package.json` must have `"name": "flight"` — this is the validation check.
+
+### Usage
+
+```bash
+export FLIGHT_REPO=/path/to/flight
+npm run dev    # dev server uses local Flight source
+npm run check  # typecheck + build against local Flight source
+```
+
+When `FLIGHT_REPO` is unset (the default), the harness falls back to the `@flighthq/*` packages installed in `node_modules/`.
+
+### When to use it
+
+- **Porting against new APIs**: when upstream Flight adds a new function or type that isn't published yet, set `FLIGHT_REPO` to the branch with that work and import normally — Vite resolves to the local source.
+- **Verifying SDK changes**: run `npm run dev` with `FLIGHT_REPO` set to visually confirm that an SDK change renders correctly in the reference demos.
+- **CI against unreleased Flight**: automated builds can set `FLIGHT_REPO` to pin the harness against a specific Flight commit.
+
+### What it does NOT do
+
+- It does not modify `node_modules/` or install anything — the aliasing is purely at the Vite resolve layer.
+- It does not affect the TypeScript project config (`tsconfig.*.json`) — typechecking uses Vite's resolution via `tsc` only when run through the Vite build pipeline. Standalone `tsc` without Vite will still resolve from `node_modules/`.
+
 ## Conventions
 
 - [commit messages](conventions/commits.md) — before writing a commit.

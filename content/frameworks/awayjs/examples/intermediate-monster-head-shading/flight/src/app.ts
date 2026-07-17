@@ -1,7 +1,6 @@
 import type { SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
-  applyLightExposure,
   createAmbientLight,
   createCamera,
   createDirectionalLight,
@@ -15,11 +14,11 @@ import {
   createVector3,
   DEG_TO_RAD,
   getNodeChildren,
-  getPhongToPbrLightExposure,
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
+  packOpaqueColor,
   scaleMatrix4,
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
@@ -27,9 +26,6 @@ import {
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
-import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
-
-const pbrExposure = getPhongToPbrLightExposure();
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -58,17 +54,17 @@ const directional = createDirectionalLight({
     z: -Math.sin(lightElevation) * Math.sin(lightDirection),
   },
   color: packOpaqueColor(0xffeedd),
-  intensity: applyLightExposure(12, pbrExposure),
+  intensity: 6,
 });
 
 const ambient = createAmbientLight({
   color: packOpaqueColor(0x606080),
-  intensity: applyLightExposure(1.5, pbrExposure),
+  intensity: 1.5,
 });
 
 const blueLight = createPointLight({
   color: packOpaqueColor(0x4080ff),
-  intensity: applyLightExposure(5, pbrExposure),
+  intensity: 3,
   range: 5000,
 });
 blueLight.position.x = 3000;
@@ -77,7 +73,7 @@ blueLight.position.y = 20;
 
 const redLight = createPointLight({
   color: packOpaqueColor(0x802010),
-  intensity: applyLightExposure(5, pbrExposure),
+  intensity: 3,
   range: 5000,
 });
 redLight.position.x = -2000;

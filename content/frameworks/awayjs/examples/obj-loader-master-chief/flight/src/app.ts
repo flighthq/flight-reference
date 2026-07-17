@@ -1,7 +1,6 @@
 import type { Mesh, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
-  applyLightExposure,
   computeMeshGeometryNormals,
   createAmbientLight,
   createCamera,
@@ -16,10 +15,10 @@ import {
   createVector3,
   DEG_TO_RAD,
   getNodeChildren,
-  getPhongToPbrLightExposure,
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
+  packOpaqueColor,
   rotateMatrix4,
   scaleMatrix4,
   setCameraViewMatrix4FromLookAt,
@@ -28,9 +27,6 @@ import {
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
-import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
-
-const pbrExposure = getPhongToPbrLightExposure();
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -57,10 +53,10 @@ setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 const directional = createDirectionalLight({
   direction: { x: 1, y: -0.5, z: 0.5 },
   color: packOpaqueColor(0xc1582d),
-  intensity: applyLightExposure(6, pbrExposure),
+  intensity: 3,
 });
 
-const ambient = createAmbientLight({ color: packOpaqueColor(0x85b2cd), intensity: applyLightExposure(2, pbrExposure) });
+const ambient = createAmbientLight({ color: packOpaqueColor(0x85b2cd), intensity: 2 });
 const lights = createSceneLights({ ambient, directional });
 
 const spartanContainer = createSceneNode();

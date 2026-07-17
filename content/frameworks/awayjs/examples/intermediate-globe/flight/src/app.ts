@@ -1,7 +1,6 @@
 import type { StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
-  applyLightExposure,
   BlendMode,
   createAmbientLight,
   createCamera,
@@ -16,19 +15,16 @@ import {
   createTexture,
   createVector3,
   DEG_TO_RAD,
-  getPhongToPbrLightExposure,
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
+  packOpaqueColor,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
-import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
-
-const pbrExposure = getPhongToPbrLightExposure();
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -52,10 +48,10 @@ let sunAngle = 0;
 const sunLight = createDirectionalLight({
   direction: { x: Math.sin(sunAngle), y: 0, z: Math.cos(sunAngle) },
   color: 0xffffffff,
-  intensity: applyLightExposure(10, pbrExposure),
+  intensity: 5,
 });
 
-const ambient = createAmbientLight({ color: packOpaqueColor(0x303040), intensity: applyLightExposure(2, pbrExposure) });
+const ambient = createAmbientLight({ color: packOpaqueColor(0x303040), intensity: 2 });
 
 const lights = createSceneLights({
   ambient,

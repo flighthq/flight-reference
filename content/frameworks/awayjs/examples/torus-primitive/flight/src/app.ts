@@ -1,7 +1,6 @@
 import type { PerspectiveProjection } from '@flighthq/sdk';
 import {
   addNodeChild,
-  applyLightExposure,
   createAmbientLight,
   createCamera,
   createDirectionalLight,
@@ -13,7 +12,6 @@ import {
   createTexture,
   createTorusMeshGeometry,
   createVector3,
-  getPhongToPbrLightExposure,
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
@@ -24,7 +22,6 @@ import {
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
-const pbrExposure = getPhongToPbrLightExposure();
 const DEG = Math.PI / 180;
 
 const ctx = createScene3DContext({
@@ -52,10 +49,10 @@ setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 const directional = createDirectionalLight({
   direction: { x: 0, y: -0.5, z: -1 },
   color: 0xffffffff,
-  intensity: applyLightExposure(6, pbrExposure),
+  intensity: 3,
 });
 
-const ambient = createAmbientLight({ color: 0xffffffff, intensity: applyLightExposure(1.5, pbrExposure) });
+const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
 const lights = createSceneLights({ ambient, directional });
 
 const image = await loadImageResourceFromUrl('awayjs/assets/dots.png');

@@ -1,7 +1,6 @@
 import type { Mesh, SceneHit, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
-  applyLightExposure,
   createAmbientLight,
   createBoxMeshGeometry,
   createCamera,
@@ -20,8 +19,8 @@ import {
   DEG_TO_RAD,
   getNodeChildren,
   getPbrRoughnessFromPhongShininess,
-  getPhongToPbrLightExposure,
   invalidateNodeLocalTransform,
+  packOpaqueColor,
   pickScene,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
@@ -31,9 +30,6 @@ import {
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
-import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
-
-const pbrExposure = getPhongToPbrLightExposure();
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -54,7 +50,7 @@ const camera = createCamera({
 
 const pointLight = createPointLight({
   color: 0xffffffff,
-  intensity: applyLightExposure(5, pbrExposure),
+  intensity: 3,
   range: 10000,
 });
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });

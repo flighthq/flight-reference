@@ -3,7 +3,6 @@ import {
   addNodeChild,
   advanceAnimationPlayer,
   applyAnimationClipToScene,
-  applyLightExposure,
   createAmbientLight,
   createAnimationPlayer,
   createCamera,
@@ -16,17 +15,14 @@ import {
   createVector3,
   DEG_TO_RAD,
   getNodeChildren,
-  getPhongToPbrLightExposure,
   getPbrRoughnessFromPhongShininess,
   isMesh,
+  packOpaqueColor,
   parseAwdSkeletonAnimation,
   setCameraViewMatrix4FromLookAt,
   updateMeshSkin,
 } from '@flighthq/sdk';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
-import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
-
-const pbrExposure = getPhongToPbrLightExposure();
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -48,9 +44,9 @@ const camera: Camera = createCamera({
 const directional = createDirectionalLight({
   direction: { x: 0, y: -1, z: 1 },
   color: 0xffffffff,
-  intensity: applyLightExposure(5, pbrExposure),
+  intensity: 3,
 });
-const ambient = createAmbientLight({ color: 0xffffffff, intensity: applyLightExposure(1.5, pbrExposure) });
+const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
 const lights: SceneLights = createSceneLights({ ambient, directional });
 
 const awdBuffer = await fetch('awayjs/assets/shambler.awd').then((r) => r.arrayBuffer());

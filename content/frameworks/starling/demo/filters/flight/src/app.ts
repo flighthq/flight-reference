@@ -62,7 +62,7 @@ import {
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
-  registerDefaultHitTestPoints,
+  registerDefaultHitTests,
   renderGlBackground,
   renderGlDisplayObject,
   RichTextKind,
@@ -204,7 +204,7 @@ infoText.data.height = 32;
 infoText.data.text = filterInfos[0].name;
 addNodeChild(root, infoText);
 
-registerDefaultHitTestPoints();
+registerDefaultHitTests();
 const inputMgr = createInputManager();
 attachPointerInput(inputMgr, (target.state as { canvas: HTMLCanvasElement }).canvas);
 const interaction = createInteractionManager<DisplayObject>(root);

@@ -18,7 +18,7 @@ import {
   loadAudioResourceFromUrls,
   loadFontFromUrl,
   loadImageResourceFromUrl,
-  registerHitTestPoint,
+  registerHitTest,
   startApplicationLoop,
   stopApplicationLoop,
   updateTweens,
@@ -52,7 +52,7 @@ const sounds = [theme, sound3, sound4, sound5];
 
 // ── Scene ──────────────────────────────────────────────────────────────────
 
-registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
+registerHitTest(DisplayObjectKind, hitTestGraphLocalBounds);
 
 const manager = createTweenManager();
 const root = createDisplayObject();

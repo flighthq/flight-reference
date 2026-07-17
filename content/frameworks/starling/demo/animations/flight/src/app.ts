@@ -15,7 +15,7 @@ import {
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
-  registerDefaultHitTestPoints,
+  registerDefaultHitTests,
   RichTextKind,
   TextLabelKind,
 } from '@flighthq/sdk';
@@ -145,7 +145,7 @@ addNodeChild(root, bgBmp);
 
 const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
 
-registerDefaultHitTestPoints();
+registerDefaultHitTests();
 const input = createInputManager();
 attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);
 const interaction = createInteractionManager<DisplayObject>(root);

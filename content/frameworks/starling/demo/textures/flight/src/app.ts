@@ -13,7 +13,7 @@ import {
   createRichText,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
-  registerDefaultHitTestPoints,
+  registerDefaultHitTests,
   RichTextKind,
   TextLabelKind,
 } from '@flighthq/sdk';
@@ -238,7 +238,7 @@ if (atfImage) {
   addNodeChild(root, fallback);
 }
 
-registerDefaultHitTestPoints();
+registerDefaultHitTests();
 
 const input = createInputManager();
 attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);

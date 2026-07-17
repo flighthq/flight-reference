@@ -13,7 +13,7 @@ import {
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
-  registerDefaultHitTestPoints,
+  registerDefaultHitTests,
   RichTextKind,
   TextLabelKind,
 } from '@flighthq/sdk';
@@ -64,7 +64,7 @@ button.x = buttonX;
 button.y = buttonY;
 addNodeChild(root, button);
 
-registerDefaultHitTestPoints();
+registerDefaultHitTests();
 
 const input = createInputManager();
 attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);

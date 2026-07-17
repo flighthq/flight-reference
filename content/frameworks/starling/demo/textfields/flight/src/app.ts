@@ -18,7 +18,7 @@ import {
   parseTextMarkup,
   prepareDisplayObjectRender,
   QuadBatchKind,
-  registerDefaultHitTestPoints,
+  registerDefaultHitTests,
   RichTextKind,
   setRichTextContent,
   TextLabelKind,
@@ -125,7 +125,7 @@ addNodeChild(root, bmpFontTF);
 updateBitmapText(bmpFontTF);
 invalidateNodeLocalContent(bmpFontTF);
 
-registerDefaultHitTestPoints();
+registerDefaultHitTests();
 
 const input = createInputManager();
 attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);

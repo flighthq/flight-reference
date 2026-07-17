@@ -13,7 +13,7 @@ import {
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
-  registerDefaultHitTestPoints,
+  registerDefaultHitTests,
   TextLabelKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -79,7 +79,7 @@ const brushTintCtx = brushTintCanvas.getContext('2d')!;
 let eraseMode = false;
 let currentBrushColor = 0xffffff;
 
-registerDefaultHitTestPoints();
+registerDefaultHitTests();
 const input = createInputManager();
 attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);
 const interaction = createInteractionManager<DisplayObject>(root);

@@ -21,7 +21,7 @@ import {
   parseBitmapFontXml,
   prepareDisplayObjectRender,
   QuadBatchKind,
-  registerDefaultHitTestPoints,
+  registerDefaultHitTests,
   removeNodeChild,
   removeNodeChildAt,
   RichTextKind,
@@ -85,7 +85,7 @@ addNodeChild(root, statusText);
 
 let resultText: RichText | null = null;
 
-registerDefaultHitTestPoints();
+registerDefaultHitTests();
 const input = createInputManager();
 attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);
 const interaction = createInteractionManager<DisplayObject>(root);

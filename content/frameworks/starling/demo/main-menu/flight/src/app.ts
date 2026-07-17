@@ -12,7 +12,7 @@ import {
   createRichText,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
-  registerDefaultHitTestPoints,
+  registerDefaultHitTests,
   RichTextKind,
   TextLabelKind,
 } from '@flighthq/sdk';
@@ -66,7 +66,7 @@ logo.data.sourceRectangle = createRectangle(1, 1, 320, 143);
 logo.y = 0;
 addNodeChild(root, logo);
 
-registerDefaultHitTestPoints();
+registerDefaultHitTests();
 
 const input = createInputManager();
 attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);

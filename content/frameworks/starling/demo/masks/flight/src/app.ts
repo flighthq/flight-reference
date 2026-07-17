@@ -20,7 +20,7 @@ import {
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
-  registerDefaultHitTestPoints,
+  registerDefaultHitTests,
   RichTextKind,
   setDisplayObjectClip,
   ShapeKind,
@@ -103,7 +103,7 @@ indicator.x = startX;
 indicator.y = startY;
 addNodeChild(root, indicator);
 
-registerDefaultHitTestPoints();
+registerDefaultHitTests();
 
 const input = createInputManager();
 attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);

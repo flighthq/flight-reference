@@ -17,7 +17,7 @@ import {
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
-  registerDefaultHitTestPoints,
+  registerDefaultHitTests,
   setTextLabelString,
   ShapeKind,
   TextLabelKind,
@@ -90,7 +90,7 @@ infoText.data.text = blendModes[0][1];
 infoText.blendMode = BlendMode.Normal;
 addNodeChild(root, infoText);
 
-registerDefaultHitTestPoints();
+registerDefaultHitTests();
 
 const input = createInputManager();
 attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);

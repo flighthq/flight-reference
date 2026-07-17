@@ -13,7 +13,7 @@ import {
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
-  registerDefaultHitTestPoints,
+  registerDefaultHitTests,
   RichTextKind,
   TextLabelKind,
 } from '@flighthq/sdk';
@@ -61,7 +61,7 @@ sheet.y = CenterY;
 sheet.rotation = 10;
 addNodeChild(root, sheet);
 
-registerDefaultHitTestPoints();
+registerDefaultHitTests();
 
 const input = createInputManager();
 attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);

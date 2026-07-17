@@ -21,6 +21,32 @@ import {
   StaticLightPicker,
 } from '@awayjs/materials';
 import { MD2Parser } from '@awayjs/parsers';
+import { _Render_RenderableBase } from '@awayjs/renderer';
+
+// The AwayJS renderer has a bug where executeRender calls the animator's
+// setRenderState (which binds pose vertex attributes) BEFORE the element
+// _setRenderState (which disables ALL vertex attributes as an iOS workaround
+// then only re-enables standard geometry attributes). This leaves animation
+// pose attributes disabled, causing meshes to collapse toward the origin as
+// the blend weight increases. Fix by setting element state first so the
+// animator's pose bindings happen after the disable-all and survive to draw.
+_Render_RenderableBase.prototype.executeRender = function (
+  this: _Render_RenderableBase,
+  enableDepthAndStencil?: boolean,
+  surfaceSelector?: number,
+  mipmapSelector?: number,
+  maskConfig?: number,
+): void {
+  const pass = (this as any)._renderMaterial._activePass;
+  const shader = pass.shader;
+  const elements = (this as any).stageElements;
+  if (shader.activeElements !== elements) {
+    shader.activeElements = elements;
+    elements._setRenderState(this, shader);
+  }
+  pass._setRenderState(this);
+  (this as any)._stageElements.draw(this, shader, (this as any)._count, (this as any)._offset);
+};
 
 class Intermediate_PerelithKnight {
   private _spriteInitialised: boolean = false;

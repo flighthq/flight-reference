@@ -1,6 +1,7 @@
 import type { SceneLights } from '@flighthq/sdk';
 import {
   addNodeChild,
+  bakeEnvironmentIbl,
   createAmbientLight,
   createCamera,
   createCubeTexture,
@@ -99,6 +100,7 @@ for (let i = 0; i < 6; i++) {
 }
 
 const environment = createEnvironment({ environment: cubeTexture, intensity: 1 });
+bakeEnvironmentIbl(state, environment);
 
 let gammaTarget: GammaTarget | null = null;
 

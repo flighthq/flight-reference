@@ -46,10 +46,10 @@ let sunAngle = 0;
 const sunLight = createDirectionalLight({
   direction: { x: Math.sin(sunAngle), y: 0, z: Math.cos(sunAngle) },
   color: 0xffffffff,
-  intensity: 5,
+  intensity: 10,
 });
 
-const ambient = createAmbientLight({ color: 0x303040ff, intensity: 1 });
+const ambient = createAmbientLight({ color: 0x303040ff, intensity: 2 });
 
 const lights = createSceneLights({
   ambient,

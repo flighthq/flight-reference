@@ -39,10 +39,10 @@ const camera = createCamera({
 const directional = createDirectionalLight({
   direction: { x: -1, y: -15, z: -1 },
   color: 0xeeddddff,
-  intensity: 0.7,
+  intensity: 6,
 });
 
-const ambient = createAmbientLight({ color: 0x808090ff, intensity: 0.35 });
+const ambient = createAmbientLight({ color: 0x808090ff, intensity: 1.5 });
 const lights = createSceneLights({ ambient, directional });
 
 const materialNameToTextureFile: Record<string, string> = {
@@ -107,10 +107,14 @@ function walkAndAssignMaterials(node: SceneNode): void {
       }
     }
 
-    if (!resolved && mesh.materials.length > 0) {
-      const existingMat = mesh.materials[0] as BlinnPhongMaterial;
-      if (!existingMat.diffuseMap) {
-        mesh.materials[0] = defaultMaterial;
+    if (!resolved) {
+      if (mesh.materials.length === 0) {
+        mesh.materials.push(defaultMaterial);
+      } else {
+        const existingMat = mesh.materials[0] as BlinnPhongMaterial;
+        if (!existingMat.diffuseMap) {
+          mesh.materials[0] = defaultMaterial;
+        }
       }
     }
   }

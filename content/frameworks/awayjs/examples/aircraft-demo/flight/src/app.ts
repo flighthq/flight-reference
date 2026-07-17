@@ -1,6 +1,7 @@
 import type { Camera, CubeTexture, Mesh, SceneLights, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
+  bakeEnvironmentIbl,
   createAmbientLight,
   createCamera,
   createCubeTexture,
@@ -97,6 +98,7 @@ const cubeImages = await Promise.all(cubeFaceUrls.map((url) => loadImageResource
 const cubeTexture: CubeTexture = createCubeTexture();
 for (let i = 0; i < 6; i++) setCubeTextureFace(cubeTexture, i, cubeImages[i]);
 const environment = createEnvironment({ environment: cubeTexture, intensity: 1 });
+bakeEnvironmentIbl(glState, environment);
 
 // Sea normal map — shared between water surface material and the aircraft's MethodMaterial
 // in the original. Here used only for the water, matching the original intent.

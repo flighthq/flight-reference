@@ -45,8 +45,6 @@ The SDK provides conversion functions via `@flighthq/sdk`:
 
 For `ambientColor`, move it to the Flight `AmbientLight`'s `color` property (appending `ff` for full alpha). If the AwayJS ambient color is very dark (e.g., `0x101025`), consider lightening it slightly (e.g., `0x303040`) since linear-space lighting dims dark ambient colors more than sRGB-space lighting does.
 
-The `_shared/flight/src/lighting.ts` helper also provides `srgbColorToLinearPacked(srgbHex)` which converts a 24-bit AwayJS sRGB color to a properly linearized 32-bit packed color for Flight light properties.
-
 ### Specular
 
 AwayJS `specular` multiplier on lights doesn't have a direct Flight equivalent. Flight's Blinn-Phong materials control specular via `shininess` and `specular` (a color). A higher directional intensity naturally produces brighter specular highlights.
@@ -54,8 +52,6 @@ AwayJS `specular` multiplier on lights doesn't have a direct Flight equivalent. 
 ## Conversion helpers
 
 **SDK (via `@flighthq/sdk`):** `computeSrgbToLinear`, `computeLinearToSrgb`, `unpackColorToLinear`, `packLinearToColor`, `createLinearColor`.
-
-**Porting utility (`_shared/flight/src/lighting.ts`):** `srgbIntensityToLinear` (intensity × π), `srgbColorToLinearPacked` (24-bit sRGB hex → 32-bit linear packed RGBA).
 
 ## Quick checklist
 

@@ -14,7 +14,6 @@ import {
   createTexture,
   createVector3,
   DEG_TO_RAD,
-  forEachNodeDescendant,
   getNodeChildren,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
@@ -86,8 +85,8 @@ const stoneMaterial = createBlinnPhongMaterial({
 stoneMaterial.diffuseMap = createTexture({ image: stoneImage });
 
 function applyMaterialToObjScene(objScene: SceneNode, material: BlinnPhongMaterial): void {
-  forEachNodeDescendant(objScene, (node) => {
-    const mesh = node as Mesh;
+  for (const child of getNodeChildren(objScene)) {
+    const mesh = child as Mesh;
     if (mesh.geometry) {
       computeMeshGeometryNormals(mesh.geometry, mesh.geometry);
       if (mesh.materials) {
@@ -100,17 +99,17 @@ function applyMaterialToObjScene(objScene: SceneNode, material: BlinnPhongMateri
         }
       }
     }
-  });
+  }
 }
 
 const spartanScene = createSceneFromObj(spartanObjText);
-applyMaterialToObjScene(spartanScene as unknown as SceneNode, masterchiefMaterial);
+applyMaterialToObjScene(spartanScene, masterchiefMaterial);
 for (const child of getNodeChildren(spartanScene)) {
   addNodeChild(spartanContainer, child);
 }
 
 const terrainScene = createSceneFromObj(terrainObjText);
-applyMaterialToObjScene(terrainScene as unknown as SceneNode, stoneMaterial);
+applyMaterialToObjScene(terrainScene, stoneMaterial);
 let terrainNode: SceneNode | undefined;
 for (const child of getNodeChildren(terrainScene)) {
   addNodeChild(scene, child);

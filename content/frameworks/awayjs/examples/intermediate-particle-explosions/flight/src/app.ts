@@ -21,7 +21,6 @@ import {
   createVector3,
   DEG_TO_RAD,
   drawGlScene,
-  drawGlSceneParticleEmitters,
   emitParticleBurst3D,
   invalidateNodeLocalTransform,
   registerBlinnPhongGlMaterial,
@@ -191,11 +190,12 @@ const logoEmitters: LogoEmitter[] = pixelSets.map((pixels, i) => {
 
 for (let g = 0; g < NUM_LOGOS; g++) {
   const entry = logoEmitters[g]!;
-  for (const [px, py] of entry.pixels) {
+  for (const [px, py, r, g2, b] of entry.pixels) {
     const x = entry.offset[0] + px * PARTICLE_SIZE;
     const y = entry.offset[1] + py * PARTICLE_SIZE;
     const z = entry.offset[2];
-    emitParticleBurst3D(entry.emitter, entry.state, entry.config, 1, x, y, z);
+    const tint = ((Math.round(r * 255) << 24) | (Math.round(g2 * 255) << 16) | (Math.round(b * 255) << 8) | 0xff) >>> 0;
+    emitParticleBurst3D(entry.emitter, entry.state, entry.config, 1, x, y, z, tint);
   }
 }
 
@@ -227,11 +227,13 @@ function frame(ts: number): void {
     stepParticleEmitter3D(entry.emitter, entry.state, entry.config, dt);
 
     if (groupTime < 50) {
-      for (const [px, py] of entry.pixels) {
+      for (const [px, py, r, g2, b] of entry.pixels) {
         const x = entry.offset[0] + px * PARTICLE_SIZE;
         const y = entry.offset[1] + py * PARTICLE_SIZE;
         const z = entry.offset[2];
-        emitParticleBurst3D(entry.emitter, entry.state, entry.config, 1, x, y, z);
+        const tint =
+          ((Math.round(r * 255) << 24) | (Math.round(g2 * 255) << 16) | (Math.round(b * 255) << 8) | 0xff) >>> 0;
+        emitParticleBurst3D(entry.emitter, entry.state, entry.config, 1, x, y, z, tint);
       }
     }
   }
@@ -253,7 +255,6 @@ function frame(ts: number): void {
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   drawGlScene(glState, scene, camera, lights);
-  drawGlSceneParticleEmitters(glState, scene, camera, lights);
   endGammaPass(gl, gammaTarget);
 
   requestAnimationFrame(frame);

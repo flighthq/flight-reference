@@ -1,9 +1,16 @@
-import type { AnimationClip, AnimationPlayer, BlinnPhongMaterial, Camera, SceneLights, SceneNode } from '@flighthq/sdk';
+import type {
+  AnimationClip,
+  AnimationPlayer,
+  BlinnPhongMaterial,
+  Camera,
+  Mesh,
+  SceneLights,
+  SceneNode,
+} from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceAnimationPlayer,
   applyAnimationClipToScene,
-  computeSkeleton3DJointMatrices,
   createAmbientLight,
   createAnimationPlayer,
   computeMeshGeometryNormals,
@@ -19,12 +26,10 @@ import {
   createScene,
   createSceneFromMd5Mesh,
   createSceneLights,
-  createSkeleton3D,
   createTexture,
   createVector3,
   DEG_TO_RAD,
   drawGlScene,
-  forEachNodeDescendant,
   getNodeChildByName,
   getNodeChildren,
   invalidateNodeLocalTransform,
@@ -37,6 +42,7 @@ import {
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
   translateMatrix4,
+  updateMeshSkin,
 } from '@flighthq/sdk';
 
 import type { GammaTarget } from '../../../_shared/flight/src/gamma';
@@ -149,24 +155,29 @@ addNodeChild(scene, groundMesh);
 const meshText = await fetch('awayjs/assets/hellknight/hellknight.md5mesh').then((r) => r.text());
 const md5Scene = createSceneFromMd5Mesh(meshText);
 
-// Extract skeleton joint nodes from the parsed scene — must flatten the full tree in pre-order
-// (matching the index order the parser used) rather than only direct children.
+// Extract skeleton joint nodes from the parsed scene for animation clip binding.
 const skeletonNode = getNodeChildByName(md5Scene, 'skeleton');
 const jointNodes: SceneNode[] = [];
 if (skeletonNode) {
-  forEachNodeDescendant(skeletonNode, (node) => jointNodes.push(node as SceneNode));
+  const collectDescendants = (parent: SceneNode): void => {
+    for (const child of getNodeChildren(parent)) {
+      jointNodes.push(child as SceneNode);
+      collectDescendants(child as SceneNode);
+    }
+  };
+  collectDescendants(skeletonNode);
 }
 
-// Build a Skeleton3D for joint matrix computation
-const skeleton = createSkeleton3D(jointNodes);
-
-// Add all mesh children from the parsed scene to our render scene and assign materials
+// Add all mesh children from the parsed scene to our render scene and assign materials.
+// The MD5 parser sets mesh.skin on each mesh — updateMeshSkin drives skinning per frame.
 const md5Children = getNodeChildren(md5Scene);
 const characterNode = createScene();
+const skinnedMeshes: Mesh[] = [];
 for (const child of md5Children) {
   if (isMesh(child)) {
     child.materials[0] = bodyMaterial;
     computeMeshGeometryNormals(child.geometry, child.geometry);
+    skinnedMeshes.push(child);
   }
   addNodeChild(characterNode, child);
 }
@@ -324,7 +335,7 @@ function frame(ts: number): void {
   }
 
   applyAnimationClipToScene(activePlayer.clip, activePlayer.time);
-  computeSkeleton3DJointMatrices(skeleton);
+  for (const mesh of skinnedMeshes) updateMeshSkin(mesh);
 
   spriteRotY += rotationInc;
   setMatrix4Identity(characterNode.localMatrix);

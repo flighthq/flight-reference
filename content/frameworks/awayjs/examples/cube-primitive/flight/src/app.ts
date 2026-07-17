@@ -59,7 +59,6 @@ const material = createBlinnPhongMaterial({
 material.diffuseMap = texture;
 material.blendMode = BlendMode.Add;
 material.alphaMode = 'blend';
-material.doubleSided = true;
 
 const torusGeometry = createTorusMeshGeometry(150, 80, 32, 16);
 const torus = createMesh(torusGeometry, [material]);

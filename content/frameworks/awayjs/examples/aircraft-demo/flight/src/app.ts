@@ -22,7 +22,6 @@ import {
   DEG_TO_RAD,
   drawGlEnvironmentSkybox,
   drawGlScene,
-  forEachNodeDescendant,
   getNodeChildren,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
@@ -139,8 +138,8 @@ f14Material.baseColorMap = createTexture({ image: f14FuselageImage });
 
 const f14Scene = createSceneFromObj(f14ObjText);
 
-forEachNodeDescendant(f14Scene, (node) => {
-  const mesh = node as Mesh;
+for (const child of getNodeChildren(f14Scene)) {
+  const mesh = child as Mesh;
   if (mesh.geometry) {
     computeMeshGeometryNormals(mesh.geometry, mesh.geometry);
     if (mesh.materials) {
@@ -153,7 +152,7 @@ forEachNodeDescendant(f14Scene, (node) => {
       }
     }
   }
-});
+}
 
 const f14Container = createScene();
 setMatrix4Identity(f14Container.localMatrix);

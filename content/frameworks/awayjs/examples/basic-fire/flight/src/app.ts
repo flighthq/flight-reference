@@ -29,7 +29,6 @@ import {
   createVector3,
   DEG_TO_RAD,
   drawGlScene,
-  drawGlSceneParticleEmitters,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   registerBlinnPhongGlMaterial,
@@ -283,7 +282,6 @@ function frame(ts: number): void {
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   drawGlScene(glState, scene, camera, lights);
-  drawGlSceneParticleEmitters(glState, scene, camera, lights);
   endGammaPass(gl, gammaTarget);
 
   requestAnimationFrame(frame);

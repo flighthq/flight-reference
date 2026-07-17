@@ -5,7 +5,6 @@ import {
   beginGlRenderTarget,
   computeMeshGeometryNormals,
   createAmbientLight,
-  createCamera,
   createCubeTexture,
   createDirectionalLight,
   createEnvironment,
@@ -14,7 +13,6 @@ import {
   createGlRenderTarget,
   createMatrix,
   createMesh,
-  createPerspectiveProjection,
   createPlaneMeshGeometry,
   createScene,
   createSceneFromObj,
@@ -42,6 +40,7 @@ import {
   translateMatrix4,
 } from '@flighthq/sdk';
 
+import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
 // The original AwayJS demo uses NormalSimpleWaterMethod + EffectEnvMapMethod + SpecularFresnelMethod
 // on the sea surface. In Flight we approximate this with:
 //   - A StandardPbrMaterial with metallic=1, roughness=0 (mirror-like env-map reflection) for the
@@ -73,17 +72,10 @@ registerStandardPbrGlMaterial(glState);
 
 const scene = createScene();
 
-const camera: Camera = createCamera({
-  near: 0.5,
-  far: 14000,
-  projection: createPerspectiveProjection({
-    fovY: 60 * DEG_TO_RAD,
-    aspect: width / height,
-  }),
-});
+const camera = createCameraFromAway({ fov: 60, near: 0.5, far: 14000 });
 
 const directional = createDirectionalLight({
-  direction: { x: -300, y: -300, z: 5000 },
+  direction: awayDirection(-300, -300, -5000),
   color: 0x974523ff,
   intensity: 3.5,
 });

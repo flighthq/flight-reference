@@ -2,21 +2,18 @@ import type { Mesh, SceneLights } from '@flighthq/sdk';
 import {
   createScene,
   addNodeChild,
-  createCamera,
   createMesh,
-  createPerspectiveProjection,
   createSceneHit,
   createSphereMeshGeometry,
   createTexture,
   createUnlitMaterial,
-  createVector3,
   loadImageResourceFromUrl,
   pickScene,
-  setCameraViewMatrix4FromLookAt,
   setSceneNodePosition,
   setSceneNodeScale,
 } from '@flighthq/sdk';
 
+import { createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const ctx = createScene3DContext({
@@ -27,19 +24,7 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera = createCamera({
-  near: 1,
-  far: 10000,
-  projection: createPerspectiveProjection({
-    fovY: (60 * Math.PI) / 180,
-    aspect: ctx.width / ctx.height,
-  }),
-});
-
-const eye = createVector3(0, 500, 600);
-const target = createVector3(0, 0, 0);
-const up = createVector3(0, 1, 0);
-setCameraViewMatrix4FromLookAt(camera, eye, target, up);
+const camera = createCameraFromAway({ y: 500, z: -600, fov: 60, near: 1, far: 10000 });
 
 const lights: SceneLights = { ambient: null, directional: null };
 

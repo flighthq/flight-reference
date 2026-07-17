@@ -3,9 +3,7 @@ import {
   addNodeChild,
   computeMeshGeometryNormals,
   createAmbientLight,
-  createCamera,
   createDirectionalLight,
-  createPerspectiveProjection,
   createScene,
   createSceneFromObj,
   createSceneLights,
@@ -21,11 +19,11 @@ import {
   packOpaqueColor,
   rotateMatrix4,
   scaleMatrix4,
-  setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
   translateMatrix4,
 } from '@flighthq/sdk';
 
+import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const ctx = createScene3DContext({
@@ -36,22 +34,10 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera = createCamera({
-  near: 0.1,
-  far: 5000,
-  projection: createPerspectiveProjection({
-    fovY: 45 * DEG_TO_RAD,
-    aspect: window.innerWidth / window.innerHeight,
-  }),
-});
-
-const eye = createVector3(0, 20, 50);
-const target = createVector3(0, 20, 0);
-const up = createVector3(0, 1, 0);
-setCameraViewMatrix4FromLookAt(camera, eye, target, up);
+const camera = createCameraFromAway({ y: 20, z: -50, targetY: 20, fov: 45 });
 
 const directional = createDirectionalLight({
-  direction: { x: 1, y: -0.5, z: 0.5 },
+  direction: awayDirection(1, -0.5, -0.5),
   color: packOpaqueColor(0xc1582d),
   intensity: 3,
 });

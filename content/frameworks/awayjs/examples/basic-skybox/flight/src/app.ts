@@ -4,7 +4,6 @@ import {
   bakeEnvironmentIbl,
   beginGlRenderTarget,
   createAmbientLight,
-  createCamera,
   createCubeTexture,
   createDirectionalLight,
   createEnvironment,
@@ -13,7 +12,6 @@ import {
   createGlRenderTarget,
   createMatrix,
   createMesh,
-  createPerspectiveProjection,
   createScene,
   createSceneLights,
   createStandardPbrMaterial,
@@ -36,6 +34,7 @@ import {
   setMatrix4Identity,
 } from '@flighthq/sdk';
 
+import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
 const width = window.innerWidth;
 const height = window.innerHeight;
 const pixelRatio = window.devicePixelRatio || 1;
@@ -71,14 +70,10 @@ const geometry = createTorusMeshGeometry(150, 60, 40, 20);
 const torus = createMesh(geometry, [torusMaterial]);
 addNodeChild(scene, torus);
 
-const camera = createCamera({
-  near: 0.1,
-  far: 5000,
-  projection: createPerspectiveProjection({ fovY: 90 * DEG_TO_RAD }),
-});
+const camera = createCameraFromAway({ fov: 90 });
 
 const directional = createDirectionalLight({
-  direction: { x: 0, y: -1, z: 1 },
+  direction: awayDirection(0, -1, -1),
   color: 0xffffffff,
   intensity: 5,
 });

@@ -3,10 +3,8 @@ import {
   BlendMode,
   createAmbientLight,
   createBoxMeshGeometry,
-  createCamera,
   createDirectionalLight,
   createMesh,
-  createPerspectiveProjection,
   createScene,
   createSceneLights,
   createStandardPbrMaterial,
@@ -23,6 +21,7 @@ import {
   translateMatrix4,
 } from '@flighthq/sdk';
 
+import { awayDirection, awayPosition, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const DEG = Math.PI / 180;
@@ -35,14 +34,10 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera = createCamera({
-  near: 0.1,
-  far: 5000,
-  projection: createPerspectiveProjection({ fovY: 120 * DEG, aspect: window.innerWidth / window.innerHeight }),
-});
+const camera = createCameraFromAway({ fov: 120 });
 
 const directional = createDirectionalLight({
-  direction: { x: 1, y: -0.5, z: 0.5 },
+  direction: awayDirection(1, -0.5, -0.5),
   color: 0xffffffff,
   intensity: 4,
 });
@@ -69,12 +64,12 @@ addNodeChild(scene, torus);
 const cubeGeometry = createBoxMeshGeometry(20, 20, 20);
 const cube = createMesh(cubeGeometry, [material]);
 setMatrix4Identity(cube.localMatrix);
-translateMatrix4(cube.localMatrix, cube.localMatrix, 130, 0, -40);
+translateMatrix4(cube.localMatrix, cube.localMatrix, ...awayPosition(130, 0, 40));
 invalidateNodeLocalTransform(cube);
 addNodeChild(scene, cube);
 
 const eye = createVector3(130, 0, 0);
-const lookTarget = createVector3(130, 0, -40);
+const lookTarget = createVector3(...awayPosition(130, 0, 40));
 const up = createVector3(0, 1, 0);
 const xAxis = createVector3(1, 0, 0);
 const yAxis = createVector3(0, 1, 0);
@@ -103,7 +98,7 @@ function frame(): void {
   invalidateNodeLocalTransform(torus);
 
   setMatrix4Identity(cube.localMatrix);
-  translateMatrix4(cube.localMatrix, cube.localMatrix, 130, 0, -40);
+  translateMatrix4(cube.localMatrix, cube.localMatrix, ...awayPosition(130, 0, 40));
   rotateMatrix4(cube.localMatrix, cube.localMatrix, yAxis, cubeAngleY);
   rotateMatrix4(cube.localMatrix, cube.localMatrix, xAxis, cubeAngleX);
   invalidateNodeLocalTransform(cube);

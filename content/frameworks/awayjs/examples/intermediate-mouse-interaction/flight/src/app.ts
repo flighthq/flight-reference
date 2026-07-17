@@ -3,10 +3,8 @@ import {
   addNodeChild,
   createAmbientLight,
   createBoxMeshGeometry,
-  createCamera,
   createCylinderMeshGeometry,
   createMesh,
-  createPerspectiveProjection,
   createPointLight,
   createScene,
   createSceneFromObj,
@@ -23,13 +21,17 @@ import {
   packOpaqueColor,
   pickScene,
   rotateMatrix4,
-  setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
   setSceneNodePosition,
   translateMatrix4,
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import {
+  createCameraFromAway,
+  createOrbitControllerFromAway,
+  AWAY_MOUSE_SENSITIVITY,
+} from '../../../_shared/flight/src/camera';
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -39,14 +41,7 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera = createCamera({
-  near: 0.1,
-  far: 5000,
-  projection: createPerspectiveProjection({
-    fovY: 60 * DEG_TO_RAD,
-    aspect: window.innerWidth / window.innerHeight,
-  }),
-});
+const camera = createCameraFromAway({ fov: 60, near: 0.1, far: 5000 });
 
 const pointLight = createPointLight({
   color: 0xffffffff,
@@ -218,21 +213,19 @@ try {
   console.warn('Could not load head.obj; skipping head model.');
 }
 
-let panAngle = 180 * DEG_TO_RAD;
-let tiltAngle = 20 * DEG_TO_RAD;
-let distance = 320;
-const minTilt = 5 * DEG_TO_RAD;
-const maxTilt = 85 * DEG_TO_RAD;
+const orbit = createOrbitControllerFromAway(camera, {
+  distance: 320,
+  panAngle: 180,
+  tiltAngle: 20,
+  minTiltAngle: 5,
+  maxTiltAngle: 85,
+});
 
 let dragging = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
-let savedPan = panAngle;
-let savedTilt = tiltAngle;
-
-const eye = createVector3(0, 0, 0);
-const target = createVector3(0, 0, 0);
-const up = createVector3(0, 1, 0);
+let savedPan = orbit.panAngle;
+let savedTilt = orbit.tiltAngle;
 
 let tiltSpeed = 4;
 let panSpeed = 4;
@@ -242,35 +235,30 @@ let panIncrement = 0;
 let distanceIncrement = 0;
 
 function updateCamera(): void {
-  panAngle += panIncrement * DEG_TO_RAD;
-  tiltAngle += tiltIncrement * DEG_TO_RAD;
-  distance += distanceIncrement;
+  orbit.panAngle += panIncrement * DEG_TO_RAD;
+  orbit.tiltAngle += tiltIncrement * DEG_TO_RAD;
+  orbit.distance += distanceIncrement;
 
-  tiltAngle = Math.max(minTilt, Math.min(maxTilt, tiltAngle));
-  if (distance < 100) distance = 100;
-  else if (distance > 2000) distance = 2000;
+  if (orbit.distance < 100) orbit.distance = 100;
+  else if (orbit.distance > 2000) orbit.distance = 2000;
 
-  eye.x = target.x + distance * Math.sin(panAngle) * Math.cos(tiltAngle);
-  eye.y = target.y + distance * Math.sin(tiltAngle);
-  eye.z = target.z - distance * Math.cos(panAngle) * Math.cos(tiltAngle);
+  orbit.update();
 
-  setCameraViewMatrix4FromLookAt(camera, eye, target, up);
-
-  pointLight.position = { x: eye.x, y: eye.y, z: eye.z };
+  pointLight.position = { x: orbit.eye.x, y: orbit.eye.y, z: orbit.eye.z };
 }
 
 ctx.canvas.addEventListener('mousedown', (e: MouseEvent) => {
   dragging = true;
   lastMouseX = e.clientX;
   lastMouseY = e.clientY;
-  savedPan = panAngle;
-  savedTilt = tiltAngle;
+  savedPan = orbit.panAngle;
+  savedTilt = orbit.tiltAngle;
 });
 
 ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
   if (dragging) {
-    panAngle = 0.3 * DEG_TO_RAD * (e.clientX - lastMouseX) + savedPan;
-    tiltAngle = 0.3 * DEG_TO_RAD * (e.clientY - lastMouseY) + savedTilt;
+    orbit.panAngle = AWAY_MOUSE_SENSITIVITY * (e.clientX - lastMouseX) + savedPan;
+    orbit.tiltAngle = AWAY_MOUSE_SENSITIVITY * (e.clientY - lastMouseY) + savedTilt;
   }
 });
 
@@ -279,9 +267,9 @@ window.addEventListener('mouseup', () => {
 });
 
 ctx.canvas.addEventListener('wheel', (e: WheelEvent) => {
-  distance -= e.deltaY / 2;
-  if (distance < 100) distance = 100;
-  else if (distance > 2000) distance = 2000;
+  orbit.distance -= e.deltaY / 2;
+  if (orbit.distance < 100) orbit.distance = 100;
+  else if (orbit.distance > 2000) orbit.distance = 2000;
 });
 
 const hit: SceneHit = createSceneHit();

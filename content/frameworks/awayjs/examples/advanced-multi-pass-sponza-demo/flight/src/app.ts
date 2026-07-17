@@ -2,23 +2,24 @@ import type { Mesh, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
-  createCamera,
   createDirectionalLight,
-  createPerspectiveProjection,
   createScene,
   createSceneFromAwd,
   createSceneLights,
   createStandardPbrMaterial,
   createTexture,
-  createVector3,
-  DEG_TO_RAD,
   getNodeChildren,
   getPbrRoughnessFromPhongShininess,
   loadImageResourceFromUrl,
   packOpaqueColor,
-  setCameraViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
+import {
+  awayDirection,
+  createCameraFromAway,
+  createFirstPersonControllerFromAway,
+  AWAY_MOUSE_SENSITIVITY,
+} from '../../../_shared/flight/src/camera';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const ctx = createScene3DContext({
@@ -29,17 +30,10 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera = createCamera({
-  near: 1,
-  far: 5000,
-  projection: createPerspectiveProjection({
-    fovY: 75 * DEG_TO_RAD,
-    aspect: window.innerWidth / window.innerHeight,
-  }),
-});
+const camera = createCameraFromAway({ fov: 75, near: 1, far: 5000 });
 
 const directional = createDirectionalLight({
-  direction: { x: -1, y: -15, z: -1 },
+  direction: awayDirection(-1, -15, 1),
   color: packOpaqueColor(0xeedddd),
   intensity: 3,
 });
@@ -141,14 +135,12 @@ for (const child of getNodeChildren(awdScene)) {
   addNodeChild(scene, child);
 }
 
-let yaw = 90 * DEG_TO_RAD;
-let pitch = 0;
-const posX = 0;
-const posY = 150;
-const posZ = 0;
-const pos = createVector3(posX, posY, posZ);
-const eye = createVector3(0, 0, 0);
-const up = createVector3(0, 1, 0);
+const fps = createFirstPersonControllerFromAway(camera, {
+  y: 150,
+  yaw: 90,
+  minPitch: -80,
+  maxPitch: 80,
+});
 
 const walkIncrement = 10;
 const strafeIncrement = 10;
@@ -162,31 +154,21 @@ let strafeAccel = 0;
 let dragging = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
-let savedYaw = yaw;
-let savedPitch = pitch;
-
-function updateCamera(): void {
-  pitch = Math.max(-80 * DEG_TO_RAD, Math.min(80 * DEG_TO_RAD, pitch));
-
-  eye.x = pos.x + Math.sin(yaw) * Math.cos(pitch);
-  eye.y = pos.y - Math.sin(pitch);
-  eye.z = pos.z - Math.cos(yaw) * Math.cos(pitch);
-
-  setCameraViewMatrix4FromLookAt(camera, pos, eye, up);
-}
+let savedYaw = fps.yaw;
+let savedPitch = fps.pitch;
 
 ctx.canvas.addEventListener('mousedown', (e: MouseEvent) => {
   dragging = true;
   lastMouseX = e.clientX;
   lastMouseY = e.clientY;
-  savedYaw = yaw;
-  savedPitch = pitch;
+  savedYaw = fps.yaw;
+  savedPitch = fps.pitch;
 });
 
 ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
   if (!dragging) return;
-  yaw = 0.3 * DEG_TO_RAD * (e.clientX - lastMouseX) + savedYaw;
-  pitch = 0.3 * DEG_TO_RAD * (e.clientY - lastMouseY) + savedPitch;
+  fps.yaw = AWAY_MOUSE_SENSITIVITY * (e.clientX - lastMouseX) + savedYaw;
+  fps.pitch = AWAY_MOUSE_SENSITIVITY * (e.clientY - lastMouseY) + savedPitch;
 });
 
 window.addEventListener('mouseup', () => {
@@ -203,7 +185,8 @@ window.addEventListener('keyup', (e: KeyboardEvent) => {
   keysDown.delete(e.key.toLowerCase());
 });
 
-updateCamera();
+const fwd = { x: 0, y: 0, z: 0 };
+const rgt = { x: 0, y: 0, z: 0 };
 
 function frame(): void {
   walkAccel = 0;
@@ -220,15 +203,13 @@ function frame(): void {
   strafeSpeed = (strafeSpeed + strafeAccel) * drag;
   if (Math.abs(strafeSpeed) < 0.01) strafeSpeed = 0;
 
-  const forwardX = Math.sin(yaw);
-  const forwardZ = -Math.cos(yaw);
-  const rightX = Math.cos(yaw);
-  const rightZ = Math.sin(yaw);
+  fps.forward(fwd);
+  fps.right(rgt);
 
-  pos.x += forwardX * walkSpeed + rightX * strafeSpeed;
-  pos.z += forwardZ * walkSpeed + rightZ * strafeSpeed;
+  fps.position.x += fwd.x * walkSpeed + rgt.x * strafeSpeed;
+  fps.position.z += fwd.z * walkSpeed + rgt.z * strafeSpeed;
 
-  updateCamera();
+  fps.update();
   ctx.render(scene, camera, lights);
   requestAnimationFrame(frame);
 }

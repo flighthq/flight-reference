@@ -3,10 +3,8 @@ import {
   addNodeChild,
   computeMeshGeometryNormals,
   createAmbientLight,
-  createCamera,
   createDirectionalLight,
   createMesh,
-  createPerspectiveProjection,
   createPlaneMeshGeometry,
   createScene,
   createSceneFrom3ds,
@@ -14,20 +12,23 @@ import {
   createSceneLights,
   createStandardPbrMaterial,
   createTexture,
-  createVector3,
-  DEG_TO_RAD,
   getNodeChildren,
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   scaleMatrix4,
-  setCameraViewMatrix4FromLookAt,
   setDirectionalLightDirection,
   setMatrix4Identity,
   translateMatrix4,
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import {
+  AWAY_MOUSE_SENSITIVITY,
+  awayDirection,
+  createCameraFromAway,
+  createOrbitControllerFromAway,
+} from '../../../_shared/flight/src/camera';
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -37,17 +38,10 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera = createCamera({
-  near: 0.1,
-  far: 2100,
-  projection: createPerspectiveProjection({
-    fovY: 45 * DEG_TO_RAD,
-    aspect: window.innerWidth / window.innerHeight,
-  }),
-});
+const camera = createCameraFromAway({ fov: 45, near: 0.1, far: 2100 });
 
 const directional = createDirectionalLight({
-  direction: { x: -1, y: -1, z: -1 },
+  direction: awayDirection(-1, -1, 1),
   color: 0xffffffff,
   intensity: 3,
 });
@@ -111,52 +105,37 @@ scaleMatrix4(modelContainer.localMatrix, modelContainer.localMatrix, 300, 300, 3
 invalidateNodeLocalTransform(modelContainer);
 addNodeChild(scene, modelContainer);
 
-let panAngle = 45 * DEG_TO_RAD;
-let tiltAngle = 20 * DEG_TO_RAD;
-let distance = 1000;
-const minTiltAngle = 0;
-const maxTiltAngle = 90 * DEG_TO_RAD;
+const orbit = createOrbitControllerFromAway(camera, {
+  distance: 1000,
+  panAngle: 45,
+  tiltAngle: 20,
+  minTiltAngle: 0,
+  maxTiltAngle: 90,
+});
 
 let dragging = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
-let lastPanAngle = panAngle;
-let lastTiltAngle = tiltAngle;
-
-const eye = createVector3(0, 0, 0);
-const target = createVector3(0, 0, 0);
-const up = createVector3(0, 1, 0);
-
-function updateCamera(): void {
-  const clampedTilt = Math.max(minTiltAngle, Math.min(maxTiltAngle, tiltAngle));
-  tiltAngle = clampedTilt;
-
-  eye.x = distance * Math.sin(panAngle) * Math.cos(clampedTilt);
-  eye.y = distance * Math.sin(clampedTilt);
-  eye.z = -distance * Math.cos(panAngle) * Math.cos(clampedTilt);
-
-  setCameraViewMatrix4FromLookAt(camera, eye, target, up);
-}
+let lastPanAngle = orbit.panAngle;
+let lastTiltAngle = orbit.tiltAngle;
 
 ctx.canvas.addEventListener('mousedown', (event: MouseEvent) => {
   dragging = true;
   lastMouseX = event.clientX;
   lastMouseY = event.clientY;
-  lastPanAngle = panAngle;
-  lastTiltAngle = tiltAngle;
+  lastPanAngle = orbit.panAngle;
+  lastTiltAngle = orbit.tiltAngle;
 });
 
 ctx.canvas.addEventListener('mousemove', (event: MouseEvent) => {
   if (!dragging) return;
-  panAngle = 0.3 * DEG_TO_RAD * (event.clientX - lastMouseX) + lastPanAngle;
-  tiltAngle = 0.3 * DEG_TO_RAD * (event.clientY - lastMouseY) + lastTiltAngle;
+  orbit.panAngle = AWAY_MOUSE_SENSITIVITY * (event.clientX - lastMouseX) + lastPanAngle;
+  orbit.tiltAngle = AWAY_MOUSE_SENSITIVITY * (event.clientY - lastMouseY) + lastTiltAngle;
 });
 
 window.addEventListener('mouseup', () => {
   dragging = false;
 });
-
-updateCamera();
 
 let startTime = 0;
 
@@ -164,11 +143,10 @@ function frame(ts: number): void {
   if (startTime === 0) startTime = ts;
   const elapsed = ts - startTime;
 
-  const dirX = -Math.sin(elapsed / 4000);
-  const dirZ = Math.cos(elapsed / 4000);
-  setDirectionalLightDirection(directional, dirX, -1, dirZ);
+  const dir = awayDirection(-Math.sin(elapsed / 4000), -1, -Math.cos(elapsed / 4000));
+  setDirectionalLightDirection(directional, dir.x, dir.y, dir.z);
 
-  updateCamera();
+  orbit.update();
   ctx.render(scene, camera, lights);
   requestAnimationFrame(frame);
 }

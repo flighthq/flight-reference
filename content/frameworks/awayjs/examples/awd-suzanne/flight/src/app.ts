@@ -2,10 +2,8 @@ import type { Mesh, SceneHit, SceneNode, StandardPbrMaterial } from '@flighthq/s
 import {
   addNodeChild,
   createAmbientLight,
-  createCamera,
   createDirectionalLight,
   createMesh,
-  createPerspectiveProjection,
   createScene,
   createSceneFromAwd,
   createSceneHit,
@@ -27,6 +25,7 @@ import {
   translateMatrix4,
 } from '@flighthq/sdk';
 
+import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const ctx = createScene3DContext({
@@ -37,17 +36,10 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera = createCamera({
-  near: 0.1,
-  far: 6000,
-  projection: createPerspectiveProjection({
-    fovY: 45 * DEG_TO_RAD,
-    aspect: window.innerWidth / window.innerHeight,
-  }),
-});
+const camera = createCameraFromAway({ fov: 45, near: 0.1, far: 6000 });
 
 const directional = createDirectionalLight({
-  direction: { x: 1, y: -0.5, z: 0.5 },
+  direction: awayDirection(1, -0.5, -0.5),
   color: packOpaqueColor(0x683019),
   intensity: 4,
 });

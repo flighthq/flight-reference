@@ -2,9 +2,7 @@ import type { SceneLights } from '@flighthq/sdk';
 import {
   createScene,
   addNodeChild,
-  createCamera,
   createMesh,
-  createPerspectiveProjection,
   createPlaneMeshGeometry,
   createTexture,
   createUnlitMaterial,
@@ -13,10 +11,10 @@ import {
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   rotateMatrix4,
-  setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
 } from '@flighthq/sdk';
 
+import { createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const ctx = createScene3DContext({ width: window.innerWidth, height: window.innerHeight, backgroundColor: 0x000000ff });
@@ -28,16 +26,7 @@ const geometry = createPlaneMeshGeometry(700, 700);
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
-const camera = createCamera({
-  near: 1,
-  far: 10000,
-  projection: createPerspectiveProjection({ fovY: 60 * DEG_TO_RAD, aspect: window.innerWidth / window.innerHeight }),
-});
-
-const eye = createVector3(0, 500, 600);
-const target = createVector3(0, 0, 0);
-const up = createVector3(0, 1, 0);
-setCameraViewMatrix4FromLookAt(camera, eye, target, up);
+const camera = createCameraFromAway({ y: 500, z: -600, fov: 60, near: 1, far: 10000 });
 
 const lights: SceneLights = { ambient: null, directional: null };
 const yAxis = createVector3(0, 1, 0);

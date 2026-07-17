@@ -1,28 +1,29 @@
-import type { AnimationClip, AnimationPlayer, Camera, Mesh, SceneLights, SceneNode } from '@flighthq/sdk';
+import type { AnimationClip, AnimationPlayer, Mesh, SceneLights, SceneNode } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceAnimationPlayer,
   applyAnimationClipToScene,
   createAmbientLight,
   createAnimationPlayer,
-  createCamera,
   createDirectionalLight,
-  createPerspectiveProjection,
   createScene,
   createSceneLights,
   createSceneFromAwd,
   createStandardPbrMaterial,
-  createVector3,
-  DEG_TO_RAD,
   getNodeChildren,
   getPbrRoughnessFromPhongShininess,
   isMesh,
   packOpaqueColor,
   parseAwdSkeletonAnimation,
-  setCameraViewMatrix4FromLookAt,
   updateMeshSkin,
 } from '@flighthq/sdk';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import {
+  createCameraFromAway,
+  createOrbitControllerFromAway,
+  AWAY_MOUSE_SENSITIVITY,
+  awayDirection,
+} from '../../../_shared/flight/src/camera';
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -32,17 +33,10 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera: Camera = createCamera({
-  near: 1,
-  far: 5000,
-  projection: createPerspectiveProjection({
-    fovY: 70 * DEG_TO_RAD,
-    aspect: window.innerWidth / window.innerHeight,
-  }),
-});
+const camera = createCameraFromAway({ fov: 70, near: 1, far: 5000 });
 
 const directional = createDirectionalLight({
-  direction: { x: 0, y: -1, z: 1 },
+  direction: awayDirection(0, -1, -1),
   color: 0xffffffff,
   intensity: 3,
 });
@@ -90,48 +84,39 @@ if (!clip) throw new Error('Failed to parse AWD skeleton animation');
 
 const player: AnimationPlayer = createAnimationPlayer(clip, { loop: true, speed: 1 });
 
-let panAngle = 0;
-let tiltAngle = 0;
-let distance = 150;
+const orbit = createOrbitControllerFromAway(camera, {
+  distance: 150,
+  panAngle: 0,
+  tiltAngle: 0,
+  minTiltAngle: 5,
+  maxTiltAngle: 60,
+  targetY: 60,
+});
+
 let dragging = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
-let savedPan = panAngle;
-let savedTilt = tiltAngle;
-
-const lookAt = createVector3(0, 60, 0);
-const up = createVector3(0, 1, 0);
-const eye = createVector3(0, 0, 0);
-
-function updateCamera(): void {
-  const tilt = Math.max(5 * DEG_TO_RAD, Math.min(60 * DEG_TO_RAD, tiltAngle));
-  tiltAngle = tilt;
-  eye.x = lookAt.x + distance * Math.sin(panAngle) * Math.cos(tilt);
-  eye.y = lookAt.y + distance * Math.sin(tilt);
-  eye.z = lookAt.z - distance * Math.cos(panAngle) * Math.cos(tilt);
-  setCameraViewMatrix4FromLookAt(camera, eye, lookAt, up);
-}
+let savedPan = orbit.panAngle;
+let savedTilt = orbit.tiltAngle;
 
 ctx.canvas.addEventListener('mousedown', (e: MouseEvent) => {
   dragging = true;
   lastMouseX = e.clientX;
   lastMouseY = e.clientY;
-  savedPan = panAngle;
-  savedTilt = tiltAngle;
+  savedPan = orbit.panAngle;
+  savedTilt = orbit.tiltAngle;
 });
 ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
   if (!dragging) return;
-  panAngle = 0.3 * DEG_TO_RAD * (e.clientX - lastMouseX) + savedPan;
-  tiltAngle = 0.3 * DEG_TO_RAD * (e.clientY - lastMouseY) + savedTilt;
+  orbit.panAngle = AWAY_MOUSE_SENSITIVITY * (e.clientX - lastMouseX) + savedPan;
+  orbit.tiltAngle = AWAY_MOUSE_SENSITIVITY * (e.clientY - lastMouseY) + savedTilt;
 });
 window.addEventListener('mouseup', () => {
   dragging = false;
 });
 ctx.canvas.addEventListener('wheel', (e: WheelEvent) => {
-  distance = Math.max(100, Math.min(2000, distance - e.deltaY / 2));
+  orbit.distance = Math.max(100, Math.min(2000, orbit.distance - e.deltaY / 2));
 });
-
-updateCamera();
 
 let lastTs = 0;
 
@@ -143,7 +128,7 @@ function frame(ts: number): void {
   applyAnimationClipToScene(clip, player.time);
   for (const mesh of skinnedMeshes) updateMeshSkin(mesh);
 
-  updateCamera();
+  orbit.update();
   ctx.render(scene, camera, lights);
   requestAnimationFrame(frame);
 }

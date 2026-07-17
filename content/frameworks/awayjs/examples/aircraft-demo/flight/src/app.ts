@@ -32,6 +32,7 @@ import {
   resolveGlRenderTarget,
   resizeGlRenderTarget,
   rotateMatrix4,
+  scaleMatrix4,
   setCameraViewMatrix4FromLookAt,
   setCubeTextureFace,
   setMatrix4Identity,
@@ -172,6 +173,12 @@ let loopIncrement = 0;
 let flightState = 0;
 
 const zAxis = createVector3(0, 0, 1);
+const xAxis = createVector3(1, 0, 0);
+
+// AwayJS applies scaleTo(20,20,20) and a resting rotationX=90 to the f14 (awayjs/src/app.ts:126-127).
+// Y-up right-handed Flight negates the AwayJS left-handed X rotation, so the resting pitch is -90.
+const F14_SCALE = 20;
+const F14_RESTING_PITCH = -90 * DEG_TO_RAD;
 
 let renderTarget: GlRenderTarget | null = null;
 const identityMatrix = createMatrix();
@@ -196,18 +203,22 @@ function frame(): void {
 
   if (flightState === 0) {
     translateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, 0, 200, 0);
-    rotateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, zAxis, Math.sin(rollIncrement) * 25 * DEG_TO_RAD);
   } else {
     loopIncrement += 0.05;
     const lz = -Math.cos(loopIncrement) * 20;
     const ly = 200 + Math.sin(loopIncrement) * 20;
     translateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, 0, ly, lz);
-    rotateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, zAxis, Math.sin(rollIncrement) * 25 * DEG_TO_RAD);
     if (loopIncrement > Math.PI * 2) {
       loopIncrement = 0;
       flightState = 0;
     }
   }
+
+  // TRS after the position translate: roll (Z), resting pitch (X), then the 20x scale —
+  // mirrors the AwayJS f14 transform (scaleTo(20,20,20) + rotationX=90) the port had dropped.
+  rotateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, zAxis, Math.sin(rollIncrement) * 25 * DEG_TO_RAD);
+  rotateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, xAxis, F14_RESTING_PITCH);
+  scaleMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, F14_SCALE, F14_SCALE, F14_SCALE);
 
   invalidateNodeLocalTransform(f14Mesh);
 

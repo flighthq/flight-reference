@@ -107,8 +107,10 @@ assignMaterialToMeshes(awdScene);
 
 for (const child of getNodeChildren(awdScene)) {
   setMatrix4Identity(child.localMatrix);
-  scaleMatrix4(child.localMatrix, child.localMatrix, 4, 4, 4);
+  // Translate before scale so the -20 world offset matches AwayJS (node y=-20 with a
+  // geometry-only scale of 4); scaling first would multiply the offset to -80.
   translateMatrix4(child.localMatrix, child.localMatrix, 0, -20, 0);
+  scaleMatrix4(child.localMatrix, child.localMatrix, 4, 4, 4);
   invalidateNodeLocalTransform(child);
   addNodeChild(scene, child);
 }

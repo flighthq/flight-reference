@@ -35,7 +35,7 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera = createCameraFromAway({ fov: 45, near: 20, far: 5000 });
+const camera = createCameraFromAway({ fov: 60, far: 1000 });
 
 const lightDirection = (120 * Math.PI) / 180;
 const lightElevation = (30 * Math.PI) / 180;
@@ -132,8 +132,8 @@ const orbit = createOrbitControllerFromAway(camera, {
   distance: 800,
   panAngle: 225,
   tiltAngle: 10,
-  minTiltAngle: -60,
-  maxTiltAngle: 60,
+  minTiltAngle: -90,
+  maxTiltAngle: 90,
 });
 
 let dragging = false;

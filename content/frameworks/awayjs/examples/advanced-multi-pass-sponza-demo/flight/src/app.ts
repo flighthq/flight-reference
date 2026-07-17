@@ -30,10 +30,16 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera = createCameraFromAway({ fov: 75, near: 1, far: 5000 });
+const camera = createCameraFromAway({ fov: 60 });
 
+const lightElevation = Math.PI / 18;
+const lightAzimuth = Math.PI / 2;
 const directional = createDirectionalLight({
-  direction: awayDirection(-1, -15, 1),
+  direction: awayDirection(
+    Math.sin(lightElevation) * Math.cos(lightAzimuth),
+    -Math.cos(lightElevation),
+    Math.sin(lightElevation) * Math.sin(lightAzimuth),
+  ),
   color: packOpaqueColor(0xeedddd),
   intensity: 3,
 });

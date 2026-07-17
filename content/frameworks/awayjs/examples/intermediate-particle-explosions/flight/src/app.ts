@@ -58,7 +58,7 @@ registerBlinnPhongGlMaterial(glState);
 
 const scene = createScene();
 
-const camera = createCameraFromAway({ fov: 60, near: 1, far: 5000, aspect: width / height });
+const camera = createCameraFromAway({ fov: 60, aspect: width / height });
 
 const greenLight = createPointLight({ color: 0x00ff00ff, intensity: 5, range: 600 });
 const blueLight = createPointLight({ color: 0x0000ffff, intensity: 5, range: 600 });

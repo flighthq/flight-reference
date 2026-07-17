@@ -38,11 +38,7 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera = createCameraFromAway({
-  fov: 45,
-  near: 0.1,
-  far: 5000,
-});
+const camera = createCameraFromAway({ fov: 60 });
 
 const directional = createDirectionalLight({
   direction: awayDirection(0, -1, 0),

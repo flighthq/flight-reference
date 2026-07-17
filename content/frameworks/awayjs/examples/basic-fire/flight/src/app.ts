@@ -69,7 +69,7 @@ registerStandardPbrGlMaterial(glState);
 
 const scene = createScene();
 
-const camera = createCameraFromAway({ fov: 60, near: 1, far: 5000 });
+const camera = createCameraFromAway({ fov: 60 });
 
 const directional = createDirectionalLight({
   direction: awayDirection(0, -1, 0),

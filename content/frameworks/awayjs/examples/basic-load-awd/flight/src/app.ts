@@ -21,11 +21,7 @@ import {
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
-import {
-  createCameraFromAway,
-  createOrbitControllerFromAway,
-  AWAY_MOUSE_SENSITIVITY,
-} from '../../../_shared/flight/src/camera';
+import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -35,10 +31,10 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera = createCameraFromAway({ fov: 45, near: 0.1, far: 5000 });
+const camera = createCameraFromAway({ z: -2000, fov: 60 });
 
 const directional = createDirectionalLight({
-  direction: { x: 1, y: -0.5, z: 0.5 },
+  direction: awayDirection(1, 0, 0),
   color: packOpaqueColor(0x683019),
   intensity: 4,
 });
@@ -79,38 +75,6 @@ for (const child of getNodeChildren(modelScene)) {
   modelChildren.push(child);
 }
 
-const orbit = createOrbitControllerFromAway(camera, {
-  distance: 2000,
-  panAngle: 0,
-  tiltAngle: 20,
-  minTiltAngle: -90,
-  maxTiltAngle: 90,
-});
-
-let dragging = false;
-let lastMouseX = 0;
-let lastMouseY = 0;
-let savedPan = orbit.panAngle;
-let savedTilt = orbit.tiltAngle;
-
-ctx.canvas.addEventListener('mousedown', (event: MouseEvent) => {
-  dragging = true;
-  lastMouseX = event.clientX;
-  lastMouseY = event.clientY;
-  savedPan = orbit.panAngle;
-  savedTilt = orbit.tiltAngle;
-});
-
-ctx.canvas.addEventListener('mousemove', (event: MouseEvent) => {
-  if (!dragging) return;
-  orbit.panAngle = AWAY_MOUSE_SENSITIVITY * (event.clientX - lastMouseX) + savedPan;
-  orbit.tiltAngle = AWAY_MOUSE_SENSITIVITY * (event.clientY - lastMouseY) + savedTilt;
-});
-
-window.addEventListener('mouseup', () => {
-  dragging = false;
-});
-
 const yAxis = createVector3(0, 1, 0);
 
 function frame(): void {
@@ -119,7 +83,6 @@ function frame(): void {
     invalidateNodeLocalTransform(child);
   }
 
-  orbit.update();
   ctx.render(scene, camera, lights);
   requestAnimationFrame(frame);
 }

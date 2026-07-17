@@ -38,7 +38,7 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera = createCameraFromAway({ fov: 45, near: 0.1, far: 2100 });
+const camera = createCameraFromAway({ fov: 60, far: 2100 });
 
 const directional = createDirectionalLight({
   direction: awayDirection(-1, -1, 1),
@@ -109,7 +109,7 @@ const orbit = createOrbitControllerFromAway(camera, {
   distance: 1000,
   panAngle: 45,
   tiltAngle: 20,
-  minTiltAngle: 0,
+  minTiltAngle: 10,
   maxTiltAngle: 90,
 });
 

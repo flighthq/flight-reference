@@ -1,11 +1,7 @@
 import type { SceneLights } from '@flighthq/sdk';
 import {
-  createScene,
-  drawGlEnvironmentSkybox,
-  drawGlScene,
   addNodeChild,
   createAmbientLight,
-  createBlinnPhongMaterial,
   createCamera,
   createCubeTexture,
   createDirectionalLight,
@@ -14,13 +10,17 @@ import {
   createGlRenderState,
   createMesh,
   createPerspectiveProjection,
+  createScene,
   createSceneLights,
+  createStandardPbrMaterial,
   createTorusMeshGeometry,
   createVector3,
   DEG_TO_RAD,
+  drawGlEnvironmentSkybox,
+  drawGlScene,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
-  registerBlinnPhongGlMaterial,
+  registerStandardPbrGlMaterial,
   renderGlBackground,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
@@ -52,14 +52,14 @@ const state = createGlRenderState(canvas, {
   pixelRatio,
 });
 
-registerBlinnPhongGlMaterial(state);
+registerStandardPbrGlMaterial(state);
 
 const scene = createScene();
 
-const torusMaterial = createBlinnPhongMaterial({
-  diffuse: 0x111199ff,
-  shininess: 20,
-  specular: 0x808080ff,
+const torusMaterial = createStandardPbrMaterial({
+  baseColor: 0xccccccff,
+  metallic: 1,
+  roughness: 0,
 });
 
 const geometry = createTorusMeshGeometry(150, 60, 40, 20);
@@ -75,10 +75,10 @@ const camera = createCamera({
 const directional = createDirectionalLight({
   direction: { x: 0, y: -1, z: 1 },
   color: 0xffffffff,
-  intensity: 0.7,
+  intensity: 5,
 });
 
-const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1 });
+const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
 const lights: SceneLights = createSceneLights({ ambient, directional });
 
 const cubeTexture = createCubeTexture();

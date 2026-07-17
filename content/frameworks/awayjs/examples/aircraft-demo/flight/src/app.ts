@@ -2,8 +2,6 @@ import type { Camera, CubeTexture, Mesh, SceneLights, StandardPbrMaterial } from
 import {
   addNodeChild,
   createAmbientLight,
-  createBlinnPhongMaterial,
-  createBoxMeshGeometry,
   createCamera,
   createCubeTexture,
   createDirectionalLight,
@@ -14,6 +12,7 @@ import {
   createPerspectiveProjection,
   createPlaneMeshGeometry,
   createScene,
+  createSceneFromObj,
   createSceneLights,
   createStandardPbrMaterial,
   createTexture,
@@ -21,6 +20,7 @@ import {
   DEG_TO_RAD,
   drawGlEnvironmentSkybox,
   drawGlScene,
+  getNodeChildren,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   registerBlinnPhongGlMaterial,
@@ -122,24 +122,39 @@ setMatrix4Identity(seaMesh.localMatrix);
 invalidateNodeLocalTransform(seaMesh);
 addNodeChild(scene, seaMesh);
 
-// F14 aircraft — EnvMapMaterial equivalent: StandardPbrMaterial with metallic=1, roughness=0
-// gives a perfect mirror env-map reflection. Placeholder box geometry until OBJ parsing lands
-// in scene-formats; replace createBoxMeshGeometry with parseObjMesh(buffer) when available.
+// F14 aircraft — loaded from OBJ model with PBR material for env-map reflection
 const f14Material: StandardPbrMaterial = createStandardPbrMaterial({
-  baseColor: 0xffffffff,
-  metallic: 1,
-  roughness: 0,
+  baseColor: 0xccccccff,
+  metallic: 0.7,
+  roughness: 0.2,
 });
 
-const f14Geometry = createBoxMeshGeometry(6, 2, 12);
-const f14Mesh: Mesh = createMesh(f14Geometry, [f14Material]);
-setMatrix4Identity(f14Mesh.localMatrix);
-translateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, 0, 200, 0);
-invalidateNodeLocalTransform(f14Mesh);
-addNodeChild(scene, f14Mesh);
+const f14ObjText = await fetch('awayjs/assets/f14/f14d.obj').then((r) => r.text());
+const f14FuselageImage = await loadImageResourceFromUrl('awayjs/assets/f14/f14fuselage.jpg');
+f14Material.baseColorMap = createTexture({ image: f14FuselageImage });
 
-// Fallback blinn-phong material for objects that don't need env-map
-const _fallbackMat = createBlinnPhongMaterial({ diffuse: 0x888888ff, shininess: 20 });
+const f14Scene = createSceneFromObj(f14ObjText);
+
+const f14Container = createScene();
+setMatrix4Identity(f14Container.localMatrix);
+translateMatrix4(f14Container.localMatrix, f14Container.localMatrix, 0, 200, 0);
+invalidateNodeLocalTransform(f14Container);
+
+for (const child of getNodeChildren(f14Scene)) {
+  const mesh = child as Mesh;
+  if (mesh.materials) {
+    if (mesh.materials.length === 0) {
+      mesh.materials.push(f14Material);
+    } else {
+      for (let i = 0; i < mesh.materials.length; i++) {
+        mesh.materials[i] = f14Material;
+      }
+    }
+  }
+  addNodeChild(f14Container, child);
+}
+addNodeChild(scene, f14Container);
+const f14Mesh = f14Container;
 
 // Camera orbits the aircraft continuously
 const eye = createVector3(0, 250, 500);

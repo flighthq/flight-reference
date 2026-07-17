@@ -1,4 +1,4 @@
-import type { AnimationClip, AnimationPlayer, Camera, SceneLights, Skeleton3D } from '@flighthq/sdk';
+import type { AnimationClip, AnimationPlayer, Camera, SceneLights, SceneNode, Skeleton3D } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceAnimationPlayer,
@@ -6,15 +6,19 @@ import {
   computeSkeleton3DJointMatrices,
   createAmbientLight,
   createAnimationPlayer,
+  createBlinnPhongMaterial,
   createCamera,
   createDirectionalLight,
   createPerspectiveProjection,
   createScene,
   createSceneLights,
   createSceneFromAwd,
+  createTexture,
   createVector3,
   DEG_TO_RAD,
   getNodeChildren,
+  isMesh,
+  loadImageResourceFromUrl,
   parseAwdSkeletonAnimation,
   setCameraViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
@@ -40,16 +44,35 @@ const camera: Camera = createCamera({
 const directional = createDirectionalLight({
   direction: { x: 0, y: -1, z: 1 },
   color: 0xffffffff,
-  intensity: 0.7,
+  intensity: 5,
 });
-const ambient = createAmbientLight({ color: 0xffffffff, intensity: 0.3 });
+const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
 const lights: SceneLights = createSceneLights({ ambient, directional });
 
 const awdBuffer = await fetch('awayjs/assets/shambler.awd').then((r) => r.arrayBuffer());
 const awdBytes = new Uint8Array(awdBuffer);
 
+const bodyMaterial = createBlinnPhongMaterial({
+  diffuse: 0x808080ff,
+  shininess: 10,
+  specular: 0x404040ff,
+});
+
+function assignMaterial(node: SceneNode): void {
+  if (isMesh(node)) {
+    if (node.materials.length === 0) node.materials.push(bodyMaterial);
+    for (let i = 0; i < node.materials.length; i++) {
+      if (!node.materials[i]) node.materials[i] = bodyMaterial;
+    }
+  }
+  for (const child of getNodeChildren(node)) {
+    assignMaterial(child);
+  }
+}
+
 // Parse mesh geometry from the AWD file
 const awdScene = createSceneFromAwd(awdBytes);
+assignMaterial(awdScene);
 for (const child of getNodeChildren(awdScene)) {
   addNodeChild(scene, child);
 }

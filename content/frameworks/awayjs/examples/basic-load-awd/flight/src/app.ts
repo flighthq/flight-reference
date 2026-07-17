@@ -2,6 +2,7 @@ import type { SceneNode } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
+  createBlinnPhongMaterial,
   createCamera,
   createDirectionalLight,
   createPerspectiveProjection,
@@ -12,6 +13,7 @@ import {
   DEG_TO_RAD,
   getNodeChildren,
   invalidateNodeLocalTransform,
+  isMesh,
   rotateMatrix4,
   scaleMatrix4,
   setCameraViewMatrix4FromLookAt,
@@ -39,16 +41,36 @@ const camera = createCamera({
 });
 
 const directional = createDirectionalLight({
-  direction: { x: 1, y: 0, z: 0 },
+  direction: { x: 1, y: -0.5, z: 0.5 },
   color: 0x683019ff,
-  intensity: 2.8,
+  intensity: 8,
 });
 
-const ambient = createAmbientLight({ color: 0x30353bff, intensity: 0.5 });
+const ambient = createAmbientLight({ color: 0x30353bff, intensity: 2 });
 const lights = createSceneLights({ ambient, directional });
+
+const defaultMaterial = createBlinnPhongMaterial({
+  diffuse: 0xffffffff,
+  shininess: 20,
+  specular: 0x808080ff,
+});
 
 const buffer = await fetch('awayjs/assets/suzanne.awd').then((r) => r.arrayBuffer());
 const modelScene = createSceneFromAwd(new Uint8Array(buffer));
+
+function assignDefaultMaterial(node: SceneNode): void {
+  if (isMesh(node)) {
+    if (node.materials.length === 0) node.materials.push(defaultMaterial);
+    for (let i = 0; i < node.materials.length; i++) {
+      if (!node.materials[i]) node.materials[i] = defaultMaterial;
+    }
+  }
+  for (const child of getNodeChildren(node)) {
+    assignDefaultMaterial(child);
+  }
+}
+
+assignDefaultMaterial(modelScene);
 
 const modelChildren: SceneNode[] = [];
 for (const child of getNodeChildren(modelScene)) {

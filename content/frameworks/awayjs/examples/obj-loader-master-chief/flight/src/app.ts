@@ -48,12 +48,12 @@ const up = createVector3(0, 1, 0);
 setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 
 const directional = createDirectionalLight({
-  direction: { x: 1, y: 0, z: 0 },
+  direction: { x: 1, y: -0.5, z: 0.5 },
   color: 0xc1582dff,
-  intensity: 1.0,
+  intensity: 6,
 });
 
-const ambient = createAmbientLight({ color: 0x85b2cdff, intensity: 0.4 });
+const ambient = createAmbientLight({ color: 0x85b2cdff, intensity: 2 });
 const lights = createSceneLights({ ambient, directional });
 
 const spartanContainer = createSceneNode();
@@ -87,8 +87,12 @@ const spartanScene = createSceneFromObj(spartanObjText);
 for (const child of getNodeChildren(spartanScene)) {
   const mesh = child as Mesh;
   if (mesh.materials) {
-    for (let i = 0; i < mesh.materials.length; i++) {
-      mesh.materials[i] = masterchiefMaterial;
+    if (mesh.materials.length === 0) {
+      mesh.materials.push(masterchiefMaterial);
+    } else {
+      for (let i = 0; i < mesh.materials.length; i++) {
+        mesh.materials[i] = masterchiefMaterial;
+      }
     }
   }
   addNodeChild(spartanContainer, mesh);
@@ -99,8 +103,12 @@ let terrainNode: SceneNode | undefined;
 for (const child of getNodeChildren(terrainScene)) {
   const mesh = child as Mesh;
   if (mesh.materials) {
-    for (let i = 0; i < mesh.materials.length; i++) {
-      mesh.materials[i] = stoneMaterial;
+    if (mesh.materials.length === 0) {
+      mesh.materials.push(stoneMaterial);
+    } else {
+      for (let i = 0; i < mesh.materials.length; i++) {
+        mesh.materials[i] = stoneMaterial;
+      }
     }
   }
   addNodeChild(scene, mesh);

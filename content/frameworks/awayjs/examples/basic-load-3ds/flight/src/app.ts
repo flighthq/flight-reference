@@ -47,10 +47,10 @@ const camera = createCamera({
 const directional = createDirectionalLight({
   direction: { x: -1, y: -1, z: -1 },
   color: 0xffffffff,
-  intensity: 0.7,
+  intensity: 6,
 });
 
-const ambient = createAmbientLight({ color: 0xffffffff, intensity: 0.2 });
+const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
 const lights = createSceneLights({ ambient, directional });
 
 const groundMaterial = createBlinnPhongMaterial({
@@ -75,12 +75,23 @@ groundMaterial.diffuseMap = createTexture({ image: sandImage });
 const modelScene = createSceneFrom3ds(new Uint8Array(modelBuffer));
 const antTexture = createTexture({ image: antImage });
 
+const antMaterial = createBlinnPhongMaterial({
+  diffuse: 0xffffffff,
+  shininess: 20,
+  specular: 0x808080ff,
+});
+antMaterial.diffuseMap = antTexture;
+
 const modelContainer = createSceneNode();
 for (const child of getNodeChildren(modelScene)) {
   const mesh = child as Mesh;
   if (mesh.materials) {
-    for (const mat of mesh.materials) {
-      (mat as BlinnPhongMaterial).diffuseMap = antTexture;
+    if (mesh.materials.length === 0) {
+      mesh.materials.push(antMaterial);
+    } else {
+      for (let i = 0; i < mesh.materials.length; i++) {
+        mesh.materials[i] = antMaterial;
+      }
     }
   }
   addNodeChild(modelContainer, mesh);

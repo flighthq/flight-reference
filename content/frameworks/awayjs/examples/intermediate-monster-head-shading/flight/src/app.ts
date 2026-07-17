@@ -1,4 +1,4 @@
-import type { BlinnPhongMaterial, Mesh, SceneNode } from '@flighthq/sdk';
+import type { BlinnPhongMaterial, SceneNode } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
@@ -35,7 +35,7 @@ const scene = createScene();
 
 const camera = createCamera({
   near: 20,
-  far: 1000,
+  far: 5000,
   projection: createPerspectiveProjection({
     fovY: 45 * DEG_TO_RAD,
     aspect: window.innerWidth / window.innerHeight,
@@ -52,17 +52,17 @@ const directional = createDirectionalLight({
     z: -Math.sin(lightElevation) * Math.sin(lightDirection),
   },
   color: 0xffeeddff,
-  intensity: 1,
+  intensity: 12,
 });
 
-const ambient = createAmbientLight({ color: 0x101025ff, intensity: 1 });
+const ambient = createAmbientLight({ color: 0x606080ff, intensity: 1.5 });
 
-const blueLight = createPointLight({ color: 0x4080ffff, intensity: 1, range: 5000 });
+const blueLight = createPointLight({ color: 0x4080ffff, intensity: 5, range: 5000 });
 blueLight.position.x = 3000;
 blueLight.position.z = -700;
 blueLight.position.y = 20;
 
-const redLight = createPointLight({ color: 0x802010ff, intensity: 1, range: 5000 });
+const redLight = createPointLight({ color: 0x802010ff, intensity: 5, range: 5000 });
 redLight.position.x = -2000;
 redLight.position.z = -800;
 redLight.position.y = -400;
@@ -74,26 +74,35 @@ const lights = createSceneLights({
 });
 
 const headMaterial: BlinnPhongMaterial = createBlinnPhongMaterial({
-  diffuse: 0x303040ff,
+  diffuse: 0xffffffff,
   shininess: 10,
   specular: 0xffffffff,
 });
 
+async function tryLoadImage(url: string): Promise<Awaited<ReturnType<typeof loadImageResourceFromUrl>> | null> {
+  try {
+    return await loadImageResourceFromUrl(url);
+  } catch {
+    return null;
+  }
+}
+
 const [diffuseImage, specularImage, normalImage, awdBuffer] = await Promise.all([
-  loadImageResourceFromUrl('awayjs/assets/monsterhead/monsterhead_diffuse.jpg'),
-  loadImageResourceFromUrl('awayjs/assets/monsterhead/monsterhead_specular.jpg'),
-  loadImageResourceFromUrl('awayjs/assets/monsterhead/monsterhead_normals.jpg'),
+  tryLoadImage('awayjs/assets/monsterhead/monsterhead_diffuse.jpg'),
+  tryLoadImage('awayjs/assets/monsterhead/monsterhead_specular.jpg'),
+  tryLoadImage('awayjs/assets/monsterhead/monsterhead_normals.jpg'),
   fetch('awayjs/assets/monsterhead/MonsterHead.awd').then((r) => r.arrayBuffer()),
 ]);
 
-headMaterial.diffuseMap = createTexture({ image: diffuseImage });
-headMaterial.specularMap = createTexture({ image: specularImage });
-headMaterial.normalMap = createTexture({ image: normalImage });
+if (diffuseImage) headMaterial.diffuseMap = createTexture({ image: diffuseImage });
+if (specularImage) headMaterial.specularMap = createTexture({ image: specularImage });
+if (normalImage) headMaterial.normalMap = createTexture({ image: normalImage });
 
 const awdScene = createSceneFromAwd(new Uint8Array(awdBuffer));
 
 function assignMaterialToMeshes(node: SceneNode): void {
   if (isMesh(node)) {
+    if (node.materials.length === 0) node.materials.push(headMaterial);
     for (let i = 0; i < node.materials.length; i++) {
       node.materials[i] = headMaterial;
     }

@@ -11,16 +11,13 @@ import {
   addNodeChild,
   advanceAnimationPlayer,
   applyAnimationClipToScene,
-  createAmbientLight,
   createAnimationPlayer,
   computeMeshGeometryNormals,
-  createDirectionalLight,
   createGlCanvasElement,
   createGlRenderState,
   createGlRenderTarget,
   createMesh,
   createPlaneMeshGeometry,
-  createPointLight,
   createScene,
   createSceneFromMd5Mesh,
   createSceneLights,
@@ -34,7 +31,6 @@ import {
   invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
-  packOpaqueColor,
   parseMd5Anim,
   presentGlScene,
   registerStandardPbrGlMaterial,
@@ -45,7 +41,8 @@ import {
   updateMeshSkin,
 } from '@flighthq/sdk';
 
-import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
+import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
+import { createDirectionalLightFromAway, createPointLightFromAway } from '../../../_shared/flight/src/lighting';
 const ANIM_NAMES = [
   'idle2',
   'walk7',
@@ -95,24 +92,21 @@ const up = createVector3(0, 1, 0);
 const eye = createVector3(0, 160, -200);
 
 function updateCamera(spriteRotY: number): void {
-  const cos = Math.cos(spriteRotY);
-  const sin = Math.sin(spriteRotY);
-  const dx = -200 * sin;
-  const dz = -200 * cos;
-  eye.x = placeHolder.x + dx;
-  eye.y = placeHolder.y + 110;
-  eye.z = placeHolder.z + dz;
+  setAwayPosition(eye, -200 * Math.sin(spriteRotY), 110, 200 * Math.cos(spriteRotY));
+  eye.x += placeHolder.x;
+  eye.y += placeHolder.y;
+  eye.z += placeHolder.z;
   setCameraViewMatrix4FromLookAt(camera, eye, placeHolder, up);
 }
 
-const redLight = createPointLight({ color: 0xff1111ff, intensity: 1, range: 3000 });
-const blueLight = createPointLight({ color: 0x1111ffff, intensity: 1, range: 3000 });
-const whiteLight = createDirectionalLight({
+const redLight = createPointLightFromAway({ color: 0xff1111, range: 3000 });
+const blueLight = createPointLightFromAway({ color: 0x1111ff, range: 3000 });
+const { directional: whiteLight, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(-50, -20, 10),
-  color: packOpaqueColor(0xffffee),
-  intensity: 3,
+  color: 0xffffee,
+  ambient: 1,
+  ambientColor: 0x303040,
 });
-const ambient = createAmbientLight({ color: packOpaqueColor(0x606080), intensity: 1 });
 const lights: SceneLights = createSceneLights({
   ambient,
   directional: whiteLight,
@@ -347,12 +341,18 @@ function frame(ts: number): void {
     placeHolder.z += Math.cos(spriteRotY) * movementDir * (isRunning ? RUN_SPEED : WALK_SPEED) * 50 * dt;
   }
 
-  redLight.position.x = Math.sin(count) * 1500;
-  redLight.position.y = 250 + Math.sin(count * 0.54) * 200;
-  redLight.position.z = -Math.cos(count * 0.7) * 1500;
-  blueLight.position.x = -Math.sin(count * 0.8) * 1500;
-  blueLight.position.y = 250 - Math.sin(count * 0.65) * 200;
-  blueLight.position.z = Math.cos(count * 0.9) * 1500;
+  setAwayPosition(
+    redLight.position,
+    Math.sin(count) * 1500,
+    250 + Math.sin(count * 0.54) * 200,
+    Math.cos(count * 0.7) * 1500,
+  );
+  setAwayPosition(
+    blueLight.position,
+    -Math.sin(count * 0.8) * 1500,
+    250 - Math.sin(count * 0.65) * 200,
+    -Math.cos(count * 0.9) * 1500,
+  );
 
   updateCamera(spriteRotY);
 

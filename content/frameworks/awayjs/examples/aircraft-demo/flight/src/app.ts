@@ -4,9 +4,7 @@ import {
   bakeEnvironmentIbl,
   beginGlRenderTarget,
   computeMeshGeometryNormals,
-  createAmbientLight,
   createCubeTexture,
-  createDirectionalLight,
   createEnvironment,
   createGlCanvasElement,
   createGlRenderState,
@@ -40,7 +38,8 @@ import {
   translateMatrix4,
 } from '@flighthq/sdk';
 
-import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
+import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
+import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
 // The original AwayJS demo uses NormalSimpleWaterMethod + EffectEnvMapMethod + SpecularFresnelMethod
 // on the sea surface. In Flight we approximate this with:
 //   - A StandardPbrMaterial with metallic=1, roughness=0 (mirror-like env-map reflection) for the
@@ -74,12 +73,13 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60, near: 0.5, far: 14000 });
 
-const directional = createDirectionalLight({
+const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(-300, -300, -5000),
-  color: 0x974523ff,
-  intensity: 3.5,
+  color: 0x974523,
+  diffuse: 1.2,
+  ambient: 1,
+  ambientColor: 0x7196ac,
 });
-const ambient = createAmbientLight({ color: 0x7196acff, intensity: 1.5 });
 const lights: SceneLights = createSceneLights({ ambient, directional });
 
 // Environment cube map — individual face images derived from the CubeTextureTest.cube asset
@@ -211,9 +211,7 @@ function frame(): void {
 
   invalidateNodeLocalTransform(f14Mesh);
 
-  eye.x = Math.cos(cameraIncrement) * 400;
-  eye.y = 250;
-  eye.z = -Math.sin(cameraIncrement) * 400;
+  setAwayPosition(eye, Math.cos(cameraIncrement) * 400, 250, Math.sin(cameraIncrement) * 400);
   updateCameraLookAt();
 
   // Scroll the water normal map to simulate surface flow

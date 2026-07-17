@@ -1,8 +1,6 @@
 import type { Mesh, SceneHit, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createAmbientLight,
-  createDirectionalLight,
   createMesh,
   createScene,
   createSceneFromAwd,
@@ -15,7 +13,6 @@ import {
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   isMesh,
-  packOpaqueColor,
   pickScene,
   rotateMatrix4,
   scaleMatrix4,
@@ -25,7 +22,8 @@ import {
   translateMatrix4,
 } from '@flighthq/sdk';
 
-import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
+import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
+import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const ctx = createScene3DContext({
@@ -38,12 +36,13 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60, far: 6000 });
 
-const directional = createDirectionalLight({
+const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(1, 0, 0),
-  color: packOpaqueColor(0x683019),
-  intensity: 4,
+  color: 0x683019,
+  diffuse: 2.8,
+  ambient: 0.1,
+  ambientColor: 0x85b2cd,
 });
-const ambient = createAmbientLight({ color: packOpaqueColor(0x85b2cd), intensity: 2 });
 const lights = createSceneLights({ ambient, directional });
 
 const defaultMaterial: StandardPbrMaterial = createStandardPbrMaterial({
@@ -111,9 +110,7 @@ const up = createVector3(0, 1, 0);
 const eye = createVector3(0, 0, 0);
 
 function updateCamera(): void {
-  eye.x = Math.cos(cameraAngle) * distance;
-  eye.y = 0;
-  eye.z = -Math.sin(cameraAngle) * distance;
+  setAwayPosition(eye, Math.cos(cameraAngle) * distance, 0, Math.sin(cameraAngle) * distance);
   setCameraViewMatrix4FromLookAt(camera, eye, lookAt, up);
 }
 

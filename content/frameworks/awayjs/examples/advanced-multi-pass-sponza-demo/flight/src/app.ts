@@ -1,8 +1,6 @@
 import type { Mesh, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createAmbientLight,
-  createDirectionalLight,
   createScene,
   createSceneFromAwd,
   createSceneLights,
@@ -20,6 +18,7 @@ import {
   createFirstPersonControllerFromAway,
   AWAY_MOUSE_SENSITIVITY,
 } from '../../../_shared/flight/src/camera';
+import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const ctx = createScene3DContext({
@@ -34,19 +33,15 @@ const camera = createCameraFromAway({ fov: 60 });
 
 const lightElevation = Math.PI / 18;
 const lightAzimuth = Math.PI / 2;
-const directional = createDirectionalLight({
+const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(
     Math.sin(lightElevation) * Math.cos(lightAzimuth),
     -Math.cos(lightElevation),
     Math.sin(lightElevation) * Math.sin(lightAzimuth),
   ),
-  color: packOpaqueColor(0xeedddd),
-  intensity: 3,
-});
-
-const ambient = createAmbientLight({
-  color: packOpaqueColor(0x808090),
-  intensity: 1.5,
+  color: 0xeedddd,
+  ambient: 0.35,
+  ambientColor: 0x808090,
 });
 const lights = createSceneLights({ ambient, directional });
 

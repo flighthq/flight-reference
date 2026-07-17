@@ -27,6 +27,7 @@ import {
   createCameraFromAway,
   createOrbitControllerFromAway,
 } from '../../../_shared/flight/src/camera';
+import { awayIntensity } from '../../../_shared/flight/src/lighting';
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -43,10 +44,10 @@ let sunAngle = 0;
 const sunLight = createDirectionalLight({
   direction: { x: Math.sin(sunAngle), y: 0, z: Math.cos(sunAngle) },
   color: 0xffffffff,
-  intensity: 5,
+  intensity: awayIntensity(2),
 });
 
-const ambient = createAmbientLight({ color: packOpaqueColor(0x303040), intensity: 2 });
+const ambient = createAmbientLight({ color: packOpaqueColor(0x303040), intensity: awayIntensity(1) });
 
 const lights = createSceneLights({
   ambient,

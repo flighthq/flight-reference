@@ -1,9 +1,6 @@
 import type { SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createAmbientLight,
-  createDirectionalLight,
-  createPointLight,
   createScene,
   createSceneFromAwd,
   createSceneLights,
@@ -14,7 +11,6 @@ import {
   invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
-  packOpaqueColor,
   scaleMatrix4,
   setMatrix4Identity,
   translateMatrix4,
@@ -26,6 +22,7 @@ import {
   createCameraFromAway,
   createOrbitControllerFromAway,
 } from '../../../_shared/flight/src/camera';
+import { createDirectionalLightFromAway, createPointLightFromAway } from '../../../_shared/flight/src/lighting';
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -40,35 +37,23 @@ const camera = createCameraFromAway({ fov: 60, far: 1000 });
 const lightDirection = (120 * Math.PI) / 180;
 const lightElevation = (30 * Math.PI) / 180;
 
-const directional = createDirectionalLight({
+const { directional, ambient } = createDirectionalLightFromAway({
   direction: {
     x: Math.sin(lightElevation) * Math.cos(lightDirection),
     y: -Math.cos(lightElevation),
     z: -Math.sin(lightElevation) * Math.sin(lightDirection),
   },
-  color: packOpaqueColor(0xffeedd),
-  intensity: 6,
+  color: 0xffeedd,
+  ambient: 1,
+  ambientColor: 0x101025,
 });
 
-const ambient = createAmbientLight({
-  color: packOpaqueColor(0x606080),
-  intensity: 1.5,
-});
-
-const blueLight = createPointLight({
-  color: packOpaqueColor(0x4080ff),
-  intensity: 3,
-  range: 5000,
-});
+const blueLight = createPointLightFromAway({ color: 0x4080ff, range: 5000 });
 blueLight.position.x = 3000;
 blueLight.position.z = -700;
 blueLight.position.y = 20;
 
-const redLight = createPointLight({
-  color: packOpaqueColor(0x802010),
-  intensity: 3,
-  range: 5000,
-});
+const redLight = createPointLightFromAway({ color: 0x802010, range: 5000 });
 redLight.position.x = -2000;
 redLight.position.z = -800;
 redLight.position.y = -400;

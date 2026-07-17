@@ -5,7 +5,6 @@ import {
   createBoxMeshGeometry,
   createCylinderMeshGeometry,
   createMesh,
-  createPointLight,
   createScene,
   createSceneFromObj,
   createSceneHit,
@@ -32,6 +31,7 @@ import {
   createOrbitControllerFromAway,
   AWAY_MOUSE_SENSITIVITY,
 } from '../../../_shared/flight/src/camera';
+import { createPointLightFromAway } from '../../../_shared/flight/src/lighting';
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -43,11 +43,7 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60 });
 
-const pointLight = createPointLight({
-  color: 0xffffffff,
-  intensity: 3,
-  range: 10000,
-});
+const pointLight = createPointLightFromAway({ range: 10000 });
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
 const lights = createSceneLights({
   ambient,

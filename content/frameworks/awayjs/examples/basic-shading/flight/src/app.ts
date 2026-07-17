@@ -1,9 +1,7 @@
 import type { StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createAmbientLight,
   createBoxMeshGeometry,
-  createDirectionalLight,
   createMesh,
   createPlaneMeshGeometry,
   createScene,
@@ -28,6 +26,7 @@ import {
   createOrbitControllerFromAway,
   AWAY_MOUSE_SENSITIVITY,
 } from '../../../_shared/flight/src/camera';
+import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const ctx = createScene3DContext({
@@ -40,13 +39,14 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60 });
 
-const directional = createDirectionalLight({
+// AwayJS has two directional lights: a white primary (diffuse 0.7, ambient 0.1) and a cyan
+// secondary (0x00ffff, diffuse 0.7, ambient 0.1). Flight's SceneLights supports only one
+// directional, so we combine both ambient contributions (0.1 + 0.1 = 0.2) into the primary.
+const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(0, -1, 0),
-  color: 0xffffffff,
-  intensity: 3,
+  diffuse: 0.7,
+  ambient: 0.2,
 });
-
-const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
 const lights = createSceneLights({ ambient, directional });
 
 const planeMaterial = createStandardPbrMaterial({

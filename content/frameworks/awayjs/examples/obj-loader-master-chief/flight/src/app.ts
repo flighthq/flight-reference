@@ -2,8 +2,6 @@ import type { Mesh, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   computeMeshGeometryNormals,
-  createAmbientLight,
-  createDirectionalLight,
   createScene,
   createSceneFromObj,
   createSceneLights,
@@ -25,6 +23,7 @@ import {
 
 import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -36,13 +35,13 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ y: 20, z: -50, targetY: 20, fov: 60, near: 0.1 });
 
-const directional = createDirectionalLight({
+const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(1, 0, 0),
-  color: packOpaqueColor(0xc1582d),
-  intensity: 3,
+  color: 0xc1582d,
+  diffuse: 2.8,
+  ambient: 0.4,
+  ambientColor: 0x85b2cd,
 });
-
-const ambient = createAmbientLight({ color: packOpaqueColor(0x85b2cd), intensity: 2 });
 const lights = createSceneLights({ ambient, directional });
 
 const spartanContainer = createSceneNode();

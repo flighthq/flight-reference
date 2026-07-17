@@ -34,7 +34,7 @@ import {
   setMatrix4Identity,
 } from '@flighthq/sdk';
 
-import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
+import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
 const width = window.innerWidth;
 const height = window.innerHeight;
 const pixelRatio = window.devicePixelRatio || 1;
@@ -135,9 +135,7 @@ function frame(): void {
   cameraRotationY += (0.5 * (mouseX - window.innerWidth / 2)) / 800;
   const rotRad = cameraRotationY * DEG_TO_RAD;
 
-  eye.x = -600 * Math.sin(rotRad);
-  eye.y = 0;
-  eye.z = 600 * Math.cos(rotRad);
+  setAwayPosition(eye, -600 * Math.sin(rotRad), 0, -600 * Math.cos(rotRad));
 
   setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 

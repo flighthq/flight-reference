@@ -3,7 +3,6 @@ import {
   addNodeChild,
   computeMeshGeometryNormals,
   createAmbientLight,
-  createDirectionalLight,
   createMesh,
   createPlaneMeshGeometry,
   createScene,
@@ -29,6 +28,7 @@ import {
   createCameraFromAway,
   createOrbitControllerFromAway,
 } from '../../../_shared/flight/src/camera';
+import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -40,10 +40,8 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60, far: 2100 });
 
-const directional = createDirectionalLight({
+const { directional } = createDirectionalLightFromAway({
   direction: awayDirection(-1, -1, 1),
-  color: 0xffffffff,
-  intensity: 3,
 });
 
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });

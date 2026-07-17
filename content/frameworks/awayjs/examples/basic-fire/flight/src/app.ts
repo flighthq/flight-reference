@@ -9,8 +9,6 @@ import type {
 import {
   addNodeChild,
   addTextureAtlasRegion,
-  createAmbientLight,
-  createDirectionalLight,
   createGlCanvasElement,
   createGlRenderState,
   createGlRenderTarget,
@@ -19,7 +17,6 @@ import {
   createParticleEmitterConfig,
   createParticleEmitterState,
   createPlaneMeshGeometry,
-  createPointLight,
   createScene,
   createSceneLights,
   createStandardPbrMaterial,
@@ -43,6 +40,11 @@ import {
   createOrbitControllerFromAway,
   AWAY_MOUSE_SENSITIVITY,
 } from '../../../_shared/flight/src/camera';
+import {
+  awayIntensity,
+  createDirectionalLightFromAway,
+  createPointLightFromAway,
+} from '../../../_shared/flight/src/lighting';
 const NUM_FIRES = 10;
 const FIRE_RADIUS = 400;
 const FIRE_START_INTERVAL = 1000;
@@ -71,16 +73,16 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60 });
 
-const directional = createDirectionalLight({
+const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(0, -1, 0),
-  color: 0xeeddddff,
-  intensity: 0.5,
+  color: 0xeedddd,
+  diffuse: 0.5,
+  ambient: 0.5,
+  ambientColor: 0x808090,
 });
 
-const ambient = createAmbientLight({ color: 0x808090ff, intensity: 0.5 });
-
 const firePointLights = Array.from({ length: NUM_FIRES }, () =>
-  createPointLight({ color: 0xff3301ff, intensity: 0, range: 400 }),
+  createPointLightFromAway({ color: 0xff3301, diffuse: 0, range: 400 }),
 );
 
 const lights: SceneLights = createSceneLights({
@@ -242,7 +244,7 @@ function frame(ts: number): void {
 
     if (fire.strength < 1) fire.strength += 0.1;
     const light = firePointLights[fire.lightIndex];
-    light.intensity = fire.strength + Math.random() * 0.2;
+    light.intensity = awayIntensity(fire.strength + Math.random() * 0.2);
     light.range = 380 + Math.random() * 20;
   }
 

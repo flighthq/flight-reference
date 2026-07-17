@@ -88,7 +88,7 @@ registerStandardPbrGlMaterial(glState);
 
 const scene = createScene();
 
-const camera = createCameraFromAway({ fov: 45, near: 1, far: 5000 });
+const camera = createCameraFromAway({ fov: 60, far: 5000 });
 
 const placeHolder = createVector3(0, 50, 0);
 const up = createVector3(0, 1, 0);

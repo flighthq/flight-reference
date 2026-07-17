@@ -27,8 +27,8 @@ export interface AwayPerspectiveCameraOptions {
 
 export function createCameraFromAway(opts: Readonly<AwayPerspectiveCameraOptions>): Camera {
   const fovDeg = opts.fov ?? 60;
-  const near = opts.near ?? 0.1;
-  const far = opts.far ?? 5000;
+  const near = opts.near ?? 20;
+  const far = opts.far ?? 3000;
   const aspect = opts.aspect ?? window.innerWidth / window.innerHeight;
 
   const camera = createCamera({

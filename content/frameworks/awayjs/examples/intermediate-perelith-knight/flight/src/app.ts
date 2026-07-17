@@ -37,7 +37,7 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera = createCameraFromAway({ fov: 45, near: 0.1, far: 5000 });
+const camera = createCameraFromAway({ fov: 60, far: 5000 });
 
 const directional = createDirectionalLight({
   direction: awayDirection(-0.5, -1, -1),
@@ -119,8 +119,8 @@ const orbit = createOrbitControllerFromAway(camera, {
   distance: 2000,
   panAngle: 45,
   tiltAngle: 20,
-  minTiltAngle: 2,
-  maxTiltAngle: 85,
+  minTiltAngle: 5,
+  maxTiltAngle: 90,
 });
 
 let dragging = false;
@@ -155,7 +155,7 @@ window.addEventListener('mouseup', () => {
 ctx.canvas.addEventListener('wheel', (e: WheelEvent) => {
   orbit.distance -= e.deltaY / 2;
   if (orbit.distance < 100) orbit.distance = 100;
-  else if (orbit.distance > 5000) orbit.distance = 5000;
+  else if (orbit.distance > 2000) orbit.distance = 2000;
 });
 
 document.addEventListener('keydown', (e: KeyboardEvent) => {

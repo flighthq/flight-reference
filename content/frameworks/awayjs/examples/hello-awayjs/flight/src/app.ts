@@ -24,7 +24,7 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera = createCameraFromAway({ y: 500, z: -600, fov: 60, near: 1, far: 10000 });
+const camera = createCameraFromAway({ y: 500, z: -600, fov: 60 });
 
 const lights: SceneLights = { ambient: null, directional: null };
 

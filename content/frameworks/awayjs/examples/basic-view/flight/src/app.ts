@@ -26,7 +26,7 @@ const geometry = createPlaneMeshGeometry(700, 700);
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
-const camera = createCameraFromAway({ y: 500, z: -600, fov: 60, near: 1, far: 10000 });
+const camera = createCameraFromAway({ y: 500, z: -600, fov: 60 });
 
 const lights: SceneLights = { ambient: null, directional: null };
 const yAxis = createVector3(0, 1, 0);

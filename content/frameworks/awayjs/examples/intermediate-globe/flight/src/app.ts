@@ -36,7 +36,7 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera = createCameraFromAway({ fov: 45, near: 0.1, far: 100000 });
+const camera = createCameraFromAway({ fov: 60, far: 100000 });
 
 let sunAngle = 0;
 

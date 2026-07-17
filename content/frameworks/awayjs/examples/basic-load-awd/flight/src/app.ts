@@ -1,17 +1,20 @@
 import type { SceneNode } from '@flighthq/sdk';
 import {
   addNodeChild,
+  applyLightExposure,
   createAmbientLight,
-  createBlinnPhongMaterial,
   createCamera,
   createDirectionalLight,
   createPerspectiveProjection,
   createScene,
   createSceneFromAwd,
   createSceneLights,
+  createStandardPbrMaterial,
   createVector3,
   DEG_TO_RAD,
   getNodeChildren,
+  getPbrRoughnessFromPhongShininess,
+  getPhongToPbrLightExposure,
   invalidateNodeLocalTransform,
   isMesh,
   rotateMatrix4,
@@ -22,6 +25,9 @@ import {
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
+
+const pbrExposure = getPhongToPbrLightExposure();
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -42,17 +48,17 @@ const camera = createCamera({
 
 const directional = createDirectionalLight({
   direction: { x: 1, y: -0.5, z: 0.5 },
-  color: 0x683019ff,
-  intensity: 8,
+  color: packOpaqueColor(0x683019),
+  intensity: applyLightExposure(8, pbrExposure),
 });
 
-const ambient = createAmbientLight({ color: 0x30353bff, intensity: 2 });
+const ambient = createAmbientLight({ color: packOpaqueColor(0x30353b), intensity: applyLightExposure(2, pbrExposure) });
 const lights = createSceneLights({ ambient, directional });
 
-const defaultMaterial = createBlinnPhongMaterial({
-  diffuse: 0xffffffff,
-  shininess: 20,
-  specular: 0x808080ff,
+const defaultMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
 });
 
 const buffer = await fetch('awayjs/assets/suzanne.awd').then((r) => r.arrayBuffer());

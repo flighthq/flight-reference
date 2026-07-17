@@ -1,9 +1,9 @@
-import type { BlinnPhongMaterial, Mesh, SceneNode } from '@flighthq/sdk';
+import type { Mesh, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
+  applyLightExposure,
   computeMeshGeometryNormals,
   createAmbientLight,
-  createBlinnPhongMaterial,
   createCamera,
   createDirectionalLight,
   createPerspectiveProjection,
@@ -11,10 +11,13 @@ import {
   createSceneFromObj,
   createSceneLights,
   createSceneNode,
+  createStandardPbrMaterial,
   createTexture,
   createVector3,
   DEG_TO_RAD,
   getNodeChildren,
+  getPhongToPbrLightExposure,
+  getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   rotateMatrix4,
@@ -25,11 +28,14 @@ import {
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
+
+const pbrExposure = getPhongToPbrLightExposure();
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
-  backgroundColor: 0xcec8c6ff,
+  backgroundColor: packOpaqueColor(0xcec8c6),
 });
 
 const scene = createScene();
@@ -50,11 +56,11 @@ setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 
 const directional = createDirectionalLight({
   direction: { x: 1, y: -0.5, z: 0.5 },
-  color: 0xc1582dff,
-  intensity: 6,
+  color: packOpaqueColor(0xc1582d),
+  intensity: applyLightExposure(6, pbrExposure),
 });
 
-const ambient = createAmbientLight({ color: 0x85b2cdff, intensity: 2 });
+const ambient = createAmbientLight({ color: packOpaqueColor(0x85b2cd), intensity: applyLightExposure(2, pbrExposure) });
 const lights = createSceneLights({ ambient, directional });
 
 const spartanContainer = createSceneNode();
@@ -70,21 +76,21 @@ const [spartanObjText, terrainObjText, masterchiefImage, stoneImage] = await Pro
   loadImageResourceFromUrl('awayjs/assets/stone_tx.jpg'),
 ]);
 
-const masterchiefMaterial = createBlinnPhongMaterial({
-  diffuse: 0xffffffff,
-  shininess: 20,
-  specular: 0x808080ff,
+const masterchiefMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
 });
-masterchiefMaterial.diffuseMap = createTexture({ image: masterchiefImage });
+masterchiefMaterial.baseColorMap = createTexture({ image: masterchiefImage });
 
-const stoneMaterial = createBlinnPhongMaterial({
-  diffuse: 0xffffffff,
-  shininess: 20,
-  specular: 0x808080ff,
+const stoneMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
 });
-stoneMaterial.diffuseMap = createTexture({ image: stoneImage });
+stoneMaterial.baseColorMap = createTexture({ image: stoneImage });
 
-function applyMaterialToObjScene(objScene: SceneNode, material: BlinnPhongMaterial): void {
+function applyMaterialToObjScene(objScene: SceneNode, material: StandardPbrMaterial): void {
   for (const child of getNodeChildren(objScene)) {
     const mesh = child as Mesh;
     if (mesh.geometry) {

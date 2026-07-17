@@ -1,8 +1,8 @@
-import type { BlinnPhongMaterial, Mesh } from '@flighthq/sdk';
+import type { Mesh, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
+  applyLightExposure,
   createAmbientLight,
-  createBlinnPhongMaterial,
   createCamera,
   createDirectionalLight,
   createMesh,
@@ -11,10 +11,13 @@ import {
   createScene,
   createSceneFromMd2,
   createSceneLights,
+  createStandardPbrMaterial,
   createTexture,
   createVector3,
   DEG_TO_RAD,
   getNodeChildren,
+  getPbrRoughnessFromPhongShininess,
+  getPhongToPbrLightExposure,
   invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
@@ -26,6 +29,8 @@ import {
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+
+const pbrExposure = getPhongToPbrLightExposure();
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -47,17 +52,23 @@ const camera = createCamera({
 const directional = createDirectionalLight({
   direction: { x: -0.5, y: -1, z: 1 },
   color: 0xffffffff,
-  intensity: 6,
+  intensity: applyLightExposure(6, pbrExposure),
 });
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
 const lights = createSceneLights({ ambient, directional });
 
-const floorMaterial = createBlinnPhongMaterial({ diffuse: 0xffffffff, shininess: 0 });
+const floorMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(0),
+});
 floorMaterial.doubleSided = true;
 
-const knightMaterials: BlinnPhongMaterial[] = [];
+const knightMaterials: StandardPbrMaterial[] = [];
 for (let i = 0; i < 4; i++) {
-  knightMaterials.push(createBlinnPhongMaterial({ diffuse: 0xffffffff, shininess: 30, specular: 0x808080ff }));
+  knightMaterials.push(
+    createStandardPbrMaterial({ baseColor: 0xffffffff, metallic: 0, roughness: getPbrRoughnessFromPhongShininess(30) }),
+  );
 }
 
 const [floorImage, ...knightImages] = await Promise.all([
@@ -70,10 +81,10 @@ const [floorImage, ...knightImages] = await Promise.all([
 
 const floorTex = createTexture({ image: floorImage });
 setTextureUvScale(floorTex, 5, 5);
-floorMaterial.diffuseMap = floorTex;
+floorMaterial.baseColorMap = floorTex;
 
 for (let i = 0; i < 4; i++) {
-  knightMaterials[i]!.diffuseMap = createTexture({ image: knightImages[i]! });
+  knightMaterials[i]!.baseColorMap = createTexture({ image: knightImages[i]! });
 }
 
 const floorGeometry = createPlaneMeshGeometry(5000, 5000, 1, 1);

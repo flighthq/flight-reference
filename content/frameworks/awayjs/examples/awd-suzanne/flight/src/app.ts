@@ -1,8 +1,8 @@
-import type { BlinnPhongMaterial, Mesh, SceneHit, SceneNode } from '@flighthq/sdk';
+import type { Mesh, SceneHit, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
+  applyLightExposure,
   createAmbientLight,
-  createBlinnPhongMaterial,
   createCamera,
   createDirectionalLight,
   createMesh,
@@ -11,9 +11,12 @@ import {
   createSceneFromAwd,
   createSceneHit,
   createSceneLights,
+  createStandardPbrMaterial,
   createVector3,
   DEG_TO_RAD,
   getNodeChildren,
+  getPhongToPbrLightExposure,
+  getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   isMesh,
   pickScene,
@@ -26,6 +29,9 @@ import {
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
+
+const pbrExposure = getPhongToPbrLightExposure();
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -46,21 +52,21 @@ const camera = createCamera({
 
 const directional = createDirectionalLight({
   direction: { x: 1, y: -0.5, z: 0.5 },
-  color: 0x683019ff,
-  intensity: 8,
+  color: packOpaqueColor(0x683019),
+  intensity: applyLightExposure(8, pbrExposure),
 });
-const ambient = createAmbientLight({ color: 0x85b2cdff, intensity: 2 });
+const ambient = createAmbientLight({ color: packOpaqueColor(0x85b2cd), intensity: applyLightExposure(2, pbrExposure) });
 const lights = createSceneLights({ ambient, directional });
 
-const defaultMaterial: BlinnPhongMaterial = createBlinnPhongMaterial({
-  diffuse: 0xffffffff,
-  shininess: 20,
-  specular: 0x808080ff,
+const defaultMaterial: StandardPbrMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
 });
-const hoverMaterial: BlinnPhongMaterial = createBlinnPhongMaterial({
-  diffuse: 0xff0000ff,
-  shininess: 20,
-  specular: 0x808080ff,
+const hoverMaterial: StandardPbrMaterial = createStandardPbrMaterial({
+  baseColor: 0xff0000ff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
 });
 
 const buffer = await fetch('awayjs/assets/suzanne.awd').then((r) => r.arrayBuffer());

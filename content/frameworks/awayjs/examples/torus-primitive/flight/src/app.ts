@@ -1,26 +1,30 @@
+import type { PerspectiveProjection } from '@flighthq/sdk';
 import {
-  createScene,
   addNodeChild,
+  applyLightExposure,
   createAmbientLight,
-  createBlinnPhongMaterial,
   createCamera,
   createDirectionalLight,
   createMesh,
   createPerspectiveProjection,
+  createScene,
   createSceneLights,
+  createStandardPbrMaterial,
   createTexture,
   createTorusMeshGeometry,
   createVector3,
+  getPhongToPbrLightExposure,
+  getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
-  PerspectiveProjection,
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
+const pbrExposure = getPhongToPbrLightExposure();
 const DEG = Math.PI / 180;
 
 const ctx = createScene3DContext({
@@ -48,20 +52,20 @@ setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 const directional = createDirectionalLight({
   direction: { x: 0, y: -0.5, z: -1 },
   color: 0xffffffff,
-  intensity: 6,
+  intensity: applyLightExposure(6, pbrExposure),
 });
 
-const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
+const ambient = createAmbientLight({ color: 0xffffffff, intensity: applyLightExposure(1.5, pbrExposure) });
 const lights = createSceneLights({ ambient, directional });
 
 const image = await loadImageResourceFromUrl('awayjs/assets/dots.png');
 const texture = createTexture({ image });
 
-const material = createBlinnPhongMaterial({
-  diffuse: 0xffffffff,
-  specular: 0xffffffff,
-  shininess: 20,
-  diffuseMap: texture,
+const material = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
+  baseColorMap: texture,
 });
 
 const geometry = createTorusMeshGeometry(220, 80, 32, 16);

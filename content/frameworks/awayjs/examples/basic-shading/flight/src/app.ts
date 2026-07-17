@@ -1,21 +1,24 @@
-import type { BlinnPhongMaterial } from '@flighthq/sdk';
+import type { StandardPbrMaterial } from '@flighthq/sdk';
 import {
-  createScene,
   addNodeChild,
+  applyLightExposure,
   createAmbientLight,
-  createBlinnPhongMaterial,
   createBoxMeshGeometry,
   createCamera,
   createDirectionalLight,
   createMesh,
   createPerspectiveProjection,
   createPlaneMeshGeometry,
+  createScene,
   createSceneLights,
   createSphereMeshGeometry,
+  createStandardPbrMaterial,
   createTexture,
   createTorusMeshGeometry,
   createVector3,
   DEG_TO_RAD,
+  getPbrRoughnessFromPhongShininess,
+  getPhongToPbrLightExposure,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   setCameraViewMatrix4FromLookAt,
@@ -26,6 +29,8 @@ import {
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+
+const pbrExposure = getPhongToPbrLightExposure();
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -47,18 +52,34 @@ const camera = createCamera({
 const directional = createDirectionalLight({
   direction: { x: 0, y: -1, z: 0 },
   color: 0xffffffff,
-  intensity: 6,
+  intensity: applyLightExposure(6, pbrExposure),
 });
 
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
 const lights = createSceneLights({ ambient, directional });
 
-const planeMaterial = createBlinnPhongMaterial({ diffuse: 0xffffffff, shininess: 20, specular: 0x808080ff });
+const planeMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
+});
 planeMaterial.doubleSided = true;
 
-const sphereMaterial = createBlinnPhongMaterial({ diffuse: 0xffffffff, shininess: 20, specular: 0x808080ff });
-const cubeMaterial = createBlinnPhongMaterial({ diffuse: 0xffffffff, shininess: 20, specular: 0x808080ff });
-const torusMaterial = createBlinnPhongMaterial({ diffuse: 0xffffffff, shininess: 20, specular: 0x808080ff });
+const sphereMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
+});
+const cubeMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
+});
+const torusMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
+});
 
 const planeGeometry = createPlaneMeshGeometry(1000, 1000, 1, 1);
 const plane = createMesh(planeGeometry, [planeMaterial]);
@@ -89,7 +110,7 @@ invalidateNodeLocalTransform(torus);
 addNodeChild(scene, torus);
 
 function applyTextures(
-  material: BlinnPhongMaterial,
+  material: StandardPbrMaterial,
   maps: { diffuse?: string; normal?: string; specular?: string },
   uvScale?: { x: number; y: number },
 ): Promise<void[]> {
@@ -100,7 +121,7 @@ function applyTextures(
       loadImageResourceFromUrl(url).then((image) => {
         const tex = createTexture({ image });
         if (uvScale) setTextureUvScale(tex, uvScale.x, uvScale.y);
-        material.diffuseMap = tex;
+        material.baseColorMap = tex;
       }),
     );
   }
@@ -120,7 +141,7 @@ function applyTextures(
       loadImageResourceFromUrl(url).then((image) => {
         const tex = createTexture({ image });
         if (uvScale) setTextureUvScale(tex, uvScale.x, uvScale.y);
-        material.specularMap = tex;
+        material.metallicRoughnessMap = tex;
       }),
     );
   }
@@ -134,7 +155,7 @@ torusMaterial.normalMap = torusNormalTex;
 
 const torusSpecTex = createTexture({ image: torusWeaveNormalImage });
 setTextureUvScale(torusSpecTex, 10, 5);
-torusMaterial.specularMap = torusSpecTex;
+torusMaterial.metallicRoughnessMap = torusSpecTex;
 
 await Promise.all([
   applyTextures(
@@ -158,7 +179,7 @@ await Promise.all([
   loadImageResourceFromUrl('awayjs/assets/weave_diffuse.jpg').then((image) => {
     const tex = createTexture({ image });
     setTextureUvScale(tex, 10, 5);
-    torusMaterial.diffuseMap = tex;
+    torusMaterial.baseColorMap = tex;
   }),
 ]);
 

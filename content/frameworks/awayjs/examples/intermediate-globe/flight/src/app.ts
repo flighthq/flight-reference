@@ -1,9 +1,9 @@
-import type { BlinnPhongMaterial } from '@flighthq/sdk';
+import type { StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
+  applyLightExposure,
   BlendMode,
   createAmbientLight,
-  createBlinnPhongMaterial,
   createCamera,
   createDirectionalLight,
   createMesh,
@@ -12,9 +12,12 @@ import {
   createSceneLights,
   createSceneNode,
   createSphereMeshGeometry,
+  createStandardPbrMaterial,
   createTexture,
   createVector3,
   DEG_TO_RAD,
+  getPhongToPbrLightExposure,
+  getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   rotateMatrix4,
@@ -23,6 +26,9 @@ import {
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
+
+const pbrExposure = getPhongToPbrLightExposure();
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -46,10 +52,10 @@ let sunAngle = 0;
 const sunLight = createDirectionalLight({
   direction: { x: Math.sin(sunAngle), y: 0, z: Math.cos(sunAngle) },
   color: 0xffffffff,
-  intensity: 10,
+  intensity: applyLightExposure(10, pbrExposure),
 });
 
-const ambient = createAmbientLight({ color: 0x303040ff, intensity: 2 });
+const ambient = createAmbientLight({ color: packOpaqueColor(0x303040), intensity: applyLightExposure(2, pbrExposure) });
 
 const lights = createSceneLights({
   ambient,
@@ -63,16 +69,16 @@ rotateMatrix4(tiltContainer.localMatrix, tiltContainer.localMatrix, axisX, -23 *
 invalidateNodeLocalTransform(tiltContainer);
 addNodeChild(scene, tiltContainer);
 
-const earthMaterial = createBlinnPhongMaterial({
-  diffuse: 0xffffffff,
-  shininess: 5,
-  specular: 0x808080ff,
+const earthMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(5),
 });
 
-const cloudMaterial = createBlinnPhongMaterial({
-  diffuse: 0xffffffff,
-  shininess: 0,
-  specular: 0x000000ff,
+const cloudMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(0),
 });
 cloudMaterial.alphaMode = 'blend';
 cloudMaterial.blendMode = BlendMode.Add;
@@ -87,8 +93,8 @@ const clouds = createMesh(cloudGeometry, [cloudMaterial]);
 addNodeChild(tiltContainer, clouds);
 
 async function applyTexture(
-  material: BlinnPhongMaterial,
-  slot: 'diffuseMap' | 'normalMap' | 'specularMap',
+  material: StandardPbrMaterial,
+  slot: 'baseColorMap' | 'normalMap' | 'metallicRoughnessMap',
   url: string,
 ): Promise<void> {
   const image = await loadImageResourceFromUrl(url);
@@ -96,10 +102,10 @@ async function applyTexture(
 }
 
 await Promise.all([
-  applyTexture(earthMaterial, 'diffuseMap', 'awayjs/assets/globe/land_ocean_ice_2048_match.jpg'),
+  applyTexture(earthMaterial, 'baseColorMap', 'awayjs/assets/globe/land_ocean_ice_2048_match.jpg'),
   applyTexture(earthMaterial, 'normalMap', 'awayjs/assets/globe/EarthNormal.png'),
-  applyTexture(earthMaterial, 'specularMap', 'awayjs/assets/globe/earth_specular_2048.jpg'),
-  applyTexture(cloudMaterial, 'diffuseMap', 'awayjs/assets/globe/cloud_combined_2048.jpg'),
+  applyTexture(earthMaterial, 'metallicRoughnessMap', 'awayjs/assets/globe/earth_specular_2048.jpg'),
+  applyTexture(cloudMaterial, 'baseColorMap', 'awayjs/assets/globe/cloud_combined_2048.jpg'),
 ]);
 
 let panAngle = 0;

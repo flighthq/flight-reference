@@ -3,26 +3,30 @@ import {
   addNodeChild,
   advanceAnimationPlayer,
   applyAnimationClipToScene,
+  applyLightExposure,
   computeSkeleton3DJointMatrices,
   createAmbientLight,
   createAnimationPlayer,
-  createBlinnPhongMaterial,
   createCamera,
   createDirectionalLight,
   createPerspectiveProjection,
   createScene,
   createSceneLights,
   createSceneFromAwd,
-  createTexture,
+  createStandardPbrMaterial,
   createVector3,
   DEG_TO_RAD,
   getNodeChildren,
+  getPhongToPbrLightExposure,
+  getPbrRoughnessFromPhongShininess,
   isMesh,
-  loadImageResourceFromUrl,
   parseAwdSkeletonAnimation,
   setCameraViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
+
+const pbrExposure = getPhongToPbrLightExposure();
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -44,18 +48,18 @@ const camera: Camera = createCamera({
 const directional = createDirectionalLight({
   direction: { x: 0, y: -1, z: 1 },
   color: 0xffffffff,
-  intensity: 5,
+  intensity: applyLightExposure(5, pbrExposure),
 });
-const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
+const ambient = createAmbientLight({ color: 0xffffffff, intensity: applyLightExposure(1.5, pbrExposure) });
 const lights: SceneLights = createSceneLights({ ambient, directional });
 
 const awdBuffer = await fetch('awayjs/assets/shambler.awd').then((r) => r.arrayBuffer());
 const awdBytes = new Uint8Array(awdBuffer);
 
-const bodyMaterial = createBlinnPhongMaterial({
-  diffuse: 0x808080ff,
-  shininess: 10,
-  specular: 0x404040ff,
+const bodyMaterial = createStandardPbrMaterial({
+  baseColor: packOpaqueColor(0x808080),
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(10),
 });
 
 function assignMaterial(node: SceneNode): void {
@@ -70,14 +74,12 @@ function assignMaterial(node: SceneNode): void {
   }
 }
 
-// Parse mesh geometry from the AWD file
 const awdScene = createSceneFromAwd(awdBytes);
 assignMaterial(awdScene);
 for (const child of getNodeChildren(awdScene)) {
   addNodeChild(scene, child);
 }
 
-// Parse skeleton animation from the same AWD file
 const skelAnim = parseAwdSkeletonAnimation(awdBytes);
 if (!skelAnim) throw new Error('Failed to parse AWD skeleton animation');
 
@@ -86,7 +88,6 @@ const clip: AnimationClip = skelAnim.clip;
 
 const player: AnimationPlayer = createAnimationPlayer(clip, { loop: true, speed: 1 });
 
-// Hover camera
 let panAngle = 0;
 let tiltAngle = 0;
 let distance = 150;

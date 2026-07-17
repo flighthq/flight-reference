@@ -1,8 +1,8 @@
 import {
   addNodeChild,
+  applyLightExposure,
   BlendMode,
   createAmbientLight,
-  createBlinnPhongMaterial,
   createBoxMeshGeometry,
   createCamera,
   createDirectionalLight,
@@ -10,9 +10,12 @@ import {
   createPerspectiveProjection,
   createScene,
   createSceneLights,
+  createStandardPbrMaterial,
   createTexture,
   createTorusMeshGeometry,
   createVector3,
+  getPhongToPbrLightExposure,
+  getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   rotateMatrix4,
@@ -22,7 +25,9 @@ import {
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
 
+const pbrExposure = getPhongToPbrLightExposure();
 const DEG = Math.PI / 180;
 
 const ctx = createScene3DContext({
@@ -42,21 +47,21 @@ const camera = createCamera({
 const directional = createDirectionalLight({
   direction: { x: 1, y: -0.5, z: 0.5 },
   color: 0xffffffff,
-  intensity: 8,
+  intensity: applyLightExposure(8, pbrExposure),
 });
 
-const ambient = createAmbientLight({ color: 0x85b2cdff, intensity: 2 });
+const ambient = createAmbientLight({ color: packOpaqueColor(0x85b2cd), intensity: applyLightExposure(2, pbrExposure) });
 const lights = createSceneLights({ ambient, directional });
 
 const image = await loadImageResourceFromUrl('awayjs/assets/spacy_texture.png');
 const texture = createTexture({ image });
 
-const material = createBlinnPhongMaterial({
-  diffuse: 0xffffffff,
-  shininess: 50,
-  specular: 0xffffffff,
+const material = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(50),
 });
-material.diffuseMap = texture;
+material.baseColorMap = texture;
 material.blendMode = BlendMode.Add;
 material.alphaMode = 'blend';
 

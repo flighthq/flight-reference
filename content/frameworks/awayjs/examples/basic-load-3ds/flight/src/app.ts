@@ -1,9 +1,9 @@
-import type { BlinnPhongMaterial, Mesh } from '@flighthq/sdk';
+import type { Mesh } from '@flighthq/sdk';
 import {
   addNodeChild,
+  applyLightExposure,
   computeMeshGeometryNormals,
   createAmbientLight,
-  createBlinnPhongMaterial,
   createCamera,
   createDirectionalLight,
   createMesh,
@@ -13,10 +13,13 @@ import {
   createSceneFrom3ds,
   createSceneNode,
   createSceneLights,
+  createStandardPbrMaterial,
   createTexture,
   createVector3,
   DEG_TO_RAD,
   getNodeChildren,
+  getPbrRoughnessFromPhongShininess,
+  getPhongToPbrLightExposure,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   scaleMatrix4,
@@ -27,6 +30,8 @@ import {
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+
+const pbrExposure = getPhongToPbrLightExposure();
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -48,16 +53,16 @@ const camera = createCamera({
 const directional = createDirectionalLight({
   direction: { x: -1, y: -1, z: -1 },
   color: 0xffffffff,
-  intensity: 6,
+  intensity: applyLightExposure(6, pbrExposure),
 });
 
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
 const lights = createSceneLights({ ambient, directional });
 
-const groundMaterial = createBlinnPhongMaterial({
-  diffuse: 0xffffffff,
-  shininess: 10,
-  specular: 0x000000ff,
+const groundMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(10),
 });
 groundMaterial.doubleSided = true;
 
@@ -71,17 +76,17 @@ const [modelBuffer, antImage, sandImage] = await Promise.all([
   loadImageResourceFromUrl('awayjs/assets/CoarseRedSand.jpg'),
 ]);
 
-groundMaterial.diffuseMap = createTexture({ image: sandImage });
+groundMaterial.baseColorMap = createTexture({ image: sandImage });
 
 const modelScene = createSceneFrom3ds(new Uint8Array(modelBuffer));
 const antTexture = createTexture({ image: antImage });
 
-const antMaterial = createBlinnPhongMaterial({
-  diffuse: 0xffffffff,
-  shininess: 20,
-  specular: 0x808080ff,
+const antMaterial = createStandardPbrMaterial({
+  baseColor: 0xffffffff,
+  metallic: 0,
+  roughness: getPbrRoughnessFromPhongShininess(20),
 });
-antMaterial.diffuseMap = antTexture;
+antMaterial.baseColorMap = antTexture;
 
 for (const child of getNodeChildren(modelScene)) {
   const mesh = child as Mesh;

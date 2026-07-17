@@ -1,16 +1,14 @@
-import type { Camera, GlRenderState, SceneLights, SceneNode } from '@flighthq/sdk';
+import type { Camera, GlRenderState, GlRenderTarget, SceneLights, SceneNode } from '@flighthq/sdk';
 import {
-  drawGlScene,
   createGlCanvasElement,
   createGlRenderState,
+  createGlRenderTarget,
+  presentGlScene,
   registerBlinnPhongGlMaterial,
   registerStandardPbrGlMaterial,
   registerUnlitGlMaterial,
-  renderGlBackground,
+  resizeGlRenderTarget,
 } from '@flighthq/sdk';
-
-import type { GammaTarget } from './gamma';
-import { beginGammaPass, createGammaTarget, endGammaPass, resizeGammaTarget } from './gamma';
 
 export interface Scene3DContext {
   canvas: HTMLCanvasElement;
@@ -51,30 +49,22 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
   registerBlinnPhongGlMaterial(state);
   registerStandardPbrGlMaterial(state);
 
-  let gammaTarget: GammaTarget | null = null;
+  let renderTarget: GlRenderTarget | null = null;
 
   return {
     canvas,
     height,
     render(scene, camera, lights) {
-      const gl = state.gl;
       const w = canvas.width;
       const h = canvas.height;
 
-      if (gammaTarget === null) {
-        gammaTarget = createGammaTarget(gl, w, h);
+      if (renderTarget === null) {
+        renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
       } else {
-        resizeGammaTarget(gl, gammaTarget, w, h);
+        resizeGlRenderTarget(state, renderTarget, w, h);
       }
 
-      beginGammaPass(gl, gammaTarget);
-      renderGlBackground(state);
-      gl.enable(gl.DEPTH_TEST);
-      gl.depthMask(true);
-      gl.clearDepth(1);
-      gl.clear(gl.DEPTH_BUFFER_BIT);
-      drawGlScene(state, scene, camera, lights);
-      endGammaPass(gl, gammaTarget);
+      presentGlScene(state, renderTarget, scene, camera, lights);
     },
     state,
     width,

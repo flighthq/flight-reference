@@ -1,10 +1,9 @@
-import type { AnimationClip, AnimationPlayer, Camera, SceneLights, SceneNode, Skeleton3D } from '@flighthq/sdk';
+import type { AnimationClip, AnimationPlayer, Camera, Mesh, SceneLights, SceneNode } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceAnimationPlayer,
   applyAnimationClipToScene,
   applyLightExposure,
-  computeSkeleton3DJointMatrices,
   createAmbientLight,
   createAnimationPlayer,
   createCamera,
@@ -22,6 +21,7 @@ import {
   isMesh,
   parseAwdSkeletonAnimation,
   setCameraViewMatrix4FromLookAt,
+  updateMeshSkin,
 } from '@flighthq/sdk';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
@@ -76,15 +76,21 @@ function assignMaterial(node: SceneNode): void {
 
 const awdScene = createSceneFromAwd(awdBytes);
 assignMaterial(awdScene);
+
+const skinnedMeshes: Mesh[] = [];
+function collectSkinnedMeshes(node: SceneNode): void {
+  if (isMesh(node) && node.skin) skinnedMeshes.push(node);
+  for (const child of getNodeChildren(node)) collectSkinnedMeshes(child);
+}
+collectSkinnedMeshes(awdScene);
+
 for (const child of getNodeChildren(awdScene)) {
   addNodeChild(scene, child);
 }
 
-const skelAnim = parseAwdSkeletonAnimation(awdBytes);
-if (!skelAnim) throw new Error('Failed to parse AWD skeleton animation');
-
-const skeleton: Skeleton3D = skelAnim.skeleton;
-const clip: AnimationClip = skelAnim.clip;
+const joints = skinnedMeshes[0]?.skin?.skeleton.joints ?? [];
+const clip: AnimationClip | null = parseAwdSkeletonAnimation(awdBytes, joints);
+if (!clip) throw new Error('Failed to parse AWD skeleton animation');
 
 const player: AnimationPlayer = createAnimationPlayer(clip, { loop: true, speed: 1 });
 
@@ -139,7 +145,7 @@ function frame(ts: number): void {
 
   advanceAnimationPlayer(player, dt);
   applyAnimationClipToScene(clip, player.time);
-  computeSkeleton3DJointMatrices(skeleton);
+  for (const mesh of skinnedMeshes) updateMeshSkin(mesh);
 
   updateCamera();
   ctx.render(scene, camera, lights);

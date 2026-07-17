@@ -1,7 +1,8 @@
-import type { Camera, CubeTexture, Mesh, SceneLights, StandardPbrMaterial } from '@flighthq/sdk';
+import type { Camera, CubeTexture, GlRenderTarget, Mesh, SceneLights, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   bakeEnvironmentIbl,
+  beginGlRenderTarget,
   computeMeshGeometryNormals,
   createAmbientLight,
   createCamera,
@@ -10,6 +11,8 @@ import {
   createEnvironment,
   createGlCanvasElement,
   createGlRenderState,
+  createGlRenderTarget,
+  createMatrix,
   createMesh,
   createPerspectiveProjection,
   createPlaneMeshGeometry,
@@ -21,22 +24,23 @@ import {
   createVector3,
   DEG_TO_RAD,
   drawGlEnvironmentSkybox,
+  drawGlLinearToSrgbPass,
   drawGlScene,
+  endGlRenderTarget,
   getNodeChildren,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   registerBlinnPhongGlMaterial,
   registerStandardPbrGlMaterial,
   renderGlBackground,
+  resolveGlRenderTarget,
+  resizeGlRenderTarget,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
   setCubeTextureFace,
   setMatrix4Identity,
   translateMatrix4,
 } from '@flighthq/sdk';
-
-import type { GammaTarget } from '../../../_shared/flight/src/gamma';
-import { beginGammaPass, createGammaTarget, endGammaPass, resizeGammaTarget } from '../../../_shared/flight/src/gamma';
 
 // The original AwayJS demo uses NormalSimpleWaterMethod + EffectEnvMapMethod + SpecularFresnelMethod
 // on the sea surface. In Flight we approximate this with:
@@ -177,7 +181,8 @@ let flightState = 0;
 
 const zAxis = createVector3(0, 0, 1);
 
-let gammaTarget: GammaTarget | null = null;
+let renderTarget: GlRenderTarget | null = null;
+const identityMatrix = createMatrix();
 
 function updateCameraLookAt(): void {
   cameraTarget.x = f14Mesh.localMatrix.m[12];
@@ -226,21 +231,22 @@ function frame(): void {
   const w = canvas.width;
   const h = canvas.height;
 
-  if (gammaTarget === null) {
-    gammaTarget = createGammaTarget(gl, w, h);
+  if (renderTarget === null) {
+    renderTarget = createGlRenderTarget(glState, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
   } else {
-    resizeGammaTarget(gl, gammaTarget, w, h);
+    resizeGlRenderTarget(glState, renderTarget, w, h);
   }
 
-  beginGammaPass(gl, gammaTarget);
+  beginGlRenderTarget(glState, renderTarget, identityMatrix);
   renderGlBackground(glState);
-  gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   drawGlEnvironmentSkybox(glState, environment, camera, width / height);
   drawGlScene(glState, scene, camera, lights);
-  endGammaPass(gl, gammaTarget);
+  endGlRenderTarget(glState);
+  resolveGlRenderTarget(glState, renderTarget);
+  drawGlLinearToSrgbPass(glState, renderTarget, null);
 
   requestAnimationFrame(frame);
 }

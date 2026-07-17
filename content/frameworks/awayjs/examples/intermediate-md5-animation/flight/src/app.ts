@@ -2,6 +2,7 @@ import type {
   AnimationClip,
   AnimationPlayer,
   Camera,
+  GlRenderTarget,
   Mesh,
   SceneLights,
   SceneNode,
@@ -18,6 +19,7 @@ import {
   createDirectionalLight,
   createGlCanvasElement,
   createGlRenderState,
+  createGlRenderTarget,
   createMesh,
   createPerspectiveProjection,
   createPlaneMeshGeometry,
@@ -29,7 +31,6 @@ import {
   createTexture,
   createVector3,
   DEG_TO_RAD,
-  drawGlScene,
   applyLightExposure,
   getPhongToPbrLightExposure,
   getPbrRoughnessFromPhongShininess,
@@ -39,8 +40,9 @@ import {
   isMesh,
   loadImageResourceFromUrl,
   parseMd5Anim,
+  presentGlScene,
   registerStandardPbrGlMaterial,
-  renderGlBackground,
+  resizeGlRenderTarget,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
@@ -48,8 +50,6 @@ import {
   updateMeshSkin,
 } from '@flighthq/sdk';
 
-import type { GammaTarget } from '../../../_shared/flight/src/gamma';
-import { beginGammaPass, createGammaTarget, endGammaPass, resizeGammaTarget } from '../../../_shared/flight/src/gamma';
 import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
 
 const pbrExposure = getPhongToPbrLightExposure();
@@ -223,7 +223,7 @@ let movementDir = 1;
 let spriteRotY = Math.PI;
 let rotationInc = 0;
 let count = 0;
-let gammaTarget: GammaTarget | null = null;
+let renderTarget: GlRenderTarget | null = null;
 
 function play(name: string): void {
   if (currentAnim === name) return;
@@ -368,24 +368,16 @@ function frame(ts: number): void {
 
   updateCamera(spriteRotY);
 
-  const gl = glState.gl;
   const w = canvas.width;
   const h = canvas.height;
 
-  if (gammaTarget === null) {
-    gammaTarget = createGammaTarget(gl, w, h);
+  if (renderTarget === null) {
+    renderTarget = createGlRenderTarget(glState, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
   } else {
-    resizeGammaTarget(gl, gammaTarget, w, h);
+    resizeGlRenderTarget(glState, renderTarget, w, h);
   }
 
-  beginGammaPass(gl, gammaTarget);
-  renderGlBackground(glState);
-  gl.enable(gl.DEPTH_TEST);
-  gl.depthMask(true);
-  gl.clearDepth(1);
-  gl.clear(gl.DEPTH_BUFFER_BIT);
-  drawGlScene(glState, scene, camera, lights);
-  endGammaPass(gl, gammaTarget);
+  presentGlScene(glState, renderTarget, scene, camera, lights);
 
   requestAnimationFrame(frame);
 }

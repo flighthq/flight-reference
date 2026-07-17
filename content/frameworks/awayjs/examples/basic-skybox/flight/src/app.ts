@@ -1,7 +1,8 @@
-import type { SceneLights } from '@flighthq/sdk';
+import type { GlRenderTarget, SceneLights } from '@flighthq/sdk';
 import {
   addNodeChild,
   bakeEnvironmentIbl,
+  beginGlRenderTarget,
   createAmbientLight,
   createCamera,
   createCubeTexture,
@@ -9,6 +10,8 @@ import {
   createEnvironment,
   createGlCanvasElement,
   createGlRenderState,
+  createGlRenderTarget,
+  createMatrix,
   createMesh,
   createPerspectiveProjection,
   createScene,
@@ -18,19 +21,20 @@ import {
   createVector3,
   DEG_TO_RAD,
   drawGlEnvironmentSkybox,
+  drawGlLinearToSrgbPass,
   drawGlScene,
+  endGlRenderTarget,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   registerStandardPbrGlMaterial,
   renderGlBackground,
+  resolveGlRenderTarget,
+  resizeGlRenderTarget,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
   setCubeTextureFace,
   setMatrix4Identity,
 } from '@flighthq/sdk';
-
-import type { GammaTarget } from '../../../_shared/flight/src/gamma';
-import { beginGammaPass, createGammaTarget, endGammaPass, resizeGammaTarget } from '../../../_shared/flight/src/gamma';
 
 const width = window.innerWidth;
 const height = window.innerHeight;
@@ -102,7 +106,8 @@ for (let i = 0; i < 6; i++) {
 const environment = createEnvironment({ environment: cubeTexture, intensity: 1 });
 bakeEnvironmentIbl(state, environment);
 
-let gammaTarget: GammaTarget | null = null;
+let renderTarget: GlRenderTarget | null = null;
+const identityMatrix = createMatrix();
 
 let mouseX = width / 2;
 let cameraRotationY = 0;
@@ -145,21 +150,22 @@ function frame(): void {
   const w = canvas.width;
   const h = canvas.height;
 
-  if (gammaTarget === null) {
-    gammaTarget = createGammaTarget(gl, w, h);
+  if (renderTarget === null) {
+    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
   } else {
-    resizeGammaTarget(gl, gammaTarget, w, h);
+    resizeGlRenderTarget(state, renderTarget, w, h);
   }
 
-  beginGammaPass(gl, gammaTarget);
+  beginGlRenderTarget(state, renderTarget, identityMatrix);
   renderGlBackground(state);
-  gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   drawGlEnvironmentSkybox(state, environment, camera, aspect);
   drawGlScene(state, scene, camera, lights);
-  endGammaPass(gl, gammaTarget);
+  endGlRenderTarget(state);
+  resolveGlRenderTarget(state, renderTarget);
+  drawGlLinearToSrgbPass(state, renderTarget, null);
 
   requestAnimationFrame(frame);
 }

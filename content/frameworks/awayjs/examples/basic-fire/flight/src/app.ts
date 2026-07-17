@@ -1,5 +1,6 @@
 import type {
   Camera,
+  GlRenderTarget,
   ParticleEmitter3D,
   ParticleEmitterConfig,
   ParticleEmitterState,
@@ -14,6 +15,7 @@ import {
   createDirectionalLight,
   createGlCanvasElement,
   createGlRenderState,
+  createGlRenderTarget,
   createMesh,
   createParticleEmitter3D,
   createParticleEmitterConfig,
@@ -28,23 +30,20 @@ import {
   createTextureAtlas,
   createVector3,
   DEG_TO_RAD,
-  drawGlScene,
   getPhongToPbrLightExposure,
   getPbrRoughnessFromPhongShininess,
   applyLightExposure,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
+  presentGlScene,
   registerStandardPbrGlMaterial,
-  renderGlBackground,
+  resizeGlRenderTarget,
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
   setTextureUvScale,
   stepParticleEmitter3D,
   translateMatrix4,
 } from '@flighthq/sdk';
-
-import type { GammaTarget } from '../../../_shared/flight/src/gamma';
-import { beginGammaPass, createGammaTarget, endGammaPass, resizeGammaTarget } from '../../../_shared/flight/src/gamma';
 
 const pbrExposure = getPhongToPbrLightExposure();
 
@@ -250,7 +249,7 @@ updateCamera();
 
 loadPlaneTextures();
 
-let gammaTarget: GammaTarget | null = null;
+let renderTarget: GlRenderTarget | null = null;
 let lastTs = 0;
 
 function frame(ts: number): void {
@@ -270,24 +269,16 @@ function frame(ts: number): void {
 
   updateCamera();
 
-  const gl = glState.gl;
   const w = canvas.width;
   const h = canvas.height;
 
-  if (gammaTarget === null) {
-    gammaTarget = createGammaTarget(gl, w, h);
+  if (renderTarget === null) {
+    renderTarget = createGlRenderTarget(glState, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
   } else {
-    resizeGammaTarget(gl, gammaTarget, w, h);
+    resizeGlRenderTarget(glState, renderTarget, w, h);
   }
 
-  beginGammaPass(gl, gammaTarget);
-  renderGlBackground(glState);
-  gl.enable(gl.DEPTH_TEST);
-  gl.depthMask(true);
-  gl.clearDepth(1);
-  gl.clear(gl.DEPTH_BUFFER_BIT);
-  drawGlScene(glState, scene, camera, lights);
-  endGammaPass(gl, gammaTarget);
+  presentGlScene(glState, renderTarget, scene, camera, lights);
 
   requestAnimationFrame(frame);
 }

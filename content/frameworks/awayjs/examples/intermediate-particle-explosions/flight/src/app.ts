@@ -1,5 +1,4 @@
 import type {
-  Camera,
   GlRenderTarget,
   ParticleEmitter3D,
   ParticleEmitterConfig,
@@ -9,7 +8,6 @@ import type {
 import {
   addNodeChild,
   createAmbientLight,
-  createCamera,
   createGlCanvasElement,
   createGlRenderState,
   createGlRenderTarget,
@@ -17,22 +15,24 @@ import {
   createParticleEmitterConfig,
   createParticleEmitterState,
   createPointLight,
-  createPerspectiveProjection,
   createScene,
   createSceneLights,
-  createVector3,
   DEG_TO_RAD,
   emitParticleBurst3D,
   invalidateNodeLocalTransform,
   presentGlScene,
   registerBlinnPhongGlMaterial,
   resizeGlRenderTarget,
-  setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
   stepParticleEmitter3D,
   translateMatrix4,
 } from '@flighthq/sdk';
 
+import {
+  AWAY_MOUSE_SENSITIVITY,
+  createCameraFromAway,
+  createOrbitControllerFromAway,
+} from '../../../_shared/flight/src/camera';
 const PARTICLE_SIZE = 2;
 const NUM_LOGOS = 4;
 
@@ -58,49 +58,38 @@ registerBlinnPhongGlMaterial(glState);
 
 const scene = createScene();
 
-const camera: Camera = createCamera({
-  near: 1,
-  far: 5000,
-  projection: createPerspectiveProjection({ fovY: 60 * DEG_TO_RAD, aspect: width / height }),
-});
+const camera = createCameraFromAway({ fov: 60, near: 1, far: 5000, aspect: width / height });
 
 const greenLight = createPointLight({ color: 0x00ff00ff, intensity: 5, range: 600 });
 const blueLight = createPointLight({ color: 0x0000ffff, intensity: 5, range: 600 });
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1 });
 const lights: SceneLights = createSceneLights({ ambient, point: [greenLight, blueLight] });
 
-let panAngle = 225 * DEG_TO_RAD;
-let tiltAngle = 10 * DEG_TO_RAD;
-let distance = 1000;
+const orbit = createOrbitControllerFromAway(camera, {
+  distance: 1000,
+  panAngle: 225,
+  tiltAngle: 10,
+  minTiltAngle: -89,
+  maxTiltAngle: 89,
+});
+
 let dragging = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
-let savedPan = panAngle;
-let savedTilt = tiltAngle;
-
-const lookAt = createVector3(0, 0, 0);
-const up = createVector3(0, 1, 0);
-const eye = createVector3(0, 0, 0);
-
-function updateCamera(): void {
-  const tilt = Math.max(-89 * DEG_TO_RAD, Math.min(89 * DEG_TO_RAD, tiltAngle));
-  eye.x = distance * Math.sin(panAngle) * Math.cos(tilt);
-  eye.y = distance * Math.sin(tilt);
-  eye.z = -distance * Math.cos(panAngle) * Math.cos(tilt);
-  setCameraViewMatrix4FromLookAt(camera, eye, lookAt, up);
-}
+let lastPanAngle = orbit.panAngle;
+let lastTiltAngle = orbit.tiltAngle;
 
 canvas.addEventListener('mousedown', (e: MouseEvent) => {
   dragging = true;
   lastMouseX = e.clientX;
   lastMouseY = e.clientY;
-  savedPan = panAngle;
-  savedTilt = tiltAngle;
+  lastPanAngle = orbit.panAngle;
+  lastTiltAngle = orbit.tiltAngle;
 });
 canvas.addEventListener('mousemove', (e: MouseEvent) => {
   if (!dragging) return;
-  panAngle = 0.3 * DEG_TO_RAD * (e.clientX - lastMouseX) + savedPan;
-  tiltAngle = 0.3 * DEG_TO_RAD * (e.clientY - lastMouseY) + savedTilt;
+  orbit.panAngle = AWAY_MOUSE_SENSITIVITY * (e.clientX - lastMouseX) + lastPanAngle;
+  orbit.tiltAngle = AWAY_MOUSE_SENSITIVITY * (e.clientY - lastMouseY) + lastTiltAngle;
 });
 window.addEventListener('mouseup', () => {
   dragging = false;
@@ -208,8 +197,8 @@ function frame(ts: number): void {
   lastTs = ts;
   time += dt;
 
-  panAngle += 0.2 * DEG_TO_RAD;
-  updateCamera();
+  orbit.panAngle += 0.2 * DEG_TO_RAD;
+  orbit.update();
 
   angle += (Math.PI * dt) / 180;
   greenLight.position.x = Math.sin(angle) * 600;

@@ -93,4 +93,5 @@ When `FLIGHT_REPO` is unset (the default), the harness falls back to the `@fligh
 ## Conventions
 
 - [commit messages](conventions/commits.md) — before writing a commit.
+- [camera conversion](conventions/camera.md) — before porting AwayJS camera, position, or direction values to Flight.
 - [lighting conversion](conventions/lighting.md) — before porting AwayJS lighting values to Flight.

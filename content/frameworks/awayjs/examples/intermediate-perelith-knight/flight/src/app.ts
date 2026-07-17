@@ -2,31 +2,32 @@ import type { Mesh, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
-  createCamera,
   createDirectionalLight,
   createMesh,
-  createPerspectiveProjection,
   createPlaneMeshGeometry,
   createScene,
   createSceneFromMd2,
   createSceneLights,
   createStandardPbrMaterial,
   createTexture,
-  createVector3,
-  DEG_TO_RAD,
   getNodeChildren,
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
   scaleMatrix4,
-  setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
   setTextureUvScale,
   translateMatrix4,
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import {
+  createCameraFromAway,
+  createOrbitControllerFromAway,
+  AWAY_MOUSE_SENSITIVITY,
+  awayDirection,
+} from '../../../_shared/flight/src/camera';
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -36,17 +37,10 @@ const ctx = createScene3DContext({
 
 const scene = createScene();
 
-const camera = createCamera({
-  near: 0.1,
-  far: 5000,
-  projection: createPerspectiveProjection({
-    fovY: 45 * DEG_TO_RAD,
-    aspect: window.innerWidth / window.innerHeight,
-  }),
-});
+const camera = createCameraFromAway({ fov: 45, near: 0.1, far: 5000 });
 
 const directional = createDirectionalLight({
-  direction: { x: -0.5, y: -1, z: 1 },
+  direction: awayDirection(-0.5, -1, -1),
   color: 0xffffffff,
   intensity: 3,
 });
@@ -121,48 +115,37 @@ for (let i = 0; i < numWide; i++) {
   }
 }
 
-let panAngle = 45 * DEG_TO_RAD;
-let tiltAngle = 20 * DEG_TO_RAD;
-let distance = 2000;
-const minTilt = 2 * DEG_TO_RAD;
-const maxTilt = 85 * DEG_TO_RAD;
+const orbit = createOrbitControllerFromAway(camera, {
+  distance: 2000,
+  panAngle: 45,
+  tiltAngle: 20,
+  minTiltAngle: 2,
+  maxTiltAngle: 85,
+});
 
 let dragging = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
-let savedPan = panAngle;
-let savedTilt = tiltAngle;
-
-const lookAt = createVector3(0, 0, 0);
-const eye = createVector3(0, 0, 0);
-const up = createVector3(0, 1, 0);
+let savedPan = orbit.panAngle;
+let savedTilt = orbit.tiltAngle;
 
 let keyUp = false;
 let keyDown = false;
 let keyLeft = false;
 let keyRight = false;
 
-function updateCamera(): void {
-  const tilt = Math.max(minTilt, Math.min(maxTilt, tiltAngle));
-  tiltAngle = tilt;
-  eye.x = lookAt.x + distance * Math.sin(panAngle) * Math.cos(tilt);
-  eye.y = lookAt.y + distance * Math.sin(tilt);
-  eye.z = lookAt.z - distance * Math.cos(panAngle) * Math.cos(tilt);
-  setCameraViewMatrix4FromLookAt(camera, eye, lookAt, up);
-}
-
 ctx.canvas.addEventListener('mousedown', (e: MouseEvent) => {
   dragging = true;
   lastMouseX = e.clientX;
   lastMouseY = e.clientY;
-  savedPan = panAngle;
-  savedTilt = tiltAngle;
+  savedPan = orbit.panAngle;
+  savedTilt = orbit.tiltAngle;
 });
 
 ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
   if (!dragging) return;
-  panAngle = 0.3 * DEG_TO_RAD * (e.clientX - lastMouseX) + savedPan;
-  tiltAngle = 0.3 * DEG_TO_RAD * (e.clientY - lastMouseY) + savedTilt;
+  orbit.panAngle = AWAY_MOUSE_SENSITIVITY * (e.clientX - lastMouseX) + savedPan;
+  orbit.tiltAngle = AWAY_MOUSE_SENSITIVITY * (e.clientY - lastMouseY) + savedTilt;
 });
 
 window.addEventListener('mouseup', () => {
@@ -170,9 +153,9 @@ window.addEventListener('mouseup', () => {
 });
 
 ctx.canvas.addEventListener('wheel', (e: WheelEvent) => {
-  distance -= e.deltaY / 2;
-  if (distance < 100) distance = 100;
-  else if (distance > 5000) distance = 5000;
+  orbit.distance -= e.deltaY / 2;
+  if (orbit.distance < 100) orbit.distance = 100;
+  else if (orbit.distance > 5000) orbit.distance = 5000;
 });
 
 document.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -221,15 +204,13 @@ document.addEventListener('keyup', (e: KeyboardEvent) => {
   }
 });
 
-updateCamera();
-
 function frame(): void {
-  if (keyUp) lookAt.x -= 10;
-  if (keyDown) lookAt.x += 10;
-  if (keyLeft) lookAt.z += 10;
-  if (keyRight) lookAt.z -= 10;
+  if (keyUp) orbit.target.x -= 10;
+  if (keyDown) orbit.target.x += 10;
+  if (keyLeft) orbit.target.z += 10;
+  if (keyRight) orbit.target.z -= 10;
 
-  updateCamera();
+  orbit.update();
   ctx.render(scene, camera, lights);
   requestAnimationFrame(frame);
 }

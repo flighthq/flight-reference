@@ -1,7 +1,6 @@
 import type {
   AnimationClip,
   AnimationPlayer,
-  Camera,
   GlRenderTarget,
   Mesh,
   SceneLights,
@@ -15,13 +14,11 @@ import {
   createAmbientLight,
   createAnimationPlayer,
   computeMeshGeometryNormals,
-  createCamera,
   createDirectionalLight,
   createGlCanvasElement,
   createGlRenderState,
   createGlRenderTarget,
   createMesh,
-  createPerspectiveProjection,
   createPlaneMeshGeometry,
   createPointLight,
   createScene,
@@ -45,10 +42,10 @@ import {
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
-  translateMatrix4,
   updateMeshSkin,
 } from '@flighthq/sdk';
 
+import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
 const ANIM_NAMES = [
   'idle2',
   'walk7',
@@ -91,11 +88,7 @@ registerStandardPbrGlMaterial(glState);
 
 const scene = createScene();
 
-const camera: Camera = createCamera({
-  near: 1,
-  far: 5000,
-  projection: createPerspectiveProjection({ fovY: 45 * DEG_TO_RAD, aspect: width / height }),
-});
+const camera = createCameraFromAway({ fov: 45, near: 1, far: 5000 });
 
 const placeHolder = createVector3(0, 50, 0);
 const up = createVector3(0, 1, 0);
@@ -115,7 +108,7 @@ function updateCamera(spriteRotY: number): void {
 const redLight = createPointLight({ color: 0xff1111ff, intensity: 1, range: 3000 });
 const blueLight = createPointLight({ color: 0x1111ffff, intensity: 1, range: 3000 });
 const whiteLight = createDirectionalLight({
-  direction: { x: -50, y: -20, z: -10 },
+  direction: awayDirection(-50, -20, 10),
   color: packOpaqueColor(0xffffee),
   intensity: 3,
 });

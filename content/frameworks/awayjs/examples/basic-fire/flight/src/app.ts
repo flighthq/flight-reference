@@ -17,11 +17,13 @@ import {
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   ParticleEmitterKind,
-  prewarmParticleEmitter,
   ShapeKind,
   stepParticleEmitter,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
+
+const NUM_FIRES = 10;
+const FIRE_START_INTERVAL = 1000;
 
 const width = window.innerWidth;
 const height = window.innerHeight;
@@ -46,46 +48,44 @@ appendShapeRectangle(floor, 0, height - 40, width, 40);
 appendShapeEndFill(floor);
 addNodeChild(root, floor);
 
-const NUM_FIRES = 10;
-
 interface FireEntry {
   emitter: ParticleEmitter;
   state: ParticleEmitterState;
-  config: ParticleEmitterConfig;
+  active: boolean;
 }
+
+const config: ParticleEmitterConfig = createParticleEmitterConfig({
+  maxParticles: 500,
+  spawnRate: 100,
+  duration: -1,
+  loop: true,
+  lifetimeMin: 0.1,
+  lifetimeMax: 4.1,
+  emitterShape: 'circle',
+  emitterRadius: 8,
+  directionX: 0,
+  directionY: -1,
+  spread: 0.4,
+  speedMin: 40,
+  speedMax: 80,
+  scaleMin: 0.15,
+  scaleMax: 0.25,
+  scaleEnd: 0.04,
+  colorStartR: 1,
+  colorStartG: 0.2,
+  colorStartB: 0.004,
+  colorEndR: 0.6,
+  colorEndG: 0,
+  colorEndB: 0,
+  alphaStart: 1,
+  alphaEnd: 0,
+  blendMode: 'add',
+});
 
 const fires: FireEntry[] = [];
 const spacing = width / (NUM_FIRES + 1);
 
 for (let i = 0; i < NUM_FIRES; i++) {
-  const config = createParticleEmitterConfig({
-    maxParticles: 500,
-    spawnRate: 120,
-    duration: -1,
-    loop: true,
-    lifetimeMin: 0.1,
-    lifetimeMax: 4.1,
-    emitterShape: 'circle',
-    emitterRadius: 8,
-    directionX: 0,
-    directionY: -1,
-    spread: 0.4,
-    speedMin: 50,
-    speedMax: 100,
-    scaleMin: 0.16,
-    scaleMax: 0.2,
-    scaleEnd: 0.04,
-    colorStartR: 1,
-    colorStartG: 0.2,
-    colorStartB: 0.004,
-    colorEndR: 0.6,
-    colorEndG: 0,
-    colorEndB: 0,
-    alphaStart: 1,
-    alphaEnd: 0,
-    blendMode: 'add',
-  });
-
   const emitter = createParticleEmitter();
   emitter.data.atlas = fireAtlas;
   const state = createParticleEmitterState();
@@ -95,11 +95,19 @@ for (let i = 0; i < NUM_FIRES; i++) {
   invalidateNodeLocalTransform(emitter);
   invalidateNodeAppearance(emitter);
 
-  prewarmParticleEmitter(emitter, state, config, 5, 1 / 60);
-
   addNodeChild(root, emitter);
-  fires.push({ emitter, state, config });
+  fires.push({ emitter, state, active: false });
 }
+
+let firesStarted = 0;
+const startTimer = setInterval(() => {
+  if (firesStarted >= NUM_FIRES) {
+    clearInterval(startTimer);
+    return;
+  }
+  fires[firesStarted]!.active = true;
+  firesStarted++;
+}, FIRE_START_INTERVAL);
 
 let lastTime = performance.now();
 
@@ -109,7 +117,9 @@ function frame(): void {
   lastTime = now;
 
   for (const fire of fires) {
-    stepParticleEmitter(fire.emitter, fire.state, fire.config, dt);
+    if (fire.active) {
+      stepParticleEmitter(fire.emitter, fire.state, config, dt);
+    }
   }
 
   target.render(root);

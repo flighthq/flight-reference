@@ -1,9 +1,7 @@
 import {
   addNodeChild,
   BlendMode,
-  createAmbientLight,
   createBoxMeshGeometry,
-  createDirectionalLight,
   createMesh,
   createScene,
   createSceneLights,
@@ -13,7 +11,6 @@ import {
   createVector3,
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
-  packOpaqueColor,
   loadImageResourceFromUrl,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
@@ -23,6 +20,7 @@ import {
 
 import { awayDirection, awayPosition, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
 
 const DEG = Math.PI / 180;
 
@@ -36,13 +34,13 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 120, near: 0.1 });
 
-const directional = createDirectionalLight({
+const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(1, 0, 0),
-  color: 0xffffffff,
-  intensity: 4,
+  color: 0xffffff,
+  diffuse: 2.8,
+  ambient: 0.4,
+  ambientColor: 0x85b2cd,
 });
-
-const ambient = createAmbientLight({ color: packOpaqueColor(0x85b2cd), intensity: 2 });
 const lights = createSceneLights({ ambient, directional });
 
 const image = await loadImageResourceFromUrl('awayjs/assets/spacy_texture.png');

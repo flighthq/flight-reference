@@ -2,7 +2,6 @@ import type { PerspectiveProjection } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
-  createDirectionalLight,
   createMesh,
   createScene,
   createSceneLights,
@@ -19,6 +18,7 @@ import {
 
 import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
 
 const DEG = Math.PI / 180;
 
@@ -32,10 +32,9 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ z: -1000, fov: 60 });
 
-const directional = createDirectionalLight({
+const { directional } = createDirectionalLightFromAway({
   direction: awayDirection(0, 0, 1),
-  color: 0xffffffff,
-  intensity: 3,
+  diffuse: 0.7,
 });
 
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });

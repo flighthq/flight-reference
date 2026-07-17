@@ -1,8 +1,6 @@
 import type { Mesh, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createAmbientLight,
-  createDirectionalLight,
   createMesh,
   createPlaneMeshGeometry,
   createScene,
@@ -28,6 +26,7 @@ import {
   AWAY_MOUSE_SENSITIVITY,
   awayDirection,
 } from '../../../_shared/flight/src/camera';
+import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -39,12 +38,10 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60, far: 5000 });
 
-const directional = createDirectionalLight({
+const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(-0.5, -1, -1),
-  color: 0xffffffff,
-  intensity: 3,
+  ambient: 0.4,
 });
-const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
 const lights = createSceneLights({ ambient, directional });
 
 const floorMaterial = createStandardPbrMaterial({

@@ -177,3 +177,9 @@ export function awayDirection(x: number, y: number, z: number): { x: number; y: 
 export function awayPosition(x: number, y: number, z: number): [number, number, number] {
   return [x, y, -z];
 }
+
+export function setAwayPosition(out: Vector3Like, x: number, y: number, z: number): void {
+  out.x = x;
+  out.y = y;
+  out.z = -z;
+}

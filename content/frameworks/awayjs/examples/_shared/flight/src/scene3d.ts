@@ -41,7 +41,7 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
 
   const state = createGlRenderState(canvas, {
     backgroundColor: options.backgroundColor ?? 0x000000ff,
-    contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: true },
+    contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
     pixelRatio,
   });
 

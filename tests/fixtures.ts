@@ -26,7 +26,7 @@ export const test = base.extend<{ deterministicPage: Page }>({
         attrs?: Record<string, unknown>,
       ) {
         if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') {
-          return realGetContext.call(this, type, { ...attrs, preserveDrawingBuffer: true });
+          return realGetContext.call(this, type, { ...attrs, preserveDrawingBuffer: false });
         }
         return realGetContext.call(this, type, attrs);
       } as typeof HTMLCanvasElement.prototype.getContext;

@@ -34,7 +34,7 @@ document.body.appendChild(canvas);
 export const state = createGlRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0xffffffff,
-  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+  contextAttributes: { alpha: false, preserveDrawingBuffer: false },
 });
 registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);

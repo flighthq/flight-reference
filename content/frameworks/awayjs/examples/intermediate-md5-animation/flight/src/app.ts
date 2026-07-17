@@ -78,7 +78,7 @@ document.body.style.margin = '0';
 
 const glState = createGlRenderState(canvas, {
   backgroundColor: 0x000000ff,
-  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: true },
+  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
   pixelRatio,
 });
 registerStandardPbrGlMaterial(glState);

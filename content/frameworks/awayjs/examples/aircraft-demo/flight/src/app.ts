@@ -82,9 +82,9 @@ const camera: Camera = createCamera({
 const directional = createDirectionalLight({
   direction: { x: -300, y: -300, z: 5000 },
   color: 0x974523ff,
-  intensity: 1.2,
+  intensity: 3.5,
 });
-const ambient = createAmbientLight({ color: 0x7196acff, intensity: 1 });
+const ambient = createAmbientLight({ color: 0x7196acff, intensity: 1.5 });
 const lights: SceneLights = createSceneLights({ ambient, directional });
 
 // Environment cube map — individual face images derived from the CubeTextureTest.cube asset

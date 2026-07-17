@@ -66,8 +66,8 @@ const camera: Camera = createCamera({
   projection: createPerspectiveProjection({ fovY: 60 * DEG_TO_RAD, aspect: width / height }),
 });
 
-const greenLight = createPointLight({ color: 0x00ff00ff, intensity: 2, range: 100 });
-const blueLight = createPointLight({ color: 0x0000ffff, intensity: 2, range: 100 });
+const greenLight = createPointLight({ color: 0x00ff00ff, intensity: 5, range: 600 });
+const blueLight = createPointLight({ color: 0x0000ffff, intensity: 5, range: 600 });
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1 });
 const lights: SceneLights = createSceneLights({ ambient, point: [greenLight, blueLight] });
 

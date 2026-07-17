@@ -54,3 +54,4 @@ Content files are linted with relaxed rules (no `consistent-type-imports`, `no-c
 ## Conventions
 
 - [commit messages](conventions/commits.md) — before writing a commit.
+- [lighting conversion](conventions/lighting.md) — before porting AwayJS lighting values to Flight.

@@ -1,6 +1,5 @@
 import {
   addNodeChild,
-  applyLightExposure,
   BlendMode,
   createAmbientLight,
   createBoxMeshGeometry,
@@ -14,9 +13,9 @@ import {
   createTexture,
   createTorusMeshGeometry,
   createVector3,
-  getPhongToPbrLightExposure,
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
+  packOpaqueColor,
   loadImageResourceFromUrl,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
@@ -25,9 +24,7 @@ import {
 } from '@flighthq/sdk';
 
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
-import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
 
-const pbrExposure = getPhongToPbrLightExposure();
 const DEG = Math.PI / 180;
 
 const ctx = createScene3DContext({
@@ -47,10 +44,10 @@ const camera = createCamera({
 const directional = createDirectionalLight({
   direction: { x: 1, y: -0.5, z: 0.5 },
   color: 0xffffffff,
-  intensity: applyLightExposure(8, pbrExposure),
+  intensity: 4,
 });
 
-const ambient = createAmbientLight({ color: packOpaqueColor(0x85b2cd), intensity: applyLightExposure(2, pbrExposure) });
+const ambient = createAmbientLight({ color: packOpaqueColor(0x85b2cd), intensity: 2 });
 const lights = createSceneLights({ ambient, directional });
 
 const image = await loadImageResourceFromUrl('awayjs/assets/spacy_texture.png');

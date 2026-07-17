@@ -30,9 +30,7 @@ import {
   createTextureAtlas,
   createVector3,
   DEG_TO_RAD,
-  getPhongToPbrLightExposure,
   getPbrRoughnessFromPhongShininess,
-  applyLightExposure,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   presentGlScene,
@@ -44,8 +42,6 @@ import {
   stepParticleEmitter3D,
   translateMatrix4,
 } from '@flighthq/sdk';
-
-const pbrExposure = getPhongToPbrLightExposure();
 
 const NUM_FIRES = 10;
 const FIRE_RADIUS = 400;
@@ -82,10 +78,10 @@ const camera: Camera = createCamera({
 const directional = createDirectionalLight({
   direction: { x: 0, y: -1, z: 0 },
   color: 0xeeddddff,
-  intensity: applyLightExposure(0.5, pbrExposure),
+  intensity: 0.5,
 });
 
-const ambient = createAmbientLight({ color: 0x808090ff, intensity: applyLightExposure(0.5, pbrExposure) });
+const ambient = createAmbientLight({ color: 0x808090ff, intensity: 0.5 });
 
 const firePointLights = Array.from({ length: NUM_FIRES }, () =>
   createPointLight({ color: 0xff3301ff, intensity: 0, range: 400 }),
@@ -263,7 +259,7 @@ function frame(ts: number): void {
 
     if (fire.strength < 1) fire.strength += 0.1;
     const light = firePointLights[fire.lightIndex];
-    light.intensity = applyLightExposure(fire.strength + Math.random() * 0.2, pbrExposure);
+    light.intensity = fire.strength + Math.random() * 0.2;
     light.range = 380 + Math.random() * 20;
   }
 

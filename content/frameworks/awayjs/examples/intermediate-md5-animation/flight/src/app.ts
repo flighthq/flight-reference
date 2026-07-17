@@ -31,14 +31,13 @@ import {
   createTexture,
   createVector3,
   DEG_TO_RAD,
-  applyLightExposure,
-  getPhongToPbrLightExposure,
   getPbrRoughnessFromPhongShininess,
   getNodeChildByName,
   getNodeChildren,
   invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
+  packOpaqueColor,
   parseMd5Anim,
   presentGlScene,
   registerStandardPbrGlMaterial,
@@ -49,10 +48,6 @@ import {
   translateMatrix4,
   updateMeshSkin,
 } from '@flighthq/sdk';
-
-import { packOpaqueColor } from '../../../_shared/flight/src/lighting';
-
-const pbrExposure = getPhongToPbrLightExposure();
 
 const ANIM_NAMES = [
   'idle2',
@@ -117,14 +112,14 @@ function updateCamera(spriteRotY: number): void {
   setCameraViewMatrix4FromLookAt(camera, eye, placeHolder, up);
 }
 
-const redLight = createPointLight({ color: 0xff1111ff, intensity: applyLightExposure(1.5, pbrExposure), range: 3000 });
-const blueLight = createPointLight({ color: 0x1111ffff, intensity: applyLightExposure(1.5, pbrExposure), range: 3000 });
+const redLight = createPointLight({ color: 0xff1111ff, intensity: 1, range: 3000 });
+const blueLight = createPointLight({ color: 0x1111ffff, intensity: 1, range: 3000 });
 const whiteLight = createDirectionalLight({
   direction: { x: -50, y: -20, z: -10 },
   color: packOpaqueColor(0xffffee),
-  intensity: applyLightExposure(5, pbrExposure),
+  intensity: 3,
 });
-const ambient = createAmbientLight({ color: packOpaqueColor(0x606080), intensity: applyLightExposure(1, pbrExposure) });
+const ambient = createAmbientLight({ color: packOpaqueColor(0x606080), intensity: 1 });
 const lights: SceneLights = createSceneLights({
   ambient,
   directional: whiteLight,

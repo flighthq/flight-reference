@@ -25,6 +25,7 @@ export function createGammaTarget(gl: WebGL2RenderingContext, width: number, hei
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.bindTexture(gl.TEXTURE_2D, null);
 
   gl.bindRenderbuffer(gl.RENDERBUFFER, depthRenderbuffer);
   gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, width, height);
@@ -98,6 +99,7 @@ export function resizeGammaTarget(
   target.height = height;
   gl.bindTexture(gl.TEXTURE_2D, target.texture);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, width, height, 0, gl.RGBA, gl.HALF_FLOAT, null);
+  gl.bindTexture(gl.TEXTURE_2D, null);
   gl.bindRenderbuffer(gl.RENDERBUFFER, target.depthRenderbuffer);
   gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, width, height);
 }
@@ -119,4 +121,5 @@ export function endGammaPass(gl: WebGL2RenderingContext, target: GammaTarget): v
   gl.bindVertexArray(target.vao);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   gl.bindVertexArray(null);
+  gl.bindTexture(gl.TEXTURE_2D, null);
 }

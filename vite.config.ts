@@ -909,5 +909,11 @@ export default defineConfig({
     fs: {
       allow: flightWorkspaceRoot ? [repoRoot, flightWorkspaceRoot] : [repoRoot],
     },
+    // .cache holds a large cached Flight checkout (including a Rust workspace); watching it exhausts
+    // the OS inotify limit (ENOSPC), which crashes the watcher and truncates asset responses mid-serve.
+    // .capture-output is generated screenshots. Neither should trigger HMR.
+    watch: {
+      ignored: ['**/.cache/**', '**/.capture-output/**'],
+    },
   },
 });

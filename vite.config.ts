@@ -733,7 +733,10 @@ function referencePlugin(): Plugin[] {
           const filtered = discoverAllCases();
           if (filtered.length === 1) {
             const target = filtered[0]!;
-            const previewUrl = target.flightPreviewRenderers?.[0]?.url ?? target.previewRenderers[0]?.url;
+            const impl = process.env.IMPL;
+            const previewUrl = impl
+              ? (target.previewRenderers.find((r) => r.id === impl)?.url ?? target.previewRenderers[0]?.url)
+              : (target.flightPreviewRenderers?.[0]?.url ?? target.previewRenderers[0]?.url);
             if (previewUrl) {
               server.middlewares.use((req, res, next) => {
                 const urlPath = (req.url ?? '/').split('?')[0] ?? '/';

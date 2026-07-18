@@ -18,6 +18,7 @@ import {
   rotateMatrix4,
   scaleMatrix4,
   setMatrix4Identity,
+  setTextureUvScale,
   translateMatrix4,
 } from '@flighthq/sdk';
 
@@ -69,7 +70,9 @@ const stoneMaterial = createStandardPbrMaterial({
   metallic: 0,
   roughness: getPbrRoughnessFromPhongShininess(20),
 });
-stoneMaterial.baseColorMap = createTexture({ image: stoneImage });
+const stoneTexture = createTexture({ image: stoneImage });
+setTextureUvScale(stoneTexture, 20, 20);
+stoneMaterial.baseColorMap = stoneTexture;
 
 function applyMaterialToObjScene(objScene: SceneNode, material: StandardPbrMaterial): void {
   for (const child of getNodeChildren(objScene)) {

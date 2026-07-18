@@ -1,9 +1,12 @@
-import type { StandardPbrMaterial } from '@flighthq/sdk';
+import type { GlRenderTarget, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   BlendMode,
   createAmbientLight,
   createDirectionalLight,
+  createGlCanvasElement,
+  createGlRenderState,
+  createGlRenderTarget,
   createMesh,
   createScene,
   createSceneLights,
@@ -17,23 +20,42 @@ import {
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   packOpaqueColor,
+  presentGlScene,
+  registerStandardPbrGlMaterial,
+  resizeGlRenderTarget,
   rotateMatrix4,
   setMatrix4Identity,
 } from '@flighthq/sdk';
 
-import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 import {
   AWAY_MOUSE_SENSITIVITY,
   createCameraFromAway,
   createOrbitControllerFromAway,
 } from '../../../_shared/flight/src/camera';
 import { awayIntensity } from '../../../_shared/flight/src/lighting';
+import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
-const ctx = createScene3DContext({
-  width: window.innerWidth,
-  height: window.innerHeight,
+const pixelRatio = window.devicePixelRatio || 1;
+
+const mount = document.getElementById('app');
+const canvas = createGlCanvasElement(window.innerWidth, window.innerHeight, pixelRatio);
+if (mount) {
+  mount.replaceWith(canvas);
+} else {
+  document.body.appendChild(canvas);
+}
+document.body.style.margin = '0';
+
+const state = createGlRenderState(canvas, {
   backgroundColor: 0x000005ff,
+  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
+  pixelRatio,
 });
+
+registerStandardPbrGlMaterial(state);
+const verifyFrame = createGlFrameVerifier(state);
+
+let renderTarget: GlRenderTarget | null = null;
 
 const scene = createScene();
 
@@ -114,7 +136,7 @@ let lastMouseY = 0;
 let lastPanAngle = orbit.panAngle;
 let lastTiltAngle = orbit.tiltAngle;
 
-ctx.canvas.addEventListener('mousedown', (event: MouseEvent) => {
+canvas.addEventListener('mousedown', (event: MouseEvent) => {
   dragging = true;
   lastMouseX = event.clientX;
   lastMouseY = event.clientY;
@@ -122,7 +144,7 @@ ctx.canvas.addEventListener('mousedown', (event: MouseEvent) => {
   lastTiltAngle = orbit.tiltAngle;
 });
 
-ctx.canvas.addEventListener('mousemove', (event: MouseEvent) => {
+canvas.addEventListener('mousemove', (event: MouseEvent) => {
   if (!dragging) return;
   orbit.panAngle = AWAY_MOUSE_SENSITIVITY * (event.clientX - lastMouseX) + lastPanAngle;
   orbit.tiltAngle = AWAY_MOUSE_SENSITIVITY * (event.clientY - lastMouseY) + lastTiltAngle;
@@ -132,7 +154,7 @@ window.addEventListener('mouseup', () => {
   dragging = false;
 });
 
-ctx.canvas.addEventListener('wheel', (event: WheelEvent) => {
+canvas.addEventListener('wheel', (event: WheelEvent) => {
   orbit.distance -= event.deltaY / 2;
   if (orbit.distance < 400) orbit.distance = 400;
   else if (orbit.distance > 10000) orbit.distance = 10000;
@@ -160,7 +182,15 @@ function frame(ts: number): void {
   sunLight.direction.z = Math.cos(sunAngle);
 
   orbit.update();
-  ctx.render(scene, camera, lights);
+  const w = canvas.width;
+  const h = canvas.height;
+  if (renderTarget === null) {
+    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
+  } else {
+    resizeGlRenderTarget(state, renderTarget, w, h);
+  }
+  presentGlScene(state, renderTarget, scene, camera, lights);
+  verifyFrame();
   requestAnimationFrame(frame);
 }
 
@@ -168,11 +198,11 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const pixelRatio = window.devicePixelRatio || 1;
-  ctx.canvas.width = w * pixelRatio;
-  ctx.canvas.height = h * pixelRatio;
-  ctx.canvas.style.width = `${w}px`;
-  ctx.canvas.style.height = `${h}px`;
-  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
+  canvas.width = w * pixelRatio;
+  canvas.height = h * pixelRatio;
+  canvas.style.width = `${w}px`;
+  canvas.style.height = `${h}px`;
+  state.gl.viewport(0, 0, canvas.width, canvas.height);
   camera.projection.aspect = w / h;
 });
 

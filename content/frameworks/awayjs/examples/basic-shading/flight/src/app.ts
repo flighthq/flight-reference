@@ -3,6 +3,7 @@ import {
   addNodeChild,
   createBoxMeshGeometry,
   createHemisphereLight,
+  createImageResourceFromCanvas,
   createMesh,
   createPlaneMeshGeometry,
   createScene,
@@ -49,19 +50,22 @@ const tilingSampler = () => createSampler({ wrapU: 'repeat', wrapV: 'repeat', an
 
 // AwayJS lights the scene with two directionals: a white primary (diffuse 0.7, ambient 0.1) whose
 // direction sweeps the horizon each frame, and a static cyan secondary (0x00ffff, diffuse 0.7,
-// ambient 0.1) pointing straight down. Flight's SceneLights carries only one directional, so the
-// animated white primary stays the directional (it drives the per-face shading that gives the
-// objects their form; both ambients fold into it: 0.1 + 0.1 = 0.2). The downward cyan secondary
-// becomes a low-intensity hemisphere light — a full-strength hemisphere lights side-facing surfaces
-// too and washes the directional contrast flat, so keep it dim: enough for the cyan tint, not enough
-// to erase the form.
+// ambient 0.1) pointing straight down. Flight's SceneLights carries one directional, so the animated
+// white primary stays the directional — it's the moving light, grazing the surfaces so the shading
+// and the specular highlights on the metal sweep as it turns (this is what keeps the scene lively).
+// The downward cyan secondary becomes a hemisphere light: cyan from above tints the up-facing floor
+// and the tops of the objects, standing in for the straight-down cyan directional.
 const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(0, -1, 0),
-  color: 0x00ffff,
   diffuse: 0.7,
   ambient: 0.2,
 });
-const lights = createSceneLights({ ambient, directional });
+const cyanFill = createHemisphereLight({
+  skyColor: 0x00ffffff,
+  groundColor: 0x000000ff,
+  intensity: awayIntensity(0.5),
+});
+const lights = createSceneLights({ ambient, directional, hemisphere: [cyanFill] });
 
 // PBR material intent (per the sample's assets): floor = stone (rough dielectric), beach ball =
 // vinyl (smooth dielectric), trinket = mixed metal + wood (part-metallic), ring = polished metal.
@@ -77,19 +81,24 @@ const sphereMaterial = createStandardPbrMaterial({
   metallic: 0,
   roughness: 0.3,
 });
+// The trinket is a metal frame around a wood panel. trinket_specular marks where it's shiny (bright
+// = metal frame) vs matte (dark = wood), so it's converted into a metallic-roughness map below. The
+// factors here scale that map: metallic reaches ~0.6 on the frame (0 on the wood), roughness is
+// taken straight from the map (frame smooth/reflective so the sweeping light glints off it, wood
+// rough/matte).
 const cubeMaterial = createStandardPbrMaterial({
   baseColor: 0xffffffff,
-  metallic: 0.4,
-  roughness: 0.5,
+  metallic: 0.6,
+  roughness: 1,
 });
-// The ring reads as polished metal, but this scene has no environment map, so a true metallic
-// surface has nothing to reflect and renders black. A dielectric with moderate roughness instead
-// catches a soft specular sheen from the sweeping light (with the weave normal for surface detail)
-// for a brushed-metal look while staying visible — matching the AwayJS reference.
+// Polished metal ring. With no environment map a fully metallic surface would render black (nothing
+// to reflect), so keep it part-metallic with low roughness: it stays visible (the weave shows) but
+// the low roughness makes the sweeping light throw a bright specular highlight across it that tracks
+// the light — the "shiny metal" read from the AwayJS original.
 const torusMaterial = createStandardPbrMaterial({
   baseColor: 0xffffffff,
-  metallic: 0,
-  roughness: 0.5,
+  metallic: 0.4,
+  roughness: 0.22,
 });
 
 const planeGeometry = createPlaneMeshGeometry(1000, 1000, 1, 1);
@@ -147,34 +156,54 @@ function applyTextures(
     const url = maps.normal;
     jobs.push(
       loadImageResourceFromUrl(url).then((image) => {
-        const tex = createTexture({ image, sampler: uvScale ? tilingSampler() : undefined });
+        // Normal maps are data, not color — they must stay linear (an sRGB decode would bend the
+        // packed normals and flatten/skew the surface relief).
+        const tex = createTexture({ image, colorSpace: 'linear', sampler: uvScale ? tilingSampler() : undefined });
         if (uvScale) setTextureUvScale(tex, uvScale.x, uvScale.y);
         material.normalMap = tex;
-      }),
-    );
-  }
-  if (maps.specular) {
-    const url = maps.specular;
-    jobs.push(
-      loadImageResourceFromUrl(url).then((image) => {
-        const tex = createTexture({ image, sampler: uvScale ? tilingSampler() : undefined });
-        if (uvScale) setTextureUvScale(tex, uvScale.x, uvScale.y);
-        material.metallicRoughnessMap = tex;
       }),
     );
   }
   return Promise.all(jobs);
 }
 
+// Converts an AwayJS specular jpg into a glTF metallic-roughness map. The specular intensity marks
+// shiny (metal) vs matte (wood) regions: bright -> more metallic + smoother (reflective), dark ->
+// dielectric + rougher (matte). Written to the glTF channels the shader reads: G = roughness,
+// B = metalness. Kept linear (it is data, not color).
+async function createMetalRoughnessFromSpecular(url: string): Promise<ReturnType<typeof createTexture>> {
+  const img = new Image();
+  img.src = url;
+  await img.decode();
+  const canvas = document.createElement('canvas');
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  const g2d = canvas.getContext('2d')!;
+  g2d.drawImage(img, 0, 0);
+  const pixels = g2d.getImageData(0, 0, canvas.width, canvas.height);
+  const p = pixels.data;
+  for (let i = 0; i < p.length; i += 4) {
+    const spec = p[i] / 255;
+    const roughness = Math.max(0.12, 1 - spec * 1.7);
+    p[i] = 0;
+    p[i + 1] = Math.round(roughness * 255);
+    p[i + 2] = Math.round(spec * 255);
+    p[i + 3] = 255;
+  }
+  g2d.putImageData(pixels, 0, 0);
+  return createTexture({ image: createImageResourceFromCanvas(canvas), colorSpace: 'linear' });
+}
+
 // The 10x5 weave tiling is baked into the torus UVs above, so the weave textures use a plain
 // repeat sampler with no uvScale.
 const torusWeaveNormalImage = await loadImageResourceFromUrl('awayjs/assets/weave_normal.jpg');
-const torusNormalTex = createTexture({ image: torusWeaveNormalImage, sampler: tilingSampler() });
+const torusNormalTex = createTexture({
+  image: torusWeaveNormalImage,
+  colorSpace: 'linear',
+  sampler: tilingSampler(),
+});
 torusMaterial.normalMap = torusNormalTex;
 
-// AwayJS specular jpgs don't map cleanly onto a glTF metallic-roughness texture (which is
-// G = roughness, B = metalness), so drive metalness/roughness from the per-material constants
-// above and keep only the diffuse + normal maps.
 await Promise.all([
   applyTextures(
     planeMaterial,
@@ -190,6 +219,9 @@ await Promise.all([
   applyTextures(cubeMaterial, {
     diffuse: 'awayjs/assets/trinket_diffuse.jpg',
     normal: 'awayjs/assets/trinket_normal.jpg',
+  }),
+  createMetalRoughnessFromSpecular('awayjs/assets/trinket_specular.jpg').then((tex) => {
+    cubeMaterial.metallicRoughnessMap = tex;
   }),
   loadImageResourceFromUrl('awayjs/assets/weave_diffuse.jpg').then((image) => {
     const tex = createTexture({ image, sampler: tilingSampler() });
@@ -236,12 +268,12 @@ ctx.canvas.addEventListener('wheel', (event: WheelEvent) => {
 });
 
 function frame(ts: number): void {
-  // Keep the light downward-dominant so surfaces facing up stay bright and side faces stay dark
-  // (the per-face contrast that gives the objects their form), with a slow horizontal precession
-  // for a moving highlight — a single-directional stand-in for AwayJS's static down + swept pair.
-  const lightX = Math.sin(ts / 4000) * 0.4;
-  const lightZ = -Math.cos(ts / 4000) * 0.4;
-  setDirectionalLightDirection(directional, lightX, -1, lightZ);
+  // AwayJS sweeps the white light around the horizon (nearly horizontal, a slight downward tilt) so
+  // the shading and the metal highlights rotate around the objects. Keep it grazing, not overhead —
+  // that grazing angle is what lights the metal frame/ring and the floor's normal relief.
+  const lightX = Math.sin(ts / 2500);
+  const lightZ = -Math.cos(ts / 2500);
+  setDirectionalLightDirection(directional, lightX, -0.35, lightZ);
 
   orbit.update();
   ctx.render(scene, camera, lights);

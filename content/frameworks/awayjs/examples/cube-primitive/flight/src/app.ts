@@ -1,7 +1,11 @@
+import type { GlRenderTarget } from '@flighthq/sdk';
 import {
   addNodeChild,
   BlendMode,
   createBoxMeshGeometry,
+  createGlCanvasElement,
+  createGlRenderState,
+  createGlRenderTarget,
   createMesh,
   createScene,
   createSceneLights,
@@ -12,6 +16,9 @@ import {
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
+  presentGlScene,
+  registerStandardPbrGlMaterial,
+  resizeGlRenderTarget,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
@@ -19,16 +26,32 @@ import {
 } from '@flighthq/sdk';
 
 import { awayDirection, awayPosition, createCameraFromAway } from '../../../_shared/flight/src/camera';
-import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
+import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
 const DEG = Math.PI / 180;
 
-const ctx = createScene3DContext({
-  width: window.innerWidth,
-  height: window.innerHeight,
+const pixelRatio = window.devicePixelRatio || 1;
+
+const mount = document.getElementById('app');
+const canvas = createGlCanvasElement(window.innerWidth, window.innerHeight, pixelRatio);
+if (mount) {
+  mount.replaceWith(canvas);
+} else {
+  document.body.appendChild(canvas);
+}
+document.body.style.margin = '0';
+
+const state = createGlRenderState(canvas, {
   backgroundColor: 0x000000ff,
+  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
+  pixelRatio,
 });
+
+registerStandardPbrGlMaterial(state);
+const verifyFrame = createGlFrameVerifier(state);
+
+let renderTarget: GlRenderTarget | null = null;
 
 const scene = createScene();
 
@@ -105,7 +128,15 @@ function frame(): void {
   rotateMatrix4(cube.localMatrix, cube.localMatrix, xAxis, cubeAngleX);
   invalidateNodeLocalTransform(cube);
 
-  ctx.render(scene, camera, lights);
+  const w = canvas.width;
+  const h = canvas.height;
+  if (renderTarget === null) {
+    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
+  } else {
+    resizeGlRenderTarget(state, renderTarget, w, h);
+  }
+  presentGlScene(state, renderTarget, scene, camera, lights);
+  verifyFrame();
   requestAnimationFrame(frame);
 }
 
@@ -113,11 +144,11 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const pixelRatio = window.devicePixelRatio || 1;
-  ctx.canvas.width = w * pixelRatio;
-  ctx.canvas.height = h * pixelRatio;
-  ctx.canvas.style.width = `${w}px`;
-  ctx.canvas.style.height = `${h}px`;
-  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
+  canvas.width = w * pixelRatio;
+  canvas.height = h * pixelRatio;
+  canvas.style.width = `${w}px`;
+  canvas.style.height = `${h}px`;
+  state.gl.viewport(0, 0, canvas.width, canvas.height);
   camera.projection.aspect = w / h;
 });
 

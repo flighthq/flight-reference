@@ -1,4 +1,4 @@
-import type { AnimationClip, AnimationPlayer, Mesh, SceneLights, SceneNode } from '@flighthq/sdk';
+import type { AnimationClip, AnimationPlayer, GlRenderTarget, Mesh, SceneLights, SceneNode } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceAnimationPlayer,
@@ -6,6 +6,9 @@ import {
   createAmbientLight,
   createAnimationPlayer,
   createDirectionalLight,
+  createGlCanvasElement,
+  createGlRenderState,
+  createGlRenderTarget,
   createScene,
   createSceneLights,
   createSceneFromAwd,
@@ -15,21 +18,40 @@ import {
   isMesh,
   packOpaqueColor,
   parseAwdSkeletonAnimation,
+  presentGlScene,
+  registerStandardPbrGlMaterial,
+  resizeGlRenderTarget,
   updateMeshSkin,
 } from '@flighthq/sdk';
-import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 import {
   createCameraFromAway,
   createOrbitControllerFromAway,
   AWAY_MOUSE_SENSITIVITY,
   awayDirection,
 } from '../../../_shared/flight/src/camera';
+import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
-const ctx = createScene3DContext({
-  width: window.innerWidth,
-  height: window.innerHeight,
+const pixelRatio = window.devicePixelRatio || 1;
+
+const mount = document.getElementById('app');
+const canvas = createGlCanvasElement(window.innerWidth, window.innerHeight, pixelRatio);
+if (mount) {
+  mount.replaceWith(canvas);
+} else {
+  document.body.appendChild(canvas);
+}
+document.body.style.margin = '0';
+
+const state = createGlRenderState(canvas, {
   backgroundColor: 0x333338ff,
+  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
+  pixelRatio,
 });
+
+registerStandardPbrGlMaterial(state);
+const verifyFrame = createGlFrameVerifier(state);
+
+let renderTarget: GlRenderTarget | null = null;
 
 const scene = createScene();
 
@@ -99,14 +121,14 @@ let lastMouseY = 0;
 let savedPan = orbit.panAngle;
 let savedTilt = orbit.tiltAngle;
 
-ctx.canvas.addEventListener('mousedown', (e: MouseEvent) => {
+canvas.addEventListener('mousedown', (e: MouseEvent) => {
   dragging = true;
   lastMouseX = e.clientX;
   lastMouseY = e.clientY;
   savedPan = orbit.panAngle;
   savedTilt = orbit.tiltAngle;
 });
-ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
   if (!dragging) return;
   orbit.panAngle = AWAY_MOUSE_SENSITIVITY * (e.clientX - lastMouseX) + savedPan;
   orbit.tiltAngle = AWAY_MOUSE_SENSITIVITY * (e.clientY - lastMouseY) + savedTilt;
@@ -114,7 +136,7 @@ ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
 window.addEventListener('mouseup', () => {
   dragging = false;
 });
-ctx.canvas.addEventListener('wheel', (e: WheelEvent) => {
+canvas.addEventListener('wheel', (e: WheelEvent) => {
   orbit.distance = Math.max(100, Math.min(2000, orbit.distance - e.deltaY / 2));
 });
 
@@ -129,7 +151,15 @@ function frame(ts: number): void {
   for (const mesh of skinnedMeshes) updateMeshSkin(mesh);
 
   orbit.update();
-  ctx.render(scene, camera, lights);
+  const w = canvas.width;
+  const h = canvas.height;
+  if (renderTarget === null) {
+    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
+  } else {
+    resizeGlRenderTarget(state, renderTarget, w, h);
+  }
+  presentGlScene(state, renderTarget, scene, camera, lights);
+  verifyFrame();
   requestAnimationFrame(frame);
 }
 
@@ -137,11 +167,11 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const pr = window.devicePixelRatio || 1;
-  ctx.canvas.width = w * pr;
-  ctx.canvas.height = h * pr;
-  ctx.canvas.style.width = `${w}px`;
-  ctx.canvas.style.height = `${h}px`;
-  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
+  canvas.width = w * pr;
+  canvas.height = h * pr;
+  canvas.style.width = `${w}px`;
+  canvas.style.height = `${h}px`;
+  state.gl.viewport(0, 0, canvas.width, canvas.height);
   camera.projection.aspect = w / h;
 });
 

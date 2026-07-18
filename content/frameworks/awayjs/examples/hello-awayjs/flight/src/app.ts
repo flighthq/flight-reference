@@ -1,7 +1,10 @@
-import type { Mesh, SceneLights } from '@flighthq/sdk';
+import type { GlRenderTarget, Mesh, SceneLights } from '@flighthq/sdk';
 import {
   createScene,
   addNodeChild,
+  createGlCanvasElement,
+  createGlRenderState,
+  createGlRenderTarget,
   createMesh,
   createSceneHit,
   createSphereMeshGeometry,
@@ -9,18 +12,37 @@ import {
   createUnlitMaterial,
   loadImageResourceFromUrl,
   pickScene,
+  presentGlScene,
+  registerUnlitGlMaterial,
+  resizeGlRenderTarget,
   setSceneNodePosition,
   setSceneNodeScale,
 } from '@flighthq/sdk';
 
 import { createCameraFromAway } from '../../../_shared/flight/src/camera';
-import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
-const ctx = createScene3DContext({
-  width: window.innerWidth,
-  height: window.innerHeight,
+const pixelRatio = window.devicePixelRatio || 1;
+
+const mount = document.getElementById('app');
+const canvas = createGlCanvasElement(window.innerWidth, window.innerHeight, pixelRatio);
+if (mount) {
+  mount.replaceWith(canvas);
+} else {
+  document.body.appendChild(canvas);
+}
+document.body.style.margin = '0';
+
+const state = createGlRenderState(canvas, {
   backgroundColor: 0x000000ff,
+  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
+  pixelRatio,
 });
+
+registerUnlitGlMaterial(state);
+const verifyFrame = createGlFrameVerifier(state);
+
+let renderTarget: GlRenderTarget | null = null;
 
 const scene = createScene();
 
@@ -50,7 +72,7 @@ for (let i = 0; i < 100; i++) {
 const hit = createSceneHit();
 
 function pickSphere(event: MouseEvent): Mesh | null {
-  const rect = ctx.canvas.getBoundingClientRect();
+  const rect = canvas.getBoundingClientRect();
   const screenX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   const screenY = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
   const result = pickScene(scene, camera, screenX, screenY, hit);
@@ -63,14 +85,14 @@ function pickSphere(event: MouseEvent): Mesh | null {
   return null;
 }
 
-ctx.canvas.addEventListener('mousedown', (event: MouseEvent) => {
+canvas.addEventListener('mousedown', (event: MouseEvent) => {
   const sphere = pickSphere(event);
   if (sphere) {
     setSceneNodeScale(sphere, 2, 2, 2);
   }
 });
 
-ctx.canvas.addEventListener('mouseup', (event: MouseEvent) => {
+canvas.addEventListener('mouseup', (event: MouseEvent) => {
   const sphere = pickSphere(event);
   if (sphere) {
     setSceneNodeScale(sphere, 1, 1, 1);
@@ -85,16 +107,24 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const pixelRatio = window.devicePixelRatio || 1;
-  ctx.canvas.width = w * pixelRatio;
-  ctx.canvas.height = h * pixelRatio;
-  ctx.canvas.style.width = `${w}px`;
-  ctx.canvas.style.height = `${h}px`;
-  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
+  canvas.width = w * pixelRatio;
+  canvas.height = h * pixelRatio;
+  canvas.style.width = `${w}px`;
+  canvas.style.height = `${h}px`;
+  state.gl.viewport(0, 0, canvas.width, canvas.height);
   camera.projection.aspect = w / h;
 });
 
 function frame(): void {
-  ctx.render(scene, camera, lights);
+  const w = canvas.width;
+  const h = canvas.height;
+  if (renderTarget === null) {
+    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
+  } else {
+    resizeGlRenderTarget(state, renderTarget, w, h);
+  }
+  presentGlScene(state, renderTarget, scene, camera, lights);
+  verifyFrame();
   requestAnimationFrame(frame);
 }
 

@@ -1,10 +1,14 @@
-import type { Mesh } from '@flighthq/sdk';
+import type { GlRenderEffectPipeline, Mesh } from '@flighthq/sdk';
 import {
   addNodeChild,
+  beginGlRenderEffectPipeline,
   computeMeshGeometryNormals,
   configureDirectionalShadowCamera,
   createAabb,
   createCamera,
+  createGlCanvasElement,
+  createGlRenderEffectPipeline,
+  createGlRenderState,
   createMesh,
   createOrthographicProjection,
   createPlaneMeshGeometry,
@@ -16,18 +20,23 @@ import {
   createStandardPbrMaterial,
   createTexture,
   createToneMapEffect,
+  drawGlScene,
   drawGlSceneShadowMap,
+  endGlRenderEffectPipeline,
   getNodeChildren,
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
+  registerDefaultGlRenderEffects,
+  registerSpecularPbrGlMaterial,
+  registerStandardPbrGlMaterial,
+  renderGlBackground,
   scaleMatrix4,
   setDirectionalLightDirection,
   setMatrix4Identity,
   translateMatrix4,
 } from '@flighthq/sdk';
 
-import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 import {
   AWAY_MOUSE_SENSITIVITY,
   awayDirection,
@@ -35,15 +44,35 @@ import {
   createOrbitControllerFromAway,
 } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
+import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
-const ctx = createScene3DContext({
-  width: window.innerWidth,
-  height: window.innerHeight,
+const pixelRatio = window.devicePixelRatio || 1;
+
+const mount = document.getElementById('app');
+const canvas = createGlCanvasElement(window.innerWidth, window.innerHeight, pixelRatio);
+if (mount) {
+  mount.replaceWith(canvas);
+} else {
+  document.body.appendChild(canvas);
+}
+document.body.style.margin = '0';
+
+const state = createGlRenderState(canvas, {
   backgroundColor: 0x000000ff,
-  // The ground is HDR-lit and clips to flat white when it fills the view; ACES tone mapping
-  // compresses the highlights back into range, matching the LDR AwayJS original.
-  effects: [createToneMapEffect({ operator: 'aces' })],
+  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
+  pixelRatio,
 });
+
+registerStandardPbrGlMaterial(state);
+registerSpecularPbrGlMaterial(state);
+registerDefaultGlRenderEffects(state);
+
+const verifyFrame = createGlFrameVerifier(state);
+
+// The ground is HDR-lit and clips to flat white when it fills the view; ACES tone mapping
+// compresses the highlights back into range, matching the LDR AwayJS original.
+const effects = [createToneMapEffect({ operator: 'aces' })];
+let pipeline: GlRenderEffectPipeline | null = null;
 
 const scene = createScene();
 
@@ -144,7 +173,7 @@ let lastMouseY = 0;
 let lastPanAngle = orbit.panAngle;
 let lastTiltAngle = orbit.tiltAngle;
 
-ctx.canvas.addEventListener('mousedown', (event: MouseEvent) => {
+canvas.addEventListener('mousedown', (event: MouseEvent) => {
   dragging = true;
   lastMouseX = event.clientX;
   lastMouseY = event.clientY;
@@ -152,7 +181,7 @@ ctx.canvas.addEventListener('mousedown', (event: MouseEvent) => {
   lastTiltAngle = orbit.tiltAngle;
 });
 
-ctx.canvas.addEventListener('mousemove', (event: MouseEvent) => {
+canvas.addEventListener('mousemove', (event: MouseEvent) => {
   if (!dragging) return;
   orbit.panAngle = AWAY_MOUSE_SENSITIVITY * (event.clientX - lastMouseX) + lastPanAngle;
   orbit.tiltAngle = AWAY_MOUSE_SENSITIVITY * (event.clientY - lastMouseY) + lastTiltAngle;
@@ -175,9 +204,22 @@ function frame(ts: number): void {
 
   // Shadow depth pass from the light's view, before the lit scene draw samples it.
   configureDirectionalShadowCamera(shadowCamera, dir, shadowBounds);
-  drawGlSceneShadowMap(ctx.state, scene, shadowCamera);
+  drawGlSceneShadowMap(state, scene, shadowCamera);
 
-  ctx.render(scene, camera, lights);
+  // Effect-pipeline present: draw the scene into the pipeline's HDR target (clearing background and
+  // depth as a direct present would), then run the post-process stack (ACES tone map) to the canvas.
+  if (pipeline === null) {
+    pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
+  }
+  beginGlRenderEffectPipeline(state, pipeline);
+  renderGlBackground(state);
+  const gl = state.gl;
+  gl.depthMask(true);
+  gl.clearDepth(1);
+  gl.clear(gl.DEPTH_BUFFER_BIT);
+  drawGlScene(state, scene, camera, lights);
+  endGlRenderEffectPipeline(state, pipeline, effects);
+  verifyFrame();
   requestAnimationFrame(frame);
 }
 
@@ -185,11 +227,11 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const pixelRatio = window.devicePixelRatio || 1;
-  ctx.canvas.width = w * pixelRatio;
-  ctx.canvas.height = h * pixelRatio;
-  ctx.canvas.style.width = `${w}px`;
-  ctx.canvas.style.height = `${h}px`;
-  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
+  canvas.width = w * pixelRatio;
+  canvas.height = h * pixelRatio;
+  canvas.style.width = `${w}px`;
+  canvas.style.height = `${h}px`;
+  state.gl.viewport(0, 0, canvas.width, canvas.height);
   camera.projection.aspect = w / h;
 });
 

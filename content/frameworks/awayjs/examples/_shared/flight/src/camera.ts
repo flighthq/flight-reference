@@ -58,6 +58,9 @@ export interface AwayOrbitOptions {
   targetY?: number;
   targetZ?: number;
   mouseSensitivity?: number;
+  // AwayJS HoverController defaults — vertical travel multiplier and easing step count.
+  yFactor?: number;
+  steps?: number;
 }
 
 export interface OrbitController {
@@ -75,9 +78,21 @@ export function createOrbitControllerFromAway(camera: Camera, opts: Readonly<Awa
   const minTilt = (opts.minTiltAngle ?? -90) * DEG_TO_RAD;
   const maxTilt = (opts.maxTiltAngle ?? 90) * DEG_TO_RAD;
 
+  // AwayJS HoverController defaults: yFactor 2 doubles the vertical orbit travel, and steps 8
+  // eases the applied angles toward the target over steps+1 frames (the drag's glide). Omitting
+  // these made the camera move noticeably less than the AwayJS original when panning/tilting.
+  const yFactor = opts.yFactor ?? 2;
+  const steps = Math.max(1, opts.steps ?? 8);
+  const SNAP_ANGLE = 0.01 * DEG_TO_RAD;
+
   const eye = createVector3(0, 0, 0);
   const target = createVector3(opts.targetX ?? 0, opts.targetY ?? 0, -(opts.targetZ ?? 0));
   const up = createVector3(0, 1, 0);
+
+  // Applied angles that ease toward the public target angles, seeded to the initial target so
+  // there is no startup glide (matches HoverController seeding current = target in its ctor).
+  let currentPan = (opts.panAngle ?? 0) * DEG_TO_RAD;
+  let currentTilt = (opts.tiltAngle ?? 0) * DEG_TO_RAD;
 
   const controller: OrbitController = {
     camera,
@@ -89,12 +104,31 @@ export function createOrbitControllerFromAway(camera: Camera, opts: Readonly<Awa
     tiltAngle: (opts.tiltAngle ?? 0) * DEG_TO_RAD,
 
     update() {
-      const clamped = Math.max(minTilt, Math.min(maxTilt, this.tiltAngle));
-      this.tiltAngle = clamped;
+      // AwayJS clamps the target tilt in its setter; clamp before easing toward it.
+      this.tiltAngle = Math.max(minTilt, Math.min(maxTilt, this.tiltAngle));
 
-      eye.x = target.x + this.distance * Math.sin(this.panAngle) * Math.cos(clamped);
-      eye.y = target.y + this.distance * Math.sin(clamped);
-      eye.z = target.z - this.distance * Math.cos(this.panAngle) * Math.cos(clamped);
+      currentPan += (this.panAngle - currentPan) / (steps + 1);
+      currentTilt += (this.tiltAngle - currentTilt) / (steps + 1);
+      if (Math.abs(this.panAngle - currentPan) < SNAP_ANGLE && Math.abs(this.tiltAngle - currentTilt) < SNAP_ANGLE) {
+        currentPan = this.panAngle;
+        currentTilt = this.tiltAngle;
+      }
+
+      const sinPan = Math.sin(currentPan);
+      const cosPan = Math.cos(currentPan);
+      const sinTilt = Math.sin(currentTilt);
+      const cosTilt = Math.cos(currentTilt);
+
+      eye.x = target.x + this.distance * sinPan * cosTilt;
+      eye.y = target.y + this.distance * sinTilt * yFactor;
+      eye.z = target.z - this.distance * cosPan * cosTilt;
+
+      // HoverController rolls the up axis by tilt so lookAt stays well-defined up to tilt = 90°
+      // (a fixed +Y up collapses when looking straight down). Z is negated to match the eye's
+      // negated Z term above (Flight right-handed vs AwayJS left-handed).
+      up.x = -sinPan * sinTilt;
+      up.y = cosTilt;
+      up.z = cosPan * sinTilt;
 
       setCameraViewMatrix4FromLookAt(camera, eye, target, up);
     },

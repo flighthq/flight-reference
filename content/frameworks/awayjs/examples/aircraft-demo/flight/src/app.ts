@@ -172,6 +172,13 @@ let rollIncrement = 0;
 let loopIncrement = 0;
 let flightState = 0;
 
+// Loop-maneuver state. AwayJS accumulates these each frame (z += cos*20, y += sin*20),
+// so the loop integrates into a ~400-unit arc that climbs to y ~= 1000 — not the fixed
+// 20-unit circle a direct read of the per-frame delta would suggest.
+let f14Y = 200;
+let f14Z = 0;
+let loopPitch = 0;
+
 const zAxis = createVector3(0, 0, 1);
 const xAxis = createVector3(1, 0, 0);
 
@@ -202,22 +209,31 @@ function frame(): void {
   setMatrix4Identity(f14Mesh.localMatrix);
 
   if (flightState === 0) {
-    translateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, 0, 200, 0);
+    // Resting pose — the loop accumulators return here for the next maneuver.
+    f14Y = 200;
+    f14Z = 0;
+    loopPitch = 0;
   } else {
     loopIncrement += 0.05;
-    const lz = -Math.cos(loopIncrement) * 20;
-    const ly = 200 + Math.sin(loopIncrement) * 20;
-    translateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, 0, ly, lz);
+    // Accumulate position like AwayJS (z += cos*20, y += sin*20). Z is negated for Flight's
+    // right-handed space. Integrating the delta is what gives the loop its full ~400-unit arc.
+    f14Z += -Math.cos(loopIncrement) * 20;
+    f14Y += Math.sin(loopIncrement) * 20;
+    // AwayJS pitches into the loop: rotationX += -atan2(z, y)*DEG_TO_RAD. Flight negates the
+    // X rotation (hence the negated resting pitch), so the accumulated term negates too.
+    loopPitch += Math.atan2(-f14Z, f14Y) * DEG_TO_RAD;
     if (loopIncrement > Math.PI * 2) {
       loopIncrement = 0;
       flightState = 0;
     }
   }
 
-  // TRS after the position translate: roll (Z), resting pitch (X), then the 20x scale —
-  // mirrors the AwayJS f14 transform (scaleTo(20,20,20) + rotationX=90) the port had dropped.
+  translateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, 0, f14Y, f14Z);
+
+  // TRS after the position translate: roll (Z), pitch (X = resting -90 plus any loop pitch),
+  // then the 20x scale — mirrors the AwayJS f14 transform (scaleTo(20,20,20) + rotationX=90).
   rotateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, zAxis, Math.sin(rollIncrement) * 25 * DEG_TO_RAD);
-  rotateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, xAxis, F14_RESTING_PITCH);
+  rotateMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, xAxis, F14_RESTING_PITCH + loopPitch);
   scaleMatrix4(f14Mesh.localMatrix, f14Mesh.localMatrix, F14_SCALE, F14_SCALE, F14_SCALE);
 
   invalidateNodeLocalTransform(f14Mesh);

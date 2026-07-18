@@ -1,9 +1,10 @@
-import type { GlRenderTarget, SceneLights } from '@flighthq/sdk';
+import type { GlRenderTarget, ImageResource, SceneLights } from '@flighthq/sdk';
 import {
   addNodeChild,
   bakeEnvironmentIbl,
   beginGlRenderTarget,
   createAmbientLight,
+  createBoxMeshGeometry,
   createCubeTexture,
   createDirectionalLight,
   createEnvironment,
@@ -14,7 +15,10 @@ import {
   createMesh,
   createScene,
   createSceneLights,
+  createEmissiveMaterial,
   createStandardPbrMaterial,
+  createSurfaceFromImageResource,
+  createSurfaceRegion,
   createTorusMeshGeometry,
   createVector3,
   DEG_TO_RAD,
@@ -24,14 +28,17 @@ import {
   endGlRenderTarget,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
+  registerEmissiveGlMaterial,
   registerStandardPbrGlMaterial,
   renderGlBackground,
   resolveGlRenderTarget,
   resizeGlRenderTarget,
   rotateMatrix4,
+  rotateSurface180,
   setCameraViewMatrix4FromLookAt,
   setCubeTextureFace,
   setMatrix4Identity,
+  translateMatrix4,
 } from '@flighthq/sdk';
 
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
@@ -58,6 +65,7 @@ const state = createGlRenderState(canvas, {
 });
 
 registerStandardPbrGlMaterial(state);
+registerEmissiveGlMaterial(state);
 
 const verifyFrame = createGlFrameVerifier(state);
 
@@ -73,6 +81,40 @@ const geometry = createTorusMeshGeometry(150, 60, 40, 20);
 const torus = createMesh(geometry, [torusMaterial]);
 addNodeChild(scene, torus);
 
+// AwayJS torus.boundsVisible = true draws the torus's bounding box outline, rotating with the torus.
+// Flight's GL wireframe draws every triangle edge (diagonals) and ignores thickness, so build a clean,
+// bold outline from thin emissive beams along the 12 box edges. Half-extents: radius+tube in X/Y, tube
+// in Z. Beams overlap by their thickness at the corners so the edges meet cleanly. Parented to the torus
+// so the outline inherits the spin.
+const boundsMaterial = createEmissiveMaterial({ emissive: 0xffffffff });
+const halfXY = 150 + 60;
+const halfZ = 60;
+const beam = 4;
+
+function addBoundsBeam(w: number, h: number, d: number, x: number, y: number, z: number): void {
+  const edge = createMesh(createBoxMeshGeometry(w, h, d), [boundsMaterial]);
+  setMatrix4Identity(edge.localMatrix);
+  translateMatrix4(edge.localMatrix, edge.localMatrix, x, y, z);
+  invalidateNodeLocalTransform(edge);
+  addNodeChild(torus, edge);
+}
+
+for (const sy of [-halfXY, halfXY]) {
+  for (const sz of [-halfZ, halfZ]) {
+    addBoundsBeam(2 * halfXY + beam, beam, beam, 0, sy, sz);
+  }
+}
+for (const sx of [-halfXY, halfXY]) {
+  for (const sz of [-halfZ, halfZ]) {
+    addBoundsBeam(beam, 2 * halfXY + beam, beam, sx, 0, sz);
+  }
+}
+for (const sx of [-halfXY, halfXY]) {
+  for (const sy of [-halfXY, halfXY]) {
+    addBoundsBeam(beam, beam, 2 * halfZ + beam, sx, sy, 0);
+  }
+}
+
 const camera = createCameraFromAway({ fov: 90 });
 
 const directional = createDirectionalLight({
@@ -86,19 +128,33 @@ const lights: SceneLights = createSceneLights({ ambient, directional });
 
 const cubeTexture = createCubeTexture();
 
+// AwayJS is left-handed and the camera is z-negated for Flight's right-handed space, so the environment
+// starts facing the opposite side. Rotating the cube 180° about Y — swapping the +X/-X and +Z/-Z faces —
+// brings the AwayJS start view back into frame. (Face slots: +X,-X,+Y,-Y,+Z,-Z.)
 const faceUrls = [
-  'awayjs/assets/skybox/snow_positive_x.jpg',
   'awayjs/assets/skybox/snow_negative_x.jpg',
+  'awayjs/assets/skybox/snow_positive_x.jpg',
   'awayjs/assets/skybox/snow_positive_y.jpg',
   'awayjs/assets/skybox/snow_negative_y.jpg',
-  'awayjs/assets/skybox/snow_positive_z.jpg',
   'awayjs/assets/skybox/snow_negative_z.jpg',
+  'awayjs/assets/skybox/snow_positive_z.jpg',
 ];
 
 const faceImages = await Promise.all(faceUrls.map((url) => loadImageResourceFromUrl(url)));
 
+// The 180°-about-Y rotation (the side-face swap above) also rotates the +Y/-Y faces about Y — an
+// in-plane 180° turn of those two images. Without it the top/bottom don't line up with the rotated
+// walls and the cube seams show. Rasterize each to a Surface and rotate it 180° in place to close them.
+function rotateImage180(resource: ImageResource): ImageResource {
+  const surface = createSurfaceFromImageResource(resource);
+  const region = createSurfaceRegion(surface);
+  rotateSurface180(region, region);
+  return surface;
+}
+
 for (let i = 0; i < 6; i++) {
-  setCubeTextureFace(cubeTexture, i, faceImages[i]);
+  const isTopOrBottom = i === 2 || i === 3;
+  setCubeTextureFace(cubeTexture, i, isTopOrBottom ? rotateImage180(faceImages[i]) : faceImages[i]);
 }
 
 const environment = createEnvironment({ environment: cubeTexture, intensity: 1 });

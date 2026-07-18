@@ -65,7 +65,7 @@ const state = createGlRenderState(canvas, {
   pixelRatio,
 });
 
-// Earth/cloud surfaces and the atmosphere halo use the composable shaded lit base
+// The earth surface and the atmosphere halo use the composable shaded lit base
 // (@flighthq/shading), mirroring the original AwayJS MethodMaterial (diffuse + half-vector
 // specular) and letting the atmosphere bake a custom fresnel-rim glow (AwayJS DiffuseGlobeMethod)
 // via a RimModifier and the sun a self-lit disc via an EmissiveModifier.
@@ -107,19 +107,9 @@ addNodeChild(scene, tiltContainer);
 // Earth: lit shaded surface with a tight specular highlight (AwayJS SpecularFresnelMethod, gloss 5).
 const earthMaterial: ShadedMaterial = createShadedMaterial({
   diffuse: 0xffffffff,
-  specular: 0xffffffff,
-  shininess: 5,
+  specular: packOpaqueColor(0x556070),
+  shininess: 12,
 });
-
-// Clouds: additive diffuse shell just above the surface, no specular (AwayJS cloudMaterial).
-const cloudMaterial: ShadedMaterial = createShadedMaterial({
-  diffuse: packOpaqueColor(0x8090b0),
-  specular: 0x000000ff,
-  shininess: 5,
-});
-cloudMaterial.alphaMode = 'blend';
-cloudMaterial.blendMode = BlendMode.Add;
-cloudMaterial.doubleSided = true;
 
 // Atmosphere: a slightly larger shell whose only visible contribution is a blue fresnel rim
 // (AwayJS DiffuseGlobeMethod, diffuse 0x1671cc, additive). A black base + additive blend means the
@@ -145,9 +135,6 @@ sunMaterial.blendMode = BlendMode.Add;
 const earth = createMesh(createSphereMeshGeometry(200, 200, 100), [earthMaterial]);
 addNodeChild(tiltContainer, earth);
 
-const clouds = createMesh(createSphereMeshGeometry(202, 200, 100), [cloudMaterial]);
-addNodeChild(tiltContainer, clouds);
-
 const atmosphere = createMesh(createSphereMeshGeometry(210, 200, 100), [atmosphereMaterial]);
 setMatrix4Identity(atmosphere.localMatrix);
 scaleMatrix4(atmosphere.localMatrix, atmosphere.localMatrix, -1, 1, 1);
@@ -172,7 +159,6 @@ await Promise.all([
   applyTexture(earthMaterial, 'diffuseMap', 'awayjs/assets/globe/land_ocean_ice_2048_match.jpg', 'srgb'),
   applyTexture(earthMaterial, 'normalMap', 'awayjs/assets/globe/EarthNormal.png', 'linear'),
   applyTexture(earthMaterial, 'specularMap', 'awayjs/assets/globe/earth_specular_2048.jpg', 'linear'),
-  applyTexture(cloudMaterial, 'diffuseMap', 'awayjs/assets/globe/cloud_combined_2048.jpg', 'srgb'),
 ]);
 
 // Space starfield skybox — the AwayJS space_texture.cube manifest's six faces into a cube map.
@@ -236,14 +222,10 @@ function frame(ts: number): void {
   lastTime = ts;
 
   const earthSpeed = 0.2 * DEG_TO_RAD * (dt / 16);
-  const cloudSpeed = 0.21 * DEG_TO_RAD * (dt / 16);
   const orbitSpeed = 0.02 * DEG_TO_RAD * (dt / 16);
 
   rotateMatrix4(earth.localMatrix, earth.localMatrix, axisY, earthSpeed);
   invalidateNodeLocalTransform(earth);
-
-  rotateMatrix4(clouds.localMatrix, clouds.localMatrix, axisY, cloudSpeed);
-  invalidateNodeLocalTransform(clouds);
 
   sunAngle += orbitSpeed;
   sunLight.direction.x = Math.sin(sunAngle);

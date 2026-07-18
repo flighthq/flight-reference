@@ -74,8 +74,8 @@ const flightLocalSource =
 // With local Flight source, the SDK barrel re-exports ~126 packages (~1800 source modules). Serving
 // it unbundled gives live HMR of SDK-source edits but a very slow cold load for a single sample.
 // Default to pre-bundling it (one optimized dependency; the sample itself keeps full HMR). Set
-// FLIGHT_SDK_SOURCE=1 to serve the SDK as raw source instead when actively editing SDK internals.
-const flightSdkAsSource = flightLocalSource && process.env.FLIGHT_SDK_SOURCE === '1';
+// FLIGHT_SDK_WATCH=1 to serve the SDK as raw source instead when actively editing SDK internals.
+const watchFlightSdk = flightLocalSource && process.env.FLIGHT_SDK_WATCH === '1';
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -889,8 +889,8 @@ export default defineConfig({
         $_: 'globalThis.$_',
       },
     },
-    include: flightLocalSource && !flightSdkAsSource ? ['@flighthq/sdk'] : [],
-    exclude: flightSdkAsSource ? ['@flighthq/sdk'] : [],
+    include: flightLocalSource && !watchFlightSdk ? ['@flighthq/sdk'] : [],
+    exclude: watchFlightSdk ? ['@flighthq/sdk'] : [],
   },
   resolve: {
     alias: {

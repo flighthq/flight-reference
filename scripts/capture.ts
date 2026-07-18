@@ -24,7 +24,10 @@ interface CaptureTarget {
 function discoverTargets(): CaptureTarget[] {
   const targets: CaptureTarget[] = [];
 
-  for (const framework of ['openfl', 'starling']) {
+  const frameworks = readdirSync(contentDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
+  for (const framework of frameworks) {
     const frameworkDir = join(contentDir, framework);
     if (!existsSync(frameworkDir)) continue;
 

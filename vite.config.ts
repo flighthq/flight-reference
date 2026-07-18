@@ -476,7 +476,18 @@ function discoverAwayjsCases(): ReferenceCase[] {
 // ---------------------------------------------------------------------------
 
 function discoverAllCases(): ReferenceCase[] {
-  return [...discoverOpenflCases(), ...discoverStarlingCases(), ...discoverAwayjsCases()];
+  const all = [...discoverOpenflCases(), ...discoverStarlingCases(), ...discoverAwayjsCases()];
+  const caseFilter = process.env.CASE;
+  if (!caseFilter) return all;
+
+  const filtered = all.filter((c) => c.id === caseFilter || c.name === caseFilter || c.id.endsWith('/' + caseFilter));
+
+  if (filtered.length === 0) {
+    const available = all.map((c) => `  ${c.id}`).join('\n');
+    throw new Error(`CASE="${caseFilter}" matched nothing.\n\nAvailable cases:\n${available}`);
+  }
+
+  return filtered;
 }
 
 // ---------------------------------------------------------------------------
@@ -717,6 +728,25 @@ function referencePlugin(): Plugin[] {
         server.watcher.add(openflContentDir);
         if (existsSync(starlingContentDir)) server.watcher.add(starlingContentDir);
         if (existsSync(awayjsContentDir)) server.watcher.add(awayjsContentDir);
+
+        if (process.env.CASE) {
+          const filtered = discoverAllCases();
+          if (filtered.length === 1) {
+            const target = filtered[0]!;
+            const previewUrl = target.flightPreviewRenderers?.[0]?.url ?? target.previewRenderers[0]?.url;
+            if (previewUrl) {
+              server.middlewares.use((req, res, next) => {
+                const urlPath = (req.url ?? '/').split('?')[0] ?? '/';
+                if (urlPath === '/' || urlPath === '/index.html') {
+                  res.writeHead(302, { Location: `${viteBase}${previewUrl}` });
+                  res.end();
+                  return;
+                }
+                next();
+              });
+            }
+          }
+        }
 
         server.middlewares.use((req, res, next) => {
           const urlPath = (req.url ?? '/').split('?')[0] ?? '/';

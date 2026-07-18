@@ -14,6 +14,7 @@ import {
   invalidateNodeRender,
   releaseInteractionPointer,
   removeNodeChild,
+  setNodeHitTestEnabled,
   setRectangle,
 } from '@flighthq/sdk';
 
@@ -43,6 +44,9 @@ export function connectTileInteraction(
   const coordScale = options?.coordScale ?? 1;
   const cursorElement = options?.cursorElement ?? null;
   const dragThreshold = 10 * coordScale;
+  // Flight hit testing is opt-in per node (default off), so the tile must enable it or pointer
+  // events never reach these signals. Its local bounds (set in createTile) are the hit region.
+  setNodeHitTestEnabled(tile.obj, true);
   const signals = enableInteractionSignals(tile.obj);
   let startX = 0;
   let startY = 0;

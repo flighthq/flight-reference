@@ -33,6 +33,7 @@ import {
   createCameraFromAway,
   createOrbitControllerFromAway,
 } from '../../../_shared/flight/src/camera';
+import { publishFunctionalRenderSync, registerFunctionalTarget } from '@ft/verify';
 const PARTICLE_SIZE = 2;
 const NUM_LOGOS = 4;
 const NUM_ANIMATORS = 4;
@@ -56,6 +57,16 @@ const glState = createGlRenderState(canvas, {
   pixelRatio,
 });
 registerBlinnPhongGlMaterial(glState);
+
+registerFunctionalTarget({
+  kind: 'webgl',
+  state: glState,
+  width: canvas.width,
+  height: canvas.height,
+  scale: pixelRatio,
+  render: () => {},
+});
+let verified = false;
 
 const scene = createScene();
 
@@ -250,6 +261,9 @@ function frame(ts: number): void {
   }
 
   presentGlScene(glState, renderTarget, scene, camera, lights);
+
+  const captureVerify = (window as { __flightCaptureVerify?: boolean }).__flightCaptureVerify;
+  if (captureVerify && !verified) verified = publishFunctionalRenderSync('webgl');
 
   requestAnimationFrame(frame);
 }

@@ -41,6 +41,7 @@ import {
 
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
+import { publishFunctionalRenderSync, registerFunctionalTarget } from '@ft/verify';
 // The original AwayJS demo uses NormalSimpleWaterMethod + EffectEnvMapMethod + SpecularFresnelMethod
 // on the sea surface. In Flight we approximate this with:
 //   - A StandardPbrMaterial with metallic=1, roughness=0 (mirror-like env-map reflection) for the
@@ -69,6 +70,16 @@ const glState = createGlRenderState(canvas, {
 });
 registerBlinnPhongGlMaterial(glState);
 registerStandardPbrGlMaterial(glState);
+
+registerFunctionalTarget({
+  kind: 'webgl',
+  state: glState,
+  width: canvas.width,
+  height: canvas.height,
+  scale: pixelRatio,
+  render: () => {},
+});
+let verified = false;
 
 const scene = createScene();
 
@@ -264,6 +275,9 @@ function frame(): void {
   endGlRenderTarget(glState);
   resolveGlRenderTarget(glState, renderTarget);
   drawGlLinearToSrgbPass(glState, renderTarget, null);
+
+  const captureVerify = (window as { __flightCaptureVerify?: boolean }).__flightCaptureVerify;
+  if (captureVerify && !verified) verified = publishFunctionalRenderSync('webgl');
 
   requestAnimationFrame(frame);
 }

@@ -126,10 +126,7 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
       // Under capture (verify mode), read the presented frame back into window.__ftRenderImage once it has
       // content. Swallow the blank-frame throw so an early frame simply retries on the next one.
       const captureVerify = (window as { __flightCaptureVerify?: boolean }).__flightCaptureVerify;
-      if (captureVerify && !verified) {
-        const captureVerify = (window as { __flightCaptureVerify?: boolean }).__flightCaptureVerify;
-        if (captureVerify && !verified) verified = publishFunctionalRenderSync('webgl');
-      }
+      if (captureVerify && !verified) verified = publishFunctionalRenderSync('webgl');
     },
     state,
     width,

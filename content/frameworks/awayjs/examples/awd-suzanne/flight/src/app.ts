@@ -129,9 +129,11 @@ const hit: SceneHit = createSceneHit();
 
 ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
   const rect = ctx.canvas.getBoundingClientRect();
-  const sx = e.clientX - rect.left;
-  const sy = e.clientY - rect.top;
-  const result = pickScene(scene, camera, sx, sy, hit);
+  // pickScene expects normalized device coordinates in [-1, 1], not pixels; the Y axis flips (screen
+  // Y grows down, NDC Y grows up). Using rect dimensions keeps this correct under devicePixelRatio.
+  const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  const ndcY = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+  const result = pickScene(scene, camera, ndcX, ndcY, hit);
 
   if (lastHovered && lastHovered !== result?.node) {
     lastHovered.materials[0] = defaultMaterial;
@@ -151,11 +153,9 @@ function frame(): void {
   cameraAngle += 0.01;
   updateCamera();
 
-  // AwayJS drives this as a headlight: the key travels from the camera toward the model, so the face the
-  // viewer sees is always the lit side. The camera uses this repo's away→flight z-negation, but the AWD
-  // model loads in un-negated space — so the light's source Z is mirrored back to match the model, or the
-  // key lands on the wrong side and the visible face falls into shadow.
-  setDirectionalLightTarget(directional, eye.x, eye.y, -eye.z, lookAt.x, lookAt.y, lookAt.z);
+  // Headlight matching AwayJS's per-frame `light.direction = -cameraPos`: the key travels from the
+  // camera toward the model, so the face the viewer sees is always the lit side.
+  setDirectionalLightTarget(directional, eye.x, eye.y, eye.z, lookAt.x, lookAt.y, lookAt.z);
 
   ctx.render(scene, camera, lights);
   requestAnimationFrame(frame);

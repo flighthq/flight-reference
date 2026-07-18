@@ -24,7 +24,7 @@ import {
   renderGlBackground,
   resizeGlRenderTarget,
 } from '@flighthq/sdk';
-import { registerFunctionalTarget, runRenderVerification } from '@ft/verify';
+import { publishFunctionalRenderSync, registerFunctionalTarget } from '@ft/verify';
 
 export interface Scene3DContext {
   canvas: HTMLCanvasElement;
@@ -127,11 +127,8 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
       // content. Swallow the blank-frame throw so an early frame simply retries on the next one.
       const captureVerify = (window as { __flightCaptureVerify?: boolean }).__flightCaptureVerify;
       if (captureVerify && !verified) {
-        void runRenderVerification({}, 'webgl')
-          .then(() => {
-            if ((window as { __ftRenderImage?: string }).__ftRenderImage) verified = true;
-          })
-          .catch(() => {});
+        const captureVerify = (window as { __flightCaptureVerify?: boolean }).__flightCaptureVerify;
+        if (captureVerify && !verified) verified = publishFunctionalRenderSync('webgl');
       }
     },
     state,

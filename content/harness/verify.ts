@@ -234,6 +234,38 @@ function measureGlFramebufferCoverage(gl: WebGL2RenderingContext, canvas: Readon
   return nonBackground / total;
 }
 
+/**
+   * Synchronously reads the registered webgl target's default framebuffer and publishes                                                                                          
+  it for the capture                                                                                                                                                              
+   * harness (sets __ftVerification + __ftRenderImage). Unlike runRenderVerification it                                                                                           
+  does NOT wait for a                                                                                                                                                             
+   * presented frame — so it MUST be called in the same task as the draw (right after                                                                                             
+  presentGlScene in an                                                                                                                                                            
+   * animation frame), while the drawing buffer is still valid. This is what lets an                                                                                              
+  animated app read back                                                                                                                                                          
+   * without preserveDrawingBuffer:true (which a wait-then-read would need, and which                                                                                             
+  breaks on-screen                                                                      
+   * animation on some drivers). Returns true once a non-blank frame was published; the 
+  caller stops then,                                                                    
+   * and retries next frame while it returns false.                                     
+   */
+export function publishFunctionalRenderSync(render: string): boolean {
+  const target = (window as VerificationWindow).__ftTarget;
+  if (target?.kind !== 'webgl') return false;
+  const surface = createSurfaceFromGlRenderState(target.state);
+  if (surface === null) return false;
+  const background = getSurfacePixel(surface, 0, 0);
+  const coverage = getSurfaceCoverage(surface, background, BACKGROUND_CHANNEL_TOLERANCE);
+  if (coverage < DEFAULT_MIN_COVERAGE) return false;
+  (window as VerificationWindow).__ftVerification = {
+    render,
+    coverage,
+    fingerprint: formatSurfaceFingerprint(createSurfaceFingerprint(surface, FINGERPRINT_GRID)),
+  };
+  (window as VerificationWindow).__ftRenderImage = encodeSurfaceToDataUrl(surface);
+  return true;
+}
+
 // Resolves after the browser has presented a frame: two rAFs — one to run the pending frame's callbacks
 // (the scene's draw), one to ensure that frame reached the compositor. Uses the capture harness's stashed
 // un-hijacked requestAnimationFrame when present so the wait survives the --frames halt (which stops

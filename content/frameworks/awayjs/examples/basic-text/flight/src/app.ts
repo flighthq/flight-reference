@@ -7,28 +7,51 @@ import {
   connectInputToTextInput,
   connectSignal,
   createDisplayContainer,
+  createGlCanvasElement,
+  createGlRenderState,
   createInputManager,
+  createMatrix,
   createRichText,
   createTextInputManager,
+  defaultGlRichTextRenderer,
   enableTextInput,
   focusTextInput,
   invalidateNodeLocalTransform,
   loadFontFromUrl,
+  prepareDisplayObjectRender,
+  registerDefaultGlMaterial,
+  registerRenderer,
+  renderGlBackground,
+  renderGlDisplayObject,
   RichTextKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
 const width = window.innerWidth;
 const height = window.innerHeight;
 
-const target = await createFunctionalTarget({
-  width,
-  height,
-  background: 0xccccccff,
-  kinds: [RichTextKind],
-});
+const pixelRatio = window.devicePixelRatio || 1;
 
-const canvas = (target.state as { canvas: HTMLCanvasElement }).canvas;
+const mount = document.getElementById('app');
+const canvas = createGlCanvasElement(width, height, pixelRatio);
+if (mount) {
+  mount.replaceWith(canvas);
+} else {
+  document.body.appendChild(canvas);
+}
+document.body.style.margin = '0';
+
+const state = createGlRenderState(canvas, {
+  backgroundColor: 0xccccccff,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: false },
+  pixelRatio,
+});
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+registerDefaultGlMaterial(state);
+registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
+
+const verifyFrame = createGlFrameVerifier(state);
 
 const font = await loadFontFromUrl('awayjs/assets/georgia.ttf', 'Georgia');
 
@@ -102,7 +125,10 @@ connectSignal(input.onWheel, (data) => {
 });
 
 function frame(): void {
-  target.render(root);
+  prepareDisplayObjectRender(state, root);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
+  verifyFrame();
   requestAnimationFrame(frame);
 }
 

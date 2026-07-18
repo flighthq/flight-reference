@@ -12,14 +12,25 @@ import {
   clearShapeCommands,
   connectSignal,
   createDisplayContainer,
+  createGlCanvasElement,
+  createGlRenderState,
   createInputManager,
+  createMatrix,
   createShape,
+  defaultGlShapeCommands,
+  defaultGlShapeRenderer,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   invalidateNodeRender,
+  prepareDisplayObjectRender,
+  registerDefaultGlMaterial,
+  registerGlShapeCommands,
+  registerRenderer,
+  renderGlBackground,
+  renderGlDisplayObject,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
 interface DrawingPathEntry {
   cmd: string;
@@ -29,12 +40,31 @@ interface DrawingPathEntry {
   cy?: number;
 }
 
-const target = await createFunctionalTarget({
-  width: window.innerWidth,
-  height: window.innerHeight,
-  background: 0xddddddff,
-  kinds: [ShapeKind],
+const width = window.innerWidth;
+const height = window.innerHeight;
+const pixelRatio = window.devicePixelRatio || 1;
+
+const mount = document.getElementById('app');
+const canvas = createGlCanvasElement(width, height, pixelRatio);
+if (mount) {
+  mount.replaceWith(canvas);
+} else {
+  document.body.appendChild(canvas);
+}
+document.body.style.margin = '0';
+
+const state = createGlRenderState(canvas, {
+  backgroundColor: 0xddddddff,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: false },
+  pixelRatio,
 });
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+registerDefaultGlMaterial(state);
+registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerGlShapeCommands(defaultGlShapeCommands);
+
+const verifyFrame = createGlFrameVerifier(state);
 
 const drawingPath: DrawingPathEntry[] = [];
 let isMouseDown = false;
@@ -98,7 +128,7 @@ function updateNewPointForMousePosition(x: number, y: number): void {
 }
 
 const input = createInputManager();
-attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);
+attachPointerInput(input, canvas);
 
 connectSignal(input.onPointerDown, (data) => {
   circleGraphic.x = data.x;
@@ -141,7 +171,10 @@ function enterFrame(): void {
     invalidateNodeLocalTransform(circleGraphic);
   }
 
-  target.render(root);
+  prepareDisplayObjectRender(state, root);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
+  verifyFrame();
   requestAnimationFrame(enterFrame);
 }
 

@@ -21,7 +21,6 @@ import {
   emitParticleBurst3D,
   invalidateNodeLocalTransform,
   presentGlScene,
-  registerBlinnPhongGlMaterial,
   resizeGlRenderTarget,
   rotateMatrix4,
   setMatrix4Identity,
@@ -33,7 +32,7 @@ import {
   createCameraFromAway,
   createOrbitControllerFromAway,
 } from '../../../_shared/flight/src/camera';
-import { publishFunctionalRenderSync, registerFunctionalTarget } from '@ft/verify';
+import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 const PARTICLE_SIZE = 2;
 const NUM_LOGOS = 4;
 const NUM_ANIMATORS = 4;
@@ -56,17 +55,8 @@ const glState = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
   pixelRatio,
 });
-registerBlinnPhongGlMaterial(glState);
 
-registerFunctionalTarget({
-  kind: 'webgl',
-  state: glState,
-  width: canvas.width,
-  height: canvas.height,
-  scale: pixelRatio,
-  render: () => {},
-});
-let verified = false;
+const verifyFrame = createGlFrameVerifier(glState);
 
 const scene = createScene();
 
@@ -262,8 +252,7 @@ function frame(ts: number): void {
 
   presentGlScene(glState, renderTarget, scene, camera, lights);
 
-  const captureVerify = (window as { __flightCaptureVerify?: boolean }).__flightCaptureVerify;
-  if (captureVerify && !verified) verified = publishFunctionalRenderSync('webgl');
+  verifyFrame();
 
   requestAnimationFrame(frame);
 }

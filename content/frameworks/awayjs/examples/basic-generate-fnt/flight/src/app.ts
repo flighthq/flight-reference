@@ -6,31 +6,54 @@ import {
   connectSignal,
   createBitmapText,
   createDisplayContainer,
+  createGlCanvasElement,
+  createGlRenderState,
   createGlyphAtlas,
   createGlyphSourceFromGlyphAtlas,
   createInputManager,
+  createMatrix,
   createWebGlyphRasterizerBackend,
+  defaultGlQuadBatchRenderer,
   getGlyphAtlasSurface,
   invalidateNodeLocalContent,
   invalidateNodeLocalTransform,
   loadFontFromUrl,
+  prepareDisplayObjectRender,
   QuadBatchKind,
+  registerDefaultGlMaterial,
+  registerRenderer,
+  renderGlBackground,
+  renderGlDisplayObject,
   setGlyphRasterizerBackend,
   updateBitmapText,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
 const width = window.innerWidth;
 const height = window.innerHeight;
 
-const target = await createFunctionalTarget({
-  width,
-  height,
-  background: 0xccccccff,
-  kinds: [QuadBatchKind],
-});
+const pixelRatio = window.devicePixelRatio || 1;
 
-const canvas = (target.state as { canvas: HTMLCanvasElement }).canvas;
+const mount = document.getElementById('app');
+const canvas = createGlCanvasElement(width, height, pixelRatio);
+if (mount) {
+  mount.replaceWith(canvas);
+} else {
+  document.body.appendChild(canvas);
+}
+document.body.style.margin = '0';
+
+const state = createGlRenderState(canvas, {
+  backgroundColor: 0xccccccff,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: false },
+  pixelRatio,
+});
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+registerDefaultGlMaterial(state);
+registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
+
+const verifyFrame = createGlFrameVerifier(state);
 
 const font = await loadFontFromUrl('awayjs/assets/georgia.ttf', 'Georgia');
 
@@ -103,7 +126,10 @@ connectSignal(input.onWheel, (data) => {
 });
 
 function frame(): void {
-  target.render(root);
+  prepareDisplayObjectRender(state, root);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
+  verifyFrame();
   requestAnimationFrame(frame);
 }
 
@@ -113,7 +139,6 @@ function showAtlasSurface(glyphAtlas: GlyphAtlas): void {
   const surface = getGlyphAtlasSurface(glyphAtlas);
   if (!surface) return;
 
-  const pixelRatio = window.devicePixelRatio || 1;
   const wrapper = document.createElement('div');
   const displayCanvas = document.createElement('canvas');
   displayCanvas.width = surface.width;

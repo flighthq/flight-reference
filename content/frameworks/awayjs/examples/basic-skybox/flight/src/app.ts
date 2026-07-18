@@ -35,7 +35,7 @@ import {
 } from '@flighthq/sdk';
 
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
-import { publishFunctionalRenderSync, registerFunctionalTarget } from '@ft/verify';
+import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 const width = window.innerWidth;
 const height = window.innerHeight;
 const pixelRatio = window.devicePixelRatio || 1;
@@ -59,15 +59,7 @@ const state = createGlRenderState(canvas, {
 
 registerStandardPbrGlMaterial(state);
 
-registerFunctionalTarget({
-  kind: 'webgl',
-  state,
-  width: canvas.width,
-  height: canvas.height,
-  scale: pixelRatio,
-  render: () => {},
-});
-let verified = false;
+const verifyFrame = createGlFrameVerifier(state);
 
 const scene = createScene();
 
@@ -171,8 +163,7 @@ function frame(): void {
   resolveGlRenderTarget(state, renderTarget);
   drawGlLinearToSrgbPass(state, renderTarget, null);
 
-  const captureVerify = (window as { __flightCaptureVerify?: boolean }).__flightCaptureVerify;
-  if (captureVerify && !verified) verified = publishFunctionalRenderSync('webgl');
+  verifyFrame();
 
   requestAnimationFrame(frame);
 }

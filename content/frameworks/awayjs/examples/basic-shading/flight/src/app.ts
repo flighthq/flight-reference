@@ -8,14 +8,15 @@ import {
   createScene,
   createSceneLights,
   createSphereMeshGeometry,
+  createSampler,
   createStandardPbrMaterial,
   createTexture,
-  createTilingSampler,
   createTorusMeshGeometry,
   createVector3,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   rotateMatrix4,
+  scaleMeshGeometryUvs,
   setDirectionalLightDirection,
   setMatrix4Identity,
   setTextureUvScale,
@@ -42,24 +43,25 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60 });
 
+// Repeating textures are viewed at grazing angles (the ground plane, the ring's tube), so use an
+// anisotropic + mipmapped repeat sampler to keep the tiled detail smooth like the AwayJS original.
+const tilingSampler = () => createSampler({ wrapU: 'repeat', wrapV: 'repeat', anisotropy: 16 });
+
 // AwayJS lights the scene with two directionals: a white primary (diffuse 0.7, ambient 0.1) whose
 // direction sweeps the horizon each frame, and a static cyan secondary (0x00ffff, diffuse 0.7,
 // ambient 0.1) pointing straight down. Flight's SceneLights carries only one directional, so the
-// primary stays the directional (both ambients folded into it: 0.1 + 0.1 = 0.2) and the downward
-// cyan fill becomes a hemisphere light — cyan from above fading to nothing below is the closest
-// single-light stand-in for a straight-down colored directional, and restores the cyan tint and
-// the diffuse energy the earlier one-light port had dropped.
+// animated white primary stays the directional (it drives the per-face shading that gives the
+// objects their form; both ambients fold into it: 0.1 + 0.1 = 0.2). The downward cyan secondary
+// becomes a low-intensity hemisphere light — a full-strength hemisphere lights side-facing surfaces
+// too and washes the directional contrast flat, so keep it dim: enough for the cyan tint, not enough
+// to erase the form.
 const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(0, -1, 0),
+  color: 0x00ffff,
   diffuse: 0.7,
   ambient: 0.2,
 });
-const cyanFill = createHemisphereLight({
-  skyColor: 0x00ffffff,
-  groundColor: 0x000000ff,
-  intensity: awayIntensity(0.7),
-});
-const lights = createSceneLights({ ambient, directional, hemisphere: [cyanFill] });
+const lights = createSceneLights({ ambient, directional });
 
 // PBR material intent (per the sample's assets): floor = stone (rough dielectric), beach ball =
 // vinyl (smooth dielectric), trinket = mixed metal + wood (part-metallic), ring = polished metal.
@@ -81,13 +83,13 @@ const cubeMaterial = createStandardPbrMaterial({
   roughness: 0.5,
 });
 // The ring reads as polished metal, but this scene has no environment map, so a true metallic
-// surface has nothing to reflect and renders black. A low-roughness dielectric instead catches a
-// tight specular highlight from the sweeping light (broken up by the weave normal) for the same
-// brushed-metal look while staying visible — matching the AwayJS reference.
+// surface has nothing to reflect and renders black. A dielectric with moderate roughness instead
+// catches a soft specular sheen from the sweeping light (with the weave normal for surface detail)
+// for a brushed-metal look while staying visible — matching the AwayJS reference.
 const torusMaterial = createStandardPbrMaterial({
   baseColor: 0xffffffff,
   metallic: 0,
-  roughness: 0.25,
+  roughness: 0.5,
 });
 
 const planeGeometry = createPlaneMeshGeometry(1000, 1000, 1, 1);
@@ -112,6 +114,10 @@ invalidateNodeLocalTransform(cube);
 addNodeChild(scene, cube);
 
 const torusGeometry = createTorusMeshGeometry(150, 60, 40, 20);
+// Match AwayJS's scaleUV(10, 5) weave density. Baking the tiling into the vertex UVs (rather than a
+// KHR_texture_transform uvScale on the texture) keeps the mip LOD derivative-correct, so the fine
+// weave stays crisp instead of aliasing into speckle on the ring's minified far side.
+scaleMeshGeometryUvs(torusGeometry, 10, 5);
 const torus = createMesh(torusGeometry, [torusMaterial]);
 setMatrix4Identity(torus.localMatrix);
 translateMatrix4(torus.localMatrix, torus.localMatrix, ...awayPosition(-250, 160, -250));
@@ -131,7 +137,7 @@ function applyTextures(
     const url = maps.diffuse;
     jobs.push(
       loadImageResourceFromUrl(url).then((image) => {
-        const tex = createTexture({ image, sampler: uvScale ? createTilingSampler() : undefined });
+        const tex = createTexture({ image, sampler: uvScale ? tilingSampler() : undefined });
         if (uvScale) setTextureUvScale(tex, uvScale.x, uvScale.y);
         material.baseColorMap = tex;
       }),
@@ -141,7 +147,7 @@ function applyTextures(
     const url = maps.normal;
     jobs.push(
       loadImageResourceFromUrl(url).then((image) => {
-        const tex = createTexture({ image, sampler: uvScale ? createTilingSampler() : undefined });
+        const tex = createTexture({ image, sampler: uvScale ? tilingSampler() : undefined });
         if (uvScale) setTextureUvScale(tex, uvScale.x, uvScale.y);
         material.normalMap = tex;
       }),
@@ -151,7 +157,7 @@ function applyTextures(
     const url = maps.specular;
     jobs.push(
       loadImageResourceFromUrl(url).then((image) => {
-        const tex = createTexture({ image, sampler: uvScale ? createTilingSampler() : undefined });
+        const tex = createTexture({ image, sampler: uvScale ? tilingSampler() : undefined });
         if (uvScale) setTextureUvScale(tex, uvScale.x, uvScale.y);
         material.metallicRoughnessMap = tex;
       }),
@@ -160,12 +166,11 @@ function applyTextures(
   return Promise.all(jobs);
 }
 
+// The 10x5 weave tiling is baked into the torus UVs above, so the weave textures use a plain
+// repeat sampler with no uvScale.
 const torusWeaveNormalImage = await loadImageResourceFromUrl('awayjs/assets/weave_normal.jpg');
-const torusNormalTex = createTexture({ image: torusWeaveNormalImage, sampler: createTilingSampler() });
-setTextureUvScale(torusNormalTex, 10, 5);
-// DIAG: normal map temporarily disabled to inspect torus shape
-// torusMaterial.normalMap = torusNormalTex;
-void torusNormalTex;
+const torusNormalTex = createTexture({ image: torusWeaveNormalImage, sampler: tilingSampler() });
+torusMaterial.normalMap = torusNormalTex;
 
 // AwayJS specular jpgs don't map cleanly onto a glTF metallic-roughness texture (which is
 // G = roughness, B = metalness), so drive metalness/roughness from the per-material constants
@@ -187,8 +192,7 @@ await Promise.all([
     normal: 'awayjs/assets/trinket_normal.jpg',
   }),
   loadImageResourceFromUrl('awayjs/assets/weave_diffuse.jpg').then((image) => {
-    const tex = createTexture({ image, sampler: createTilingSampler() });
-    setTextureUvScale(tex, 10, 5);
+    const tex = createTexture({ image, sampler: tilingSampler() });
     torusMaterial.baseColorMap = tex;
   }),
 ]);
@@ -232,9 +236,12 @@ ctx.canvas.addEventListener('wheel', (event: WheelEvent) => {
 });
 
 function frame(ts: number): void {
-  const lightX = Math.sin(ts / 10000) * 150000;
-  const lightZ = -Math.cos(ts / 10000) * 150000;
-  setDirectionalLightDirection(directional, lightX, -1000, lightZ);
+  // Keep the light downward-dominant so surfaces facing up stay bright and side faces stay dark
+  // (the per-face contrast that gives the objects their form), with a slow horizontal precession
+  // for a moving highlight — a single-directional stand-in for AwayJS's static down + swept pair.
+  const lightX = Math.sin(ts / 4000) * 0.4;
+  const lightZ = -Math.cos(ts / 4000) * 0.4;
+  setDirectionalLightDirection(directional, lightX, -1, lightZ);
 
   orbit.update();
   ctx.render(scene, camera, lights);

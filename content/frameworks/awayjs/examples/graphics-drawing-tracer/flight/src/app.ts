@@ -8,12 +8,23 @@ import {
   appendShapeMoveTo,
   clearShapeCommands,
   createDisplayContainer,
+  createGlCanvasElement,
+  createGlRenderState,
+  createMatrix,
   createShape,
+  defaultGlShapeCommands,
+  defaultGlShapeRenderer,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  prepareDisplayObjectRender,
+  registerDefaultGlMaterial,
+  registerGlShapeCommands,
+  registerRenderer,
+  renderGlBackground,
+  renderGlDisplayObject,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
 const WIDTH = window.innerWidth;
 const HEIGHT = window.innerHeight;
@@ -25,12 +36,29 @@ interface PathPoint {
   y: number;
 }
 
-const target = await createFunctionalTarget({
-  width: WIDTH,
-  height: HEIGHT,
-  background: 0x777777ff,
-  kinds: [ShapeKind],
+const pixelRatio = window.devicePixelRatio || 1;
+
+const mount = document.getElementById('app');
+const canvas = createGlCanvasElement(WIDTH, HEIGHT, pixelRatio);
+if (mount) {
+  mount.replaceWith(canvas);
+} else {
+  document.body.appendChild(canvas);
+}
+document.body.style.margin = '0';
+
+const state = createGlRenderState(canvas, {
+  backgroundColor: 0x777777ff,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: false },
+  pixelRatio,
 });
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+registerDefaultGlMaterial(state);
+registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerGlShapeCommands(defaultGlShapeCommands);
+
+const verifyFrame = createGlFrameVerifier(state);
 
 const drawingPath: PathPoint[][] = [[], [], [], []];
 
@@ -134,7 +162,10 @@ function enterFrame(): void {
   invalidateNodeLocalTransform(movingRect);
 
   drawTracerShape();
-  target.render(root);
+  prepareDisplayObjectRender(state, root);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
+  verifyFrame();
   requestAnimationFrame(enterFrame);
 }
 

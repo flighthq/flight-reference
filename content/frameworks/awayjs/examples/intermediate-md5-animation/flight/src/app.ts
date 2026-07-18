@@ -43,7 +43,7 @@ import {
 
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway, createPointLightFromAway } from '../../../_shared/flight/src/lighting';
-import { publishFunctionalRenderSync, registerFunctionalTarget } from '@ft/verify';
+import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 const ANIM_NAMES = [
   'idle2',
   'walk7',
@@ -84,15 +84,7 @@ const glState = createGlRenderState(canvas, {
 });
 registerStandardPbrGlMaterial(glState);
 
-registerFunctionalTarget({
-  kind: 'webgl',
-  state: glState,
-  width: canvas.width,
-  height: canvas.height,
-  scale: pixelRatio,
-  render: () => {},
-});
-let verified = false;
+const verifyFrame = createGlFrameVerifier(glState);
 
 const scene = createScene();
 
@@ -383,8 +375,7 @@ function frame(ts: number): void {
 
   presentGlScene(glState, renderTarget, scene, camera, lights);
 
-  const captureVerify = (window as { __flightCaptureVerify?: boolean }).__flightCaptureVerify;
-  if (captureVerify && !verified) verified = publishFunctionalRenderSync('webgl');
+  verifyFrame();
 
   requestAnimationFrame(frame);
 }

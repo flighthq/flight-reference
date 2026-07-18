@@ -9,20 +9,53 @@ import {
   appendShapeMoveTo,
   createClipRegionFromCircle,
   createDisplayContainer,
+  createGlCanvasElement,
+  createGlRenderState,
+  createMatrix,
   createShape,
+  defaultGlShapeCommands,
+  defaultGlShapeRenderer,
+  enableGlClipSupport,
   invalidateNodeLocalTransform,
+  prepareDisplayObjectRender,
+  registerDefaultGlMaterial,
+  registerGlShapeCommands,
+  registerRenderer,
+  renderGlBackground,
+  renderGlDisplayObject,
   setDisplayObjectClip,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
-const target = await createFunctionalTarget({
-  width: window.innerWidth,
-  height: window.innerHeight,
-  background: 0x777777ff,
-  kinds: [ShapeKind],
-  clip: true,
+const width = window.innerWidth;
+const height = window.innerHeight;
+const pixelRatio = window.devicePixelRatio || 1;
+
+const mount = document.getElementById('app');
+const canvas = createGlCanvasElement(width, height, pixelRatio);
+if (mount) {
+  mount.replaceWith(canvas);
+} else {
+  document.body.appendChild(canvas);
+}
+document.body.style.margin = '0';
+
+const state = createGlRenderState(canvas, {
+  backgroundColor: 0x777777ff,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: false },
+  pixelRatio,
 });
+// Shapes are authored in logical units; this device transform scales the scene up to the
+// backing-store resolution so it stays crisp on HiDPI displays.
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+registerDefaultGlMaterial(state);
+registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerGlShapeCommands(defaultGlShapeCommands);
+enableGlClipSupport(state);
+
+const verifyFrame = createGlFrameVerifier(state);
 
 const root = createDisplayContainer();
 
@@ -106,7 +139,11 @@ function frame(): void {
     invalidateNodeLocalTransform(animShapes[i]);
   }
 
-  target.render(root);
+  prepareDisplayObjectRender(state, root);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
+  verifyFrame();
+
   requestAnimationFrame(frame);
 }
 

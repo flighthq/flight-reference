@@ -12,23 +12,52 @@ import {
   clearShapeCommands,
   connectSignal,
   createDisplayContainer,
+  createGlCanvasElement,
+  createGlRenderState,
   createInputManager,
+  createMatrix,
   createShape,
+  defaultGlShapeCommands,
+  defaultGlShapeRenderer,
   invalidateNodeLocalTransform,
   invalidateNodeRender,
+  prepareDisplayObjectRender,
+  registerDefaultGlMaterial,
+  registerGlShapeCommands,
+  registerRenderer,
   removeNodeChildren,
+  renderGlBackground,
+  renderGlDisplayObject,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
-const target = await createFunctionalTarget({
-  width: window.innerWidth,
-  height: window.innerHeight,
-  background: 0x777777ff,
-  kinds: [ShapeKind],
+const width = window.innerWidth;
+const height = window.innerHeight;
+const pixelRatio = window.devicePixelRatio || 1;
+
+const mount = document.getElementById('app');
+const canvas = createGlCanvasElement(width, height, pixelRatio);
+if (mount) {
+  mount.replaceWith(canvas);
+} else {
+  document.body.appendChild(canvas);
+}
+document.body.style.margin = '0';
+
+const state = createGlRenderState(canvas, {
+  backgroundColor: 0x777777ff,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: false },
+  pixelRatio,
 });
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
-const canvas = (target.state as { canvas: HTMLCanvasElement }).canvas;
+registerDefaultGlMaterial(state);
+registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerGlShapeCommands(defaultGlShapeCommands);
+
+const verifyFrame = createGlFrameVerifier(state);
+
 const root = createDisplayContainer();
 
 let activeStar: Shape | null = null;
@@ -121,7 +150,10 @@ connectSignal(input.onKeyDown, (data) => {
 });
 
 function frame(): void {
-  target.render(root);
+  prepareDisplayObjectRender(state, root);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
+  verifyFrame();
   requestAnimationFrame(frame);
 }
 frame();

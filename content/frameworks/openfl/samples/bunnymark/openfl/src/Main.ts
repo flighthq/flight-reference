@@ -26,7 +26,7 @@ export class Main extends Sprite {
     this.bunnies = [];
     this.counter = document.createElement('div');
 
-    BitmapData.loadFromFile('wabbit_alpha.png')
+    BitmapData.loadFromFile('openfl/wabbit_alpha.png')
       .onComplete((bitmapData) => this.start(bitmapData))
       .onError((e) => console.error(e));
   }

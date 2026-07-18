@@ -28,12 +28,12 @@ export class PiratePigGame extends Sprite {
   private static NUM_ROWS = 8;
 
   private static tileImages = [
-    'images/game_bear.png',
-    'images/game_bunny_02.png',
-    'images/game_carrot.png',
-    'images/game_lemon.png',
-    'images/game_panda.png',
-    'images/game_piratePig.png',
+    'openfl/images/game_bear.png',
+    'openfl/images/game_bunny_02.png',
+    'openfl/images/game_carrot.png',
+    'openfl/images/game_lemon.png',
+    'openfl/images/game_panda.png',
+    'openfl/images/game_piratePig.png',
   ];
 
   private Background: Sprite;
@@ -118,7 +118,7 @@ export class PiratePigGame extends Sprite {
     this.Logo.smoothing = true;
     this.addChild(this.Logo);
 
-    var font = Assets.getFont('Freebooter') ?? Assets.getFont('fonts/FreebooterUpdated.ttf');
+    var font = Assets.getFont('Freebooter') ?? Assets.getFont('openfl/fonts/FreebooterUpdated.ttf');
     var defaultFormat = new TextFormat(font.fontName, 60, 0x000000);
     defaultFormat.align = TextFormatAlign.RIGHT;
 
@@ -296,11 +296,11 @@ export class PiratePigGame extends Sprite {
     }
 
     this.Background = new Sprite();
-    this.Logo = new Bitmap(Assets.getBitmapData('images/logo.png'));
+    this.Logo = new Bitmap(Assets.getBitmapData('openfl/images/logo.png'));
     this.Score = new TextField();
     this.TileContainer = new Sprite();
-    this.Cursor = new Bitmap(Assets.getBitmapData('images/cursor.png'));
-    this.CursorHighlight = new Bitmap(Assets.getBitmapData('images/cursor_highlight.png'));
+    this.Cursor = new Bitmap(Assets.getBitmapData('openfl/images/cursor.png'));
+    this.CursorHighlight = new Bitmap(Assets.getBitmapData('openfl/images/cursor_highlight.png'));
   }
 
   private moveCursor(x: number, y: number, aPressed: boolean): void {

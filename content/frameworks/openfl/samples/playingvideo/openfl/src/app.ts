@@ -54,7 +54,7 @@ class App extends Sprite {
 
   private overlay_onMouseDown = (event: MouseEvent): void => {
     Actuate.tween(this.overlay, 2, { alpha: 0 });
-    this.netStream.play('assets/example.mp4');
+    this.netStream.play('openfl/assets/example.mp4');
   };
 }
 

@@ -88,7 +88,7 @@ class Main extends Sprite
 		programTextureAttribute = program.getAttributeIndex("aTexCoord");
 		programMatrixUniform = program.getConstantIndex("uMatrix");
 
-		var bitmapData = Assets.getBitmapData("assets/openfl.png");
+		var bitmapData = Assets.getBitmapData("openfl/assets/openfl.png");
 		bitmapTexture = context.createRectangleTexture(bitmapData.width, bitmapData.height, BGRA, false);
 		bitmapTexture.uploadFromBitmapData(bitmapData);
 

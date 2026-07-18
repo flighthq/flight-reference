@@ -49,7 +49,7 @@ function loadBitmapData(url: string): Promise<BitmapData> {
 }
 
 (async () => {
-  const bitmapData = await loadBitmapData('assets/openfl.png');
+  const bitmapData = await loadBitmapData('openfl/assets/openfl.png');
 
   const posters = new Sprite();
 

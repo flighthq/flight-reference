@@ -880,7 +880,7 @@ function referencePlugin(): Plugin[] {
 export default defineConfig({
   base: process.env.VITE_BASE || '/',
   plugins: [react(), ...referencePlugin()],
-  publicDir: resolve(repoRoot, 'content/assets/public/openfl'),
+  publicDir: resolve(repoRoot, 'content/assets/public'),
   optimizeDeps: {
     force: true,
     esbuildOptions: {

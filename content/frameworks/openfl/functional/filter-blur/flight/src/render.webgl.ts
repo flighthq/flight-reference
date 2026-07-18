@@ -2,7 +2,7 @@ import type { BlurEffect } from '@flighthq/effects';
 import { applyGaussianBlurToGl } from '@flighthq/effects-gl';
 import type { DisplayObject, Matrix, GlRenderTarget } from '@flighthq/sdk';
 import {
-  beginGlRenderTarget,
+  beginGlRenderPass,
   BitmapKind,
   clearGlRenderTarget,
   computeNodeBoundsRectangle,
@@ -17,13 +17,14 @@ import {
   defaultGlBitmapRenderer,
   defaultGlRichTextRenderer,
   drawGlRenderTargetResult,
-  endGlRenderTarget,
+  endGlRenderPass,
   getRenderProxy2D,
   prepareDisplayObjectRender,
   registerDefaultGlMaterial,
   registerRenderer,
   renderGlBackground,
   renderGlDisplayObject,
+  setGlRenderTransform2D,
   RichTextKind,
 } from '@flighthq/sdk';
 
@@ -100,13 +101,14 @@ export function render(root: DisplayObject): void {
     if (renderProxy === undefined) continue;
     setTranslation(renderProxy.transform2D, padding - _bounds.x, padding - _bounds.y);
 
-    beginGlRenderTarget(state, source, _identity);
+    beginGlRenderPass(state, source, { preserveColor: true, preserveDepth: true });
+    setGlRenderTransform2D(state, _identity);
     clearGlRenderTarget(state, source);
     renderGlDisplayObject(state, node);
     clearGlRenderTarget(state, blurred);
     clearGlRenderTarget(state, scratch);
     applyGaussianBlurToGl(state, source, blurred, scratch, filter);
-    endGlRenderTarget(state);
+    endGlRenderPass(state);
   }
 
   // Main pass: restore scene transforms, hide the blurred source nodes so the sharp originals are

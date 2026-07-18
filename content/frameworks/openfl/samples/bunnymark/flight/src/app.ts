@@ -27,7 +27,7 @@ counter.style.cssText =
   'position:fixed;bottom:0;right:0;width:80px;padding:3px 0;background:#fff;color:#333;font:bold 9px monospace;text-align:center;opacity:0.9;z-index:10000';
 document.body.appendChild(counter);
 
-const bunny = await loadImageResourceFromUrl('assets/wabbit_alpha.png');
+const bunny = await loadImageResourceFromUrl('openfl/assets/wabbit_alpha.png');
 
 const atlas = createTextureAtlas({ image: bunny });
 addTextureAtlasRegion(atlas, 0, 0, bunny.width, bunny.height);

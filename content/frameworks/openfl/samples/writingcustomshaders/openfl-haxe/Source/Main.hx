@@ -29,7 +29,7 @@ class Main extends Sprite
 			displayObject.shader = displayObjectShader;
 		}
 
-		displayObject.addChild(new Bitmap(Assets.getBitmapData("assets/openfl.png"), PixelSnapping.AUTO, true));
+		displayObject.addChild(new Bitmap(Assets.getBitmapData("openfl/assets/openfl.png"), PixelSnapping.AUTO, true));
 		displayObject.x = (stage.stageWidth - displayObject.width) / 2;
 		displayObject.y = (stage.stageHeight - displayObject.height) / 4;
 		addChild(displayObject);
@@ -44,7 +44,7 @@ class Main extends Sprite
 			renderToTexture.filters = [new ShaderFilter(renderToTextureShader)];
 		}
 
-		renderToTexture.addChild(new Bitmap(Assets.getBitmapData("assets/openfl.png"), PixelSnapping.AUTO, true));
+		renderToTexture.addChild(new Bitmap(Assets.getBitmapData("openfl/assets/openfl.png"), PixelSnapping.AUTO, true));
 		renderToTexture.x = (stage.stageWidth - renderToTexture.width) / 2;
 		renderToTexture.y = ((stage.stageHeight - renderToTexture.height) / 4) * 3;
 		addChild(renderToTexture);

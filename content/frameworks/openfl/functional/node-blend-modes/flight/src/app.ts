@@ -54,8 +54,8 @@ appendShapeEndFill(bg);
 addNodeChild(root, bg);
 
 const [squareImg, circleImg] = await Promise.all([
-  loadImageResourceFromUrl('assets/BlendSquare.png'),
-  loadImageResourceFromUrl('assets/BlendCircle.png'),
+  loadImageResourceFromUrl('openfl/assets/BlendSquare.png'),
+  loadImageResourceFromUrl('openfl/assets/BlendCircle.png'),
 ]);
 
 // Grid layout — 16:9 aspect ratio

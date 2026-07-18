@@ -29,7 +29,7 @@ class App extends Sprite {
     this.background.addEventListener(MouseEvent.MOUSE_DOWN, this.this_onMouseDown);
     this.addChild(this.background);
 
-    this.sound = Assets.getSound('assets/stars.ogg');
+    this.sound = Assets.getSound('openfl/assets/stars.ogg');
     this.position = 0;
 
     this.resize();
@@ -101,7 +101,7 @@ class App extends Sprite {
 }
 
 var manifest = new AssetManifest();
-manifest.addSound(['assets/stars.ogg', 'assets/stars.mp3']);
+manifest.addSound(['openfl/assets/stars.ogg', 'openfl/assets/stars.mp3']);
 
 AssetLibrary.loadFromManifest(manifest)
   .onComplete((library) => {

@@ -40,7 +40,7 @@ appendShapeBeginFill(stageBg, 0x000000);
 appendShapeRectangle(stageBg, 0, 0, W, H);
 addNodeChild(root, stageBg);
 
-const image = await loadImageResourceFromUrl('assets/openfl.png');
+const image = await loadImageResourceFromUrl('openfl/assets/openfl.png');
 
 const posters = createDisplayContainer();
 

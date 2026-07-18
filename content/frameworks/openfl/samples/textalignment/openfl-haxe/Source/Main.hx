@@ -108,9 +108,9 @@ class Main extends Sprite
 		{
 			comparison = new Bitmap();
 		}
-		if (Assets.exists("assets/img/" + str + demo + ".png"))
+		if (Assets.exists("openfl/assets/img/" + str + demo + ".png"))
 		{
-			comparison.bitmapData = Assets.getBitmapData("assets/img/" + str + demo + ".png");
+			comparison.bitmapData = Assets.getBitmapData("openfl/assets/img/" + str + demo + ".png");
 			if (!contains(comparison))
 			{
 				addChildAt(comparison, 0);

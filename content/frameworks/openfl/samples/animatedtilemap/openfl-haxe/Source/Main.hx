@@ -55,7 +55,7 @@ class Main extends Sprite
 		 * (https://opengameart.org/content/various-creatures)
 		 * (https://creativecommons.org/licenses/by/3.0/)
 		 */
-		var bitmapData = Assets.getBitmapData("assets/tileset.png");
+		var bitmapData = Assets.getBitmapData("openfl/assets/tileset.png");
 
 		tileset = new Tileset(bitmapData);
 

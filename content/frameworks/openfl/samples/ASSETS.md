@@ -10,4 +10,4 @@ That keeps the reference corpus self-contained:
 
 The detached branch's asset list is still the right shortlist for what should eventually get a stable, committed home here.
 
-One extra committed asset still sits outside the two upstream sample repos: `assets/nyancat.png` is retained for the Flight-side Nyan Cat parity port, while the upstream OpenFL sample itself continues to load `assets/library.swf`.
+One extra committed asset still sits outside the two upstream sample repos: `openfl/assets/nyancat.png` is retained for the Flight-side Nyan Cat parity port, while the upstream OpenFL sample itself continues to load `openfl/assets/library.swf`.

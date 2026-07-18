@@ -46,7 +46,10 @@ function ensureAudioContext(): AudioContext {
   return audioContext;
 }
 
-loadAudioResourceFromUrls(ensureAudioContext(), [{ url: 'assets/stars.ogg' }, { url: 'assets/stars.mp3' }]).then(
+loadAudioResourceFromUrls(ensureAudioContext(), [
+  { url: 'openfl/assets/stars.ogg' },
+  { url: 'openfl/assets/stars.mp3' },
+]).then(
   (resource: AudioResource) => {
     sound = resource;
   },

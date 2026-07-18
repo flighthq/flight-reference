@@ -224,7 +224,7 @@ class App extends Sprite {
   };
 
   private stage3D_onContext3DCreate = (event: Event): void => {
-    BitmapData.loadFromFile('openfl.png')
+    BitmapData.loadFromFile('openfl/openfl.png')
       .onComplete((bitmapData) => {
         this.bitmapData = bitmapData;
 

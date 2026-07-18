@@ -31,7 +31,7 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-const videoSource = await loadVideoResourceFromUrl('assets/example.mp4');
+const videoSource = await loadVideoResourceFromUrl('openfl/assets/example.mp4');
 
 const videoNode = createVideo();
 videoNode.data.source = videoSource;

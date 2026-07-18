@@ -51,7 +51,7 @@ class Main extends Sprite {
       this.comparison = new Bitmap();
     }
 
-    var path = 'assets/img/' + str + this.demo + '.png';
+    var path = 'openfl/assets/img/' + str + this.demo + '.png';
     if (Assets.exists(path)) {
       this.comparison.bitmapData = Assets.getBitmapData(path);
       if (!this.contains(this.comparison)) {

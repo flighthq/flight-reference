@@ -44,15 +44,15 @@ const [
   indicatorDisposed,
   indicatorError,
 ] = await Promise.all([
-  Promise.all(sourceNames.map((name) => loadImageResourceFromUrl(`assets/${SIZE}/${name}.png`))),
-  loadImageResourceFromUrl(`assets/${SIZE}/0.png`),
-  loadImageResourceFromUrl(`assets/${SIZE}/minus1.png`),
-  loadImageResourceFromUrl(`assets/${SIZE}/minus2.png`),
-  loadImageResourceFromUrl(`assets/${SIZE}/minus3.png`),
-  loadImageResourceFromUrl(`assets/${SIZE}/minus4.png`),
-  loadImageResourceFromUrl(`assets/${SIZE}/null.png`),
-  loadImageResourceFromUrl(`assets/${SIZE}/disposed.png`),
-  loadImageResourceFromUrl(`assets/${SIZE}/error.png`),
+  Promise.all(sourceNames.map((name) => loadImageResourceFromUrl(`openfl/assets/${SIZE}/${name}.png`))),
+  loadImageResourceFromUrl(`openfl/assets/${SIZE}/0.png`),
+  loadImageResourceFromUrl(`openfl/assets/${SIZE}/minus1.png`),
+  loadImageResourceFromUrl(`openfl/assets/${SIZE}/minus2.png`),
+  loadImageResourceFromUrl(`openfl/assets/${SIZE}/minus3.png`),
+  loadImageResourceFromUrl(`openfl/assets/${SIZE}/minus4.png`),
+  loadImageResourceFromUrl(`openfl/assets/${SIZE}/null.png`),
+  loadImageResourceFromUrl(`openfl/assets/${SIZE}/disposed.png`),
+  loadImageResourceFromUrl(`openfl/assets/${SIZE}/error.png`),
 ]);
 
 const sourceSurfaces = sourceImages.map((img) => createSurfaceFromImageResource(img));

@@ -45,7 +45,7 @@ class Main extends Sprite {
   }
 
   private buildTileset(): void {
-    const bitmapData = Assets.getBitmapData('assets/tileset.png');
+    const bitmapData = Assets.getBitmapData('openfl/assets/tileset.png');
 
     this.tileset = new Tileset(bitmapData);
     this.snailAnimation = [];

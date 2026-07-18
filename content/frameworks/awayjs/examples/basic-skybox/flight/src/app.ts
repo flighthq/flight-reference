@@ -2,7 +2,7 @@ import type { GlRenderTarget, ImageResource, SceneLights } from '@flighthq/sdk';
 import {
   addNodeChild,
   bakeEnvironmentIbl,
-  beginGlRenderTarget,
+  beginGlRenderPass,
   createAmbientLight,
   createBoxMeshGeometry,
   createCubeTexture,
@@ -11,7 +11,6 @@ import {
   createGlCanvasElement,
   createGlRenderState,
   createGlRenderTarget,
-  createMatrix,
   createMesh,
   createScene,
   createSceneLights,
@@ -25,7 +24,7 @@ import {
   drawGlEnvironmentSkybox,
   drawGlLinearToSrgbPass,
   drawGlScene,
-  endGlRenderTarget,
+  endGlRenderPass,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   registerEmissiveGlMaterial,
@@ -161,7 +160,6 @@ const environment = createEnvironment({ environment: cubeTexture, intensity: 1 }
 bakeEnvironmentIbl(state, environment);
 
 let renderTarget: GlRenderTarget | null = null;
-const identityMatrix = createMatrix();
 
 let mouseX = width / 2;
 let cameraRotationY = 0;
@@ -198,7 +196,6 @@ function frame(): void {
 
   setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 
-  const gl = state.gl;
   const w = canvas.width;
   const h = canvas.height;
 
@@ -208,14 +205,13 @@ function frame(): void {
     resizeGlRenderTarget(state, renderTarget, w, h);
   }
 
-  beginGlRenderTarget(state, renderTarget, identityMatrix);
+  // The pass clears depth (to renderTarget.clearDepth = 1); renderGlBackground clears color, so
+  // color is preserved on begin. No display-object 2D transform is involved in this 3D pass.
+  beginGlRenderPass(state, renderTarget, { preserveColor: true });
   renderGlBackground(state);
-  gl.depthMask(true);
-  gl.clearDepth(1);
-  gl.clear(gl.DEPTH_BUFFER_BIT);
   drawGlEnvironmentSkybox(state, environment, camera, aspect);
   drawGlScene(state, scene, camera, lights);
-  endGlRenderTarget(state);
+  endGlRenderPass(state);
   resolveGlRenderTarget(state, renderTarget);
   drawGlLinearToSrgbPass(state, renderTarget, null);
 

@@ -16,16 +16,16 @@ class Main extends Sprite {
   private test(size: number): void {
     this.size = size;
 
-    const checkers = Assets.getBitmapData(`assets/${size}/checkers.png`);
-    const checkersAlpha = Assets.getBitmapData(`assets/${size}/checkers_alpha.png`);
-    const noise1 = Assets.getBitmapData(`assets/${size}/noise1.png`);
-    const noise2 = Assets.getBitmapData(`assets/${size}/noise2.png`);
-    const redBall = Assets.getBitmapData(`assets/${size}/red_ball.png`);
-    const redBallAlpha = Assets.getBitmapData(`assets/${size}/red_ball_alpha.png`);
-    const redBallHalfAlpha = Assets.getBitmapData(`assets/${size}/red_ball_half_alpha.png`);
-    const yellowBall = Assets.getBitmapData(`assets/${size}/yellow_ball.png`);
-    const rectangle = Assets.getBitmapData(`assets/${size}/rectangle.png`);
-    const rectangle2 = Assets.getBitmapData(`assets/${size}/rectangle2.png`);
+    const checkers = Assets.getBitmapData(`openfl/assets/${size}/checkers.png`);
+    const checkersAlpha = Assets.getBitmapData(`openfl/assets/${size}/checkers_alpha.png`);
+    const noise1 = Assets.getBitmapData(`openfl/assets/${size}/noise1.png`);
+    const noise2 = Assets.getBitmapData(`openfl/assets/${size}/noise2.png`);
+    const redBall = Assets.getBitmapData(`openfl/assets/${size}/red_ball.png`);
+    const redBallAlpha = Assets.getBitmapData(`openfl/assets/${size}/red_ball_alpha.png`);
+    const redBallHalfAlpha = Assets.getBitmapData(`openfl/assets/${size}/red_ball_half_alpha.png`);
+    const yellowBall = Assets.getBitmapData(`openfl/assets/${size}/yellow_ball.png`);
+    const rectangle = Assets.getBitmapData(`openfl/assets/${size}/rectangle.png`);
+    const rectangle2 = Assets.getBitmapData(`openfl/assets/${size}/rectangle2.png`);
 
     const nullBmp: BitmapData | null = null;
     const disposedBmp = checkers.clone();
@@ -87,7 +87,7 @@ class Main extends Sprite {
       } else if (typeof result === 'number') {
         resultBitmaps.push(this.resultBitmap(result));
       } else {
-        resultBitmaps.push(Assets.getBitmapData(`assets/${this.size}/error.png`));
+        resultBitmaps.push(Assets.getBitmapData(`openfl/assets/${this.size}/error.png`));
       }
     }
 
@@ -102,23 +102,23 @@ class Main extends Sprite {
   private resultBitmap(result: number): BitmapData {
     switch (result) {
       case -1:
-        return Assets.getBitmapData(`assets/${this.size}/minus1.png`);
+        return Assets.getBitmapData(`openfl/assets/${this.size}/minus1.png`);
       case -2:
-        return Assets.getBitmapData(`assets/${this.size}/minus2.png`);
+        return Assets.getBitmapData(`openfl/assets/${this.size}/minus2.png`);
       case -3:
-        return Assets.getBitmapData(`assets/${this.size}/minus3.png`);
+        return Assets.getBitmapData(`openfl/assets/${this.size}/minus3.png`);
       case -4:
-        return Assets.getBitmapData(`assets/${this.size}/minus4.png`);
+        return Assets.getBitmapData(`openfl/assets/${this.size}/minus4.png`);
       case 0:
-        return Assets.getBitmapData(`assets/${this.size}/0.png`);
+        return Assets.getBitmapData(`openfl/assets/${this.size}/0.png`);
       default:
-        return Assets.getBitmapData(`assets/${this.size}/error.png`);
+        return Assets.getBitmapData(`openfl/assets/${this.size}/error.png`);
     }
   }
 
   private getBitmapDataForDisplay(bmp: BitmapData | null): BitmapData {
-    if (bmp === null) return Assets.getBitmapData(`assets/${this.size}/null.png`);
-    if (this.isDisposed(bmp)) return Assets.getBitmapData(`assets/${this.size}/disposed.png`);
+    if (bmp === null) return Assets.getBitmapData(`openfl/assets/${this.size}/null.png`);
+    if (this.isDisposed(bmp)) return Assets.getBitmapData(`openfl/assets/${this.size}/disposed.png`);
     return bmp;
   }
 

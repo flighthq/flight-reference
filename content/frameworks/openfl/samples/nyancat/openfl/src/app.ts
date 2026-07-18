@@ -29,7 +29,7 @@ class App extends Sprite {
   public constructor() {
     super();
 
-    this.spriteSheet = Assets.getBitmapData('assets/nyancat.png');
+    this.spriteSheet = Assets.getBitmapData('openfl/assets/nyancat.png');
     this.frameData = new BitmapData(FRAME_WIDTH, FRAME_HEIGHT, true, 0x00000000);
     this.frameBitmap = new Bitmap(this.frameData);
     this.frameBitmap.x = (STAGE_WIDTH - FRAME_WIDTH) / 2;
@@ -71,7 +71,7 @@ class App extends Sprite {
 }
 
 const manifest = new AssetManifest();
-manifest.addBitmapData('assets/nyancat.png');
+manifest.addBitmapData('openfl/assets/nyancat.png');
 
 AssetLibrary.loadFromManifest(manifest)
   .onComplete((library) => {

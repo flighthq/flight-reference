@@ -1,29 +1,46 @@
-import type { GlRenderTarget, Mesh, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
+import type { GlRenderEffectPipeline, ImageResource, Mesh, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
+  bakeEnvironmentIbl,
+  beginGlRenderEffectPipeline,
+  buildSurfaceGradientRamp,
   computeMeshGeometryNormals,
+  createCubeTexture,
+  createEmissiveMaterial,
+  createEnvironment,
   createGlCanvasElement,
+  createGlRenderEffectPipeline,
   createGlRenderState,
-  createGlRenderTarget,
+  createImageResourceFromSurface,
+  createMesh,
   createScene,
   createSceneFromObj,
   createSceneLights,
   createSceneNode,
+  createSphereMeshGeometry,
   createStandardPbrMaterial,
+  createSurface,
+  createSurfaceFromImageResource,
+  createSurfaceRegion,
   createTexture,
   createTilingSampler,
+  createToneMapEffect,
   createVector3,
   DEG_TO_RAD,
+  drawGlScene,
+  endGlRenderEffectPipeline,
+  fillSurfaceLinearGradient,
   getNodeChildren,
-  getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   packOpaqueColor,
-  presentGlScene,
+  registerDefaultGlRenderEffects,
+  registerEmissiveGlMaterial,
   registerStandardPbrGlMaterial,
-  resizeGlRenderTarget,
+  renderGlBackground,
   rotateMatrix4,
   scaleMatrix4,
+  setCubeTextureFace,
   setMatrix4Identity,
   setTextureUvScale,
   translateMatrix4,
@@ -51,20 +68,63 @@ const state = createGlRenderState(canvas, {
 });
 
 registerStandardPbrGlMaterial(state);
+registerEmissiveGlMaterial(state);
+registerDefaultGlRenderEffects(state);
 const verifyFrame = createGlFrameVerifier(state);
 
-let renderTarget: GlRenderTarget | null = null;
+const effects = [createToneMapEffect({ operator: 'aces' })];
+let pipeline: GlRenderEffectPipeline | null = null;
 
 const scene = createScene();
 
-const camera = createCameraFromAway({ y: 20, z: -50, targetY: 20, fov: 60, near: 0.1 });
+// Far plane raised to enclose the sky dome below.
+const camera = createCameraFromAway({ y: 20, z: -50, targetY: 20, fov: 60, near: 0.1, far: 9000 });
 
+// Sky: AwayJS just clears to flat 0xcec8c6. Instead, build a vertical-gradient dome — a large emissive
+// (self-lit, unaffected by scene lights) sphere seen from the inside (doubleSided). A tall 1-px-wide
+// Surface is filled with a linear gradient ramp (warm hazy horizon -> cooler zenith) and mapped up the
+// sphere's latitude, so the horizon sits at the equator and the zenith at the top pole. Emissive values
+// stay < 1 so the ACES pass keeps them in range.
+const SKY_STOPS = { colors: [0x3f74c4, 0xa9c6e6, 0xead9b8], alphas: [255, 255, 255], ratios: [0, 132, 255] };
+const skyRamp = new Uint8ClampedArray(256 * 4);
+buildSurfaceGradientRamp(skyRamp, SKY_STOPS.colors, SKY_STOPS.alphas, SKY_STOPS.ratios);
+const skySurface = createSurface(1, 256);
+fillSurfaceLinearGradient(createSurfaceRegion(skySurface), skyRamp, 0, 0, 0, 256);
+const skyMaterial = createEmissiveMaterial({
+  emissive: 0xffffffff,
+  emissiveMap: createTexture({ image: createImageResourceFromSurface(skySurface) }),
+  emissiveStrength: 1.35,
+});
+skyMaterial.doubleSided = true;
+const skyDome = createMesh(createSphereMeshGeometry(6000, 32, 16), [skyMaterial]);
+addNodeChild(scene, skyDome);
+
+// Metallic surfaces need an environment to reflect. There's no HDR map here, so bake a cheap IBL from a
+// solid-color cube — sky blue overhead (+Y), warm dirt below (-Y), horizon on the sides. The bake blurs
+// it, so flat faces are plenty; this is what lets the metallic armor read as metal instead of going gray.
+// Kept at a modest intensity so it mainly feeds the metal reflection, not a strong blue diffuse fill.
+const SKY_REFLECT = 0x8fb3dcff;
+const HORIZON_REFLECT = 0xc3c9c8ff;
+const GROUND_REFLECT = 0x9a6a42ff;
+const envFaces = [HORIZON_REFLECT, HORIZON_REFLECT, SKY_REFLECT, GROUND_REFLECT, HORIZON_REFLECT, HORIZON_REFLECT];
+const envCube = createCubeTexture();
+for (let i = 0; i < 6; i++) {
+  setCubeTextureFace(envCube, i, createImageResourceFromSurface(createSurface(8, 8, envFaces[i])));
+}
+const environment = createEnvironment({ environment: envCube, intensity: 0.55 });
+bakeEnvironmentIbl(state, environment);
+
+// Now that the colorized albedo carries the palette, the light just shades it: a warm-white key (a
+// saturated orange key would muddy the olive/orange albedo) with a cool ambient fill for contrast.
+// Exposure is moderated so the key lands in the colorful range and the ACES pass (below) compresses the
+// highlights instead of clipping the lit surfaces to flat white.
 const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(1, 0, 0),
-  color: 0xc1582d,
+  color: 0xffe8d0,
   diffuse: 2.8,
   ambient: 0.4,
   ambientColor: 0x85b2cd,
+  tuning: { diffuse: 0.45, ambient: 0.5 },
 });
 const lights = createSceneLights({ ambient, directional });
 
@@ -81,19 +141,174 @@ const [spartanObjText, terrainObjText, masterchiefImage, stoneImage] = await Pro
   loadImageResourceFromUrl('awayjs/assets/stone_tx.jpg'),
 ]);
 
+// The source textures are grayscale (masterchief_base.png averages ~(95,95,94)) — AwayJS gets its color
+// purely from the warm light acting on those values. To force the Halo palette, colorize each texture
+// with a luminance gradient map: build a 256-entry ramp from color stops and, per pixel, replace it with
+// the ramp color at that pixel's luminance. The one exception is the visor: it's the only region with any
+// chroma in the source (a gold shield in the atlas), so use that chroma as a free mask and send those
+// pixels through a separate orange ramp. createSurfaceFromImageResource gives the editable pixels;
+// createImageResourceFromSurface rasterizes back to a source-backed image the material can upload.
+interface ColorStop {
+  t: number;
+  r: number;
+  g: number;
+  b: number;
+}
+
+function buildRampChannel(stops: ReadonlyArray<ColorStop>, channel: 'r' | 'g' | 'b'): number[] {
+  const lut = new Array<number>(256);
+  for (let i = 0; i < 256; i++) {
+    const t = i / 255;
+    let lo = stops[0];
+    let hi = stops[stops.length - 1];
+    for (let s = 0; s < stops.length - 1; s++) {
+      if (t >= stops[s].t && t <= stops[s + 1].t) {
+        lo = stops[s];
+        hi = stops[s + 1];
+        break;
+      }
+    }
+    const span = hi.t - lo.t || 1;
+    const f = Math.min(1, Math.max(0, (t - lo.t) / span));
+    lut[i] = Math.round(lo[channel] + (hi[channel] - lo[channel]) * f);
+  }
+  return lut;
+}
+
+// Colorize a grayscale texture through `baseStops` by luminance. Pixels whose source chroma exceeds
+// CHROMA_MASK (only the visor, in this atlas) go through `chromaStops` instead.
+const CHROMA_MASK = 24;
+function colorizeByLuminance(
+  image: ImageResource,
+  baseStops: ReadonlyArray<ColorStop>,
+  chromaStops?: ReadonlyArray<ColorStop>,
+): ImageResource {
+  const surface = createSurfaceFromImageResource(image);
+  const data = surface.data;
+  if (data === null) return image;
+  const br = buildRampChannel(baseStops, 'r');
+  const bg = buildRampChannel(baseStops, 'g');
+  const bb = buildRampChannel(baseStops, 'b');
+  const xr = chromaStops ? buildRampChannel(chromaStops, 'r') : null;
+  const xg = chromaStops ? buildRampChannel(chromaStops, 'g') : null;
+  const xb = chromaStops ? buildRampChannel(chromaStops, 'b') : null;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const luma = Math.min(255, Math.round(0.299 * r + 0.587 * g + 0.114 * b));
+    if (xr !== null && Math.max(r, g, b) - Math.min(r, g, b) > CHROMA_MASK) {
+      data[i] = xr[luma];
+      data[i + 1] = xg![luma];
+      data[i + 2] = xb![luma];
+    } else {
+      data[i] = br[luma];
+      data[i + 1] = bg[luma];
+      data[i + 2] = bb[luma];
+    }
+  }
+  return createImageResourceFromSurface(surface);
+}
+
+const ARMOR_RAMP: ColorStop[] = [
+  { t: 0.0, r: 16, g: 14, b: 10 }, // deep shadow / crevices
+  { t: 0.3, r: 34, g: 38, b: 24 }, // dark olive (bodysuit / shadowed armor)
+  { t: 0.55, r: 90, g: 104, b: 54 }, // olive-green armor panels
+  { t: 0.78, r: 150, g: 150, b: 100 }, // lit khaki armor
+  { t: 1.0, r: 220, g: 214, b: 175 }, // worn-metal highlights (kept desaturated, not orange)
+];
+
+const VISOR_RAMP: ColorStop[] = [
+  { t: 0.0, r: 70, g: 26, b: 6 }, // shadowed visor edge
+  { t: 0.4, r: 224, g: 104, b: 22 }, // oakley orange
+  { t: 0.75, r: 255, g: 156, b: 44 },
+  { t: 1.0, r: 255, g: 206, b: 120 }, // bright amber glint
+];
+
+// Warm reddish dirt — a complementary contrast to the olive/oregano armor.
+const STONE_RAMP: ColorStop[] = [
+  { t: 0.0, r: 46, g: 24, b: 12 }, // dark umber
+  { t: 0.5, r: 158, g: 92, b: 50 }, // warm reddish-brown
+  { t: 1.0, r: 226, g: 168, b: 110 }, // sunlit sand
+];
+
+// Roughness varies by region, driven off the same grayscale values: the black cloth undersuit (dark) is
+// matte, the green metal armor (mid/bright) is more reflective, and the visor (the chroma mask) is the
+// glossiest. Written into a metallicRoughnessMap's G channel (glTF: G = roughness, B = metallic); the
+// material's roughness scalar stays 1 so the map fully drives it, metallic stays 0 (no env to reflect).
+interface ScalarStop {
+  t: number;
+  v: number;
+}
+const ROUGH_STOPS: ScalarStop[] = [
+  { t: 0.0, v: 0.9 }, // black cloth undersuit -> matte
+  { t: 0.28, v: 0.55 }, // green metal armor -> semi-reflective
+  { t: 1.0, v: 0.34 }, // bright metal edges -> reflective
+];
+const ROUGH_VISOR = 0.12; // glass visor -> glossy
+
+// Metallic (map B channel): the armor is real metal, the cloth and visor barely so.
+const METAL_STOPS: ScalarStop[] = [
+  { t: 0.0, v: 0.05 }, // black cloth -> dielectric
+  { t: 0.28, v: 0.45 }, // green metal armor -> metallic
+  { t: 1.0, v: 0.55 },
+];
+const METAL_VISOR = 0.1; // glass visor -> slight
+
+function sampleScalarStops(stops: ReadonlyArray<ScalarStop>, t: number): number {
+  let lo = stops[0];
+  let hi = stops[stops.length - 1];
+  for (let s = 0; s < stops.length - 1; s++) {
+    if (t >= stops[s].t && t <= stops[s + 1].t) {
+      lo = stops[s];
+      hi = stops[s + 1];
+      break;
+    }
+  }
+  const span = hi.t - lo.t || 1;
+  return lo.v + (hi.v - lo.v) * Math.min(1, Math.max(0, (t - lo.t) / span));
+}
+
+function buildMetallicRoughnessMap(image: ImageResource): ImageResource {
+  const surface = createSurfaceFromImageResource(image);
+  const data = surface.data;
+  if (data === null) return image;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const luma = Math.min(255, Math.round(0.299 * r + 0.587 * g + 0.114 * b));
+    const isVisor = Math.max(r, g, b) - Math.min(r, g, b) > CHROMA_MASK;
+    const rough = isVisor ? ROUGH_VISOR : sampleScalarStops(ROUGH_STOPS, luma / 255);
+    const metal = isVisor ? METAL_VISOR : sampleScalarStops(METAL_STOPS, luma / 255);
+    data[i] = 0; // R unused
+    data[i + 1] = Math.round(rough * 255); // G = roughness
+    data[i + 2] = Math.round(metal * 255); // B = metallic
+    data[i + 3] = 255;
+  }
+  return createImageResourceFromSurface(surface);
+}
+
+// Scalars stay 1 so the metallicRoughnessMap fully drives both channels per region.
 const masterchiefMaterial = createStandardPbrMaterial({
   baseColor: 0xffffffff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(20),
+  metallic: 1,
+  roughness: 1,
 });
-masterchiefMaterial.baseColorMap = createTexture({ image: masterchiefImage });
+masterchiefMaterial.baseColorMap = createTexture({
+  image: colorizeByLuminance(masterchiefImage, ARMOR_RAMP, VISOR_RAMP),
+});
+masterchiefMaterial.metallicRoughnessMap = createTexture({ image: buildMetallicRoughnessMap(masterchiefImage) });
 
 const stoneMaterial = createStandardPbrMaterial({
   baseColor: 0xffffffff,
   metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(20),
+  roughness: 0.85,
 });
-const stoneTexture = createTexture({ image: stoneImage, sampler: createTilingSampler() });
+const stoneTexture = createTexture({
+  image: colorizeByLuminance(stoneImage, STONE_RAMP),
+  sampler: createTilingSampler(),
+});
 setTextureUvScale(stoneTexture, 20, 20);
 stoneMaterial.baseColorMap = stoneTexture;
 
@@ -155,14 +370,19 @@ function frame(): void {
     invalidateNodeLocalTransform(terrainNode);
   }
 
-  const w = canvas.width;
-  const h = canvas.height;
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
-  } else {
-    resizeGlRenderTarget(state, renderTarget, w, h);
+  // Draw into the pipeline's HDR target, then ACES tone-map to the canvas so the warm key compresses
+  // into colored range instead of clipping the lit armor/ground to flat white (matches basic-load-3ds).
+  if (pipeline === null) {
+    pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
   }
-  presentGlScene(state, renderTarget, scene, camera, lights);
+  beginGlRenderEffectPipeline(state, pipeline);
+  renderGlBackground(state);
+  const gl = state.gl;
+  gl.depthMask(true);
+  gl.clearDepth(1);
+  gl.clear(gl.DEPTH_BUFFER_BIT);
+  drawGlScene(state, scene, camera, lights);
+  endGlRenderEffectPipeline(state, pipeline, effects);
   verifyFrame();
   requestAnimationFrame(frame);
 }

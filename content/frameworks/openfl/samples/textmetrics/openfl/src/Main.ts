@@ -23,7 +23,8 @@ class Main extends Sprite {
     this.field = new Point(this.box.x - this.gutter * 2, this.box.y - this.gutter * 2);
 
     var offset = new Point(300, 100);
-    var font = Assets.getFont('Liberation Serif Regular') ?? Assets.getFont('assets/LiberationSerif-Regular.ttf');
+    var font =
+      Assets.getFont('Liberation Serif Regular') ?? Assets.getFont('openfl/assets/LiberationSerif-Regular.ttf');
     var format = new TextFormat(
       font.fontName,
       120,

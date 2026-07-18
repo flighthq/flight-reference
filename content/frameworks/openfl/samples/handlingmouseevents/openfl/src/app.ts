@@ -18,7 +18,7 @@ class App extends Sprite {
     super();
 
     this.Logo = new Sprite();
-    this.Logo.addChild(new Bitmap(Assets.getBitmapData('assets/openfl.png')));
+    this.Logo.addChild(new Bitmap(Assets.getBitmapData('openfl/assets/openfl.png')));
     this.Logo.x = 100;
     this.Logo.y = 100;
     this.Logo.buttonMode = true;
@@ -62,7 +62,7 @@ class App extends Sprite {
 }
 
 var manifest = new AssetManifest();
-manifest.addBitmapData('assets/openfl.png');
+manifest.addBitmapData('openfl/assets/openfl.png');
 
 AssetLibrary.loadFromManifest(manifest)
   .onComplete((library) => {

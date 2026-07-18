@@ -22,7 +22,7 @@ function loadBitmapData(url: string): Promise<BitmapData> {
 }
 
 (async () => {
-  const image = await loadBitmapData('assets/openfl.png');
+  const image = await loadBitmapData('openfl/assets/openfl.png');
   const bitmaps: Bitmap[] = [];
   const masks: Bitmap[] = [];
   const bgMasks: Bitmap[] = [];

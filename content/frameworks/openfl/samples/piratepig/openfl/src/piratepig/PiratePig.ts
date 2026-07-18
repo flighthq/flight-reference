@@ -34,8 +34,8 @@ export class PiratePig extends Sprite {
   }
 
   private initialize(): void {
-    this.Background = new Bitmap(Assets.getBitmapData('images/background_tile.png'));
-    this.Footer = new Bitmap(Assets.getBitmapData('images/center_bottom.png'));
+    this.Background = new Bitmap(Assets.getBitmapData('openfl/images/background_tile.png'));
+    this.Footer = new Bitmap(Assets.getBitmapData('openfl/images/center_bottom.png'));
     this.Game = new PiratePigGame();
   }
 

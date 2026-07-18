@@ -9,7 +9,7 @@ const manifest = new AssetManifest();
 for (const size of [32, 64]) {
   for (const name of [
     '0.png',
-    'checkers.png',
+    'openfl/checkers.png',
     'checkers_alpha.png',
     'disposed.png',
     'error.png',
@@ -27,7 +27,7 @@ for (const size of [32, 64]) {
     'red_ball_half_alpha.png',
     'yellow_ball.png',
   ]) {
-    manifest.addBitmapData(`assets/${size}/${name}`);
+    manifest.addBitmapData(`openfl/assets/${size}/${name}`);
   }
 }
 

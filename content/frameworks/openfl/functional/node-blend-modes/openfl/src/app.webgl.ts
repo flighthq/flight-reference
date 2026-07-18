@@ -73,8 +73,8 @@ function createOverlay(squareBd: BitmapData, circleBd: BitmapData, x: number, y:
 
 (async () => {
   const [squareBd, circleBd] = await Promise.all([
-    loadBitmapData('assets/BlendSquare.png'),
-    loadBitmapData('assets/BlendCircle.png'),
+    loadBitmapData('openfl/assets/BlendSquare.png'),
+    loadBitmapData('openfl/assets/BlendCircle.png'),
   ]);
 
   let rows = 1;

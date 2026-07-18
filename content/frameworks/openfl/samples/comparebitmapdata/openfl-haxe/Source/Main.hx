@@ -26,16 +26,16 @@ class Main extends Sprite
 	{
 		this.size = size;
 
-		var checkers = (Assets.getBitmapData("assets/" + size + "/checkers.png"));
-		var checkers_alpha = (Assets.getBitmapData("assets/" + size + "/checkers_alpha.png"));
-		var noise1 = (Assets.getBitmapData("assets/" + size + "/noise1.png"));
-		var noise2 = (Assets.getBitmapData("assets/" + size + "/noise2.png"));
-		var red_ball = (Assets.getBitmapData("assets/" + size + "/red_ball.png"));
-		var red_ball_alpha = (Assets.getBitmapData("assets/" + size + "/red_ball_alpha.png"));
-		var red_ball_half_alpha = (Assets.getBitmapData("assets/" + size + "/red_ball_half_alpha.png"));
-		var yellow_ball = (Assets.getBitmapData("assets/" + size + "/yellow_ball.png"));
-		var rectangle = (Assets.getBitmapData("assets/" + size + "/rectangle.png"));
-		var rectangle2 = (Assets.getBitmapData("assets/" + size + "/rectangle2.png"));
+		var checkers = (Assets.getBitmapData("openfl/assets/" + size + "/checkers.png"));
+		var checkers_alpha = (Assets.getBitmapData("openfl/assets/" + size + "/checkers_alpha.png"));
+		var noise1 = (Assets.getBitmapData("openfl/assets/" + size + "/noise1.png"));
+		var noise2 = (Assets.getBitmapData("openfl/assets/" + size + "/noise2.png"));
+		var red_ball = (Assets.getBitmapData("openfl/assets/" + size + "/red_ball.png"));
+		var red_ball_alpha = (Assets.getBitmapData("openfl/assets/" + size + "/red_ball_alpha.png"));
+		var red_ball_half_alpha = (Assets.getBitmapData("openfl/assets/" + size + "/red_ball_half_alpha.png"));
+		var yellow_ball = (Assets.getBitmapData("openfl/assets/" + size + "/yellow_ball.png"));
+		var rectangle = (Assets.getBitmapData("openfl/assets/" + size + "/rectangle.png"));
+		var rectangle2 = (Assets.getBitmapData("openfl/assets/" + size + "/rectangle2.png"));
 
 		var nullBmp = null;
 		var disposedBmp = checkers.clone();
@@ -104,18 +104,18 @@ class Main extends Sprite
 				var i:Int = cast result;
 				var bmp = switch (i)
 				{
-					case -1: Assets.getBitmapData("assets/" + size + "/minus1.png");
-					case -2: Assets.getBitmapData("assets/" + size + "/minus2.png");
-					case -3: Assets.getBitmapData("assets/" + size + "/minus3.png");
-					case -4: Assets.getBitmapData("assets/" + size + "/minus4.png");
-					case 0: Assets.getBitmapData("assets/" + size + "/0.png");
-					default: Assets.getBitmapData("assets/" + size + "/error.png");
+					case -1: Assets.getBitmapData("openfl/assets/" + size + "/minus1.png");
+					case -2: Assets.getBitmapData("openfl/assets/" + size + "/minus2.png");
+					case -3: Assets.getBitmapData("openfl/assets/" + size + "/minus3.png");
+					case -4: Assets.getBitmapData("openfl/assets/" + size + "/minus4.png");
+					case 0: Assets.getBitmapData("openfl/assets/" + size + "/0.png");
+					default: Assets.getBitmapData("openfl/assets/" + size + "/error.png");
 				}
 				resultBmps.push(bmp);
 			}
 			else
 			{
-				resultBmps.push(Assets.getBitmapData("assets/" + size + "/error.png"));
+				resultBmps.push(Assets.getBitmapData("openfl/assets/" + size + "/error.png"));
 			}
 		}
 
@@ -144,8 +144,8 @@ class Main extends Sprite
 
 	private function getBmp(bmp:BitmapData):BitmapData
 	{
-		if (bmp == null) return Assets.getBitmapData("assets/" + size + "/null.png");
-		if (isDisposed(bmp)) return Assets.getBitmapData("assets/" + size + "/disposed.png");
+		if (bmp == null) return Assets.getBitmapData("openfl/assets/" + size + "/null.png");
+		if (isDisposed(bmp)) return Assets.getBitmapData("openfl/assets/" + size + "/disposed.png");
 		return (bmp);
 	}
 

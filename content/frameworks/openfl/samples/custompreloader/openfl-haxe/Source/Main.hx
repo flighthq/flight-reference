@@ -11,7 +11,7 @@ class Main extends Sprite
 	{
 		super();
 
-		var bitmap = new Bitmap(Assets.getBitmapData("assets/openfl.png"));
+		var bitmap = new Bitmap(Assets.getBitmapData("openfl/assets/openfl.png"));
 		addChild(bitmap);
 
 		bitmap.x = (stage.stageWidth - bitmap.width) / 2;

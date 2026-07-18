@@ -29,4 +29,4 @@ loader.contentLoaderInfo.addEventListener(Event.COMPLETE, (event: Event) => {
     stage.addChild(new Main(loader.content as Bitmap, stage.stageWidth, stage.stageHeight));
   });
 });
-loader.load(new URLRequest('assets/openfl.png'));
+loader.load(new URLRequest('openfl/assets/openfl.png'));

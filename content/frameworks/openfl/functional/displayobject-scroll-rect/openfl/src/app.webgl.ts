@@ -31,7 +31,7 @@ function loadBitmapData(url: string): Promise<BitmapData> {
 }
 
 (async () => {
-  const owlData = await loadBitmapData('assets/OwlAlpha.png');
+  const owlData = await loadBitmapData('openfl/assets/OwlAlpha.png');
 
   const owlSprite = new Sprite();
   owlSprite.graphics.beginBitmapFill(owlData);

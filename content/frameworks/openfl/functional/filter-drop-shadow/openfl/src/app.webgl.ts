@@ -22,7 +22,7 @@ function loadBitmapData(url: string): Promise<BitmapData> {
 }
 
 (async () => {
-  const bd = await loadBitmapData('assets/openfl.png');
+  const bd = await loadBitmapData('openfl/assets/openfl.png');
 
   const bitmaps: Bitmap[] = [];
   const filters: DropShadowFilter[] = [];

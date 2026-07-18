@@ -36,7 +36,7 @@ import type {
 import {
   addNodeChild,
   attachPointerInput,
-  beginGlRenderTarget,
+  beginGlRenderPass,
   BitmapKind,
   clearGlRenderTarget,
   computeNodeBoundsRectangle,
@@ -56,7 +56,7 @@ import {
   createGlRenderTargetPool,
   drawGlRenderTargetResult,
   enableDomCssFilterSupport,
-  endGlRenderTarget,
+  endGlRenderPass,
   ensureCanvasRenderCacheTarget,
   getRenderProxy2D,
   invalidateNodeAppearance,
@@ -66,6 +66,7 @@ import {
   renderGlBackground,
   renderGlDisplayObject,
   RichTextKind,
+  setGlRenderTransform2D,
   setDomCssFilter,
   TextLabelKind,
   useRenderCache,
@@ -280,7 +281,8 @@ function runGl(state: GlRenderState): void {
       computeRenderCacheTransform(cacheTransform, _bounds, MAX_PADDING, MAX_PADDING);
       setTranslation(proxy.transform2D, MAX_PADDING - _bounds.x, MAX_PADDING - _bounds.y);
 
-      beginGlRenderTarget(state, source, _identity);
+      beginGlRenderPass(state, source, { preserveColor: true, preserveDepth: true });
+      setGlRenderTransform2D(state, _identity);
       clearGlRenderTarget(state, source);
       renderGlDisplayObject(state, rocket);
       clearGlRenderTarget(state, dest);
@@ -302,7 +304,7 @@ function runGl(state: GlRenderState): void {
         }
       }
 
-      endGlRenderTarget(state);
+      endGlRenderPass(state);
 
       copyMatrix(proxy.transform2D, sceneTransform);
       proxy.visible = false;

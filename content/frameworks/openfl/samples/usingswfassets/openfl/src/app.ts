@@ -12,7 +12,7 @@ class App extends Sprite {
   constructor() {
     super();
 
-    AssetLibrary.loadFromFile('assets/layout.swf').onComplete((library: AssetLibrary) => {
+    AssetLibrary.loadFromFile('openfl/assets/layout.swf').onComplete((library: AssetLibrary) => {
       this.layout = library.getMovieClip('Layout');
       this.addChild(this.layout);
 

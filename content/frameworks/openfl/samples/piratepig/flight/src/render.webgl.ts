@@ -1,14 +1,13 @@
 ﻿import { applyGaussianBlurToGl } from '@flighthq/effects-gl';
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  beginGlRenderTarget,
+  beginGlRenderPass,
   BitmapKind,
   clearGlRenderTarget,
   copyMatrix,
   createGlCacheState,
   createGlRenderState,
   createGlRenderTarget,
-  createMatrix,
   createRenderCache,
   defaultGlBitmapRenderer,
   defaultGlBeginFill,
@@ -18,7 +17,7 @@ import {
   defaultGlTextLabelRenderer,
   destroyGlRenderTarget,
   enableGlRenderCache,
-  endGlRenderTarget,
+  endGlRenderPass,
   ensureGlRenderCacheTarget,
   getGlRenderCacheTarget,
   invalidateNodeLocalTransform,
@@ -87,13 +86,14 @@ export function applyBackgroundBlur(node: DisplayObject): () => void {
     if (src === null) return;
     const out = ensureGlRenderCacheTarget(state, blurred, src.width, src.height);
     const temp = createGlRenderTarget(state, { width: src.width, height: src.height });
-    // Run inside a render-target bracket so endGlRenderTarget rebinds the screen framebuffer the
-    // next render() draws into; clear the output first since the blur composites over it.
-    beginGlRenderTarget(state, out, createMatrix());
+    // Run inside a render-pass bracket so endGlRenderPass rebinds the screen framebuffer the
+    // next render() draws into; preserve on begin and clear explicitly to transparent (the pass's
+    // default clear uses the background color, but the blur must composite over transparent).
+    beginGlRenderPass(state, out, { preserveColor: true, preserveDepth: true });
     clearGlRenderTarget(state, out);
     clearGlRenderTarget(state, temp);
     applyGaussianBlurToGl(state, src, out, temp, { blurX: 10, blurY: 10 });
-    endGlRenderTarget(state);
+    endGlRenderPass(state);
     destroyGlRenderTarget(state, temp);
     copyMatrix(blurred.transform, sharp.transform);
     // The panel never invalidates on its own (its revisions do not change on resize), so the

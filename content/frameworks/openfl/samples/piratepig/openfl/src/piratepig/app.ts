@@ -24,15 +24,18 @@ class Main extends Sprite {
       'game_piratePig.png',
       'logo.png',
     ]) {
-      manifest.addBitmapData('images/' + image);
+      manifest.addBitmapData('openfl/images/' + image);
     }
 
     for (var sound of ['3', '4', '5', 'theme']) {
       var id = 'sound' + sound.charAt(0).toUpperCase() + sound.substr(1);
-      manifest.addSound(['sounds/' + sound + '.ogg', 'sounds/' + sound + '.mp3', 'sounds/' + sound + '.wav'], id);
+      manifest.addSound(
+        ['openfl/sounds/' + sound + '.ogg', 'openfl/sounds/' + sound + '.mp3', 'openfl/sounds/' + sound + '.wav'],
+        id,
+      );
     }
 
-    manifest.addFont('fonts/FreebooterUpdated.ttf', 'Freebooter');
+    manifest.addFont('openfl/fonts/FreebooterUpdated.ttf', 'Freebooter');
 
     AssetLibrary.loadFromManifest(manifest)
       .onComplete((library) => {
@@ -40,8 +43,8 @@ class Main extends Sprite {
         Assets.loadFont('Freebooter')
           .onComplete(async () => {
             if ('FontFace' in window && 'fonts' in document) {
-              const cssName = 'fonts/FreebooterUpdated.ttf';
-              const fontFace = new FontFace(cssName, 'url(fonts/FreebooterUpdated.ttf)');
+              const cssName = 'openfl/fonts/FreebooterUpdated.ttf';
+              const fontFace = new FontFace(cssName, 'url(openfl/fonts/FreebooterUpdated.ttf)');
               await fontFace.load();
               document.fonts.add(fontFace);
               await Promise.allSettled([document.fonts.load(`60px "${cssName}"`), document.fonts.ready]);

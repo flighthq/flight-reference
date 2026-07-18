@@ -31,19 +31,19 @@ class App extends Sprite {
 }
 
 var manifest = new AssetManifest();
-manifest.addFont('assets/KatamotzIkasi.ttf', declaredFontName);
+manifest.addFont('openfl/assets/KatamotzIkasi.ttf', declaredFontName);
 
 AssetLibrary.loadFromManifest(manifest)
   .onComplete((library) => {
     Assets.registerLibrary('default', library);
 
-    const font = Assets.getFont(declaredFontName) ?? Assets.getFont('assets/KatamotzIkasi.ttf');
+    const font = Assets.getFont(declaredFontName) ?? Assets.getFont('openfl/assets/KatamotzIkasi.ttf');
     if (font?.fontName) loadedFontName = font.fontName;
 
     Assets.loadFont(declaredFontName)
       .onComplete(async () => {
         if ('FontFace' in window && 'fonts' in document) {
-          const fontFace = new FontFace(declaredFontName, 'url(assets/KatamotzIkasi.ttf)');
+          const fontFace = new FontFace(declaredFontName, 'url(openfl/assets/KatamotzIkasi.ttf)');
           await fontFace.load();
           document.fonts.add(fontFace);
           loadedFontName = declaredFontName;

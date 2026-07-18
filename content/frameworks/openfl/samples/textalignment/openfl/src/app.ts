@@ -13,12 +13,12 @@ function loadFont(id: string): Promise<void> {
 }
 
 var manifest = new AssetManifest();
-manifest.addFont('assets/LiberationSerif-Regular.ttf', 'Liberation Serif Regular');
-manifest.addFont('assets/nokiafc22.ttf', 'Nokia Cellphone FC Small');
+manifest.addFont('openfl/assets/LiberationSerif-Regular.ttf', 'Liberation Serif Regular');
+manifest.addFont('openfl/assets/nokiafc22.ttf', 'Nokia Cellphone FC Small');
 
 for (var renderer of ['flash', 'legacy', 'html5']) {
   for (var i = 0; i <= 5; i++) {
-    manifest.addBitmapData('assets/img/' + renderer + i + '.png');
+    manifest.addBitmapData('openfl/assets/img/' + renderer + i + '.png');
   }
 }
 
@@ -29,8 +29,8 @@ AssetLibrary.loadFromManifest(manifest)
     Promise.all([loadFont('Liberation Serif Regular'), loadFont('Nokia Cellphone FC Small')])
       .then(async () => {
         if ('FontFace' in window && 'fonts' in document) {
-          const liberation = new FontFace('Liberation Serif Regular', 'url(assets/LiberationSerif-Regular.ttf)');
-          const nokia = new FontFace('Nokia Cellphone FC Small', 'url(assets/nokiafc22.ttf)');
+          const liberation = new FontFace('Liberation Serif Regular', 'url(openfl/assets/LiberationSerif-Regular.ttf)');
+          const nokia = new FontFace('Nokia Cellphone FC Small', 'url(openfl/assets/nokiafc22.ttf)');
           await Promise.all([liberation.load(), nokia.load()]);
           document.fonts.add(liberation);
           document.fonts.add(nokia);

@@ -28,7 +28,7 @@ function loadBitmapData(url: string): Promise<BitmapData> {
 }
 
 (async () => {
-  const image = await loadBitmapData('assets/openfl.png');
+  const image = await loadBitmapData('openfl/assets/openfl.png');
   const iw = image.width;
   const ih = image.height;
 

@@ -26,7 +26,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlRenderTarget,
+  beginGlRenderPass,
   BitmapKind,
   clearGlRenderTarget,
   computeNodeBoundsRectangle,
@@ -43,13 +43,14 @@ import {
   createGlRenderTargetPool,
   drawGlRenderTargetResult,
   enableDomCssFilterSupport,
-  endGlRenderTarget,
+  endGlRenderPass,
   ensureCanvasRenderCacheTarget,
   getRenderProxy2D,
   loadImageResourceFromUrl,
   prepareDisplayObjectRender,
   renderGlBackground,
   renderGlDisplayObject,
+  setGlRenderTransform2D,
   setDomCssFilter,
   ShapeKind,
   useRenderCache,
@@ -78,7 +79,7 @@ appendShapeRectangle(bg, 0, 0, W, H);
 appendShapeEndFill(bg);
 addNodeChild(root, bg);
 
-const image = await loadImageResourceFromUrl('assets/openfl.png');
+const image = await loadImageResourceFromUrl('openfl/assets/openfl.png');
 
 const colSpacing = image.width + 50;
 
@@ -273,7 +274,8 @@ function renderGlGlowFrame(
     const renderProxy = getRenderProxy2D(state, node);
     if (renderProxy === undefined) continue;
     setTranslation(renderProxy.transform2D, padding - _bounds.x, padding - _bounds.y);
-    beginGlRenderTarget(state, source, _identity);
+    beginGlRenderPass(state, source, { preserveColor: true, preserveDepth: true });
+    setGlRenderTransform2D(state, _identity);
     clearGlRenderTarget(state, source);
     renderGlDisplayObject(state, node);
     clearGlRenderTarget(state, dest);
@@ -282,7 +284,7 @@ function renderGlGlowFrame(
     } else {
       applyOuterGlowEffectToGl(state, source, dest, pool, filter);
     }
-    endGlRenderTarget(state);
+    endGlRenderPass(state);
   }
 
   for (const entry of entries) {

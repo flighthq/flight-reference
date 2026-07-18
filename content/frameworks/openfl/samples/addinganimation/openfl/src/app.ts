@@ -12,7 +12,7 @@ class App extends Sprite {
   public constructor() {
     super();
 
-    var bitmap = new Bitmap(Assets.getBitmapData('assets/openfl.png'));
+    var bitmap = new Bitmap(Assets.getBitmapData('openfl/assets/openfl.png'));
     bitmap.x = -bitmap.width / 2;
     bitmap.y = -bitmap.height / 2;
     bitmap.smoothing = true;
@@ -33,7 +33,7 @@ class App extends Sprite {
 }
 
 var manifest = new AssetManifest();
-manifest.addBitmapData('assets/openfl.png');
+manifest.addBitmapData('openfl/assets/openfl.png');
 
 AssetLibrary.loadFromManifest(manifest)
   .onComplete((library) => {

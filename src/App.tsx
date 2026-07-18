@@ -49,6 +49,7 @@ const availableFrameworks = [...new Set(allCases.map((c) => c.framework))].sort(
 function frameworkLabel(id: string): string {
   if (id === 'openfl') return 'OpenFL';
   if (id === 'starling') return 'Starling';
+  if (id === 'awayjs') return 'AwayJS';
   return id.charAt(0).toUpperCase() + id.slice(1);
 }
 
@@ -280,6 +281,7 @@ export default function App() {
     selectedCase.flightPreviewRenderers?.find((renderer) => renderer.id === 'webgl') ??
     selectedCase.flightPreviewRenderers?.[0];
   const hasFlightImplementation = selectedCase.implementations.some((impl) => impl.id === 'flight');
+  const showFlightInSingle = layoutMode === 'single' && !!selectedFlightRenderer;
 
   useEffect(() => {
     const selectedButton = document.querySelector<HTMLElement>(`[data-case-id="${CSS.escape(selectedCase.id)}"]`);
@@ -490,43 +492,46 @@ export default function App() {
           }
           data-framework={selectedCase.framework}
           data-corpus={selectedCase.corpus}>
-          <section className="pane">
-            <header className="pane__header">
-              <div>
-                <h3>{fwLabel}</h3>
-                <p>
-                  {selectedRenderer
-                    ? `Live ${fwLabel} renderer: ${rendererLabel(selectedRenderer.label)}`
-                    : 'This case currently ships source only.'}
-                </p>
-              </div>
-              <div className="pane__status">
-                <span className="pane__pill">{selectedCase.framework}</span>
-                <span className="pane__pill pane__pill--subtle">{selectedCase.corpus}</span>
-              </div>
-            </header>
+          {!showFlightInSingle ? (
+            <section className="pane">
+              <header className="pane__header">
+                <div>
+                  <h3>{fwLabel}</h3>
+                  <p>
+                    {selectedRenderer
+                      ? `Live ${fwLabel} renderer: ${rendererLabel(selectedRenderer.label)}`
+                      : 'This case currently ships source only.'}
+                  </p>
+                </div>
+                <div className="pane__status">
+                  <span className="pane__pill">{selectedCase.framework}</span>
+                  <span className="pane__pill pane__pill--subtle">{selectedCase.corpus}</span>
+                </div>
+              </header>
 
-            {selectedRenderer ? (
-              <div className="pane__iframe-wrap">
-                <PreviewFrame
-                  key={selectedRenderer.url}
-                  src={`${baseUrl}${selectedRenderer.url}`}
-                  title={`${selectedCase.title} preview`}
-                  nativeViewport={nativeViewportFor(selectedCase, layoutMode)}
-                />
-              </div>
-            ) : (
-              <div className="pane__empty">
-                <strong>No runnable preview</strong>
-                <p>
-                  This case currently exists as imported source only. Use the details pane to inspect the available
-                  implementation directories.
-                </p>
-              </div>
-            )}
-          </section>
+              {selectedRenderer ? (
+                <div className="pane__iframe-wrap">
+                  <PreviewFrame
+                    key={selectedRenderer.url}
+                    src={`${baseUrl}${selectedRenderer.url}`}
+                    title={`${selectedCase.title} preview`}
+                    nativeViewport={nativeViewportFor(selectedCase, layoutMode)}
+                  />
+                </div>
+              ) : (
+                <div className="pane__empty">
+                  <strong>No runnable preview</strong>
+                  <p>
+                    This case currently exists as imported source only. Use the details pane to inspect the available
+                    implementation directories.
+                  </p>
+                </div>
+              )}
+            </section>
+          ) : null}
 
-          {layoutMode === 'split' && (hasFlightImplementation || selectedCase.flightPreviewRenderers?.length) ? (
+          {(layoutMode === 'split' && (hasFlightImplementation || selectedCase.flightPreviewRenderers?.length)) ||
+          showFlightInSingle ? (
             <section className="pane">
               <header className="pane__header">
                 <div>

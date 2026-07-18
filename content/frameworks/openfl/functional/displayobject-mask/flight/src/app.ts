@@ -32,7 +32,7 @@ appendShapeRectangle(bg, 0, 0, W, H);
 appendShapeEndFill(bg);
 addNodeChild(root, bg);
 
-const image = await loadImageResourceFromUrl('assets/openfl.png');
+const image = await loadImageResourceFromUrl('openfl/assets/openfl.png');
 const iw = image.width;
 const ih = image.height;
 

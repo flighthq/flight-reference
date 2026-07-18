@@ -22,7 +22,7 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-const image = await loadImageResourceFromUrl('assets/openfl.png');
+const image = await loadImageResourceFromUrl('openfl/assets/openfl.png');
 const imageSurface = createSurfaceFromImageResource(image);
 const imageRegion = createSurfaceRegion(imageSurface);
 

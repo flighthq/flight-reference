@@ -1,4 +1,4 @@
-import type { AmbientLight, DirectionalLight, PointLight, Vector3Like } from '@flighthq/sdk';
+import type { AmbientLight, BlinnPhongMaterial, DirectionalLight, PointLight, Vector3Like } from '@flighthq/sdk';
 import {
   applyLightExposure,
   createAmbientLight,
@@ -14,12 +14,56 @@ function pbrIntensity(awayDiffuse: number): number {
   return applyLightExposure(awayDiffuse, pbrExposure);
 }
 
+// AwayJS color hex are sRgb values, which is exactly what Flight's light `color` expects: the renderer
+// gamma-decodes them to linear (unpackColorToLinear) and the gamma.ts pass re-encodes at display, so
+// the hue round-trips to the AwayJS look. Only the intensity needs the ×π energy boost above.
+function awayLightColor(hex: number): number {
+  return packOpaqueColor(hex);
+}
+
+// AwayJS MethodMaterial `gloss` is a Phong specular exponent; Flight's BlinnPhongMaterial.shininess feeds a
+// Blinn-Phong (half-vector) lobe, which needs roughly this multiple for a highlight of the same tightness.
+const PHONG_TO_BLINN_SHININESS = 3.6;
+
+function scaleColorBrightness(color: number, factor: number): number {
+  const f = Math.max(0, Math.min(1, factor));
+  const r = Math.round(((color >>> 24) & 0xff) * f);
+  const g = Math.round(((color >>> 16) & 0xff) * f);
+  const b = Math.round(((color >>> 8) & 0xff) * f);
+  return ((r << 24) | (g << 16) | (b << 8) | (color & 0xff)) >>> 0;
+}
+
+export interface AwayGlossOptions {
+  gloss?: number; // AwayJS MethodMaterial gloss (Phong exponent)
+  specular?: number; // AwayJS light.specular multiplier
+  specularColor?: number; // Flight specular color 0xRRGGBBAA
+}
+
+// Bakes AwayJS's material gloss + light.specular multiplier into a Flight BlinnPhongMaterial. AwayJS drives
+// specular strength from the light, which Flight has no equivalent for, so it folds into the specular color
+// here — clamped to white, since a >1 multiplier can't reflect past full white.
+export function applyAwayGloss(material: BlinnPhongMaterial, opts: Readonly<AwayGlossOptions> = {}): void {
+  material.shininess = (opts.gloss ?? 50) * PHONG_TO_BLINN_SHININESS;
+  material.specular = scaleColorBrightness(opts.specularColor ?? 0xffffffff, opts.specular ?? 1);
+}
+
+export interface AwayLightTuning {
+  // Flight-specific art direction layered on the AwayJS→Flight conversion — the demo still declares the true
+  // AwayJS values; only this block bridges Flight's linear/energy-correct shading to AwayJS's gamma-space
+  // look. `diffuse`/`ambient` scale the converted intensities; `ambientColor` overrides the fill color in
+  // Flight space (an sRgb ambient can read differently once linearized). All default to a no-op.
+  diffuse?: number;
+  ambient?: number;
+  ambientColor?: number;
+}
+
 export interface AwayDirectionalLightOptions {
   direction: Vector3Like;
   color?: number;
   diffuse?: number;
   ambient?: number;
   ambientColor?: number;
+  tuning?: AwayLightTuning;
 }
 
 export interface AwayDirectionalLightResult {
@@ -33,17 +77,19 @@ export function createDirectionalLightFromAway(
   const color = opts.color ?? 0xffffff;
   const diffuse = opts.diffuse ?? 1;
   const ambient = opts.ambient ?? 0;
-  const ambientColor = opts.ambientColor ?? 0xffffff;
+  const ambientColor = opts.tuning?.ambientColor ?? opts.ambientColor ?? 0xffffff;
+  const diffuseScale = opts.tuning?.diffuse ?? 1;
+  const ambientScale = opts.tuning?.ambient ?? 1;
 
   return {
     directional: createDirectionalLight({
       direction: opts.direction,
-      color: packOpaqueColor(color),
-      intensity: pbrIntensity(diffuse),
+      color: awayLightColor(color),
+      intensity: pbrIntensity(diffuse) * diffuseScale,
     }),
     ambient: createAmbientLight({
-      color: packOpaqueColor(ambientColor),
-      intensity: pbrIntensity(ambient),
+      color: awayLightColor(ambientColor),
+      intensity: pbrIntensity(ambient) * ambientScale,
     }),
   };
 }
@@ -59,7 +105,7 @@ export function createPointLightFromAway(opts: Readonly<AwayPointLightOptions>):
   const diffuse = opts.diffuse ?? 1;
 
   return createPointLight({
-    color: packOpaqueColor(color),
+    color: awayLightColor(color),
     intensity: pbrIntensity(diffuse),
     range: opts.range,
   });

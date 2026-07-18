@@ -3,9 +3,7 @@ import {
   addNodeChild,
   appendMatrix4,
   copyMatrix4,
-  createAmbientLight,
   createBlinnPhongMaterial,
-  createDirectionalLight,
   createMatrix4,
   createMesh,
   createScene,
@@ -14,20 +12,19 @@ import {
   createVector3,
   DEG_TO_RAD,
   findNode,
-  getNodeChildren,
   invalidateNodeLocalTransform,
   isMesh,
   loadSceneFromAwd,
-  packOpaqueColor,
   pickScene,
   rotateMatrix4,
   scaleMatrix4,
   setCameraViewMatrix4FromLookAt,
-  setDirectionalLightDirection,
+  setDirectionalLightTarget,
   setMatrix4Identity,
   translateMatrix4,
 } from '@flighthq/sdk';
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
+import { applyAwayGloss, createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const ctx = createScene3DContext({
@@ -40,18 +37,26 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60, far: 6000 });
 
-// Match the Away3D reference's MethodMaterial (Blinn-Phong) rather than physically-based shading.
-// The AWD's own texture is a near-white AO map, so all of the model's color comes from the lights:
-// an orange key over a blue ambient. Feed the lights the RAW Away3D diffuse/ambient — Blinn-Phong
-// does not divide albedo by π, so the ×π PBR exposure would make it too bright here.
-const directional = createDirectionalLight({
+// Original Away3D light values (see awayjs/src/app.ts): an orange key over a blue ambient. The AWD's
+// own texture is a near-white AO map, so all of the model's color comes from these lights. The shared
+// helper converts the AwayJS diffuse/ambient intensities and sRgb colors into Flight's linear-HDR
+// equivalents — see agents/conventions/lighting.md.
+const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(1, 0, 0),
-  color: packOpaqueColor(0x683019),
-  intensity: 2.8,
-});
-const ambient = createAmbientLight({
-  color: packOpaqueColor(0x85b2cd),
-  intensity: 0.1,
+  color: 0x683019,
+  diffuse: 2.8,
+  ambient: 0.1,
+  ambientColor: 0x85b2cd,
+  // Flight look tuning (see AwayLightTuning). Flight is linear + energy-correct where AwayJS is
+  // gamma-space and clips, so a faithful conversion renders flatter and cooler. The AwayJS ambient is a
+  // dim blue that its pipeline shows as a barely-there lift; in linear space that sRgb blue reads as a
+  // haze, so the fill is retuned to copper — the reference is monochromatic copper (dark-copper shadows,
+  // not gray or blue), and a white/blue fill grays the shadows and washes the head pale.
+  tuning: {
+    diffuse: 0.95,
+    ambient: 0.6,
+    ambientColor: 0xa06038,
+  },
 });
 const lights = createSceneLights({ ambient, directional });
 
@@ -67,7 +72,10 @@ const templateMesh = findNode(modelScene, isMesh) as Mesh | null;
 if (!templateMesh?.geometry) throw new Error('No mesh found in suzanne.awd');
 const templateGeometry = templateMesh.geometry;
 const defaultMaterial = templateMesh.materials[0] as BlinnPhongMaterial;
-console.log(defaultMaterial);
+// AwayJS lit this with a glossy MethodMaterial (default gloss 50) boosted by light.specular = 1.8. The AWD
+// imports near-matte, so re-derive the tight bright highlight from those literals — otherwise the flat
+// headlight reads as matte orange silicone rather than darker glossy paint.
+applyAwayGloss(defaultMaterial, { gloss: 50, specular: 1.8 });
 
 // The AWD mesh node carries a 90°-X that stands the Z-up geometry upright in Y-up world. We instance
 // bare geometry across the scene, so re-apply that authored orientation as the innermost transform
@@ -143,7 +151,11 @@ function frame(): void {
   cameraAngle += 0.01;
   updateCamera();
 
-  setDirectionalLightDirection(directional, -Math.cos(-cameraAngle) * 1400, 0, Math.sin(cameraAngle) * 1400);
+  // AwayJS drives this as a headlight: the key travels from the camera toward the model, so the face the
+  // viewer sees is always the lit side. The camera uses this repo's away→flight z-negation, but the AWD
+  // model loads in un-negated space — so the light's source Z is mirrored back to match the model, or the
+  // key lands on the wrong side and the visible face falls into shadow.
+  setDirectionalLightTarget(directional, eye.x, eye.y, -eye.z, lookAt.x, lookAt.y, lookAt.z);
 
   ctx.render(scene, camera, lights);
   requestAnimationFrame(frame);

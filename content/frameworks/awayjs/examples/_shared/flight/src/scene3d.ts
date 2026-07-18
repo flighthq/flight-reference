@@ -24,6 +24,7 @@ import {
   renderGlBackground,
   resizeGlRenderTarget,
 } from '@flighthq/sdk';
+import { registerFunctionalTarget, runRenderVerification } from '@ft/verify';
 
 export interface Scene3DContext {
   canvas: HTMLCanvasElement;
@@ -69,11 +70,23 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
   registerStandardPbrGlMaterial(state);
   registerSpecularPbrGlMaterial(state);
 
+  // Publish the GL surface to the capture harness so headless capture reads pixels back via gl.readPixels
+  // (window.__ftRenderImage) instead of screenshotting the canvas, which is compositor-black in Docker.
+  registerFunctionalTarget({
+    kind: 'webgl',
+    state,
+    width: canvas.width,
+    height: canvas.height,
+    scale: pixelRatio,
+    render: () => {},
+  });
+
   const effects = options.effects ?? [];
   if (effects.length > 0) registerDefaultGlRenderEffects(state);
 
   let renderTarget: GlRenderTarget | null = null;
   let pipeline: GlRenderEffectPipeline | null = null;
+  let verified = false;
 
   return {
     canvas,
@@ -94,22 +107,32 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
           resizeGlRenderTarget(state, renderTarget, w, h);
         }
         presentGlScene(state, renderTarget, scene, camera, lights);
-        return;
+      } else {
+        // Effect-pipeline path: draw the scene into the pipeline's HDR target (it owns sizing,
+        // background is ours to clear as presentGlScene would), then run the post-process stack.
+        if (pipeline === null) {
+          pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
+        }
+        beginGlRenderEffectPipeline(state, pipeline);
+        renderGlBackground(state);
+        const gl = state.gl;
+        gl.depthMask(true);
+        gl.clearDepth(1);
+        gl.clear(gl.DEPTH_BUFFER_BIT);
+        drawGlScene(state, scene, camera, lights);
+        endGlRenderEffectPipeline(state, pipeline, effects);
       }
 
-      // Effect-pipeline path: draw the scene into the pipeline's HDR target (it owns sizing,
-      // background is ours to clear as presentGlScene would), then run the post-process stack.
-      if (pipeline === null) {
-        pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
+      // Under capture (verify mode), read the presented frame back into window.__ftRenderImage once it has
+      // content. Swallow the blank-frame throw so an early frame simply retries on the next one.
+      const captureVerify = (window as { __flightCaptureVerify?: boolean }).__flightCaptureVerify;
+      if (captureVerify && !verified) {
+        void runRenderVerification({}, 'webgl')
+          .then(() => {
+            if ((window as { __ftRenderImage?: string }).__ftRenderImage) verified = true;
+          })
+          .catch(() => {});
       }
-      beginGlRenderEffectPipeline(state, pipeline);
-      renderGlBackground(state);
-      const gl = state.gl;
-      gl.depthMask(true);
-      gl.clearDepth(1);
-      gl.clear(gl.DEPTH_BUFFER_BIT);
-      drawGlScene(state, scene, camera, lights);
-      endGlRenderEffectPipeline(state, pipeline, effects);
     },
     state,
     width,

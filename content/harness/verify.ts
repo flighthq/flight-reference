@@ -1,5 +1,6 @@
-import type { Surface, WgpuRenderState } from '@flighthq/sdk';
+import type { GlRenderState, Surface, WgpuRenderState } from '@flighthq/sdk';
 import {
+  createSurface,
   createSurfaceFingerprint,
   createSurfaceFromImageSource,
   createSurfaceFromWgpuRenderState,
@@ -157,13 +158,6 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
   result.coverage = coverage;
   result.fingerprint = formatSurfaceFingerprint(createSurfaceFingerprint(surface, FINGERPRINT_GRID));
 
-  // Wgpu cannot be screenshotted by the browser (the swapchain is never presented on the headless/
-  // software adapter), so expose the GPU-read-back surface as a PNG data URL for the capture harness to
-  // save as screenshot.png. Canvas/Gl screenshot normally, so this is Wgpu-only.
-  if (render === 'webgpu') {
-    (window as VerificationWindow).__ftRenderImage = encodeSurfaceToDataUrl(surface);
-  }
-
   const minCoverage = testModule.minCoverage ?? DEFAULT_MIN_COVERAGE;
   if (coverage < minCoverage) {
     // The surface read (via drawImage of the canvas for webgl) came back blank. Re-read the webgl frame
@@ -177,6 +171,36 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
   }
 
   await testModule.assertRender?.(surface);
+  (window as VerificationWindow).__ftRenderImage = encodeSurfaceToDataUrl(getFunctionalRenderImageSurface() ?? surface);
+}
+
+function getFunctionalRenderImageSurface(): Surface | null {
+  const target = (window as VerificationWindow).__ftTarget;
+  if (target?.kind !== 'webgl') return null;
+  return createSurfaceFromGlRenderState(target.state);
+}
+
+function createSurfaceFromGlRenderState(state: GlRenderState): Surface | null {
+  const canvas = state.canvas;
+  const width = canvas.width;
+  const height = canvas.height;
+  if (width === 0 || height === 0) return null;
+
+  const gl = state.gl;
+  gl.finish();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+  const bottomUp = new Uint8Array(width * height * 4);
+  gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, bottomUp);
+
+  // gl.readPixels is bottom-up; flip rows into a top-down Surface.
+  const surface = createSurface(width, height);
+  const out = surface.data;
+  const rowBytes = width * 4;
+  for (let y = 0; y < height; y++) {
+    out.set(bottomUp.subarray((height - 1 - y) * rowBytes, (height - y) * rowBytes), y * rowBytes);
+  }
+  return surface;
 }
 
 // Diagnostic-only: measures non-background coverage by reading the webgl default framebuffer directly

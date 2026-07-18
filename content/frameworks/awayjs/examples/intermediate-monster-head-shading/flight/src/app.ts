@@ -48,12 +48,17 @@ const { directional, ambient } = createDirectionalLightFromAway({
   ambientColor: 0x101025,
 });
 
-const blueLight = createPointLightFromAway({ color: 0x4080ff, range: 5000 });
+// AwayJS PointLight defaults to fallOff = 100000; map that outer radius to Flight's range so the
+// point lights match the original rather than a hand-picked cutoff. Note Flight's punctual lights
+// use inverse-square attenuation while AwayJS keeps full intensity out to its radius, so these
+// lights (positioned ~2000-3000 units away) read far dimmer here than in the original regardless
+// of range — the head is lit almost entirely by the directional + ambient terms.
+const blueLight = createPointLightFromAway({ color: 0x4080ff, range: 100000 });
 blueLight.position.x = 3000;
 blueLight.position.z = -700;
 blueLight.position.y = 20;
 
-const redLight = createPointLightFromAway({ color: 0x802010, range: 5000 });
+const redLight = createPointLightFromAway({ color: 0x802010, range: 100000 });
 redLight.position.x = -2000;
 redLight.position.z = -800;
 redLight.position.y = -400;
@@ -86,8 +91,8 @@ const [diffuseImage, specularImage, normalImage, awdBuffer] = await Promise.all(
 ]);
 
 if (diffuseImage) headMaterial.baseColorMap = createTexture({ image: diffuseImage });
-if (specularImage) headMaterial.metallicRoughnessMap = createTexture({ image: specularImage });
-if (normalImage) headMaterial.normalMap = createTexture({ image: normalImage });
+if (specularImage) headMaterial.metallicRoughnessMap = createTexture({ image: specularImage, colorSpace: 'linear' });
+if (normalImage) headMaterial.normalMap = createTexture({ image: normalImage, colorSpace: 'linear' });
 
 const awdScene = createSceneFromAwd(new Uint8Array(awdBuffer));
 

@@ -135,12 +135,17 @@ const [rockDiffuse, rockNormal, rockSpecular, bodyDiffuse, bodyNormal, bodySpecu
 ]);
 
 groundMaterial.baseColorMap = createTexture({ image: rockDiffuse, uvScaleX: 200, uvScaleY: 200 });
-groundMaterial.normalMap = createTexture({ image: rockNormal, uvScaleX: 200, uvScaleY: 200 });
-groundMaterial.metallicRoughnessMap = createTexture({ image: rockSpecular, uvScaleX: 200, uvScaleY: 200 });
+groundMaterial.normalMap = createTexture({ image: rockNormal, uvScaleX: 200, uvScaleY: 200, colorSpace: 'linear' });
+groundMaterial.metallicRoughnessMap = createTexture({
+  image: rockSpecular,
+  uvScaleX: 200,
+  uvScaleY: 200,
+  colorSpace: 'linear',
+});
 
 bodyMaterial.baseColorMap = createTexture({ image: bodyDiffuse });
-bodyMaterial.normalMap = createTexture({ image: bodyNormal });
-bodyMaterial.metallicRoughnessMap = createTexture({ image: bodySpecular });
+bodyMaterial.normalMap = createTexture({ image: bodyNormal, colorSpace: 'linear' });
+bodyMaterial.metallicRoughnessMap = createTexture({ image: bodySpecular, colorSpace: 'linear' });
 
 const groundMesh = createMesh(createPlaneMeshGeometry(50000, 50000, 1, 1), [groundMaterial]);
 setMatrix4Identity(groundMesh.localMatrix);

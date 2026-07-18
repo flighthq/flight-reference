@@ -23,9 +23,9 @@ import {
   presentGlScene,
   registerBlinnPhongGlMaterial,
   resizeGlRenderTarget,
+  rotateMatrix4,
   setMatrix4Identity,
   stepParticleEmitter3D,
-  translateMatrix4,
 } from '@flighthq/sdk';
 
 import {
@@ -35,6 +35,7 @@ import {
 } from '../../../_shared/flight/src/camera';
 const PARTICLE_SIZE = 2;
 const NUM_LOGOS = 4;
+const NUM_ANIMATORS = 4;
 
 const width = window.innerWidth;
 const height = window.innerHeight;
@@ -148,36 +149,50 @@ interface LogoEmitter {
   config: ParticleEmitterConfig;
   pixels: Array<[number, number, number, number, number]>;
   offset: [number, number, number];
+  animator: number;
 }
 
-const logoEmitters: LogoEmitter[] = pixelSets.map((pixels, i) => {
-  const config: ParticleEmitterConfig = createParticleEmitterConfig({
-    maxParticles: pixels.length,
-    spawnRate: 0,
-    duration: 1,
-    loop: true,
-    lifetimeMin: 1,
-    lifetimeMax: 1,
-    scaleMin: PARTICLE_SIZE,
-    scaleMax: PARTICLE_SIZE,
-    alphaStart: 1,
-    alphaEnd: 1,
-    blendMode: 'add',
-  });
+// The original clones the combined particle cloud NUM_ANIMATORS times, each rotated
+// rotationY = 45*(i-1) degrees, producing a fan of rotated explosion clouds. Each clone
+// is driven by its own animator whose phase is offset by PI*i/4. We reproduce this by
+// instancing the full per-logo emitter set once per animator, rotating each instance's
+// emitters about world Y. Y rotation negates for the left-handed → right-handed flip;
+// the per-logo offset is already baked into the burst spawn positions, so the emitter's
+// local matrix carries only the instance rotation.
+const logoEmitters: LogoEmitter[] = [];
 
-  const state: ParticleEmitterState = createParticleEmitterState();
-  const emitter: ParticleEmitter3D = createParticleEmitter3D();
+for (let a = 0; a < NUM_ANIMATORS; a++) {
+  const rotationY = -45 * (a - 1) * DEG_TO_RAD;
 
-  setMatrix4Identity(emitter.localMatrix);
-  translateMatrix4(emitter.localMatrix, emitter.localMatrix, ...logoOffsets[i]!);
-  invalidateNodeLocalTransform(emitter);
-  addNodeChild(scene, emitter);
+  for (let g = 0; g < NUM_LOGOS; g++) {
+    const pixels = pixelSets[g]!;
+    const config: ParticleEmitterConfig = createParticleEmitterConfig({
+      maxParticles: pixels.length,
+      spawnRate: 0,
+      duration: 1,
+      loop: true,
+      lifetimeMin: 1,
+      lifetimeMax: 1,
+      scaleMin: PARTICLE_SIZE,
+      scaleMax: PARTICLE_SIZE,
+      alphaStart: 1,
+      alphaEnd: 1,
+      blendMode: 'add',
+    });
 
-  return { emitter, state, config, pixels, offset: logoOffsets[i]! };
-});
+    const state: ParticleEmitterState = createParticleEmitterState();
+    const emitter: ParticleEmitter3D = createParticleEmitter3D();
 
-for (let g = 0; g < NUM_LOGOS; g++) {
-  const entry = logoEmitters[g]!;
+    setMatrix4Identity(emitter.localMatrix);
+    rotateMatrix4(emitter.localMatrix, emitter.localMatrix, { x: 0, y: 1, z: 0 }, rotationY);
+    invalidateNodeLocalTransform(emitter);
+    addNodeChild(scene, emitter);
+
+    logoEmitters.push({ emitter, state, config, pixels, offset: logoOffsets[g]!, animator: a });
+  }
+}
+
+for (const entry of logoEmitters) {
   for (const [px, py, r, g2, b] of entry.pixels) {
     const x = entry.offset[0] + px * PARTICLE_SIZE;
     const y = entry.offset[1] + py * PARTICLE_SIZE;
@@ -208,9 +223,8 @@ function frame(ts: number): void {
   blueLight.position.y = 0;
   blueLight.position.z = -Math.cos(angle + Math.PI) * 600;
 
-  for (let g = 0; g < NUM_LOGOS; g++) {
-    const entry = logoEmitters[g]!;
-    const groupTime = 1000 * (Math.sin(time / 5 + (Math.PI * g) / 4) + 1);
+  for (const entry of logoEmitters) {
+    const groupTime = 1000 * (Math.sin(time / 5 + (Math.PI * entry.animator) / 4) + 1);
 
     stepParticleEmitter3D(entry.emitter, entry.state, entry.config, dt);
 

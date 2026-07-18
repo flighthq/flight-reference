@@ -54,6 +54,7 @@ const material = createStandardPbrMaterial({
 material.baseColorMap = texture;
 material.blendMode = BlendMode.Add;
 material.alphaMode = 'blend';
+material.doubleSided = true;
 
 const torusGeometry = createTorusMeshGeometry(150, 80, 32, 16);
 const torus = createMesh(torusGeometry, [material]);
@@ -93,6 +94,9 @@ function frame(): void {
 
   setMatrix4Identity(torus.localMatrix);
   rotateMatrix4(torus.localMatrix, torus.localMatrix, yAxis, torusAngleY);
+  // AwayJS builds this torus with yUp=true (ring in the XZ plane); Flight's torus ring
+  // is in the XY plane, so tilt it 90° about X to put the camera down the tube's length.
+  rotateMatrix4(torus.localMatrix, torus.localMatrix, xAxis, Math.PI / 2);
   invalidateNodeLocalTransform(torus);
 
   setMatrix4Identity(cube.localMatrix);

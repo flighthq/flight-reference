@@ -1,23 +1,26 @@
-import type { GlRenderTarget, PerspectiveProjection } from '@flighthq/sdk';
+import type { GlRenderEffectPipeline, PerspectiveProjection } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createAmbientLight,
+  beginGlRenderEffectPipeline,
   createGlCanvasElement,
+  createGlRenderEffectPipeline,
   createGlRenderState,
-  createGlRenderTarget,
   createMesh,
   createScene,
   createSceneLights,
   createStandardPbrMaterial,
   createTexture,
+  createToneMapEffect,
   createTorusMeshGeometry,
   createVector3,
+  drawGlScene,
+  endGlRenderEffectPipeline,
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
-  presentGlScene,
+  registerDefaultGlRenderEffects,
   registerStandardPbrGlMaterial,
-  resizeGlRenderTarget,
+  renderGlBackground,
   rotateMatrix4,
   setMatrix4Identity,
 } from '@flighthq/sdk';
@@ -46,24 +49,33 @@ const state = createGlRenderState(canvas, {
 });
 
 registerStandardPbrGlMaterial(state);
+registerDefaultGlRenderEffects(state);
 const verifyFrame = createGlFrameVerifier(state);
 
-let renderTarget: GlRenderTarget | null = null;
+const effects = [createToneMapEffect({ operator: 'aces' })];
+let pipeline: GlRenderEffectPipeline | null = null;
 
 const scene = createScene();
 
 const camera = createCameraFromAway({ z: -1000, fov: 60 });
 
-const { directional } = createDirectionalLightFromAway({
+// AwayJS's DirectionalLight defaults to ambient 0 and this sample adds no ambient light, so the torus
+// is lit by the directional alone; the helper supplies the matching ~zero ambient. ACES tone mapping
+// (below) compresses the single light's highlights into range without a flat fill washing it out.
+const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(0, 0, 1),
   diffuse: 0.7,
 });
 
-const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
 const lights = createSceneLights({ ambient, directional });
 
 const image = await loadImageResourceFromUrl('awayjs/assets/dots.png');
+// Flight builds the torus in its native right-handed space while the camera helper mirrors z
+// (left-handed AwayJS -> right-handed Flight). The unmirrored mesh renders as the z-reflection of the
+// original, flipping the texture along the tube (v) axis; mirror v back to match the AwayJS look.
 const texture = createTexture({ image });
+texture.uvScale.y = -1;
+texture.uvOffset.y = 1;
 
 const material = createStandardPbrMaterial({
   baseColor: 0xffffffff,
@@ -72,7 +84,10 @@ const material = createStandardPbrMaterial({
   baseColorMap: texture,
 });
 
-const geometry = createTorusMeshGeometry(220, 80, 32, 16);
+// AwayJS PrimitiveTorusPrefab(radius, tube, segmentsR=32 around the ring, segmentsT=16 around the
+// tube). Flight's signature is (radius, tube, radialSegments=around the tube, tubularSegments=around
+// the ring), so the counts swap to reproduce the original's tessellation (smoother ring, coarser tube).
+const geometry = createTorusMeshGeometry(220, 80, 16, 32);
 const torus = createMesh(geometry, [material]);
 addNodeChild(scene, torus);
 
@@ -86,14 +101,19 @@ function frame(): void {
   rotateMatrix4(torus.localMatrix, torus.localMatrix, yAxis, rotationY);
   invalidateNodeLocalTransform(torus);
 
-  const w = canvas.width;
-  const h = canvas.height;
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
-  } else {
-    resizeGlRenderTarget(state, renderTarget, w, h);
+  // Draw into the pipeline's HDR target, then ACES tone-map to the canvas so the single directional
+  // light's highlights compress into range instead of clipping (matches basic-load-3ds).
+  if (pipeline === null) {
+    pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
   }
-  presentGlScene(state, renderTarget, scene, camera, lights);
+  beginGlRenderEffectPipeline(state, pipeline);
+  renderGlBackground(state);
+  const gl = state.gl;
+  gl.depthMask(true);
+  gl.clearDepth(1);
+  gl.clear(gl.DEPTH_BUFFER_BIT);
+  drawGlScene(state, scene, camera, lights);
+  endGlRenderEffectPipeline(state, pipeline, effects);
   verifyFrame();
   requestAnimationFrame(frame);
 }

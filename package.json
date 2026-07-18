@@ -10,7 +10,8 @@
   },
   "scripts": {
     "predev": "tsx scripts/openfl-shims.ts",
-    "dev": "vite",
+    "dev": "tsx scripts/dev.ts",
+    "dev:all": "vite",
     "prebuild": "tsx scripts/openfl-shims.ts",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",

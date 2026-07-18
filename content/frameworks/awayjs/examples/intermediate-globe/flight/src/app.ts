@@ -1,30 +1,43 @@
-import type { GlRenderTarget, StandardPbrMaterial } from '@flighthq/sdk';
+import type { GlRenderTarget, ShadedMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   BlendMode,
   createAmbientLight,
   createDirectionalLight,
+  createEmissiveModifier,
   createGlCanvasElement,
   createGlRenderState,
   createGlRenderTarget,
   createMesh,
+  createRimModifier,
   createScene,
   createSceneLights,
   createSceneNode,
+  createShadedMaterial,
   createSphereMeshGeometry,
-  createStandardPbrMaterial,
   createTexture,
   createVector3,
   DEG_TO_RAD,
-  getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   packOpaqueColor,
-  presentGlScene,
-  registerStandardPbrGlMaterial,
+  beginGlRenderPass,
+  createCubeTexture,
+  createEnvironment,
+  drawGlEnvironmentSkybox,
+  drawGlLinearToSrgbPass,
+  drawGlScene,
+  endGlRenderPass,
+  registerBuiltInGlModifierSnippets,
+  registerShadedGlMaterial,
+  renderGlBackground,
   resizeGlRenderTarget,
+  resolveGlRenderTarget,
   rotateMatrix4,
+  setCubeTextureFace,
+  scaleMatrix4,
   setMatrix4Identity,
+  translateMatrix4,
 } from '@flighthq/sdk';
 
 import {
@@ -52,7 +65,15 @@ const state = createGlRenderState(canvas, {
   pixelRatio,
 });
 
-registerStandardPbrGlMaterial(state);
+// Earth/cloud surfaces and the atmosphere halo use the composable shaded lit base
+// (@flighthq/shading), mirroring the original AwayJS MethodMaterial (diffuse + half-vector
+// specular) and letting the atmosphere bake a custom fresnel-rim glow (AwayJS DiffuseGlobeMethod)
+// via a RimModifier and the sun a self-lit disc via an EmissiveModifier.
+// These two registrations MUST run before the first presentGlScene: the shaded program cache keys
+// Rim/plain-Emissive identically whether or not their snippet is registered, so a program compiled
+// before registration would cache modifier-less and never recompile.
+registerShadedGlMaterial(state);
+registerBuiltInGlModifierSnippets(state);
 const verifyFrame = createGlFrameVerifier(state);
 
 let renderTarget: GlRenderTarget | null = null;
@@ -61,7 +82,7 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60, far: 100000 });
 
-let sunAngle = 0;
+let sunAngle = 0.9;
 
 const sunLight = createDirectionalLight({
   direction: { x: Math.sin(sunAngle), y: 0, z: Math.cos(sunAngle) },
@@ -69,7 +90,7 @@ const sunLight = createDirectionalLight({
   intensity: awayIntensity(2),
 });
 
-const ambient = createAmbientLight({ color: packOpaqueColor(0x303040), intensity: awayIntensity(1) });
+const ambient = createAmbientLight({ color: packOpaqueColor(0x555f78), intensity: awayIntensity(1.5) });
 
 const lights = createSceneLights({
   ambient,
@@ -83,44 +104,91 @@ rotateMatrix4(tiltContainer.localMatrix, tiltContainer.localMatrix, axisX, -23 *
 invalidateNodeLocalTransform(tiltContainer);
 addNodeChild(scene, tiltContainer);
 
-const earthMaterial = createStandardPbrMaterial({
-  baseColor: 0xffffffff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(5),
+// Earth: lit shaded surface with a tight specular highlight (AwayJS SpecularFresnelMethod, gloss 5).
+const earthMaterial: ShadedMaterial = createShadedMaterial({
+  diffuse: 0xffffffff,
+  specular: 0xffffffff,
+  shininess: 5,
 });
 
-const cloudMaterial = createStandardPbrMaterial({
-  baseColor: 0xffffffff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(0),
+// Clouds: additive diffuse shell just above the surface, no specular (AwayJS cloudMaterial).
+const cloudMaterial: ShadedMaterial = createShadedMaterial({
+  diffuse: packOpaqueColor(0x8090b0),
+  specular: 0x000000ff,
+  shininess: 5,
 });
 cloudMaterial.alphaMode = 'blend';
 cloudMaterial.blendMode = BlendMode.Add;
 cloudMaterial.doubleSided = true;
 
-const earthGeometry = createSphereMeshGeometry(200, 200, 100);
-const earth = createMesh(earthGeometry, [earthMaterial]);
+// Atmosphere: a slightly larger shell whose only visible contribution is a blue fresnel rim
+// (AwayJS DiffuseGlobeMethod, diffuse 0x1671cc, additive). A black base + additive blend means the
+// facing interior stays invisible and only the grazing limb glows, giving the halo around the disc.
+const atmosphereMaterial: ShadedMaterial = createShadedMaterial({
+  diffuse: 0x000000ff,
+  specular: 0x000000ff,
+  modifiers: [createRimModifier({ color: packOpaqueColor(0x1671cc), power: 3, intensity: 1.1 })],
+});
+atmosphereMaterial.alphaMode = 'blend';
+atmosphereMaterial.blendMode = BlendMode.Add;
+atmosphereMaterial.doubleSided = false;
+
+// Sun: a self-lit additive disc far along the light direction (AwayJS 3000-unit camera-plane
+// billboard). A sphere reads the same from every orbit angle, so no per-frame billboarding is needed.
+const sunMaterial: ShadedMaterial = createShadedMaterial({
+  diffuse: 0x000000ff,
+  modifiers: [createEmissiveModifier({ color: packOpaqueColor(0xfff2cc), strength: 4 })],
+});
+sunMaterial.alphaMode = 'blend';
+sunMaterial.blendMode = BlendMode.Add;
+
+const earth = createMesh(createSphereMeshGeometry(200, 200, 100), [earthMaterial]);
 addNodeChild(tiltContainer, earth);
 
-const cloudGeometry = createSphereMeshGeometry(202, 200, 100);
-const clouds = createMesh(cloudGeometry, [cloudMaterial]);
+const clouds = createMesh(createSphereMeshGeometry(202, 200, 100), [cloudMaterial]);
 addNodeChild(tiltContainer, clouds);
 
+const atmosphere = createMesh(createSphereMeshGeometry(210, 200, 100), [atmosphereMaterial]);
+setMatrix4Identity(atmosphere.localMatrix);
+scaleMatrix4(atmosphere.localMatrix, atmosphere.localMatrix, -1, 1, 1);
+invalidateNodeLocalTransform(atmosphere);
+addNodeChild(scene, atmosphere);
+
+const SUN_DISTANCE = 10000;
+const sun = createMesh(createSphereMeshGeometry(700, 32, 16), [sunMaterial]);
+addNodeChild(scene, sun);
+
 async function applyTexture(
-  material: StandardPbrMaterial,
-  slot: 'baseColorMap' | 'normalMap' | 'metallicRoughnessMap',
+  material: ShadedMaterial,
+  slot: 'diffuseMap' | 'normalMap' | 'specularMap',
   url: string,
+  colorSpace: 'srgb' | 'linear',
 ): Promise<void> {
   const image = await loadImageResourceFromUrl(url);
-  material[slot] = createTexture({ image });
+  material[slot] = createTexture({ image, colorSpace });
 }
 
 await Promise.all([
-  applyTexture(earthMaterial, 'baseColorMap', 'awayjs/assets/globe/land_ocean_ice_2048_match.jpg'),
-  applyTexture(earthMaterial, 'normalMap', 'awayjs/assets/globe/EarthNormal.png'),
-  applyTexture(earthMaterial, 'metallicRoughnessMap', 'awayjs/assets/globe/earth_specular_2048.jpg'),
-  applyTexture(cloudMaterial, 'baseColorMap', 'awayjs/assets/globe/cloud_combined_2048.jpg'),
+  applyTexture(earthMaterial, 'diffuseMap', 'awayjs/assets/globe/land_ocean_ice_2048_match.jpg', 'srgb'),
+  applyTexture(earthMaterial, 'normalMap', 'awayjs/assets/globe/EarthNormal.png', 'linear'),
+  applyTexture(earthMaterial, 'specularMap', 'awayjs/assets/globe/earth_specular_2048.jpg', 'linear'),
+  applyTexture(cloudMaterial, 'diffuseMap', 'awayjs/assets/globe/cloud_combined_2048.jpg', 'srgb'),
 ]);
+
+// Space starfield skybox — the AwayJS space_texture.cube manifest's six faces into a cube map.
+// (Face slots: +X, -X, +Y, -Y, +Z, -Z.)
+const skyboxFaceUrls = [
+  'awayjs/assets/skybox/space_posX.jpg',
+  'awayjs/assets/skybox/space_negX.jpg',
+  'awayjs/assets/skybox/space_posY.jpg',
+  'awayjs/assets/skybox/space_negY.jpg',
+  'awayjs/assets/skybox/space_posZ.jpg',
+  'awayjs/assets/skybox/space_negZ.jpg',
+];
+const skyboxFaces = await Promise.all(skyboxFaceUrls.map((url) => loadImageResourceFromUrl(url)));
+const skyboxTexture = createCubeTexture();
+for (let i = 0; i < 6; i++) setCubeTextureFace(skyboxTexture, i, skyboxFaces[i]);
+const environment = createEnvironment({ environment: skyboxTexture, intensity: 1 });
 
 const orbit = createOrbitControllerFromAway(camera, {
   distance: 600,
@@ -181,6 +249,17 @@ function frame(ts: number): void {
   sunLight.direction.x = Math.sin(sunAngle);
   sunLight.direction.z = Math.cos(sunAngle);
 
+  // Keep the sun disc opposite the light direction (light travels from the sun toward the globe).
+  setMatrix4Identity(sun.localMatrix);
+  translateMatrix4(
+    sun.localMatrix,
+    sun.localMatrix,
+    -Math.sin(sunAngle) * SUN_DISTANCE,
+    0,
+    -Math.cos(sunAngle) * SUN_DISTANCE,
+  );
+  invalidateNodeLocalTransform(sun);
+
   orbit.update();
   const w = canvas.width;
   const h = canvas.height;
@@ -189,7 +268,13 @@ function frame(ts: number): void {
   } else {
     resizeGlRenderTarget(state, renderTarget, w, h);
   }
-  presentGlScene(state, renderTarget, scene, camera, lights);
+  beginGlRenderPass(state, renderTarget, { preserveColor: true });
+  renderGlBackground(state);
+  drawGlEnvironmentSkybox(state, environment, camera, w / h);
+  drawGlScene(state, scene, camera, lights);
+  endGlRenderPass(state);
+  resolveGlRenderTarget(state, renderTarget);
+  drawGlLinearToSrgbPass(state, renderTarget, null);
   verifyFrame();
   requestAnimationFrame(frame);
 }
@@ -197,9 +282,9 @@ function frame(ts: number): void {
 window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  const pixelRatio = window.devicePixelRatio || 1;
-  canvas.width = w * pixelRatio;
-  canvas.height = h * pixelRatio;
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = w * ratio;
+  canvas.height = h * ratio;
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   state.gl.viewport(0, 0, canvas.width, canvas.height);

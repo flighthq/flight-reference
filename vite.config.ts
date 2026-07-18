@@ -71,6 +71,12 @@ const flightLocalSource =
   existsSync(join(flightWorkspaceRoot, 'node_modules')) &&
   typeof flightPackageAliases['@flighthq/sdk'] === 'string';
 
+// With local Flight source, the SDK barrel re-exports ~126 packages (~1800 source modules). Serving
+// it unbundled gives live HMR of SDK-source edits but a very slow cold load for a single sample.
+// Default to pre-bundling it (one optimized dependency; the sample itself keeps full HMR). Set
+// FLIGHT_SDK_SOURCE=1 to serve the SDK as raw source instead when actively editing SDK internals.
+const flightSdkAsSource = flightLocalSource && process.env.FLIGHT_SDK_SOURCE === '1';
+
 // ---------------------------------------------------------------------------
 // Shared types
 // ---------------------------------------------------------------------------
@@ -883,7 +889,8 @@ export default defineConfig({
         $_: 'globalThis.$_',
       },
     },
-    exclude: flightLocalSource ? ['@flighthq/sdk'] : [],
+    include: flightLocalSource && !flightSdkAsSource ? ['@flighthq/sdk'] : [],
+    exclude: flightSdkAsSource ? ['@flighthq/sdk'] : [],
   },
   resolve: {
     alias: {

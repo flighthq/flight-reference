@@ -448,18 +448,18 @@ export default function App() {
                 <button
                   type="button"
                   className={
-                    layoutMode === 'single' ? 'segmented__button segmented__button--active' : 'segmented__button'
-                  }
-                  onClick={() => setLayoutMode('single')}>
-                  Preview
-                </button>
-                <button
-                  type="button"
-                  className={
                     layoutMode === 'split' ? 'segmented__button segmented__button--active' : 'segmented__button'
                   }
                   onClick={() => setLayoutMode('split')}>
                   Split
+                </button>
+                <button
+                  type="button"
+                  className={
+                    layoutMode === 'single' ? 'segmented__button segmented__button--active' : 'segmented__button'
+                  }
+                  onClick={() => setLayoutMode('single')}>
+                  Preview
                 </button>
               </div>
             ) : null}

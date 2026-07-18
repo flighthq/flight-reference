@@ -1,18 +1,24 @@
-import type { Mesh, SceneHit, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
+import type { BlinnPhongMaterial, Material, Mesh, SceneHit } from '@flighthq/sdk';
 import {
   addNodeChild,
+  appendMatrix4,
+  copyMatrix4,
+  createAmbientLight,
+  createBlinnPhongMaterial,
+  createDirectionalLight,
+  createMatrix4,
   createMesh,
   createScene,
-  createSceneFromAwd,
   createSceneHit,
   createSceneLights,
-  createStandardPbrMaterial,
   createVector3,
   DEG_TO_RAD,
+  findNode,
   getNodeChildren,
-  getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   isMesh,
+  loadSceneFromAwd,
+  packOpaqueColor,
   pickScene,
   rotateMatrix4,
   scaleMatrix4,
@@ -21,9 +27,7 @@ import {
   setMatrix4Identity,
   translateMatrix4,
 } from '@flighthq/sdk';
-
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
-import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const ctx = createScene3DContext({
@@ -36,71 +40,69 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60, far: 6000 });
 
-const { directional, ambient } = createDirectionalLightFromAway({
+// Match the Away3D reference's MethodMaterial (Blinn-Phong) rather than physically-based shading.
+// The AWD's own texture is a near-white AO map, so all of the model's color comes from the lights:
+// an orange key over a blue ambient. Feed the lights the RAW Away3D diffuse/ambient — Blinn-Phong
+// does not divide albedo by π, so the ×π PBR exposure would make it too bright here.
+const directional = createDirectionalLight({
   direction: awayDirection(1, 0, 0),
-  color: 0x683019,
-  diffuse: 2.8,
-  ambient: 0.1,
-  ambientColor: 0x85b2cd,
+  color: packOpaqueColor(0x683019),
+  intensity: 2.8,
+});
+const ambient = createAmbientLight({
+  color: packOpaqueColor(0x85b2cd),
+  intensity: 0.1,
 });
 const lights = createSceneLights({ ambient, directional });
 
-const defaultMaterial: StandardPbrMaterial = createStandardPbrMaterial({
-  baseColor: 0xffffffff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(20),
-});
-const hoverMaterial: StandardPbrMaterial = createStandardPbrMaterial({
-  baseColor: 0xff0000ff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(20),
+const hoverMaterial: Material = createBlinnPhongMaterial({
+  diffuse: 0xff0000ff,
+  specular: 0x000000ff,
 });
 
 const buffer = await fetch('awayjs/assets/suzanne.awd').then((r) => r.arrayBuffer());
-const modelScene = createSceneFromAwd(new Uint8Array(buffer));
+const modelScene = await loadSceneFromAwd(new Uint8Array(buffer));
 
-function findFirstMesh(root: SceneNode): Mesh | null {
-  for (const child of getNodeChildren(root)) {
-    if (isMesh(child)) return child;
-    const found = findFirstMesh(child);
-    if (found) return found;
-  }
-  return null;
-}
+const templateMesh = findNode(modelScene, isMesh) as Mesh | null;
+if (!templateMesh?.geometry) throw new Error('No mesh found in suzanne.awd');
+const templateGeometry = templateMesh.geometry;
+const defaultMaterial = templateMesh.materials[0] as BlinnPhongMaterial;
+console.log(defaultMaterial);
 
-const templateMesh = findFirstMesh(modelScene);
-const templateGeometry = templateMesh?.geometry ?? null;
-
-if (!templateGeometry) throw new Error('No mesh found in suzanne.awd');
-
-const allMeshes: Mesh[] = [];
-
-const mainMesh = createMesh(templateGeometry, [defaultMaterial]);
-setMatrix4Identity(mainMesh.localMatrix);
-scaleMatrix4(mainMesh.localMatrix, mainMesh.localMatrix, 500, 500, 500);
-translateMatrix4(mainMesh.localMatrix, mainMesh.localMatrix, 0, -100 / 500, 0);
-invalidateNodeLocalTransform(mainMesh);
-addNodeChild(scene, mainMesh);
-allMeshes.push(mainMesh);
+// The AWD mesh node carries a 90°-X that stands the Z-up geometry upright in Y-up world. We instance
+// bare geometry across the scene, so re-apply that authored orientation as the innermost transform
+// on every instance (append = applied first to the vertex). For this asset the mesh sits directly
+// under the scene root, so its localMatrix is already the world orientation.
+const orient = createMatrix4();
+copyMatrix4(orient, templateMesh.localMatrix);
 
 const yAxis = createVector3(0, 1, 0);
 
+// TRS order: translate, then rotate, then scale (innermost). The scale is uniform so it commutes with
+// the rotation, so tx/ty/tz stay in world space — no need to divide by scale.
+function placeMesh(scale: number, tx: number, ty: number, tz: number, rotationY: number): Mesh {
+  const mesh = createMesh(templateGeometry, [defaultMaterial]);
+  setMatrix4Identity(mesh.localMatrix);
+  translateMatrix4(mesh.localMatrix, mesh.localMatrix, tx, ty, tz);
+  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, yAxis, rotationY);
+  scaleMatrix4(mesh.localMatrix, mesh.localMatrix, scale, scale, scale);
+  appendMatrix4(mesh.localMatrix, mesh.localMatrix, orient);
+  invalidateNodeLocalTransform(mesh);
+  addNodeChild(scene, mesh);
+  return mesh;
+}
+
+placeMesh(500, 0, -100, 0, 0);
+
 for (let i = 0; i < 80; i++) {
-  const clone = createMesh(templateGeometry, [defaultMaterial]);
   const scale = 50 + Math.random() * 150;
-  setMatrix4Identity(clone.localMatrix);
-  scaleMatrix4(clone.localMatrix, clone.localMatrix, scale, scale, scale);
-  translateMatrix4(
-    clone.localMatrix,
-    clone.localMatrix,
-    ((Math.random() - 0.5) * 4000) / scale,
-    ((Math.random() - 0.5) * 4000) / scale,
-    ((Math.random() - 0.5) * 4000) / scale,
+  placeMesh(
+    scale,
+    (Math.random() - 0.5) * 4000,
+    (Math.random() - 0.5) * 4000,
+    (Math.random() - 0.5) * 4000,
+    Math.random() * 360 * DEG_TO_RAD,
   );
-  rotateMatrix4(clone.localMatrix, clone.localMatrix, yAxis, Math.random() * 360 * DEG_TO_RAD);
-  invalidateNodeLocalTransform(clone);
-  addNodeChild(scene, clone);
-  allMeshes.push(clone);
 }
 
 let cameraAngle = 0;

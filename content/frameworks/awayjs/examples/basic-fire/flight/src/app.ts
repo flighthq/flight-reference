@@ -22,6 +22,7 @@ import {
   createStandardPbrMaterial,
   createTexture,
   createTextureAtlas,
+  createTilingSampler,
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
@@ -111,15 +112,15 @@ async function loadPlaneTextures(): Promise<void> {
     loadImageResourceFromUrl('awayjs/assets/floor_normal.jpg'),
     loadImageResourceFromUrl('awayjs/assets/floor_specular.jpg'),
   ]);
-  const diffuseTex = createTexture({ image: diffuseImg });
+  const diffuseTex = createTexture({ image: diffuseImg, sampler: createTilingSampler() });
   setTextureUvScale(diffuseTex, 2, 2);
   planeMaterial.baseColorMap = diffuseTex;
 
-  const normalTex = createTexture({ image: normalImg });
+  const normalTex = createTexture({ image: normalImg, sampler: createTilingSampler() });
   setTextureUvScale(normalTex, 2, 2);
   planeMaterial.normalMap = normalTex;
 
-  const specularTex = createTexture({ image: specularImg });
+  const specularTex = createTexture({ image: specularImg, sampler: createTilingSampler() });
   setTextureUvScale(specularTex, 2, 2);
   planeMaterial.metallicRoughnessMap = specularTex;
 }

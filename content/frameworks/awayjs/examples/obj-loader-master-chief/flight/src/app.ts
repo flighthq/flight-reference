@@ -8,6 +8,7 @@ import {
   createSceneNode,
   createStandardPbrMaterial,
   createTexture,
+  createTilingSampler,
   createVector3,
   DEG_TO_RAD,
   getNodeChildren,
@@ -70,7 +71,7 @@ const stoneMaterial = createStandardPbrMaterial({
   metallic: 0,
   roughness: getPbrRoughnessFromPhongShininess(20),
 });
-const stoneTexture = createTexture({ image: stoneImage });
+const stoneTexture = createTexture({ image: stoneImage, sampler: createTilingSampler() });
 setTextureUvScale(stoneTexture, 20, 20);
 stoneMaterial.baseColorMap = stoneTexture;
 

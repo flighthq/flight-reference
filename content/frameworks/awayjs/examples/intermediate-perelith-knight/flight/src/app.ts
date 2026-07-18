@@ -8,6 +8,7 @@ import {
   createSceneLights,
   createStandardPbrMaterial,
   createTexture,
+  createTilingSampler,
   getNodeChildren,
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
@@ -66,7 +67,7 @@ const [floorImage, ...knightImages] = await Promise.all([
   loadImageResourceFromUrl('awayjs/assets/pknight4.png'),
 ]);
 
-const floorTex = createTexture({ image: floorImage });
+const floorTex = createTexture({ image: floorImage, sampler: createTilingSampler() });
 setTextureUvScale(floorTex, 5, 5);
 floorMaterial.baseColorMap = floorTex;
 

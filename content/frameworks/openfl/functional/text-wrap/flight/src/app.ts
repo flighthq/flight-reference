@@ -38,8 +38,10 @@ field.data.htmlText =
   '<br>&lt; (less than), &gt; (greater than), &amp; ' +
   '(ampersand), &quot; (double quote), &apos; (apostrophe), ' +
   '&lt;&gt;&amp;&quot;&apos; (all)' +
-  'patientiam <font size="+10">tuam et quia</font> nom potes ' +
-  '<font size="-6" color="#123456">sustinere malos</font> et ' +
+  // Flight text markup uses absolute font sizes; OpenFL's relative "+10"/"-6" resolve against the
+  // 28px base to 38/22, so the port encodes those directly to match the reference's rendered sizes.
+  'patientiam <font size="38">tuam et quia</font> nom potes ' +
+  '<font size="22" color="#123456">sustinere malos</font> et ' +
   'temptasti eos qui se dicunt apostolos et non sunt et ' +
   'invenisti eos mendaces et patientiam habes et sustinuisti ' +
   'propter nomen meum et non defecisti sed habeo adversus te <p><p>' +

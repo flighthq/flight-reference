@@ -2,15 +2,21 @@ import type { Mesh } from '@flighthq/sdk';
 import {
   addNodeChild,
   computeMeshGeometryNormals,
-  createAmbientLight,
+  configureDirectionalShadowCamera,
+  createAabb,
+  createCamera,
   createMesh,
+  createOrthographicProjection,
   createPlaneMeshGeometry,
   createScene,
   createSceneFrom3ds,
   createSceneNode,
   createSceneLights,
+  createSpecularPbrMaterial,
   createStandardPbrMaterial,
   createTexture,
+  createToneMapEffect,
+  drawGlSceneShadowMap,
   getNodeChildren,
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
@@ -34,24 +40,43 @@ const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
   backgroundColor: 0x000000ff,
+  // The ground is HDR-lit and clips to flat white when it fills the view; ACES tone mapping
+  // compresses the highlights back into range, matching the LDR AwayJS original.
+  effects: [createToneMapEffect({ operator: 'aces' })],
 });
 
 const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60, far: 2100 });
 
-const { directional } = createDirectionalLightFromAway({
+// AwayJS's DirectionalLight defaults to ambient 0 and this sample adds no ambient light, so the
+// ground is lit by the directional alone. A flat ambient here washes out the plane (its edges glow
+// against the black background), so let the helper supply the matching ~zero ambient.
+const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(-1, -1, 1),
 });
 
-const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
+// AwayJS casts the ant's soft shadow onto the ground (ShadowSoftMethod + castsShadows). Enable the
+// directional shadow map and reconfigure its orthographic light camera each frame to the animated
+// direction. Bounds cover the 1000x1000 ground plane and the ant standing on it.
+directional.castsShadow = true;
+const shadowCamera = createCamera({
+  near: 1,
+  far: 10,
+  projection: createOrthographicProjection({ halfWidth: 1, halfHeight: 1 }),
+});
+const shadowBounds = createAabb(-500, -20, -500, 500, 250, 500);
+
 const lights = createSceneLights({ ambient, directional });
 
-const groundMaterial = createStandardPbrMaterial({
-  baseColor: 0xffffffff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(10),
-});
+// AwayJS sets the ground's specularMethod.strength = 0 (fully matte). Plain metallic-roughness keeps a
+// fixed 0.04 dielectric spec that can't be zeroed (glossy highlight when panning, or a broad grey wash
+// at max roughness), so use KHR_materials_specular with specular = 0 to remove the specular lobe while
+// keeping the correct PBR diffuse energy.
+const groundMaterial = createSpecularPbrMaterial({ specular: 0 });
+groundMaterial.standard.baseColor = 0xffffffff;
+groundMaterial.standard.metallic = 0;
+groundMaterial.standard.roughness = 1;
 groundMaterial.doubleSided = true;
 
 const groundGeometry = createPlaneMeshGeometry(1000, 1000, 1, 1);
@@ -64,7 +89,7 @@ const [modelBuffer, antImage, sandImage] = await Promise.all([
   loadImageResourceFromUrl('awayjs/assets/CoarseRedSand.jpg'),
 ]);
 
-groundMaterial.baseColorMap = createTexture({ image: sandImage });
+groundMaterial.standard.baseColorMap = createTexture({ image: sandImage });
 
 const modelScene = createSceneFrom3ds(new Uint8Array(modelBuffer));
 const antTexture = createTexture({ image: antImage });
@@ -98,6 +123,8 @@ for (const child of getNodeChildren(modelScene)) {
 }
 
 setMatrix4Identity(modelContainer.localMatrix);
+// AwayJS places the loader at z = -200; flipped to +200 for Flight's right-handed z. The 3DS
+// Z-up->Y-up rotation lands the ant at ~-195 in world z after scaling, so +200 centers it.
 translateMatrix4(modelContainer.localMatrix, modelContainer.localMatrix, 0, 0, 200);
 scaleMatrix4(modelContainer.localMatrix, modelContainer.localMatrix, 300, 300, 300);
 invalidateNodeLocalTransform(modelContainer);
@@ -145,6 +172,11 @@ function frame(ts: number): void {
   setDirectionalLightDirection(directional, dir.x, dir.y, dir.z);
 
   orbit.update();
+
+  // Shadow depth pass from the light's view, before the lit scene draw samples it.
+  configureDirectionalShadowCamera(shadowCamera, dir, shadowBounds);
+  drawGlSceneShadowMap(ctx.state, scene, shadowCamera);
+
   ctx.render(scene, camera, lights);
   requestAnimationFrame(frame);
 }

@@ -1,21 +1,22 @@
-import type { GlRenderTarget, SceneNode } from '@flighthq/sdk';
+import type { BlinnPhongMaterial, GlRenderTarget, Mesh } from '@flighthq/sdk';
 import {
   addNodeChild,
+  appendMatrix4,
+  copyMatrix4,
   createGlCanvasElement,
   createGlRenderState,
   createGlRenderTarget,
+  createMatrix4,
   createScene,
-  createSceneFromAwd,
   createSceneLights,
-  createStandardPbrMaterial,
   createVector3,
   DEG_TO_RAD,
-  getNodeChildren,
-  getPbrRoughnessFromPhongShininess,
+  findNode,
   invalidateNodeLocalTransform,
   isMesh,
+  loadSceneFromAwd,
   presentGlScene,
-  registerStandardPbrGlMaterial,
+  registerBlinnPhongGlMaterial,
   resizeGlRenderTarget,
   rotateMatrix4,
   scaleMatrix4,
@@ -24,7 +25,7 @@ import {
 } from '@flighthq/sdk';
 
 import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
-import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
+import { applyAwayGloss, createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -44,7 +45,7 @@ const state = createGlRenderState(canvas, {
   pixelRatio,
 });
 
-registerStandardPbrGlMaterial(state);
+registerBlinnPhongGlMaterial(state);
 const verifyFrame = createGlFrameVerifier(state);
 
 let renderTarget: GlRenderTarget | null = null;
@@ -59,49 +60,37 @@ const { directional, ambient } = createDirectionalLightFromAway({
   diffuse: 2.8,
   ambient: 0.5,
   ambientColor: 0x30353b,
+  tuning: {
+    diffuse: 0.95,
+    ambient: 0.6,
+    ambientColor: 0xa06038,
+  },
 });
 const lights = createSceneLights({ ambient, directional });
 
-const defaultMaterial = createStandardPbrMaterial({
-  baseColor: 0xffffffff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(20),
-});
-
 const buffer = await fetch('awayjs/assets/suzanne.awd').then((r) => r.arrayBuffer());
-const modelScene = createSceneFromAwd(new Uint8Array(buffer));
+const modelScene = await loadSceneFromAwd(new Uint8Array(buffer));
 
-function assignDefaultMaterial(node: SceneNode): void {
-  if (isMesh(node)) {
-    if (node.materials.length === 0) node.materials.push(defaultMaterial);
-    for (let i = 0; i < node.materials.length; i++) {
-      if (!node.materials[i]) node.materials[i] = defaultMaterial;
-    }
-  }
-  for (const child of getNodeChildren(node)) {
-    assignDefaultMaterial(child);
-  }
-}
+const templateMesh = findNode(modelScene, isMesh) as Mesh | null;
+if (!templateMesh?.geometry) throw new Error('No mesh found in suzanne.awd');
+const defaultMaterial = templateMesh.materials[0] as BlinnPhongMaterial;
+applyAwayGloss(defaultMaterial, { gloss: 50, specular: 1.8 });
 
-assignDefaultMaterial(modelScene);
+const orient = createMatrix4();
+copyMatrix4(orient, templateMesh.localMatrix);
 
-const modelChildren: SceneNode[] = [];
-for (const child of getNodeChildren(modelScene)) {
-  setMatrix4Identity(child.localMatrix);
-  translateMatrix4(child.localMatrix, child.localMatrix, 0, -300, 0);
-  scaleMatrix4(child.localMatrix, child.localMatrix, 900, 900, 900);
-  invalidateNodeLocalTransform(child);
-  addNodeChild(scene, child);
-  modelChildren.push(child);
-}
+setMatrix4Identity(templateMesh.localMatrix);
+translateMatrix4(templateMesh.localMatrix, templateMesh.localMatrix, 0, -300, 0);
+scaleMatrix4(templateMesh.localMatrix, templateMesh.localMatrix, 900, 900, 900);
+appendMatrix4(templateMesh.localMatrix, templateMesh.localMatrix, orient);
+invalidateNodeLocalTransform(templateMesh);
+addNodeChild(scene, templateMesh);
 
 const yAxis = createVector3(0, 1, 0);
 
 function frame(): void {
-  for (const child of modelChildren) {
-    rotateMatrix4(child.localMatrix, child.localMatrix, yAxis, -1 * DEG_TO_RAD);
-    invalidateNodeLocalTransform(child);
-  }
+  rotateMatrix4(templateMesh!.localMatrix, templateMesh!.localMatrix, yAxis, -1 * DEG_TO_RAD);
+  invalidateNodeLocalTransform(templateMesh!);
 
   const w = canvas.width;
   const h = canvas.height;
@@ -118,9 +107,9 @@ function frame(): void {
 window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  const pixelRatio = window.devicePixelRatio || 1;
-  canvas.width = w * pixelRatio;
-  canvas.height = h * pixelRatio;
+  const pr = window.devicePixelRatio || 1;
+  canvas.width = w * pr;
+  canvas.height = h * pr;
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   state.gl.viewport(0, 0, canvas.width, canvas.height);

@@ -6,6 +6,7 @@ import {
   createDirectionalLight,
   createEmissiveModifier,
   createGlCanvasElement,
+  createImageResourceFromCanvas,
   createGlRenderState,
   createGlRenderTarget,
   createMesh,
@@ -111,6 +112,18 @@ const earthMaterial: ShadedMaterial = createShadedMaterial({
   shininess: 12,
 });
 
+// Clouds: a lit shell just above the surface (AwayJS cloudMaterial). The source cloud map is an
+// opaque JPG, so an alpha channel is derived from its luminance below (transparent where there is no
+// cloud); a plain 'blend' material over the opaque earth then composites correctly in the renderer's
+// sorted transparent pass. The cloud node spins slightly faster than the earth for independent drift.
+const cloudMaterial: ShadedMaterial = createShadedMaterial({
+  diffuse: 0xffffffff,
+  specular: 0x000000ff,
+  shininess: 5,
+});
+cloudMaterial.alphaMode = 'blend';
+cloudMaterial.doubleSided = false;
+
 // Atmosphere: a slightly larger shell whose only visible contribution is a blue fresnel rim
 // (AwayJS DiffuseGlobeMethod, diffuse 0x1671cc, additive). A black base + additive blend means the
 // facing interior stays invisible and only the grazing limb glows, giving the halo around the disc.
@@ -134,6 +147,9 @@ sunMaterial.blendMode = BlendMode.Add;
 
 const earth = createMesh(createSphereMeshGeometry(200, 200, 100), [earthMaterial]);
 addNodeChild(tiltContainer, earth);
+
+const clouds = createMesh(createSphereMeshGeometry(204, 200, 100), [cloudMaterial]);
+addNodeChild(tiltContainer, clouds);
 
 const atmosphere = createMesh(createSphereMeshGeometry(210, 200, 100), [atmosphereMaterial]);
 setMatrix4Identity(atmosphere.localMatrix);
@@ -160,6 +176,29 @@ await Promise.all([
   applyTexture(earthMaterial, 'normalMap', 'awayjs/assets/globe/EarthNormal.png', 'linear'),
   applyTexture(earthMaterial, 'specularMap', 'awayjs/assets/globe/earth_specular_2048.jpg', 'linear'),
 ]);
+
+// Build the cloud texture with a luminance-derived alpha: the grayscale cloud map is rasterized to a
+// canvas, each pixel's alpha set to its brightness (opaque cloud → white/opaque, clear sky → 0) and
+// the RGB flattened to white, then wrapped back into an image resource.
+const cloudSource = await loadImageResourceFromUrl('awayjs/assets/globe/cloud_combined_2048.jpg');
+const cloudCanvas = document.createElement('canvas');
+cloudCanvas.width = cloudSource.width;
+cloudCanvas.height = cloudSource.height;
+const cloudCtx = cloudCanvas.getContext('2d');
+if (cloudCtx && cloudSource.source) {
+  cloudCtx.drawImage(cloudSource.source, 0, 0);
+  const cloudData = cloudCtx.getImageData(0, 0, cloudCanvas.width, cloudCanvas.height);
+  const px = cloudData.data;
+  for (let i = 0; i < px.length; i += 4) {
+    const luminance = (px[i]! + px[i + 1]! + px[i + 2]!) / 3;
+    px[i] = 255;
+    px[i + 1] = 255;
+    px[i + 2] = 255;
+    px[i + 3] = luminance;
+  }
+  cloudCtx.putImageData(cloudData, 0, 0);
+  cloudMaterial.diffuseMap = createTexture({ image: createImageResourceFromCanvas(cloudCanvas) });
+}
 
 // Space starfield skybox — the AwayJS space_texture.cube manifest's six faces into a cube map.
 // (Face slots: +X, -X, +Y, -Y, +Z, -Z.)
@@ -222,10 +261,14 @@ function frame(ts: number): void {
   lastTime = ts;
 
   const earthSpeed = 0.2 * DEG_TO_RAD * (dt / 16);
+  const cloudSpeed = 0.21 * DEG_TO_RAD * (dt / 16);
   const orbitSpeed = 0.02 * DEG_TO_RAD * (dt / 16);
 
   rotateMatrix4(earth.localMatrix, earth.localMatrix, axisY, earthSpeed);
   invalidateNodeLocalTransform(earth);
+
+  rotateMatrix4(clouds.localMatrix, clouds.localMatrix, axisY, cloudSpeed);
+  invalidateNodeLocalTransform(clouds);
 
   sunAngle += orbitSpeed;
   sunLight.direction.x = Math.sin(sunAngle);

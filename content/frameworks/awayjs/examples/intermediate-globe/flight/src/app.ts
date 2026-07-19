@@ -9,8 +9,12 @@ import {
   createImageResourceFromCanvas,
   createGlRenderState,
   createGlRenderTarget,
+  createBillboard,
   createMesh,
-  createRimModifier,
+  createPlaneMeshGeometry,
+  createUnlitMaterial,
+  orientSceneBillboardsToCamera,
+  registerUnlitGlMaterial,
   createScene,
   createSceneLights,
   createSceneNode,
@@ -36,7 +40,6 @@ import {
   resolveGlRenderTarget,
   rotateMatrix4,
   setCubeTextureFace,
-  scaleMatrix4,
   setMatrix4Identity,
   translateMatrix4,
 } from '@flighthq/sdk';
@@ -66,15 +69,14 @@ const state = createGlRenderState(canvas, {
   pixelRatio,
 });
 
-// The earth surface and the atmosphere halo use the composable shaded lit base
-// (@flighthq/shading), mirroring the original AwayJS MethodMaterial (diffuse + half-vector
-// specular) and letting the atmosphere bake a custom fresnel-rim glow (AwayJS DiffuseGlobeMethod)
-// via a RimModifier and the sun a self-lit disc via an EmissiveModifier.
-// These two registrations MUST run before the first presentGlScene: the shaded program cache keys
-// Rim/plain-Emissive identically whether or not their snippet is registered, so a program compiled
-// before registration would cache modifier-less and never recompile.
+// The earth/clouds use the composable shaded lit base (@flighthq/shading, mirroring the original
+// AwayJS MethodMaterial), the sun is a self-lit disc via an EmissiveModifier, and the atmosphere is
+// an unlit halo billboard. The modifier-snippet registration MUST run before the first draw: the
+// shaded program cache keys a plain Emissive identically whether or not its snippet is registered, so
+// a program compiled before registration would cache modifier-less and never recompile.
 registerShadedGlMaterial(state);
 registerBuiltInGlModifierSnippets(state);
+registerUnlitGlMaterial(state);
 const verifyFrame = createGlFrameVerifier(state);
 
 let renderTarget: GlRenderTarget | null = null;
@@ -124,17 +126,24 @@ const cloudMaterial: ShadedMaterial = createShadedMaterial({
 cloudMaterial.alphaMode = 'blend';
 cloudMaterial.doubleSided = false;
 
-// Atmosphere: a slightly larger shell whose only visible contribution is a blue fresnel rim
-// (AwayJS DiffuseGlobeMethod, diffuse 0x1671cc, additive). A black base + additive blend means the
-// facing interior stays invisible and only the grazing limb glows, giving the halo around the disc.
-const atmosphereMaterial: ShadedMaterial = createShadedMaterial({
-  diffuse: 0x000000ff,
-  specular: 0x000000ff,
-  modifiers: [createRimModifier({ color: packOpaqueColor(0x1671cc), power: 3, intensity: 1.1 })],
-});
+// Atmosphere: a soft blue glow fading outward into space. A shaded rim shell can only add COLOR
+// (not alpha), so it reads as a hard opaque ring; instead this is a camera-facing billboard textured
+// with a radial-gradient alpha halo. The opaque earth masks its bright centre, leaving a soft limb glow.
+const haloCanvas = document.createElement('canvas');
+haloCanvas.width = 256;
+haloCanvas.height = 256;
+const haloCtx = haloCanvas.getContext('2d');
+if (haloCtx) {
+  const haloGradient = haloCtx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  haloGradient.addColorStop(0.0, 'rgba(70,140,220,0.85)');
+  haloGradient.addColorStop(0.5, 'rgba(70,140,220,0.32)');
+  haloGradient.addColorStop(1.0, 'rgba(70,140,220,0.0)');
+  haloCtx.fillStyle = haloGradient;
+  haloCtx.fillRect(0, 0, 256, 256);
+}
+const atmosphereMaterial = createUnlitMaterial({ baseColor: 0xffffffff });
+atmosphereMaterial.baseColorMap = createTexture({ image: createImageResourceFromCanvas(haloCanvas) });
 atmosphereMaterial.alphaMode = 'blend';
-atmosphereMaterial.blendMode = BlendMode.Add;
-atmosphereMaterial.doubleSided = false;
 
 // Sun: a self-lit additive disc far along the light direction (AwayJS 3000-unit camera-plane
 // billboard). A sphere reads the same from every orbit angle, so no per-frame billboarding is needed.
@@ -151,10 +160,7 @@ addNodeChild(tiltContainer, earth);
 const clouds = createMesh(createSphereMeshGeometry(204, 200, 100), [cloudMaterial]);
 addNodeChild(tiltContainer, clouds);
 
-const atmosphere = createMesh(createSphereMeshGeometry(210, 200, 100), [atmosphereMaterial]);
-setMatrix4Identity(atmosphere.localMatrix);
-scaleMatrix4(atmosphere.localMatrix, atmosphere.localMatrix, -1, 1, 1);
-invalidateNodeLocalTransform(atmosphere);
+const atmosphere = createBillboard(createPlaneMeshGeometry(900, 900, 1, 1), [atmosphereMaterial], 'screenAligned');
 addNodeChild(scene, atmosphere);
 
 const SUN_DISTANCE = 10000;
@@ -286,6 +292,7 @@ function frame(ts: number): void {
   invalidateNodeLocalTransform(sun);
 
   orbit.update();
+  orientSceneBillboardsToCamera(scene, camera);
   const w = canvas.width;
   const h = canvas.height;
   if (renderTarget === null) {

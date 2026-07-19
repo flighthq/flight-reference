@@ -25,6 +25,8 @@ import {
   drawGlLinearToSrgbPass,
   drawGlScene,
   endGlRenderPass,
+  flipSurfaceHorizontal,
+  flipSurfaceVertical,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   registerEmissiveGlMaterial,
@@ -33,7 +35,6 @@ import {
   resolveGlRenderTarget,
   resizeGlRenderTarget,
   rotateMatrix4,
-  rotateSurface180,
   setCameraViewMatrix4FromLookAt,
   setCubeTextureFace,
   setMatrix4Identity,
@@ -127,12 +128,15 @@ const lights: SceneLights = createSceneLights({ ambient, directional });
 
 const cubeTexture = createCubeTexture();
 
-// AwayJS is left-handed and the camera is z-negated for Flight's right-handed space, so the environment
-// starts facing the opposite side. Rotating the cube 180° about Y — swapping the +X/-X and +Z/-Z faces —
-// brings the AwayJS start view back into frame. (Face slots: +X,-X,+Y,-Y,+Z,-Z.)
+// AwayJS uses a left-handed coordinate system (+Z into screen); Flight is right-handed (+Z out). The
+// only axis that flips is Z, which affects cubemap sampling: for each world-space direction d, Flight's
+// shader samples the cubemap at d while AwayJS would sample at (dx, dy, -dz). Working through the
+// OpenGL cubemap face-selection and UV formulas with this Z-negate gives a clean rule:
+//   - ±X and ±Z side faces: same-name for X, Z-swapped for Z, all horizontally flipped
+//   - ±Y top/bottom faces: same slot, vertically flipped
 const faceUrls = [
-  'awayjs/assets/skybox/snow_negative_x.jpg',
   'awayjs/assets/skybox/snow_positive_x.jpg',
+  'awayjs/assets/skybox/snow_negative_x.jpg',
   'awayjs/assets/skybox/snow_positive_y.jpg',
   'awayjs/assets/skybox/snow_negative_y.jpg',
   'awayjs/assets/skybox/snow_negative_z.jpg',
@@ -141,19 +145,23 @@ const faceUrls = [
 
 const faceImages = await Promise.all(faceUrls.map((url) => loadImageResourceFromUrl(url)));
 
-// The 180°-about-Y rotation (the side-face swap above) also rotates the +Y/-Y faces about Y — an
-// in-plane 180° turn of those two images. Without it the top/bottom don't line up with the rotated
-// walls and the cube seams show. Rasterize each to a Surface and rotate it 180° in place to close them.
-function rotateImage180(resource: ImageResource): ImageResource {
+function flipImageH(resource: ImageResource): ImageResource {
   const surface = createSurfaceFromImageResource(resource);
   const region = createSurfaceRegion(surface);
-  rotateSurface180(region, region);
+  flipSurfaceHorizontal(region, region);
+  return surface;
+}
+
+function flipImageV(resource: ImageResource): ImageResource {
+  const surface = createSurfaceFromImageResource(resource);
+  const region = createSurfaceRegion(surface);
+  flipSurfaceVertical(region, region);
   return surface;
 }
 
 for (let i = 0; i < 6; i++) {
   const isTopOrBottom = i === 2 || i === 3;
-  setCubeTextureFace(cubeTexture, i, isTopOrBottom ? rotateImage180(faceImages[i]) : faceImages[i]);
+  setCubeTextureFace(cubeTexture, i, isTopOrBottom ? flipImageV(faceImages[i]) : flipImageH(faceImages[i]));
 }
 
 const environment = createEnvironment({ environment: cubeTexture, intensity: 1 });
@@ -205,8 +213,6 @@ function frame(): void {
     resizeGlRenderTarget(state, renderTarget, w, h);
   }
 
-  // The pass clears depth (to renderTarget.clearDepth = 1); renderGlBackground clears color, so
-  // color is preserved on begin. No display-object 2D transform is involved in this 3D pass.
   beginGlRenderPass(state, renderTarget, { preserveColor: true });
   renderGlBackground(state);
   drawGlEnvironmentSkybox(state, environment, camera, aspect);

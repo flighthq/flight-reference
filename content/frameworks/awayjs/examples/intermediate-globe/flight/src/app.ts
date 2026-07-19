@@ -10,10 +10,13 @@ import {
   createGlRenderState,
   createGlRenderTarget,
   createBillboard,
+  createCustomShaderMaterial,
   createMesh,
   createPlaneMeshGeometry,
   createUnlitMaterial,
   orientSceneBillboardsToCamera,
+  registerCustomShaderGlMaterial,
+  registerGlCustomMaterialShader,
   registerUnlitGlMaterial,
   createScene,
   createSceneLights,
@@ -77,6 +80,62 @@ const state = createGlRenderState(canvas, {
 registerShadedGlMaterial(state);
 registerBuiltInGlModifierSnippets(state);
 registerUnlitGlMaterial(state);
+
+// Earth day/night: an opaque custom shader that lights the day texture by the sun and cross-fades to
+// the city-lights texture on the night side (AwayJS composited the night lights as the ambient term).
+// It is one OPAQUE material because custom-shader materials only draw in drawGlScene's opaque pass,
+// not its transparent pass. Specular is the ocean mask; sRGB textures are decoded to linear here so
+// the linear->sRGB present pass encodes once.
+registerCustomShaderGlMaterial(state);
+registerGlCustomMaterialShader(state, 'globeEarth', {
+  vertex: `#version 300 es
+in vec3 a_position;
+in vec3 a_normal;
+in vec2 a_uv0;
+uniform mat4 u_viewProjection;
+uniform mat4 u_model;
+uniform mat3 u_normalMatrix;
+out vec3 v_normal;
+out vec3 v_worldPos;
+out vec2 v_uv;
+void main() {
+  vec4 worldPos = u_model * vec4(a_position, 1.0);
+  v_worldPos = worldPos.xyz;
+  v_normal = normalize(u_normalMatrix * a_normal);
+  v_uv = a_uv0;
+  gl_Position = u_viewProjection * worldPos;
+}`,
+  fragment: `#version 300 es
+precision highp float;
+in vec3 v_normal;
+in vec3 v_worldPos;
+in vec2 v_uv;
+uniform sampler2D u_dayTex;
+uniform sampler2D u_nightTex;
+uniform sampler2D u_specTex;
+uniform vec3 u_sunDir;
+uniform vec3 u_cameraPosition;
+out vec4 o_color;
+vec3 toLinear(vec3 c) { return pow(c, vec3(2.2)); }
+void main() {
+  vec3 N = normalize(v_normal);
+  vec3 L = -normalize(u_sunDir);
+  float ndl = dot(N, L);
+  float dayAmount = smoothstep(-0.05, 0.2, ndl);
+  vec3 day = toLinear(texture(u_dayTex, v_uv).rgb);
+  vec3 night = toLinear(texture(u_nightTex, v_uv).rgb);
+  vec3 ambient = vec3(0.04, 0.05, 0.08);
+  vec3 dayColor = day * (max(ndl, 0.0) * 1.25 + ambient);
+  vec3 V = normalize(u_cameraPosition - v_worldPos);
+  vec3 H = normalize(L + V);
+  float spec = pow(max(dot(N, H), 0.0), 40.0) * texture(u_specTex, v_uv).r * step(0.0, ndl);
+  dayColor += vec3(0.3, 0.36, 0.5) * spec;
+  vec3 cities = max(night - vec3(0.03, 0.05, 0.12), 0.0) * 6.0;
+  vec3 nightColor = night * 0.5 + cities;
+  o_color = vec4(mix(nightColor, dayColor, dayAmount), 1.0);
+}`,
+});
+
 const verifyFrame = createGlFrameVerifier(state);
 
 let renderTarget: GlRenderTarget | null = null;
@@ -85,15 +144,15 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60, far: 100000 });
 
-let sunAngle = 0.9;
+let sunAngle = 1.35;
 
 const sunLight = createDirectionalLight({
   direction: { x: Math.sin(sunAngle), y: 0, z: Math.cos(sunAngle) },
   color: 0xffffffff,
-  intensity: awayIntensity(2),
+  intensity: awayIntensity(2.6),
 });
 
-const ambient = createAmbientLight({ color: packOpaqueColor(0x555f78), intensity: awayIntensity(1.5) });
+const ambient = createAmbientLight({ color: packOpaqueColor(0x0c1424), intensity: awayIntensity(0.5) });
 
 const lights = createSceneLights({
   ambient,
@@ -107,12 +166,10 @@ rotateMatrix4(tiltContainer.localMatrix, tiltContainer.localMatrix, axisX, -23 *
 invalidateNodeLocalTransform(tiltContainer);
 addNodeChild(scene, tiltContainer);
 
-// Earth: lit shaded surface with a tight specular highlight (AwayJS SpecularFresnelMethod, gloss 5).
-const earthMaterial: ShadedMaterial = createShadedMaterial({
-  diffuse: 0xffffffff,
-  specular: packOpaqueColor(0x556070),
-  shininess: 12,
-});
+// Earth: the day/night custom shader (day texture + specular on the lit side, city lights on the
+// dark side). u_sunDir is refreshed each frame so the terminator tracks the orbiting sun.
+const earthSunDir: number[] = [Math.sin(sunAngle), 0, Math.cos(sunAngle)];
+const earthMaterial = createCustomShaderMaterial({ shaderKey: 'globeEarth', uniforms: { u_sunDir: earthSunDir } });
 
 // Clouds: a lit shell just above the surface (AwayJS cloudMaterial). The source cloud map is an
 // opaque JPG, so an alpha channel is derived from its luminance below (transparent where there is no
@@ -167,20 +224,9 @@ const SUN_DISTANCE = 10000;
 const sun = createMesh(createSphereMeshGeometry(700, 32, 16), [sunMaterial]);
 addNodeChild(scene, sun);
 
-async function applyTexture(
-  material: ShadedMaterial,
-  slot: 'diffuseMap' | 'normalMap' | 'specularMap',
-  url: string,
-  colorSpace: 'srgb' | 'linear',
-): Promise<void> {
-  const image = await loadImageResourceFromUrl(url);
-  material[slot] = createTexture({ image, colorSpace });
-}
-
-await Promise.all([
-  applyTexture(earthMaterial, 'diffuseMap', 'awayjs/assets/globe/land_ocean_ice_2048_match.jpg', 'srgb'),
-  applyTexture(earthMaterial, 'normalMap', 'awayjs/assets/globe/EarthNormal.png', 'linear'),
-  applyTexture(earthMaterial, 'specularMap', 'awayjs/assets/globe/earth_specular_2048.jpg', 'linear'),
+const [dayImage, specImage] = await Promise.all([
+  loadImageResourceFromUrl('awayjs/assets/globe/land_ocean_ice_2048_match.jpg'),
+  loadImageResourceFromUrl('awayjs/assets/globe/earth_specular_2048.jpg'),
 ]);
 
 // Build the cloud texture with a luminance-derived alpha: the grayscale cloud map is rasterized to a
@@ -205,6 +251,24 @@ if (cloudCtx && cloudSource.source) {
   cloudCtx.putImageData(cloudData, 0, 0);
   cloudMaterial.diffuseMap = createTexture({ image: createImageResourceFromCanvas(cloudCanvas) });
 }
+
+// Night-lights texture: the source is a 16384-wide JPG, so downscale it into a 2048x1024 canvas to
+// keep GPU memory sane, then bind day/night/specular to the earth shader's samplers.
+const nightSource = await loadImageResourceFromUrl('awayjs/assets/globe/land_lights_16384.jpg');
+const nightCanvas = document.createElement('canvas');
+nightCanvas.width = 2048;
+nightCanvas.height = 1024;
+const nightCtx = nightCanvas.getContext('2d');
+let nightImage = nightSource;
+if (nightCtx && nightSource.source) {
+  nightCtx.drawImage(nightSource.source, 0, 0, 2048, 1024);
+  nightImage = createImageResourceFromCanvas(nightCanvas);
+}
+earthMaterial.textures = {
+  u_dayTex: createTexture({ image: dayImage }),
+  u_nightTex: createTexture({ image: nightImage }),
+  u_specTex: createTexture({ image: specImage }),
+};
 
 // Space starfield skybox — the AwayJS space_texture.cube manifest's six faces into a cube map.
 // (Face slots: +X, -X, +Y, -Y, +Z, -Z.)
@@ -279,6 +343,8 @@ function frame(ts: number): void {
   sunAngle += orbitSpeed;
   sunLight.direction.x = Math.sin(sunAngle);
   sunLight.direction.z = Math.cos(sunAngle);
+  earthSunDir[0] = Math.sin(sunAngle);
+  earthSunDir[2] = Math.cos(sunAngle);
 
   // Keep the sun disc opposite the light direction (light travels from the sun toward the globe).
   setMatrix4Identity(sun.localMatrix);

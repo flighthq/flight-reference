@@ -50,6 +50,15 @@ const NUM_FIRES = 10;
 const FIRE_RADIUS = 400;
 const FIRE_START_INTERVAL = 1000;
 
+// AwayJS attenuates its fire point lights with a linear radius→fallOff falloff: full strength within
+// the light's inner `radius` (200), easing to 0 at `fallOff` (380). Because the lights hover only
+// ~25 units over the floor, that whole floor sits inside the plateau and floods red. Flight's PBR
+// renderer instead uses physical inverse-square (1/d²), which crushes the same light to <1% at floor
+// distance — no glow survives. Flight's PointLight has no plateau to port, so we scale intensity by
+// ~d_ref² for a representative floor distance, restoring a red pool of a perceptually similar spread.
+const FIRE_LIGHT_FLOOR_DISTANCE = 400;
+const FIRE_LIGHT_BOOST = FIRE_LIGHT_FLOOR_DISTANCE * FIRE_LIGHT_FLOOR_DISTANCE;
+
 const width = window.innerWidth;
 const height = window.innerHeight;
 const pixelRatio = window.devicePixelRatio || 1;
@@ -244,7 +253,7 @@ function frame(ts: number): void {
 
     if (fire.strength < 1) fire.strength += 0.1;
     const light = firePointLights[fire.lightIndex];
-    light.intensity = awayIntensity(fire.strength + Math.random() * 0.2);
+    light.intensity = awayIntensity(fire.strength + Math.random() * 0.2) * FIRE_LIGHT_BOOST;
     light.range = 380 + Math.random() * 20;
   }
 

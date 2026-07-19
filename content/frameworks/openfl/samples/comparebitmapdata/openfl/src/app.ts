@@ -9,7 +9,7 @@ const manifest = new AssetManifest();
 for (const size of [32, 64]) {
   for (const name of [
     '0.png',
-    'openfl/checkers.png',
+    'checkers.png',
     'checkers_alpha.png',
     'disposed.png',
     'error.png',

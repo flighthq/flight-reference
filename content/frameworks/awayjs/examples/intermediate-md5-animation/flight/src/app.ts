@@ -208,7 +208,7 @@ addNodeChild(scene, groundMesh);
 // the normal-mapped ground completely unobscured near the character.
 const FOG_START = 2500;
 const FOG_END = 5000;
-const FOG_RINGS = 32;
+const FOG_RINGS = 64;
 const FOG_SEGMENTS = 96;
 for (let ring = 0; ring < FOG_RINGS; ring++) {
   const innerRadius = FOG_START + ((FOG_END - FOG_START) * ring) / FOG_RINGS;
@@ -226,7 +226,8 @@ for (let ring = 0; ring < FOG_RINGS; ring++) {
     }
   }
   const fogAlpha = Math.round(((ring + 1) / FOG_RINGS) * 255);
-  const fogMaterial = createUnlitMaterial({ color: fogAlpha });
+  // Packed colors are RRGGBBAA, so a value in the low byte is black with the requested alpha.
+  const fogMaterial = createUnlitMaterial({ baseColor: fogAlpha });
   fogMaterial.alphaMode = 'blend';
   fogMaterial.doubleSided = true;
   const fogRing = createMesh(createMeshGeometryFromAttributes({ positions, indices }), [fogMaterial]);

@@ -26,25 +26,22 @@ type FixedEntry = { kind: 'fixed'; mode: BlendModeType; name: string };
 type AdvancedEntry = { kind: 'advanced'; mode: AdvancedBlendModeType; cssOp: GlobalCompositeOperation; name: string };
 type BlendEntry = AdvancedEntry | FixedEntry;
 
-const FIXED_MODES: FixedEntry[] = [
+const BLEND_ENTRIES: BlendEntry[] = [
   { kind: 'fixed', mode: BlendMode.Normal, name: 'normal' },
   { kind: 'fixed', mode: BlendMode.Layer, name: 'layer' },
   { kind: 'fixed', mode: BlendMode.Multiply, name: 'multiply' },
   { kind: 'fixed', mode: BlendMode.Screen, name: 'screen' },
   { kind: 'fixed', mode: BlendMode.Lighten, name: 'lighten' },
   { kind: 'fixed', mode: BlendMode.Darken, name: 'darken' },
+  { kind: 'advanced', mode: AdvancedBlendMode.Difference, cssOp: 'difference', name: 'difference' },
   { kind: 'fixed', mode: BlendMode.Add, name: 'add' },
   { kind: 'fixed', mode: BlendMode.Subtract, name: 'subtract' },
   { kind: 'fixed', mode: BlendMode.Invert, name: 'invert' },
   { kind: 'fixed', mode: BlendMode.Alpha, name: 'alpha' },
   { kind: 'fixed', mode: BlendMode.Erase, name: 'erase' },
-];
-
-const ADVANCED_MODES: AdvancedEntry[] = [
   { kind: 'advanced', mode: AdvancedBlendMode.Overlay, cssOp: 'overlay', name: 'overlay' },
   { kind: 'advanced', mode: AdvancedBlendMode.HardLight, cssOp: 'hard-light', name: 'hardlight' },
   { kind: 'advanced', mode: AdvancedBlendMode.SoftLight, cssOp: 'soft-light', name: 'softlight' },
-  { kind: 'advanced', mode: AdvancedBlendMode.Difference, cssOp: 'difference', name: 'difference' },
   { kind: 'advanced', mode: AdvancedBlendMode.Exclusion, cssOp: 'exclusion', name: 'exclusion' },
   { kind: 'advanced', mode: AdvancedBlendMode.ColorDodge, cssOp: 'color-dodge', name: 'color-dodge' },
   { kind: 'advanced', mode: AdvancedBlendMode.ColorBurn, cssOp: 'color-burn', name: 'color-burn' },
@@ -53,8 +50,6 @@ const ADVANCED_MODES: AdvancedEntry[] = [
   { kind: 'advanced', mode: AdvancedBlendMode.Color, cssOp: 'color', name: 'color' },
   { kind: 'advanced', mode: AdvancedBlendMode.Luminosity, cssOp: 'luminosity', name: 'luminosity' },
 ];
-
-const BLEND_ENTRIES: BlendEntry[] = [...FIXED_MODES, ...ADVANCED_MODES];
 
 const { height, render, width } = await createFunctionalTarget({
   width: 800,
@@ -85,38 +80,42 @@ function compositeAdvanced(
   circle: Readonly<ImageResource>,
   cssOp: GlobalCompositeOperation,
 ): ImageResource {
-  const dx = square.width / 2 - 10;
-  const dy = square.height / 2 - 10;
-  const cw = Math.max(square.width, dx + circle.width);
-  const ch = Math.max(square.height, dy + circle.height);
+  const cdx = square.width / 2 - 10;
+  const cdy = square.height / 2 - 10;
+  const cw = Math.max(square.width, cdx + circle.width);
+  const ch = Math.max(square.height, cdy + circle.height);
   const canvas = document.createElement('canvas');
   canvas.width = cw;
   canvas.height = ch;
   const ctx = canvas.getContext('2d')!;
   ctx.drawImage(square.source as CanvasImageSource, 0, 0);
   ctx.globalCompositeOperation = cssOp;
-  ctx.drawImage(circle.source as CanvasImageSource, dx, dy);
+  ctx.drawImage(circle.source as CanvasImageSource, cdx, cdy);
   return createImageResourceFromCanvas(canvas);
 }
 
-let rows = 1;
-while (rows * Math.floor((rows * 16) / 9) < BLEND_ENTRIES.length) rows++;
-const cols = Math.floor((rows * 16) / 9);
-
-const cellW = W / cols;
+const COLS = 5;
+const rows = Math.ceil(BLEND_ENTRIES.length / COLS);
+const cellW = W / COLS;
 const cellH = H / rows;
 const LABEL_SPACE = 24;
-const PADDING = 8;
+const PADDING = 6;
 const dx = squareImg.width / 2 - 10;
 const dy = squareImg.height / 2 - 10;
 const naturalW = Math.max(squareImg.width, dx + circleImg.width);
 const naturalH = Math.max(squareImg.height, dy + circleImg.height);
 const imgScale = Math.min((cellW - PADDING * 2) / naturalW, (cellH - LABEL_SPACE - PADDING * 2) / naturalH);
 
+const blendLayer = createDisplayContainer();
+addNodeChild(root, blendLayer);
+
+const labelLayer = createDisplayContainer();
+addNodeChild(root, labelLayer);
+
 for (let i = 0; i < BLEND_ENTRIES.length; i++) {
   const entry = BLEND_ENTRIES[i];
-  const col = i % cols;
-  const row = Math.floor(i / cols);
+  const col = i % COLS;
+  const row = Math.floor(i / COLS);
   const cx = cellW * col + cellW / 2;
   const cy = cellH * row + (cellH - LABEL_SPACE) / 2;
 
@@ -146,22 +145,23 @@ for (let i = 0; i < BLEND_ENTRIES.length; i++) {
     addNodeChild(group, composited);
   }
 
-  addNodeChild(root, group);
+  addNodeChild(blendLayer, group);
 
+  const squareRightX = group.x + squareImg.width * imgScale;
   const lbl = createRichText();
   lbl.data.defaultTextFormat = {
     font: 'sans-serif',
     size: 11,
     bold: true,
     color: 0x222222,
-    align: 'center',
+    align: 'right',
   };
-  lbl.x = cx - cellW / 2 + PADDING;
+  lbl.x = squareRightX - squareImg.width * imgScale;
   lbl.y = cy + (naturalH * imgScale) / 2 + 2;
-  lbl.data.width = cellW - PADDING * 2;
+  lbl.data.width = squareImg.width * imgScale;
   lbl.data.height = LABEL_SPACE;
   lbl.data.text = entry.name;
-  addNodeChild(root, lbl);
+  addNodeChild(labelLayer, lbl);
 }
 
 render(root);

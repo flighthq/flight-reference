@@ -6,7 +6,7 @@
 //   - Canvas: baked once into an offscreen render cache via CSS drop-shadow(0,0,σ,color)
 //   - Gl:  offscreen render target + applyOuterGlowEffectToGl /
 //             applyInnerGlowEffectToGl shader passes
-// CSS only covers non-knockout outer glow; inner glow and knockout are Gl-only.
+// CSS only covers sourceMode:'draw' outer glow; inner glow and knockout/hide modes are Gl-only.
 import type { InnerGlowEffect, OuterGlowEffect } from '@flighthq/effects';
 import { computeGaussianSigmaFromRadius, createInnerGlowEffect, createOuterGlowEffect } from '@flighthq/effects';
 import { computeOuterGlowEffectCss } from '@flighthq/effects-canvas';
@@ -116,7 +116,7 @@ filtered[2].filter = createOuterGlowEffect({
   blurY: computeGaussianSigmaFromRadius(6),
   strength: 2,
   quality: 3,
-  knockout: true,
+  sourceMode: 'knockout',
 });
 filtered[3].filter = createInnerGlowEffect({
   color: 0xff0000,
@@ -124,7 +124,7 @@ filtered[3].filter = createInnerGlowEffect({
   blurY: computeGaussianSigmaFromRadius(6),
   strength: 2,
   quality: 3,
-  knockout: true,
+  sourceMode: 'hide',
 });
 
 const _bounds = createRectangle();
@@ -177,7 +177,7 @@ function updateFilters(): void {
     blurY: blur,
     strength: 2,
     quality: 3,
-    knockout: true,
+    sourceMode: 'knockout',
   });
   filtered[3].filter = createInnerGlowEffect({
     color: 0xff0000,
@@ -185,7 +185,7 @@ function updateFilters(): void {
     blurY: blur,
     strength: 2,
     quality: 3,
-    knockout: true,
+    sourceMode: 'hide',
   });
 }
 

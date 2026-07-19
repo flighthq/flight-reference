@@ -114,7 +114,7 @@ const factories: FilterFactory[] = [
       blurX: blur,
       blurY: blur,
       quality: 3,
-      knockout: true,
+      sourceMode: 'knockout',
     }),
   (blur, angle) =>
     createInnerShadowEffect({
@@ -125,7 +125,7 @@ const factories: FilterFactory[] = [
       blurX: blur,
       blurY: blur,
       quality: 3,
-      knockout: true,
+      sourceMode: 'hide',
     }),
   (blur, angle) =>
     createDropShadowEffect({
@@ -136,7 +136,7 @@ const factories: FilterFactory[] = [
       blurX: blur,
       blurY: blur,
       quality: 3,
-      hideObject: true,
+      sourceMode: 'hide',
     }),
   (blur, angle) =>
     createInnerShadowEffect({
@@ -147,7 +147,7 @@ const factories: FilterFactory[] = [
       blurX: blur,
       blurY: blur,
       quality: 3,
-      hideObject: true,
+      sourceMode: 'hide',
     }),
 ];
 

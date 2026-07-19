@@ -24,6 +24,7 @@ import {
   createGlRenderState,
   createGlRenderTarget,
   createMesh,
+  createMeshGeometryFromAttributes,
   createPlaneMeshGeometry,
   createOrthographicProjection,
   createScene,
@@ -32,6 +33,7 @@ import {
   createStandardPbrMaterial,
   createTexture,
   createTilingSampler,
+  createUnlitMaterial,
   createVector3,
   DEG_TO_RAD,
   drawGlEnvironmentSkybox,
@@ -47,6 +49,7 @@ import {
   loadImageResourceFromUrl,
   parseMd5Anim,
   registerStandardPbrGlMaterial,
+  registerUnlitGlMaterial,
   renderGlBackground,
   resolveGlRenderTarget,
   resizeGlRenderTarget,
@@ -104,6 +107,7 @@ const glState = createGlRenderState(canvas, {
   pixelRatio,
 });
 registerStandardPbrGlMaterial(glState);
+registerUnlitGlMaterial(glState);
 
 const verifyFrame = createGlFrameVerifier(glState);
 
@@ -198,6 +202,37 @@ setMatrix4Identity(groundMesh.localMatrix);
 invalidateNodeLocalTransform(groundMesh);
 addNodeChild(scene, groundMesh);
 
+// AwayJS's EffectFogMethod fades the ground to black from half the camera far distance to the far
+// plane. Flight has no scene-fog pass yet, so approximate that ground-specific fade with narrow,
+// alpha-blended black rings. Enough rings make the transition read as a smooth ramp, while leaving
+// the normal-mapped ground completely unobscured near the character.
+const FOG_START = 2500;
+const FOG_END = 5000;
+const FOG_RINGS = 32;
+const FOG_SEGMENTS = 96;
+for (let ring = 0; ring < FOG_RINGS; ring++) {
+  const innerRadius = FOG_START + ((FOG_END - FOG_START) * ring) / FOG_RINGS;
+  const outerRadius = FOG_START + ((FOG_END - FOG_START) * (ring + 1)) / FOG_RINGS;
+  const positions: number[] = [];
+  const indices: number[] = [];
+  for (let segment = 0; segment <= FOG_SEGMENTS; segment++) {
+    const angle = (segment / FOG_SEGMENTS) * Math.PI * 2;
+    const sin = Math.sin(angle);
+    const cos = Math.cos(angle);
+    positions.push(sin * innerRadius, 0.05, cos * innerRadius, sin * outerRadius, 0.05, cos * outerRadius);
+    if (segment < FOG_SEGMENTS) {
+      const base = segment * 2;
+      indices.push(base, base + 1, base + 3, base, base + 3, base + 2);
+    }
+  }
+  const fogAlpha = Math.round(((ring + 1) / FOG_RINGS) * 255);
+  const fogMaterial = createUnlitMaterial({ color: fogAlpha });
+  fogMaterial.alphaMode = 'blend';
+  fogMaterial.doubleSided = true;
+  const fogRing = createMesh(createMeshGeometryFromAttributes({ positions, indices }), [fogMaterial]);
+  addNodeChild(scene, fogRing);
+}
+
 const meshText = await fetch('awayjs/assets/hellknight/hellknight.md5mesh').then((r) => r.text());
 const md5Scene = createSceneFromMd5Mesh(meshText);
 
@@ -217,6 +252,7 @@ if (skeletonNode) {
 // Add all mesh children from the parsed scene to our render scene and assign materials.
 // The MD5 parser sets mesh.skin on each mesh — updateMeshSkin drives skinning per frame.
 const md5Children = getNodeChildren(md5Scene);
+const characterPositionNode = createScene();
 const characterNode = createScene();
 const skinnedMeshes: Mesh[] = [];
 for (const child of md5Children) {
@@ -229,7 +265,8 @@ for (const child of md5Children) {
 }
 setMatrix4Identity(characterNode.localMatrix);
 invalidateNodeLocalTransform(characterNode);
-addNodeChild(scene, characterNode);
+addNodeChild(characterPositionNode, characterNode);
+addNodeChild(scene, characterPositionNode);
 
 const animTexts = await Promise.all(
   ANIM_NAMES.map((name) => fetch(`awayjs/assets/hellknight/${name}.md5anim`).then((r) => r.text())),
@@ -412,8 +449,12 @@ function frame(ts: number): void {
     characterZ += Math.cos(spriteRotY) * distance;
   }
 
+  // Keep root-motion translation and visual yaw on separate nodes. This makes the yaw pivot the
+  // character's local origin and prevents turning from rotating its accumulated world displacement.
+  setMatrix4Identity(characterPositionNode.localMatrix);
+  translateMatrix4(characterPositionNode.localMatrix, characterPositionNode.localMatrix, characterX, 0, characterZ);
+  invalidateNodeLocalTransform(characterPositionNode);
   setMatrix4Identity(characterNode.localMatrix);
-  translateMatrix4(characterNode.localMatrix, characterNode.localMatrix, characterX, 0, characterZ);
   const yAxis = createVector3(0, 1, 0);
   rotateMatrix4(characterNode.localMatrix, characterNode.localMatrix, yAxis, spriteRotY + CHARACTER_YAW_OFFSET);
   invalidateNodeLocalTransform(characterNode);

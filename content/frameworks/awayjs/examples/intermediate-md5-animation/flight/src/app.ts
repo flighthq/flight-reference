@@ -11,13 +11,17 @@ import {
   addNodeChild,
   advanceAnimationPlayer,
   applyAnimationClipToScene,
+  configureDirectionalShadowCamera,
   createAnimationPlayer,
+  createAabb,
+  createCamera,
   computeMeshGeometryNormals,
   createGlCanvasElement,
   createGlRenderState,
   createGlRenderTarget,
   createMesh,
   createPlaneMeshGeometry,
+  createOrthographicProjection,
   createScene,
   createSceneFromMd5Mesh,
   createSceneLights,
@@ -25,6 +29,7 @@ import {
   createTexture,
   createVector3,
   DEG_TO_RAD,
+  drawGlSceneShadowMap,
   getPbrRoughnessFromPhongShininess,
   getNodeChildByName,
   getNodeChildren,
@@ -63,6 +68,9 @@ const WALK_NAME = 'walk7';
 const ROTATION_SPEED = 3;
 const WALK_SPEED = 1;
 const RUN_SPEED = 2;
+// The MD5 asset's forward axis is perpendicular to Flight's camera-facing axis. Keep movement and
+// chase-camera maths unchanged, and rotate only the rendered model so its front is visible.
+const CHARACTER_YAW_OFFSET = 90 * DEG_TO_RAD;
 
 const width = window.innerWidth;
 const height = window.innerHeight;
@@ -116,6 +124,16 @@ const lights: SceneLights = createSceneLights({
   point: [redLight, blueLight],
 });
 
+whiteLight.castsShadow = true;
+const shadowCamera = createCamera({
+  near: 1,
+  far: 10,
+  projection: createOrthographicProjection({ halfWidth: 1, halfHeight: 1 }),
+});
+// Keep the shadow map concentrated around the playable area instead of spending its resolution on
+// the full 50,000-unit decorative ground plane.
+const shadowBounds = createAabb(-500, -20, -500, 500, 500, 500);
+
 const bodyMaterial: StandardPbrMaterial = createStandardPbrMaterial({
   baseColor: 0xffffffff,
   metallic: 0,
@@ -128,23 +146,21 @@ const groundMaterial: StandardPbrMaterial = createStandardPbrMaterial({
 });
 groundMaterial.doubleSided = false;
 
-const [rockDiffuse, rockNormal, rockSpecular, bodyDiffuse, bodyNormal, bodySpecular] = await Promise.all([
+const [rockDiffuse, rockNormal, bodyDiffuse, bodyNormal, bodySpecular] = await Promise.all([
   loadImageResourceFromUrl('awayjs/assets/rockbase_diffuse.jpg'),
   loadImageResourceFromUrl('awayjs/assets/rockbase_normals.png'),
-  loadImageResourceFromUrl('awayjs/assets/rockbase_specular.png'),
   loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_diffuse.jpg'),
   loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_normals.png'),
   loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_specular.png'),
 ]);
 
-groundMaterial.baseColorMap = createTexture({ image: rockDiffuse, uvScaleX: 200, uvScaleY: 200 });
-groundMaterial.normalMap = createTexture({ image: rockNormal, uvScaleX: 200, uvScaleY: 200, colorSpace: 'linear' });
-groundMaterial.metallicRoughnessMap = createTexture({
-  image: rockSpecular,
-  uvScaleX: 200,
-  uvScaleY: 200,
-  colorSpace: 'linear',
-});
+const groundDiffuseTexture = createTexture({ image: rockDiffuse });
+const groundNormalTexture = createTexture({ image: rockNormal, colorSpace: 'linear' });
+groundDiffuseTexture.uvScale = { x: 200, y: 200 };
+groundNormalTexture.uvScale = { x: 200, y: 200 };
+groundMaterial.baseColorMap = groundDiffuseTexture;
+groundMaterial.normalMap = groundNormalTexture;
+groundMaterial.normalScale = 0.75;
 
 bodyMaterial.baseColorMap = createTexture({ image: bodyDiffuse });
 bodyMaterial.normalMap = createTexture({ image: bodyNormal, colorSpace: 'linear' });
@@ -341,7 +357,7 @@ function frame(ts: number): void {
   spriteRotY += rotationInc;
   setMatrix4Identity(characterNode.localMatrix);
   const yAxis = createVector3(0, 1, 0);
-  rotateMatrix4(characterNode.localMatrix, characterNode.localMatrix, yAxis, spriteRotY);
+  rotateMatrix4(characterNode.localMatrix, characterNode.localMatrix, yAxis, spriteRotY + CHARACTER_YAW_OFFSET);
   invalidateNodeLocalTransform(characterNode);
 
   if (isMoving) {
@@ -363,6 +379,9 @@ function frame(ts: number): void {
   );
 
   updateCamera(spriteRotY);
+
+  configureDirectionalShadowCamera(shadowCamera, whiteLight.direction, shadowBounds);
+  drawGlSceneShadowMap(glState, scene, shadowCamera);
 
   const w = canvas.width;
   const h = canvas.height;

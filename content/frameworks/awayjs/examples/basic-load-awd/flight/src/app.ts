@@ -79,17 +79,18 @@ applyAwayGloss(defaultMaterial, { gloss: 50, specular: 1.8 });
 const orient = createMatrix4();
 copyMatrix4(orient, templateMesh.localMatrix);
 
-setMatrix4Identity(templateMesh.localMatrix);
-translateMatrix4(templateMesh.localMatrix, templateMesh.localMatrix, 0, -300, 0);
-scaleMatrix4(templateMesh.localMatrix, templateMesh.localMatrix, 900, 900, 900);
-appendMatrix4(templateMesh.localMatrix, templateMesh.localMatrix, orient);
-invalidateNodeLocalTransform(templateMesh);
 addNodeChild(scene, templateMesh);
 
 const yAxis = createVector3(0, 1, 0);
+let rotationAngle = 0;
 
 function frame(): void {
-  rotateMatrix4(templateMesh!.localMatrix, templateMesh!.localMatrix, yAxis, -1 * DEG_TO_RAD);
+  rotationAngle += -1 * DEG_TO_RAD;
+  setMatrix4Identity(templateMesh!.localMatrix);
+  translateMatrix4(templateMesh!.localMatrix, templateMesh!.localMatrix, 0, -300, 0);
+  rotateMatrix4(templateMesh!.localMatrix, templateMesh!.localMatrix, yAxis, rotationAngle);
+  scaleMatrix4(templateMesh!.localMatrix, templateMesh!.localMatrix, 900, 900, 900);
+  appendMatrix4(templateMesh!.localMatrix, templateMesh!.localMatrix, orient);
   invalidateNodeLocalTransform(templateMesh!);
 
   const w = canvas.width;

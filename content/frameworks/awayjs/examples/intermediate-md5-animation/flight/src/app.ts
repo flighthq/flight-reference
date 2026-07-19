@@ -27,6 +27,7 @@ import {
   createSceneLights,
   createStandardPbrMaterial,
   createTexture,
+  createTilingSampler,
   createVector3,
   DEG_TO_RAD,
   drawGlSceneShadowMap,
@@ -43,6 +44,7 @@ import {
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
+  setTextureUvScale,
   updateMeshSkin,
 } from '@flighthq/sdk';
 
@@ -98,20 +100,23 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60, far: 5000 });
 
-const placeHolder = createVector3(0, 50, 0);
+const cameraTarget = createVector3(0, 50, 0);
 const up = createVector3(0, 1, 0);
 const eye = createVector3(0, 160, -200);
 
-function updateCamera(spriteRotY: number): void {
-  setAwayPosition(eye, -200 * Math.sin(spriteRotY), 110, 200 * Math.cos(spriteRotY));
-  eye.x += placeHolder.x;
-  eye.y += placeHolder.y;
-  eye.z += placeHolder.z;
-  setCameraViewMatrix4FromLookAt(camera, eye, placeHolder, up);
+function updateCamera(): void {
+  // AwayJS uses a fixed camera at (0, 160, -200), looking at a y=50 placeholder parented to the
+  // character. The MD5 walk cycle moves in place; turning the character does not orbit the camera.
+  setCameraViewMatrix4FromLookAt(camera, eye, cameraTarget, up);
 }
 
 const redLight = createPointLightFromAway({ color: 0xff1111, range: 3000 });
 const blueLight = createPointLightFromAway({ color: 0x1111ff, range: 3000 });
+// AwayJS point lights remain at full strength over most of their falloff, while Flight uses physical
+// inverse-square attenuation. Compensate for the roughly 1,500-unit orbit so the colored lighting is
+// as prominent as it is upstream instead of disappearing after division by distance squared.
+redLight.intensity *= 1_500_000;
+blueLight.intensity *= 1_500_000;
 const { directional: whiteLight, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(-50, -20, 10),
   color: 0xffffee,
@@ -156,8 +161,11 @@ const [rockDiffuse, rockNormal, bodyDiffuse, bodyNormal, bodySpecular] = await P
 
 const groundDiffuseTexture = createTexture({ image: rockDiffuse });
 const groundNormalTexture = createTexture({ image: rockNormal, colorSpace: 'linear' });
-groundDiffuseTexture.uvScale = { x: 200, y: 200 };
-groundNormalTexture.uvScale = { x: 200, y: 200 };
+const groundSampler = createTilingSampler();
+groundDiffuseTexture.sampler = groundSampler;
+groundNormalTexture.sampler = groundSampler;
+setTextureUvScale(groundDiffuseTexture, 200, 200);
+setTextureUvScale(groundNormalTexture, 200, 200);
 groundMaterial.baseColorMap = groundDiffuseTexture;
 groundMaterial.normalMap = groundNormalTexture;
 groundMaterial.normalScale = 0.75;
@@ -243,12 +251,15 @@ function play(name: string): void {
 function updateMovement(dir: number): void {
   movementDir = dir;
   isMoving = true;
+  activePlayer.speed = dir * (isRunning ? RUN_SPEED : WALK_SPEED);
   if (currentAnim !== WALK_NAME && !onceAnim) play(WALK_NAME);
+  activePlayer.speed = dir * (isRunning ? RUN_SPEED : WALK_SPEED);
 }
 
 function stop(): void {
   isMoving = false;
   if (currentAnim !== IDLE_NAME && !onceAnim) play(IDLE_NAME);
+  activePlayer.speed = 1;
 }
 
 function playAction(index: number): void {
@@ -277,11 +288,11 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
     case 'ArrowLeft':
     case 'KeyA':
     case 'KeyQ':
-      rotationInc = ROTATION_SPEED * DEG_TO_RAD;
+      rotationInc = -ROTATION_SPEED * DEG_TO_RAD;
       break;
     case 'ArrowRight':
     case 'KeyD':
-      rotationInc = -ROTATION_SPEED * DEG_TO_RAD;
+      rotationInc = ROTATION_SPEED * DEG_TO_RAD;
       break;
     case 'Digit1':
       playAction(1);
@@ -349,6 +360,7 @@ function frame(ts: number): void {
   if (onceAnim && !activePlayer.playing) {
     onceAnim = null;
     play(isMoving ? WALK_NAME : IDLE_NAME);
+    activePlayer.speed = isMoving ? movementDir * (isRunning ? RUN_SPEED : WALK_SPEED) : 1;
   }
 
   applyAnimationClipToScene(activePlayer.clip, activePlayer.time);
@@ -359,11 +371,6 @@ function frame(ts: number): void {
   const yAxis = createVector3(0, 1, 0);
   rotateMatrix4(characterNode.localMatrix, characterNode.localMatrix, yAxis, spriteRotY + CHARACTER_YAW_OFFSET);
   invalidateNodeLocalTransform(characterNode);
-
-  if (isMoving) {
-    placeHolder.x += Math.sin(spriteRotY) * movementDir * (isRunning ? RUN_SPEED : WALK_SPEED) * 50 * dt;
-    placeHolder.z += Math.cos(spriteRotY) * movementDir * (isRunning ? RUN_SPEED : WALK_SPEED) * 50 * dt;
-  }
 
   setAwayPosition(
     redLight.position,
@@ -378,7 +385,7 @@ function frame(ts: number): void {
     -Math.cos(count * 0.9) * 1500,
   );
 
-  updateCamera(spriteRotY);
+  updateCamera();
 
   configureDirectionalShadowCamera(shadowCamera, whiteLight.direction, shadowBounds);
   drawGlSceneShadowMap(glState, scene, shadowCamera);
@@ -411,5 +418,5 @@ window.addEventListener('resize', () => {
   camera.projection.aspect = w / h;
 });
 
-updateCamera(spriteRotY);
+updateCamera();
 requestAnimationFrame(frame);

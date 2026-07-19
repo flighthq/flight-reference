@@ -148,6 +148,7 @@ for (let i = 0; i < BLEND_ENTRIES.length; i++) {
   addNodeChild(blendLayer, group);
 
   const squareRightX = group.x + squareImg.width * imgScale;
+  const lblW = cellW - PADDING;
   const lbl = createRichText();
   lbl.data.defaultTextFormat = {
     font: 'sans-serif',
@@ -156,9 +157,9 @@ for (let i = 0; i < BLEND_ENTRIES.length; i++) {
     color: 0x222222,
     align: 'right',
   };
-  lbl.x = squareRightX - squareImg.width * imgScale;
+  lbl.x = squareRightX - lblW;
   lbl.y = cy + (naturalH * imgScale) / 2 + 2;
-  lbl.data.width = squareImg.width * imgScale;
+  lbl.data.width = lblW;
   lbl.data.height = LABEL_SPACE;
   lbl.data.text = entry.name;
   addNodeChild(labelLayer, lbl);

@@ -1,9 +1,10 @@
-import type { AnimationPlayer, AnimationTrack, GlRenderTarget, Mesh, StandardPbrMaterial } from '@flighthq/sdk';
+import type { AnimationPlayer, AnimationTrack, BlinnPhongMaterial, GlRenderTarget, Mesh } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceAnimationPlayer,
   cloneMeshGeometry,
   createAnimationPlayer,
+  createBlinnPhongMaterial,
   createGlCanvasElement,
   createGlRenderState,
   createGlRenderTarget,
@@ -11,17 +12,15 @@ import {
   createPlaneMeshGeometry,
   createScene,
   createSceneLights,
-  createStandardPbrMaterial,
   createTexture,
   createTilingSampler,
   getNodeChildren,
-  getPbrRoughnessFromPhongShininess,
   importMd2,
   invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
   presentGlScene,
-  registerStandardPbrGlMaterial,
+  registerBlinnPhongGlMaterial,
   resizeGlRenderTarget,
   sampleAnimationTrack,
   scaleMatrix4,
@@ -57,7 +56,7 @@ const state = createGlRenderState(canvas, {
   pixelRatio,
 });
 
-registerStandardPbrGlMaterial(state);
+registerBlinnPhongGlMaterial(state);
 const verifyFrame = createGlFrameVerifier(state);
 
 let renderTarget: GlRenderTarget | null = null;
@@ -72,18 +71,16 @@ const { directional, ambient } = createDirectionalLightFromAway({
 });
 const lights = createSceneLights({ ambient, directional });
 
-const floorMaterial = createStandardPbrMaterial({
-  baseColor: 0xffffffff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(0),
+const floorMaterial = createBlinnPhongMaterial({
+  diffuse: 0xffffffff,
+  specular: 0x000000ff,
+  shininess: 1,
 });
 floorMaterial.doubleSided = true;
 
-const knightMaterials: StandardPbrMaterial[] = [];
+const knightMaterials: BlinnPhongMaterial[] = [];
 for (let i = 0; i < 4; i++) {
-  knightMaterials.push(
-    createStandardPbrMaterial({ baseColor: 0xffffffff, metallic: 0, roughness: getPbrRoughnessFromPhongShininess(30) }),
-  );
+  knightMaterials.push(createBlinnPhongMaterial({ diffuse: 0xffffffff, specular: 0xffffffff, shininess: 30 }));
 }
 
 const [floorImage, ...knightImages] = await Promise.all([
@@ -96,10 +93,10 @@ const [floorImage, ...knightImages] = await Promise.all([
 
 const floorTex = createTexture({ image: floorImage, sampler: createTilingSampler() });
 setTextureUvScale(floorTex, 5, 5);
-floorMaterial.baseColorMap = floorTex;
+floorMaterial.diffuseMap = floorTex;
 
 for (let i = 0; i < 4; i++) {
-  knightMaterials[i]!.baseColorMap = createTexture({ image: knightImages[i]! });
+  knightMaterials[i]!.diffuseMap = createTexture({ image: knightImages[i]! });
 }
 
 const floorGeometry = createPlaneMeshGeometry(5000, 5000, 1, 1);

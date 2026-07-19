@@ -41,7 +41,10 @@ if (mount) {
 document.body.style.margin = '0';
 
 const state = createGlRenderState(canvas, {
-  backgroundColor: 0x333338ff,
+  // AwayJS used the sRGB display color 0x333338. Flight clears into the linear-HDR scene target and the
+  // present pass applies the linear->sRGB encode, so a raw 0x333338 clear would display much lighter
+  // (~0x7c7c81). Pre-linearize to the value that presents back as 0x333338.
+  backgroundColor: 0x08080aff,
   contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
   pixelRatio,
 });
@@ -55,12 +58,14 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 70, near: 1, far: 5000 });
 
+// The AWD ships a fully textured diffuse skin, so keep the lights modest — Flight's linear pipeline
+// blows the texture out to white at the AwayJS-era intensities (dir 3 / amb 1.5).
 const directional = createDirectionalLight({
   direction: awayDirection(0, -1, -1),
   color: 0xffffffff,
-  intensity: 3,
+  intensity: 1.1,
 });
-const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
+const ambient = createAmbientLight({ color: 0xffffffff, intensity: 0.35 });
 const lights: SceneLights = createSceneLights({ ambient, directional });
 
 const awdBuffer = await fetch('awayjs/assets/shambler.awd').then((r) => r.arrayBuffer());
@@ -100,7 +105,8 @@ for (const child of getNodeChildren(awdScene)) {
 }
 
 const joints = skinnedMeshes[0]?.skin?.skeleton.joints ?? [];
-const clip: AnimationClip | null = parseAwdSkeletonAnimation(awdBytes, joints);
+// The shambler AWD ships several clips (idle, walk, attack01–05); the reference plays the idle loop.
+const clip: AnimationClip | null = parseAwdSkeletonAnimation(awdBytes, joints, undefined, 'idle');
 if (!clip) throw new Error('Failed to parse AWD skeleton animation');
 
 const player: AnimationPlayer = createAnimationPlayer(clip, { loop: true, speed: 1 });

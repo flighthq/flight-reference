@@ -21,7 +21,6 @@ import {
   presentGlScene,
   registerStandardPbrGlMaterial,
   resizeGlRenderTarget,
-  updateMeshSkin,
 } from '@flighthq/sdk';
 import {
   createCameraFromAway,
@@ -148,7 +147,6 @@ function frame(ts: number): void {
 
   advanceAnimationPlayer(player, dt);
   applyAnimationClipToScene(clip, player.time);
-  for (const mesh of skinnedMeshes) updateMeshSkin(mesh);
 
   orbit.update();
   const w = canvas.width;

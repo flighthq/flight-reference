@@ -1,6 +1,7 @@
 import type {
   AnimationClip,
   AnimationPlayer,
+  CubeTexture,
   GlRenderTarget,
   Mesh,
   SceneLights,
@@ -11,10 +12,13 @@ import {
   addNodeChild,
   advanceAnimationPlayer,
   applyAnimationClipToScene,
+  beginGlRenderPass,
   configureDirectionalShadowCamera,
   createAnimationPlayer,
   createAabb,
   createCamera,
+  createCubeTexture,
+  createEnvironment,
   computeMeshGeometryNormals,
   createGlCanvasElement,
   createGlRenderState,
@@ -30,7 +34,11 @@ import {
   createTilingSampler,
   createVector3,
   DEG_TO_RAD,
+  drawGlEnvironmentSkybox,
+  drawGlLinearToSrgbPass,
+  drawGlScene,
   drawGlSceneShadowMap,
+  endGlRenderPass,
   getPbrRoughnessFromPhongShininess,
   getNodeChildByName,
   getNodeChildren,
@@ -38,13 +46,16 @@ import {
   isMesh,
   loadImageResourceFromUrl,
   parseMd5Anim,
-  presentGlScene,
   registerStandardPbrGlMaterial,
+  renderGlBackground,
+  resolveGlRenderTarget,
   resizeGlRenderTarget,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
+  setCubeTextureFace,
   setTextureUvScale,
+  translateMatrix4,
   updateMeshSkin,
 } from '@flighthq/sdk';
 
@@ -97,6 +108,14 @@ registerStandardPbrGlMaterial(glState);
 const verifyFrame = createGlFrameVerifier(glState);
 
 const scene = createScene();
+
+const skyFaceNames = ['posX', 'negX', 'posY', 'negY', 'posZ', 'negZ'];
+const skyImages = await Promise.all(
+  skyFaceNames.map((face) => loadImageResourceFromUrl(`awayjs/assets/skybox/grimnight_${face}.png`)),
+);
+const skyTexture: CubeTexture = createCubeTexture();
+for (let i = 0; i < skyImages.length; i++) setCubeTextureFace(skyTexture, i, skyImages[i]);
+const environment = createEnvironment({ environment: skyTexture, intensity: 1 });
 
 const camera = createCameraFromAway({ fov: 60, far: 5000 });
 
@@ -219,7 +238,19 @@ const animTexts = await Promise.all(
 const clips: Map<string, AnimationClip> = new Map();
 for (let i = 0; i < ANIM_NAMES.length; i++) {
   const clip = parseMd5Anim(animTexts[i]!, jointNodes);
-  if (clip) clips.set(ANIM_NAMES[i]!, clip);
+  const name = ANIM_NAMES[i]!;
+  if (clip && name === WALK_NAME) {
+    // AwayJS consumes joint zero's translation as owner root motion and omits it from the rendered
+    // skeleton. Flight normally applies every channel to the skeleton, which is what causes walk7 to
+    // jump from its final 130-unit origin translation back to zero on every loop.
+    for (const channel of clip.channels) {
+      const target = channel.targetRef as { node?: SceneNode; path?: string } | null;
+      if (target?.node === jointNodes[0] && target.path === 'Translation') {
+        channel.track.values = new Float32Array(channel.track.values.length);
+      }
+    }
+  }
+  if (clip) clips.set(name, clip);
 }
 
 const idleClip = clips.get(IDLE_NAME);
@@ -237,6 +268,8 @@ let movementDir = 1;
 let spriteRotY = Math.PI;
 let rotationInc = 0;
 let count = 0;
+let characterX = 0;
+let characterZ = 0;
 let renderTarget: GlRenderTarget | null = null;
 
 function play(name: string): void {
@@ -367,7 +400,20 @@ function frame(ts: number): void {
   for (const mesh of skinnedMeshes) updateMeshSkin(mesh);
 
   spriteRotY += rotationInc;
+
+  // AwayJS extracts the walk clip's animated origin translation and applies it as root motion to the
+  // sprite owner. Its walk7 origin advances 130.27 units over 37 frames at 24 fps (~84.5 units/s).
+  // Applying the equivalent continuous displacement to the container avoids the clip-loop snap while
+  // retaining the original forward/reverse and walk/run playback-speed behavior.
+  if (isMoving && currentAnim === WALK_NAME) {
+    const rootSpeed = 130.2688 / (37 / 24);
+    const distance = rootSpeed * movementDir * (isRunning ? RUN_SPEED : WALK_SPEED) * dt;
+    characterX += Math.sin(spriteRotY) * distance;
+    characterZ += Math.cos(spriteRotY) * distance;
+  }
+
   setMatrix4Identity(characterNode.localMatrix);
+  translateMatrix4(characterNode.localMatrix, characterNode.localMatrix, characterX, 0, characterZ);
   const yAxis = createVector3(0, 1, 0);
   rotateMatrix4(characterNode.localMatrix, characterNode.localMatrix, yAxis, spriteRotY + CHARACTER_YAW_OFFSET);
   invalidateNodeLocalTransform(characterNode);
@@ -385,6 +431,8 @@ function frame(ts: number): void {
     -Math.cos(count * 0.9) * 1500,
   );
 
+  cameraTarget.x = characterX;
+  cameraTarget.z = characterZ;
   updateCamera();
 
   configureDirectionalShadowCamera(shadowCamera, whiteLight.direction, shadowBounds);
@@ -399,7 +447,13 @@ function frame(ts: number): void {
     resizeGlRenderTarget(glState, renderTarget, w, h);
   }
 
-  presentGlScene(glState, renderTarget, scene, camera, lights);
+  beginGlRenderPass(glState, renderTarget, { preserveColor: true });
+  renderGlBackground(glState);
+  drawGlEnvironmentSkybox(glState, environment, camera, w / h);
+  drawGlScene(glState, scene, camera, lights);
+  endGlRenderPass(glState);
+  resolveGlRenderTarget(glState, renderTarget);
+  drawGlLinearToSrgbPass(glState, renderTarget, null);
 
   verifyFrame();
 

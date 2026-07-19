@@ -15,8 +15,9 @@ import {
   presentGlScene,
   registerUnlitGlMaterial,
   resizeGlRenderTarget,
+  invalidateNodeLocalTransform,
+  setVector3,
 } from '@flighthq/sdk';
-import { setSceneNodePosition, setSceneNodeScale } from '../../../_shared/flight/src/position';
 
 import { createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
@@ -62,7 +63,8 @@ for (let i = 0; i < 100; i++) {
   const py = Math.random() * 1000 - 500;
   const pz = Math.random() * 1000 - 500;
 
-  setSceneNodePosition(mesh, px, py, pz);
+  setVector3(mesh.position, px, py, pz);
+  invalidateNodeLocalTransform(mesh);
 
   spheres.push(mesh);
   addNodeChild(scene, mesh);
@@ -87,14 +89,16 @@ function pickSphere(event: MouseEvent): Mesh | null {
 canvas.addEventListener('mousedown', (event: MouseEvent) => {
   const sphere = pickSphere(event);
   if (sphere) {
-    setSceneNodeScale(sphere, 2, 2, 2);
+    setVector3(sphere.scale, 2, 2, 2);
+    invalidateNodeLocalTransform(sphere);
   }
 });
 
 canvas.addEventListener('mouseup', (event: MouseEvent) => {
   const sphere = pickSphere(event);
   if (sphere) {
-    setSceneNodeScale(sphere, 1, 1, 1);
+    setVector3(sphere.scale, 1, 1, 1);
+    invalidateNodeLocalTransform(sphere);
   }
 });
 

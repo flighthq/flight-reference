@@ -16,9 +16,10 @@ import {
   presentGlScene,
   registerUnlitGlMaterial,
   resizeGlRenderTarget,
+  copyQuaternion,
+  invalidateNodeLocalTransform,
   setQuaternionFromAxisAngle,
 } from '@flighthq/sdk';
-import { setSceneNodeRotationQuaternion } from '../../../_shared/flight/src/position';
 
 import { createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
@@ -68,7 +69,8 @@ function frame(): void {
   angle -= DEG_TO_RAD;
 
   setQuaternionFromAxisAngle(scratchQuat, yAxis, angle);
-  setSceneNodeRotationQuaternion(mesh, scratchQuat);
+  copyQuaternion(mesh.rotation, scratchQuat);
+  invalidateNodeLocalTransform(mesh);
 
   const w = canvas.width;
   const h = canvas.height;

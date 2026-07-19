@@ -11,9 +11,10 @@ import {
   createVector3,
   createVertexColorMaterial,
   setCameraViewMatrix4FromLookAt,
+  copyQuaternion,
+  invalidateNodeLocalTransform,
   setQuaternionFromAxisAngle,
 } from '@flighthq/sdk';
-import { setSceneNodeRotationQuaternion } from '../../../../../awayjs/examples/_shared/flight/src/position';
 
 import { render } from './render';
 
@@ -50,7 +51,8 @@ const scratchQuat = createQuaternion();
 
 function frame(): void {
   setQuaternionFromAxisAngle(scratchQuat, zAxis, (performance.now() / 40) * (Math.PI / 180));
-  setSceneNodeRotationQuaternion(mesh, scratchQuat);
+  copyQuaternion(mesh.rotation, scratchQuat);
+  invalidateNodeLocalTransform(mesh);
   render(scene, camera, lights);
   requestAnimationFrame(frame);
 }

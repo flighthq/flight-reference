@@ -28,17 +28,12 @@ type BlendEntry = AdvancedEntry | FixedEntry;
 
 const BLEND_ENTRIES: BlendEntry[] = [
   { kind: 'fixed', mode: BlendMode.Normal, name: 'normal' },
-  { kind: 'fixed', mode: BlendMode.Layer, name: 'layer' },
   { kind: 'fixed', mode: BlendMode.Multiply, name: 'multiply' },
   { kind: 'fixed', mode: BlendMode.Screen, name: 'screen' },
   { kind: 'fixed', mode: BlendMode.Lighten, name: 'lighten' },
   { kind: 'fixed', mode: BlendMode.Darken, name: 'darken' },
-  { kind: 'advanced', mode: AdvancedBlendMode.Difference, cssOp: 'difference', name: 'difference' },
   { kind: 'fixed', mode: BlendMode.Add, name: 'add' },
-  { kind: 'fixed', mode: BlendMode.Subtract, name: 'subtract' },
-  { kind: 'fixed', mode: BlendMode.Invert, name: 'invert' },
-  { kind: 'fixed', mode: BlendMode.Alpha, name: 'alpha' },
-  { kind: 'fixed', mode: BlendMode.Erase, name: 'erase' },
+  { kind: 'advanced', mode: AdvancedBlendMode.Difference, cssOp: 'difference', name: 'difference' },
   { kind: 'advanced', mode: AdvancedBlendMode.Overlay, cssOp: 'overlay', name: 'overlay' },
   { kind: 'advanced', mode: AdvancedBlendMode.HardLight, cssOp: 'hard-light', name: 'hardlight' },
   { kind: 'advanced', mode: AdvancedBlendMode.SoftLight, cssOp: 'soft-light', name: 'softlight' },

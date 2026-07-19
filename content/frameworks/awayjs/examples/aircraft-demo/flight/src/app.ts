@@ -49,6 +49,8 @@ import {
   flipSurfaceVertical,
   getNodeChildren,
   getNodeLocalMatrix4,
+  copyVector3,
+  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   parseObjMaterialLibrary,
   registerStandardPbrGlMaterial,
@@ -63,10 +65,10 @@ import {
   setNodeLocalMatrix4,
   setCubeTextureFace,
   setMatrix4Identity,
+  setVector3,
   translateMatrix4,
   updateParticleEmitter3D,
 } from '@flighthq/sdk';
-import { getSceneNodePosition, setSceneNodePosition } from '../../../_shared/flight/src/position';
 
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
@@ -306,7 +308,8 @@ for (const mesh of f14Meshes) {
 }
 
 const f14Container = createScene();
-setSceneNodePosition(f14Container, 0, 200, 0);
+f14Container.position.y = 200;
+invalidateNodeLocalTransform(f14Container);
 
 for (const child of getNodeChildren(f14Scene)) {
   addNodeChild(f14Container, child);
@@ -500,7 +503,7 @@ function sweepWing(meshes: readonly Mesh[], pivot: Vector3, angle: number): void
 let renderTarget: GlRenderTarget | null = null;
 
 function updateCameraLookAt(): void {
-  getSceneNodePosition(cameraTarget, f14Mesh);
+  copyVector3(cameraTarget, f14Mesh.position);
   setCameraViewMatrix4FromLookAt(camera, eye, cameraTarget, up);
 }
 
@@ -586,7 +589,8 @@ function renderScene(): void {
 
   // The sea follows the jet's flight (translate by flightZ) so it stays underneath — jet, camera, and
   // sea move together, leaving only the world-space contrail to reveal the motion.
-  setSceneNodePosition(seaMesh, 0, 0, flightZ);
+  seaMesh.position.z = flightZ;
+  invalidateNodeLocalTransform(seaMesh);
 
   // Orbit with a slow vertical drift + click pulse; add flightZ so the whole orbit follows the flying
   // jet (keeps eye.z - target.z constant, so the framing stays put). Clamp the height so a downward bob

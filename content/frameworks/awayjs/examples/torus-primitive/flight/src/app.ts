@@ -22,8 +22,9 @@ import {
   registerStandardPbrGlMaterial,
   renderGlBackground,
   setQuaternionFromAxisAngle,
+  copyQuaternion,
+  invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
-import { setSceneNodeRotationQuaternion } from '../../../_shared/flight/src/position';
 
 import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
@@ -99,7 +100,8 @@ function frame(): void {
   rotationY -= DEG;
 
   setQuaternionFromAxisAngle(scratchQuat, yAxis, rotationY);
-  setSceneNodeRotationQuaternion(torus, scratchQuat);
+  copyQuaternion(torus.rotation, scratchQuat);
+  invalidateNodeLocalTransform(torus);
 
   // Draw into the pipeline's HDR target, then ACES tone-map to the canvas so the single directional
   // light's highlights compress into range instead of clipping (matches basic-load-3ds).

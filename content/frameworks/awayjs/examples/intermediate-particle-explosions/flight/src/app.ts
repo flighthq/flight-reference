@@ -23,9 +23,10 @@ import {
   presentGlScene,
   resizeGlRenderTarget,
   setQuaternionFromAxisAngle,
+  copyQuaternion,
+  invalidateNodeLocalTransform,
   stepParticleEmitter3D,
 } from '@flighthq/sdk';
-import { setSceneNodeRotationQuaternion } from '../../../_shared/flight/src/position';
 
 import {
   AWAY_MOUSE_SENSITIVITY,
@@ -186,7 +187,8 @@ for (let a = 0; a < NUM_ANIMATORS; a++) {
 
     const emitterQuat = createQuaternion();
     setQuaternionFromAxisAngle(emitterQuat, { x: 0, y: 1, z: 0 }, rotationY);
-    setSceneNodeRotationQuaternion(emitter, emitterQuat);
+    copyQuaternion(emitter.rotation, emitterQuat);
+    invalidateNodeLocalTransform(emitter);
     addNodeChild(scene, emitter);
 
     logoEmitters.push({ emitter, state, config, pixels, offset: logoOffsets[g]!, animator: a });

@@ -19,9 +19,11 @@ import {
   scaleMeshGeometryUvs,
   setDirectionalLightDirection,
   setQuaternionFromAxisAngle,
+  copyQuaternion,
+  invalidateNodeLocalTransform,
+  setVector3,
   setTextureUvScale,
 } from '@flighthq/sdk';
-import { setSceneNodePosition, setSceneNodeRotationQuaternion } from '../../../_shared/flight/src/position';
 
 import {
   awayDirection,
@@ -102,17 +104,20 @@ const torusMaterial = createStandardPbrMaterial({
 
 const planeGeometry = createPlaneMeshGeometry(1000, 1000, 1, 1);
 const plane = createMesh(planeGeometry, [planeMaterial]);
-setSceneNodePosition(plane, 0, -20, 0);
+plane.position.y = -20;
+invalidateNodeLocalTransform(plane);
 addNodeChild(scene, plane);
 
 const sphereGeometry = createSphereMeshGeometry(150, 40, 20);
 const sphere = createMesh(sphereGeometry, [sphereMaterial]);
-setSceneNodePosition(sphere, ...awayPosition(300, 160, 300));
+setVector3(sphere.position, ...awayPosition(300, 160, 300));
+invalidateNodeLocalTransform(sphere);
 addNodeChild(scene, sphere);
 
 const cubeGeometry = createBoxMeshGeometry(200, 200, 200);
 const cube = createMesh(cubeGeometry, [cubeMaterial]);
-setSceneNodePosition(cube, ...awayPosition(300, 160, -250));
+setVector3(cube.position, ...awayPosition(300, 160, -250));
+invalidateNodeLocalTransform(cube);
 addNodeChild(scene, cube);
 
 const torusGeometry = createTorusMeshGeometry(150, 60, 40, 20);
@@ -121,10 +126,11 @@ const torusGeometry = createTorusMeshGeometry(150, 60, 40, 20);
 // weave stays crisp instead of aliasing into speckle on the ring's minified far side.
 scaleMeshGeometryUvs(torusGeometry, 10, 5);
 const torus = createMesh(torusGeometry, [torusMaterial]);
-setSceneNodePosition(torus, ...awayPosition(-250, 160, -250));
+setVector3(torus.position, ...awayPosition(-250, 160, -250));
 const torusRotation = createQuaternion();
 setQuaternionFromAxisAngle(torusRotation, createVector3(1, 0, 0), Math.PI / 2);
-setSceneNodeRotationQuaternion(torus, torusRotation);
+copyQuaternion(torus.rotation, torusRotation);
+invalidateNodeLocalTransform(torus);
 addNodeChild(scene, torus);
 
 function applyTextures(

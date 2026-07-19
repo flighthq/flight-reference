@@ -32,10 +32,11 @@ import {
   registerStandardPbrGlMaterial,
   registerUnlitGlMaterial,
   resizeGlRenderTarget,
+  invalidateNodeLocalTransform,
   setTextureUvScale,
+  setVector3,
   stepParticleEmitter3D,
 } from '@flighthq/sdk';
-import { setSceneNodePosition } from '../../../_shared/flight/src/position';
 
 import {
   awayDirection,
@@ -118,7 +119,8 @@ planeMaterial.doubleSided = true;
 
 const planeGeometry = createPlaneMeshGeometry(1000, 1000, 1, 1);
 const plane = createMesh(planeGeometry, [planeMaterial]);
-setSceneNodePosition(plane, 0, -20, 0);
+plane.position.y = -20;
+invalidateNodeLocalTransform(plane);
 addNodeChild(scene, plane);
 
 // Bakes AwayJS's specular gloss mask into a glTF metallic-roughness map: roughness in G (bright
@@ -254,13 +256,15 @@ for (let i = 0; i < NUM_FIRES; i++) {
   const z = -Math.cos(angle) * FIRE_RADIUS;
   const y = 5;
 
-  setSceneNodePosition(emitter, x, y, z);
+  setVector3(emitter.position, x, y, z);
+  invalidateNodeLocalTransform(emitter);
 
   const decalMaterial = createUnlitMaterial({ baseColor: 0xffffff00, baseColorMap: glowTexture });
   decalMaterial.alphaMode = 'blend';
   decalMaterial.doubleSided = true;
   const decal = createMesh(decalGeometry, [decalMaterial]);
-  setSceneNodePosition(decal, x, DECAL_Y_BASE + i * DECAL_Y_STEP, z);
+  setVector3(decal.position, x, DECAL_Y_BASE + i * DECAL_Y_STEP, z);
+  invalidateNodeLocalTransform(decal);
 
   addNodeChild(scene, emitter);
   addNodeChild(scene, decal);

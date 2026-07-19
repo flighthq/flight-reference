@@ -31,8 +31,9 @@ import {
   registerStandardPbrGlMaterial,
   renderGlBackground,
   setDirectionalLightDirection,
+  invalidateNodeLocalTransform,
+  setVector3,
 } from '@flighthq/sdk';
-import { setSceneNodePosition, setSceneNodeScale } from '../../../_shared/flight/src/position';
 
 import {
   AWAY_MOUSE_SENSITIVITY,
@@ -148,8 +149,9 @@ for (const child of getNodeChildren(modelScene)) {
   addNodeChild(modelContainer, child);
 }
 
-setSceneNodePosition(modelContainer, 0, 0, 200);
-setSceneNodeScale(modelContainer, 300, 300, 300);
+modelContainer.position.z = 200;
+setVector3(modelContainer.scale, 300, 300, 300);
+invalidateNodeLocalTransform(modelContainer);
 addNodeChild(scene, modelContainer);
 
 const orbit = createOrbitControllerFromAway(camera, {

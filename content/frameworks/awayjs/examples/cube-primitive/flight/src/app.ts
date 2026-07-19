@@ -22,8 +22,10 @@ import {
   resizeGlRenderTarget,
   setCameraViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
+  copyQuaternion,
+  invalidateNodeLocalTransform,
+  setVector3,
 } from '@flighthq/sdk';
-import { setSceneNodePosition, setSceneNodeRotationQuaternion } from '../../../_shared/flight/src/position';
 
 import { awayDirection, awayPosition, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
@@ -85,7 +87,8 @@ addNodeChild(scene, torus);
 
 const cubeGeometry = createBoxMeshGeometry(20, 20, 20);
 const cube = createMesh(cubeGeometry, [material]);
-setSceneNodePosition(cube, ...awayPosition(130, 0, 40));
+setVector3(cube.position, ...awayPosition(130, 0, 40));
+invalidateNodeLocalTransform(cube);
 addNodeChild(scene, cube);
 
 const eye = createVector3(130, 0, 0);
@@ -118,13 +121,14 @@ function frame(): void {
   setQuaternionFromAxisAngle(scratchQuatA, yAxis, torusAngleY);
   setQuaternionFromAxisAngle(scratchQuatB, xAxis, Math.PI / 2);
   multiplyQuaternion(scratchQuatA, scratchQuatA, scratchQuatB);
-  setSceneNodeRotationQuaternion(torus, scratchQuatA);
+  copyQuaternion(torus.rotation, scratchQuatA);
+  invalidateNodeLocalTransform(torus);
 
-  setSceneNodePosition(cube, ...awayPosition(130, 0, 40));
   setQuaternionFromAxisAngle(scratchQuatA, yAxis, cubeAngleY);
   setQuaternionFromAxisAngle(scratchQuatB, xAxis, cubeAngleX);
   multiplyQuaternion(scratchQuatA, scratchQuatA, scratchQuatB);
-  setSceneNodeRotationQuaternion(cube, scratchQuatA);
+  copyQuaternion(cube.rotation, scratchQuatA);
+  invalidateNodeLocalTransform(cube);
 
   const w = canvas.width;
   const h = canvas.height;

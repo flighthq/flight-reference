@@ -16,8 +16,9 @@ import {
   presentGlScene,
   registerStandardPbrGlMaterial,
   resizeGlRenderTarget,
+  invalidateNodeLocalTransform,
+  setVector3,
 } from '@flighthq/sdk';
-import { setSceneNodePosition, setSceneNodeScale } from '../../../_shared/flight/src/position';
 
 import {
   AWAY_MOUSE_SENSITIVITY,
@@ -130,8 +131,9 @@ function assignMaterialToMeshes(node: SceneNode): void {
 assignMaterialToMeshes(awdScene);
 
 for (const child of getNodeChildren(awdScene)) {
-  setSceneNodePosition(child, 0, -20, 0);
-  setSceneNodeScale(child, 4, 4, 4);
+  child.position.y = -20;
+  setVector3(child.scale, 4, 4, 4);
+  invalidateNodeLocalTransform(child);
   addNodeChild(scene, child);
 }
 

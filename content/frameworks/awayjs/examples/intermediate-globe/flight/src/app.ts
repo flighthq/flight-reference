@@ -43,8 +43,10 @@ import {
   resolveGlRenderTarget,
   setCubeTextureFace,
   setQuaternionFromAxisAngle,
+  copyQuaternion,
+  invalidateNodeLocalTransform,
+  setVector3,
 } from '@flighthq/sdk';
-import { setSceneNodePosition, setSceneNodeRotationQuaternion } from '../../../_shared/flight/src/position';
 
 import {
   AWAY_MOUSE_SENSITIVITY,
@@ -162,7 +164,8 @@ const tiltContainer = createSceneNode();
 const axisX = createVector3(1, 0, 0);
 const tiltQuat = createQuaternion();
 setQuaternionFromAxisAngle(tiltQuat, axisX, -23 * DEG_TO_RAD);
-setSceneNodeRotationQuaternion(tiltContainer, tiltQuat);
+copyQuaternion(tiltContainer.rotation, tiltQuat);
+invalidateNodeLocalTransform(tiltContainer);
 addNodeChild(scene, tiltContainer);
 
 // Earth: the day/night custom shader (day texture + specular on the lit side, city lights on the
@@ -338,11 +341,13 @@ function frame(ts: number): void {
 
   earthAngle += earthSpeed;
   setQuaternionFromAxisAngle(scratchQuat, axisY, earthAngle);
-  setSceneNodeRotationQuaternion(earth, scratchQuat);
+  copyQuaternion(earth.rotation, scratchQuat);
+  invalidateNodeLocalTransform(earth);
 
   cloudAngle += cloudSpeed;
   setQuaternionFromAxisAngle(scratchQuat, axisY, cloudAngle);
-  setSceneNodeRotationQuaternion(clouds, scratchQuat);
+  copyQuaternion(clouds.rotation, scratchQuat);
+  invalidateNodeLocalTransform(clouds);
 
   sunAngle += orbitSpeed;
   sunLight.direction.x = Math.sin(sunAngle);
@@ -350,7 +355,8 @@ function frame(ts: number): void {
   earthSunDir[0] = Math.sin(sunAngle);
   earthSunDir[2] = Math.cos(sunAngle);
 
-  setSceneNodePosition(sun, -Math.sin(sunAngle) * SUN_DISTANCE, 0, -Math.cos(sunAngle) * SUN_DISTANCE);
+  setVector3(sun.position, -Math.sin(sunAngle) * SUN_DISTANCE, 0, -Math.cos(sunAngle) * SUN_DISTANCE);
+  invalidateNodeLocalTransform(sun);
 
   orbit.update();
   orientSceneBillboardsToCamera(scene, camera);

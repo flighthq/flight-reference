@@ -47,15 +47,14 @@ addNodeChild(root, bgBmp);
 
 const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
 
-// BlendMode.None is supported but produces a different visual effect because Flight
-// premultiplies alpha — semi-transparent edges render dark instead of white. To match
-// the Starling reference visually, "none" uses Normal blending over a white backdrop.
+// Starling's "none" blend mode (Copy/source-only) is now a CompositeOperator, not a BlendMode.
+// To match the Starling reference visually, "none" uses Normal blending over a white backdrop.
 const blendModes: [string, string][] = [
   [BlendMode.Normal, 'normal'],
   [BlendMode.Multiply, 'multiply'],
   [BlendMode.Screen, 'screen'],
   [BlendMode.Add, 'add'],
-  [BlendMode.Erase, 'erase'],
+  [BlendMode.Darken, 'darken'],
   [BlendMode.Normal, 'none'],
 ];
 

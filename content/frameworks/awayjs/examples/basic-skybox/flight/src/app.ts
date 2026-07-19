@@ -38,8 +38,10 @@ import {
   setCameraViewMatrix4FromLookAt,
   setCubeTextureFace,
   setQuaternionFromAxisAngle,
+  copyQuaternion,
+  invalidateNodeLocalTransform,
+  setVector3,
 } from '@flighthq/sdk';
-import { setSceneNodePosition, setSceneNodeRotationQuaternion } from '../../../_shared/flight/src/position';
 
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
@@ -93,7 +95,8 @@ const beam = 4;
 
 function addBoundsBeam(w: number, h: number, d: number, x: number, y: number, z: number): void {
   const edge = createMesh(createBoxMeshGeometry(w, h, d), [boundsMaterial]);
-  setSceneNodePosition(edge, x, y, z);
+  setVector3(edge.position, x, y, z);
+  invalidateNodeLocalTransform(edge);
   addNodeChild(torus, edge);
 }
 
@@ -195,7 +198,8 @@ function frame(): void {
   setQuaternionFromAxisAngle(scratchQuatA, xAxis, torusRotX);
   setQuaternionFromAxisAngle(scratchQuatB, yAxis, torusRotY);
   multiplyQuaternion(scratchQuatA, scratchQuatA, scratchQuatB);
-  setSceneNodeRotationQuaternion(torus, scratchQuatA);
+  copyQuaternion(torus.rotation, scratchQuatA);
+  invalidateNodeLocalTransform(torus);
 
   cameraRotationY += (0.5 * (mouseX - window.innerWidth / 2)) / 800;
   const rotRad = cameraRotationY * DEG_TO_RAD;

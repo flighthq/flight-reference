@@ -26,12 +26,10 @@ import {
   registerStandardPbrGlMaterial,
   resizeGlRenderTarget,
   setQuaternionFromAxisAngle,
+  copyQuaternion,
+  invalidateNodeLocalTransform,
+  setVector3,
 } from '@flighthq/sdk';
-import {
-  setSceneNodePosition,
-  setSceneNodeRotationQuaternion,
-  setSceneNodeScale,
-} from '../../../_shared/flight/src/position';
 
 import {
   createCameraFromAway,
@@ -112,12 +110,10 @@ const blueTracerMaterial = createStandardPbrMaterial({
 });
 
 const pickingTracer = createMesh(createSphereMeshGeometry(2, 8, 6), [greenTracerMaterial]);
-setSceneNodePosition(pickingTracer, 0, 0, 0);
 pickingTracer.visible = false;
 addNodeChild(scene, pickingTracer);
 
 const sceneTracer = createMesh(createSphereMeshGeometry(2, 8, 6), [blueTracerMaterial]);
-setSceneNodePosition(sceneTracer, 0, 0, 0);
 sceneTracer.visible = false;
 addNodeChild(scene, sceneTracer);
 
@@ -186,14 +182,15 @@ function createRandomObject(): ObjectInfo {
   const r = 200 + 100 * Math.random();
   const azimuth = 2 * Math.PI * Math.random();
   const elevation = 0.25 * Math.PI * Math.random();
-  setSceneNodePosition(
-    mesh,
+  setVector3(
+    mesh.position,
     r * Math.cos(elevation) * Math.sin(azimuth),
     r * Math.sin(elevation),
     r * Math.cos(elevation) * Math.cos(azimuth),
   );
   setQuaternionFromAxisAngle(scratchQuatA, zAxis, rotZ);
-  setSceneNodeRotationQuaternion(mesh, scratchQuatA);
+  copyQuaternion(mesh.rotation, scratchQuatA);
+  invalidateNodeLocalTransform(mesh);
 
   addNodeChild(scene, mesh);
   objectInfos.push(info);
@@ -222,7 +219,8 @@ try {
     const m = child as Mesh;
     // AwayJS loads head.obj through new OBJParser(25), which scales the geometry 25x;
     // createSceneFromObj applies no scale, so match it here or the head renders 1/25 size.
-    setSceneNodeScale(m, 25, 25, 25);
+    setVector3(m.scale, 25, 25, 25);
+    invalidateNodeLocalTransform(m);
     if (m.materials) {
       m.materials = [headMaterial];
       headMesh = m;
@@ -312,7 +310,7 @@ function positionNormalTracer(
   ny: number,
   nz: number,
 ): void {
-  setSceneNodePosition(tracer, px, py, pz);
+  setVector3(tracer.position, px, py, pz);
 
   const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
   if (len > 0.001) {
@@ -332,7 +330,8 @@ function positionNormalTracer(
     scratchQuatA.z = 0;
     scratchQuatA.w = 1;
   }
-  setSceneNodeRotationQuaternion(tracer, scratchQuatA);
+  copyQuaternion(tracer.rotation, scratchQuatA);
+  invalidateNodeLocalTransform(tracer);
 }
 
 canvas.addEventListener('mousemove', (e: MouseEvent) => {
@@ -359,7 +358,8 @@ canvas.addEventListener('mousemove', (e: MouseEvent) => {
       previousHoveredInfo = info;
 
       pickingTracer.visible = true;
-      setSceneNodePosition(pickingTracer, result.pointX, result.pointY, result.pointZ);
+      setVector3(pickingTracer.position, result.pointX, result.pointY, result.pointZ);
+      invalidateNodeLocalTransform(pickingTracer);
 
       pickingNormalTracer.visible = true;
       positionNormalTracer(

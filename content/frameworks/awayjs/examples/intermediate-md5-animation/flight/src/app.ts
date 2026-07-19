@@ -56,10 +56,12 @@ import {
   setCameraViewMatrix4FromLookAt,
   setCubeTextureFace,
   setQuaternionFromAxisAngle,
+  copyQuaternion,
+  invalidateNodeLocalTransform,
+  setVector3,
   setTextureUvScale,
   updateMeshSkin,
 } from '@flighthq/sdk';
-import { setSceneNodePosition, setSceneNodeRotationQuaternion } from '../../../_shared/flight/src/position';
 
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway, createPointLightFromAway } from '../../../_shared/flight/src/lighting';
@@ -449,9 +451,11 @@ function frame(ts: number): void {
 
   // Keep root-motion translation and visual yaw on separate nodes. This makes the yaw pivot the
   // character's local origin and prevents turning from rotating its accumulated world displacement.
-  setSceneNodePosition(characterPositionNode, characterX, 0, characterZ);
+  setVector3(characterPositionNode.position, characterX, 0, characterZ);
+  invalidateNodeLocalTransform(characterPositionNode);
   setQuaternionFromAxisAngle(characterQuat, yAxisVec, spriteRotY + CHARACTER_YAW_OFFSET);
-  setSceneNodeRotationQuaternion(characterNode, characterQuat);
+  copyQuaternion(characterNode.rotation, characterQuat);
+  invalidateNodeLocalTransform(characterNode);
 
   setAwayPosition(
     redLight.position,

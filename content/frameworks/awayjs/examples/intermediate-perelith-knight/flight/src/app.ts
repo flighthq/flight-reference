@@ -26,10 +26,11 @@ import {
   registerBlinnPhongGlMaterial,
   resizeGlRenderTarget,
   sampleAnimationTrack,
+  invalidateNodeLocalTransform,
+  setVector3,
   setTextureUvScale,
   updateMeshMorph,
 } from '@flighthq/sdk';
-import { setSceneNodePosition, setSceneNodeScale } from '../../../_shared/flight/src/position';
 
 import {
   createCameraFromAway,
@@ -159,8 +160,9 @@ for (let i = 0; i < numWide; i++) {
 
     const x = ((i - (numWide - 1) / 2) * 5000) / numWide;
     const z = ((j - (numDeep - 1) / 2) * 5000) / numDeep;
-    setSceneNodePosition(knight, x, 120, z);
-    setSceneNodeScale(knight, 5, 5, 5);
+    setVector3(knight.position, x, 120, z);
+    setVector3(knight.scale, 5, 5, 5);
+    invalidateNodeLocalTransform(knight);
     addNodeChild(scene, knight);
     knights.push({ mesh: knight, player, track: md2Track });
   }

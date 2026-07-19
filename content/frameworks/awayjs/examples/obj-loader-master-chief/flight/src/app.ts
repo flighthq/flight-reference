@@ -40,13 +40,11 @@ import {
   renderGlBackground,
   setCubeTextureFace,
   setQuaternionFromAxisAngle,
+  copyQuaternion,
+  invalidateNodeLocalTransform,
+  setVector3,
   setTextureUvScale,
 } from '@flighthq/sdk';
-import {
-  setSceneNodePosition,
-  setSceneNodeRotationQuaternion,
-  setSceneNodeScale,
-} from '../../../_shared/flight/src/position';
 
 import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
@@ -131,7 +129,8 @@ const { directional, ambient } = createDirectionalLightFromAway({
 const lights = createSceneLights({ ambient, directional });
 
 const spartanContainer = createSceneNode();
-setSceneNodeScale(spartanContainer, 0.25, 0.25, 0.25);
+setVector3(spartanContainer.scale, 0.25, 0.25, 0.25);
+invalidateNodeLocalTransform(spartanContainer);
 addNodeChild(scene, spartanContainer);
 
 const [spartanObjText, terrainObjText, masterchiefImage, stoneImage] = await Promise.all([
@@ -345,7 +344,8 @@ for (const child of getNodeChildren(terrainScene)) {
 }
 
 if (terrainNode) {
-  setSceneNodePosition(terrainNode, 0, 98, 0);
+  terrainNode.position.y = 98;
+  invalidateNodeLocalTransform(terrainNode);
 }
 
 const yAxis = createVector3(0, 1, 0);
@@ -357,14 +357,16 @@ function frame(): void {
   spartanRotationY -= 0.4 * DEG_TO_RAD;
   terrainRotationY -= 0.4 * DEG_TO_RAD;
 
-  setSceneNodeScale(spartanContainer, 0.25, 0.25, 0.25);
+  setVector3(spartanContainer.scale, 0.25, 0.25, 0.25);
   setQuaternionFromAxisAngle(scratchQuat, yAxis, spartanRotationY);
-  setSceneNodeRotationQuaternion(spartanContainer, scratchQuat);
+  copyQuaternion(spartanContainer.rotation, scratchQuat);
+  invalidateNodeLocalTransform(spartanContainer);
 
   if (terrainNode) {
-    setSceneNodePosition(terrainNode, 0, 98, 0);
+    terrainNode.position.y = 98;
     setQuaternionFromAxisAngle(scratchQuat, yAxis, terrainRotationY);
-    setSceneNodeRotationQuaternion(terrainNode, scratchQuat);
+    copyQuaternion(terrainNode.rotation, scratchQuat);
+    invalidateNodeLocalTransform(terrainNode);
   }
 
   // Draw into the pipeline's HDR target, then ACES tone-map to the canvas so the warm key compresses

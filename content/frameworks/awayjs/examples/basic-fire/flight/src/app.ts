@@ -23,7 +23,6 @@ import {
   createTexture,
   createTextureAtlas,
   createTilingSampler,
-  getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   presentGlScene,
@@ -98,7 +97,7 @@ const lights: SceneLights = createSceneLights({
 const planeMaterial: StandardPbrMaterial = createStandardPbrMaterial({
   baseColor: 0xffffffff,
   metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(10),
+  roughness: 0.4,
 });
 planeMaterial.doubleSided = true;
 
@@ -110,10 +109,9 @@ invalidateNodeLocalTransform(plane);
 addNodeChild(scene, plane);
 
 async function loadPlaneTextures(): Promise<void> {
-  const [diffuseImg, normalImg, specularImg] = await Promise.all([
+  const [diffuseImg, normalImg] = await Promise.all([
     loadImageResourceFromUrl('awayjs/assets/floor_diffuse.jpg'),
     loadImageResourceFromUrl('awayjs/assets/floor_normal.jpg'),
-    loadImageResourceFromUrl('awayjs/assets/floor_specular.jpg'),
   ]);
   const diffuseTex = createTexture({ image: diffuseImg, sampler: createTilingSampler() });
   setTextureUvScale(diffuseTex, 2, 2);
@@ -122,10 +120,6 @@ async function loadPlaneTextures(): Promise<void> {
   const normalTex = createTexture({ image: normalImg, sampler: createTilingSampler() });
   setTextureUvScale(normalTex, 2, 2);
   planeMaterial.normalMap = normalTex;
-
-  const specularTex = createTexture({ image: specularImg, sampler: createTilingSampler() });
-  setTextureUvScale(specularTex, 2, 2);
-  planeMaterial.metallicRoughnessMap = specularTex;
 }
 
 const fireImage = await loadImageResourceFromUrl('awayjs/assets/blue.png');
@@ -134,21 +128,22 @@ addTextureAtlasRegion(fireAtlas, 0, 0, fireImage.width, fireImage.height);
 
 const config: ParticleEmitterConfig = createParticleEmitterConfig({
   maxParticles: 500,
-  spawnRate: 100,
+  spawnRate: 120,
   duration: -1,
   loop: true,
   lifetimeMin: 0.1,
   lifetimeMax: 4.1,
-  emitterShape: 'sphere',
-  emitterRadius: 15,
+  emitterShape: 'cone3d',
+  emitterConeAngle: 0.37,
+  emitterRadius: 0,
   directionX: 0,
   directionY: 1,
   directionZ: 0,
-  speedMin: 50,
-  speedMax: 80,
-  scaleMin: 8,
+  speedMin: 70,
+  speedMax: 90,
+  scaleMin: 20,
   scaleMax: 25,
-  scaleEnd: 5,
+  scaleEnd: 0.2,
   colorStartR: 1,
   colorStartG: 0.2,
   colorStartB: 0.004,
@@ -177,7 +172,7 @@ for (let i = 0; i < NUM_FIRES; i++) {
 
   const angle = (i / NUM_FIRES) * Math.PI * 2;
   const x = Math.sin(angle) * FIRE_RADIUS;
-  const z = Math.cos(angle) * FIRE_RADIUS;
+  const z = -Math.cos(angle) * FIRE_RADIUS;
   const y = 5;
 
   setMatrix4Identity(emitter.localMatrix);

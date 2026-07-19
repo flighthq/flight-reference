@@ -103,49 +103,63 @@ let rows = 1;
 while (rows * Math.floor((rows * 16) / 9) < BLEND_ENTRIES.length) rows++;
 const cols = Math.floor((rows * 16) / 9);
 
+const cellW = W / cols;
+const cellH = H / rows;
+const LABEL_SPACE = 24;
+const PADDING = 8;
+const dx = squareImg.width / 2 - 10;
+const dy = squareImg.height / 2 - 10;
+const naturalW = Math.max(squareImg.width, dx + circleImg.width);
+const naturalH = Math.max(squareImg.height, dy + circleImg.height);
+const imgScale = Math.min((cellW - PADDING * 2) / naturalW, (cellH - LABEL_SPACE - PADDING * 2) / naturalH);
+
 for (let i = 0; i < BLEND_ENTRIES.length; i++) {
   const entry = BLEND_ENTRIES[i];
   const col = i % cols;
   const row = Math.floor(i / cols);
-  const cx = (W * col) / cols + W / (2 * cols);
-  const cy = (H * row) / rows + H / (2 * rows) - 20;
+  const cx = cellW * col + cellW / 2;
+  const cy = cellH * row + (cellH - LABEL_SPACE) / 2;
+
+  const group = createDisplayContainer();
+  group.scaleX = imgScale;
+  group.scaleY = imgScale;
+  group.x = cx - (naturalW * imgScale) / 2;
+  group.y = cy - (naturalH * imgScale) / 2;
 
   if (entry.kind === 'fixed') {
     const square = createBitmap();
     square.data.image = squareImg;
     square.data.smoothing = true;
-    square.x = cx - squareImg.width / 2;
-    square.y = cy - squareImg.height / 2;
-    addNodeChild(root, square);
+    addNodeChild(group, square);
 
     const circle = createBitmap();
     circle.data.image = circleImg;
     circle.data.smoothing = true;
-    circle.x = cx - 10;
-    circle.y = cy - 10;
+    circle.x = dx;
+    circle.y = dy;
     circle.blendMode = entry.mode;
-    addNodeChild(root, circle);
+    addNodeChild(group, circle);
   } else {
     const composited = createBitmap();
     composited.data.image = compositeAdvanced(squareImg, circleImg, entry.cssOp);
     composited.data.smoothing = true;
-    composited.x = cx - squareImg.width / 2;
-    composited.y = cy - squareImg.height / 2;
-    addNodeChild(root, composited);
+    addNodeChild(group, composited);
   }
+
+  addNodeChild(root, group);
 
   const lbl = createRichText();
   lbl.data.defaultTextFormat = {
     font: 'sans-serif',
-    size: 14,
+    size: 11,
     bold: true,
     color: 0x222222,
     align: 'center',
   };
-  lbl.x = cx - squareImg.height / 2 - 30;
-  lbl.y = cy + squareImg.height / 2 + 40;
-  lbl.data.width = 200;
-  lbl.data.height = 200;
+  lbl.x = cx - cellW / 2 + PADDING;
+  lbl.y = cy + (naturalH * imgScale) / 2 + 2;
+  lbl.data.width = cellW - PADDING * 2;
+  lbl.data.height = LABEL_SPACE;
   lbl.data.text = entry.name;
   addNodeChild(root, lbl);
 }

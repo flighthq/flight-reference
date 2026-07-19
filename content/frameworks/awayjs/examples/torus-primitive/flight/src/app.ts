@@ -22,8 +22,8 @@ import {
   registerStandardPbrGlMaterial,
   renderGlBackground,
   setQuaternionFromAxisAngle,
-  setSceneNodeRotationQuaternion,
 } from '@flighthq/sdk';
+import { setSceneNodeRotationQuaternion } from '../../../_shared/flight/src/position';
 
 import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';

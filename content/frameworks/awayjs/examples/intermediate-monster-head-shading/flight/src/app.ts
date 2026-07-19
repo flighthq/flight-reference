@@ -16,9 +16,8 @@ import {
   presentGlScene,
   registerStandardPbrGlMaterial,
   resizeGlRenderTarget,
-  setSceneNodePosition,
-  setSceneNodeScale,
 } from '@flighthq/sdk';
+import { setSceneNodePosition, setSceneNodeScale } from '../../../_shared/flight/src/position';
 
 import {
   AWAY_MOUSE_SENSITIVITY,

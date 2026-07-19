@@ -17,8 +17,8 @@ import {
   registerUnlitGlMaterial,
   resizeGlRenderTarget,
   setQuaternionFromAxisAngle,
-  setSceneNodeRotationQuaternion,
 } from '@flighthq/sdk';
+import { setSceneNodeRotationQuaternion } from '../../../_shared/flight/src/position';
 
 import { createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';

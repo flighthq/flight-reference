@@ -32,10 +32,10 @@ import {
   registerStandardPbrGlMaterial,
   registerUnlitGlMaterial,
   resizeGlRenderTarget,
-  setSceneNodePosition,
   setTextureUvScale,
   stepParticleEmitter3D,
 } from '@flighthq/sdk';
+import { setSceneNodePosition } from '../../../_shared/flight/src/position';
 
 import {
   awayDirection,

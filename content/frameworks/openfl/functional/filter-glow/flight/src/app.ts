@@ -124,6 +124,7 @@ filtered[3].filter = createInnerGlowEffect({
   blurY: computeGaussianSigmaFromRadius(6),
   strength: 2,
   quality: 3,
+  knockout: true,
 });
 
 const _bounds = createRectangle();
@@ -178,7 +179,14 @@ function updateFilters(): void {
     quality: 3,
     knockout: true,
   });
-  filtered[3].filter = createInnerGlowEffect({ color: 0xff0000, blurX: blur, blurY: blur, strength: 2, quality: 3 });
+  filtered[3].filter = createInnerGlowEffect({
+    color: 0xff0000,
+    blurX: blur,
+    blurY: blur,
+    strength: 2,
+    quality: 3,
+    knockout: true,
+  });
 }
 
 type CanvasGlowCache = {
@@ -288,7 +296,9 @@ function renderGlGlowFrame(
 
   for (const entry of entries) {
     const renderProxy = getRenderProxy2D(state, entry.node);
-    if (renderProxy !== undefined) copyMatrix(renderProxy.transform2D, entry.sceneTransform);
+    if (renderProxy === undefined) continue;
+    copyMatrix(renderProxy.transform2D, entry.sceneTransform);
+    renderProxy.visible = false;
   }
 
   renderGlBackground(state);
@@ -297,6 +307,7 @@ function renderGlGlowFrame(
   for (const entry of entries) {
     const renderProxy = getRenderProxy2D(state, entry.node);
     if (renderProxy === undefined) continue;
+    renderProxy.visible = true;
     drawGlRenderTargetResult(state, renderProxy, entry.dest, entry.cacheTransform);
   }
 }

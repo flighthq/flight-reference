@@ -22,9 +22,8 @@ import {
   resizeGlRenderTarget,
   setCameraViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
-  setSceneNodePosition,
-  setSceneNodeRotationQuaternion,
 } from '@flighthq/sdk';
+import { setSceneNodePosition, setSceneNodeRotationQuaternion } from '../../../_shared/flight/src/position';
 
 import { awayDirection, awayPosition, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';

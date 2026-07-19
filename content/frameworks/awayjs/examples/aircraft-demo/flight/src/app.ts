@@ -49,7 +49,6 @@ import {
   flipSurfaceVertical,
   getNodeChildren,
   getNodeLocalMatrix4,
-  getSceneNodePosition,
   loadImageResourceFromUrl,
   parseObjMaterialLibrary,
   registerStandardPbrGlMaterial,
@@ -64,10 +63,10 @@ import {
   setNodeLocalMatrix4,
   setCubeTextureFace,
   setMatrix4Identity,
-  setSceneNodePosition,
   translateMatrix4,
   updateParticleEmitter3D,
 } from '@flighthq/sdk';
+import { getSceneNodePosition, setSceneNodePosition } from '../../../_shared/flight/src/position';
 
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';

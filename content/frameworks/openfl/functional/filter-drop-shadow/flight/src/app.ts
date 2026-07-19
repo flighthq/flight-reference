@@ -125,6 +125,7 @@ const factories: FilterFactory[] = [
       blurX: blur,
       blurY: blur,
       quality: 3,
+      knockout: true,
     }),
   (blur, angle) =>
     createDropShadowEffect({
@@ -146,6 +147,7 @@ const factories: FilterFactory[] = [
       blurX: blur,
       blurY: blur,
       quality: 3,
+      hideObject: true,
     }),
 ];
 

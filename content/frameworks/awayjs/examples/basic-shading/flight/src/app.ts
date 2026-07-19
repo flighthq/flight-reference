@@ -19,10 +19,9 @@ import {
   scaleMeshGeometryUvs,
   setDirectionalLightDirection,
   setQuaternionFromAxisAngle,
-  setSceneNodePosition,
-  setSceneNodeRotationQuaternion,
   setTextureUvScale,
 } from '@flighthq/sdk';
+import { setSceneNodePosition, setSceneNodeRotationQuaternion } from '../../../_shared/flight/src/position';
 
 import {
   awayDirection,

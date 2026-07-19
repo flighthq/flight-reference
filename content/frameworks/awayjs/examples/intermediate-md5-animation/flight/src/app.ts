@@ -56,11 +56,10 @@ import {
   setCameraViewMatrix4FromLookAt,
   setCubeTextureFace,
   setQuaternionFromAxisAngle,
-  setSceneNodePosition,
-  setSceneNodeRotationQuaternion,
   setTextureUvScale,
   updateMeshSkin,
 } from '@flighthq/sdk';
+import { setSceneNodePosition, setSceneNodeRotationQuaternion } from '../../../_shared/flight/src/position';
 
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway, createPointLightFromAway } from '../../../_shared/flight/src/lighting';

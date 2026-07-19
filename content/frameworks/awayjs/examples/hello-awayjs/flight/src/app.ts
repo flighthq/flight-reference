@@ -15,9 +15,8 @@ import {
   presentGlScene,
   registerUnlitGlMaterial,
   resizeGlRenderTarget,
-  setSceneNodePosition,
-  setSceneNodeScale,
 } from '@flighthq/sdk';
+import { setSceneNodePosition, setSceneNodeScale } from '../../../_shared/flight/src/position';
 
 import { createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';

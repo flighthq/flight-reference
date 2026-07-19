@@ -26,11 +26,10 @@ import {
   registerBlinnPhongGlMaterial,
   resizeGlRenderTarget,
   sampleAnimationTrack,
-  setSceneNodePosition,
-  setSceneNodeScale,
   setTextureUvScale,
   updateMeshMorph,
 } from '@flighthq/sdk';
+import { setSceneNodePosition, setSceneNodeScale } from '../../../_shared/flight/src/position';
 
 import {
   createCameraFromAway,

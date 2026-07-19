@@ -43,9 +43,8 @@ import {
   resolveGlRenderTarget,
   setCubeTextureFace,
   setQuaternionFromAxisAngle,
-  setSceneNodePosition,
-  setSceneNodeRotationQuaternion,
 } from '@flighthq/sdk';
+import { setSceneNodePosition, setSceneNodeRotationQuaternion } from '../../../_shared/flight/src/position';
 
 import {
   AWAY_MOUSE_SENSITIVITY,

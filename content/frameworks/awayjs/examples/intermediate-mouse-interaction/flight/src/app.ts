@@ -26,10 +26,12 @@ import {
   registerStandardPbrGlMaterial,
   resizeGlRenderTarget,
   setQuaternionFromAxisAngle,
+} from '@flighthq/sdk';
+import {
   setSceneNodePosition,
   setSceneNodeRotationQuaternion,
   setSceneNodeScale,
-} from '@flighthq/sdk';
+} from '../../../_shared/flight/src/position';
 
 import {
   createCameraFromAway,

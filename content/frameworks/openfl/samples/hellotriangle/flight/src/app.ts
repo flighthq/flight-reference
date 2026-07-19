@@ -12,8 +12,8 @@ import {
   createVertexColorMaterial,
   setCameraViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
-  setSceneNodeRotationQuaternion,
 } from '@flighthq/sdk';
+import { setSceneNodeRotationQuaternion } from '../../../../../awayjs/examples/_shared/flight/src/position';
 
 import { render } from './render';
 

@@ -23,9 +23,9 @@ import {
   presentGlScene,
   resizeGlRenderTarget,
   setQuaternionFromAxisAngle,
-  setSceneNodeRotationQuaternion,
   stepParticleEmitter3D,
 } from '@flighthq/sdk';
+import { setSceneNodeRotationQuaternion } from '../../../_shared/flight/src/position';
 
 import {
   AWAY_MOUSE_SENSITIVITY,

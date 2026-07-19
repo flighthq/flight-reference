@@ -40,11 +40,13 @@ import {
   renderGlBackground,
   setCubeTextureFace,
   setQuaternionFromAxisAngle,
+  setTextureUvScale,
+} from '@flighthq/sdk';
+import {
   setSceneNodePosition,
   setSceneNodeRotationQuaternion,
   setSceneNodeScale,
-  setTextureUvScale,
-} from '@flighthq/sdk';
+} from '../../../_shared/flight/src/position';
 
 import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';

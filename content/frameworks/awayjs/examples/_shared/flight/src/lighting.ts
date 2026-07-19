@@ -8,10 +8,22 @@ import {
   packOpaqueColor,
 } from '@flighthq/sdk';
 
-const pbrExposure = getPhongToPbrLightExposure();
+// The Flight material model a demo's ports shade with. AwayJS lights are authored for classic Phong:
+// gamma-space radiance whose Lambert diffuse term does NOT divide albedo by π. The light energy has to
+// match whichever model receives it, so this is the dial:
+//   - 'pbr'   → StandardPbrMaterial's diffuse BRDF divides albedo by π for energy conservation, so the
+//               light needs the Phong→PBR ×π exposure (getPhongToPbrLightExposure) or the scene renders
+//               ~π× too dark — the classic "ported scene is far too dark" failure.
+//   - 'phong' → BlinnPhongMaterial keeps the classic Lambert term (no /π), so the AwayJS intensity passes
+//               through unchanged; applying the ×π boost would blow every surface out ~π× too bright.
+// Most ports use StandardPbrMaterial, so 'pbr' is the default.
+export type AwayShadingModel = 'pbr' | 'phong';
 
-function pbrIntensity(awayDiffuse: number): number {
-  return applyLightExposure(awayDiffuse, pbrExposure);
+const DEFAULT_SHADING_MODEL: AwayShadingModel = 'pbr';
+
+function awayIntensity(intensity: number, shading: AwayShadingModel = DEFAULT_SHADING_MODEL): number {
+  const exposure = shading === 'pbr' ? getPhongToPbrLightExposure() : 0;
+  return applyLightExposure(intensity, exposure);
 }
 
 // AwayJS color hex are sRgb values, which is exactly what Flight's light `color` expects: the renderer
@@ -63,6 +75,7 @@ export interface AwayDirectionalLightOptions {
   diffuse?: number;
   ambient?: number;
   ambientColor?: number;
+  shading?: AwayShadingModel;
   tuning?: AwayLightTuning;
 }
 
@@ -80,16 +93,17 @@ export function createDirectionalLightFromAway(
   const ambientColor = opts.tuning?.ambientColor ?? opts.ambientColor ?? 0xffffff;
   const diffuseScale = opts.tuning?.diffuse ?? 1;
   const ambientScale = opts.tuning?.ambient ?? 1;
+  const shading = opts.shading ?? DEFAULT_SHADING_MODEL;
 
   return {
     directional: createDirectionalLight({
       direction: opts.direction,
       color: awayLightColor(color),
-      intensity: pbrIntensity(diffuse) * diffuseScale,
+      intensity: awayIntensity(diffuse, shading) * diffuseScale,
     }),
     ambient: createAmbientLight({
       color: awayLightColor(ambientColor),
-      intensity: pbrIntensity(ambient) * ambientScale,
+      intensity: awayIntensity(ambient, shading) * ambientScale,
     }),
   };
 }
@@ -98,17 +112,19 @@ export interface AwayPointLightOptions {
   color?: number;
   diffuse?: number;
   range: number;
+  shading?: AwayShadingModel;
 }
 
 export function createPointLightFromAway(opts: Readonly<AwayPointLightOptions>): PointLight {
   const color = opts.color ?? 0xffffff;
   const diffuse = opts.diffuse ?? 1;
+  const shading = opts.shading ?? DEFAULT_SHADING_MODEL;
 
   return createPointLight({
     color: awayLightColor(color),
-    intensity: pbrIntensity(diffuse),
+    intensity: awayIntensity(diffuse, shading),
     range: opts.range,
   });
 }
 
-export { pbrIntensity as awayIntensity };
+export { awayIntensity };

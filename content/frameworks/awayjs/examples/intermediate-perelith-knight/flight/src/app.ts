@@ -3,17 +3,21 @@ import {
   addNodeChild,
   advanceAnimationPlayer,
   cloneMeshGeometry,
+  configureDirectionalShadowCamera,
   createAnimationPlayer,
   createBlinnPhongMaterial,
+  createCamera,
   createGlCanvasElement,
   createGlRenderState,
   createGlRenderTarget,
   createMesh,
+  createOrthographicProjection,
   createPlaneMeshGeometry,
   createScene,
   createSceneLights,
   createTexture,
   createTilingSampler,
+  drawGlSceneShadowMap,
   getNodeChildren,
   importMd2,
   invalidateNodeLocalTransform,
@@ -65,9 +69,19 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60, far: 5000 });
 
+// This demo shades with BlinnPhongMaterial (classic Lambert, no /π), so the lights skip the Phong→PBR
+// ×π exposure — 'shading: phong' passes the AwayJS intensities through unchanged. Under the default
+// 'pbr' path every surface would render ~π× too bright and blow the floor to flat white.
+//
+// tuning lifts the linear-space result back toward AwayJS's gamma-space look: a faithful ×1 conversion
+// leaves the knights' camera-facing (ambient-only) sides too dark, since linear shading crushes the
+// mid-tone fill that AwayJS shows brighter. The ambient scale targets those shadowed faces hardest; a
+// small diffuse scale warms the key light without re-blowing the floor.
 const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(-0.5, -1, -1),
   ambient: 0.4,
+  shading: 'phong',
+  tuning: { diffuse: 1.15, ambient: 1.9 },
 });
 const lights = createSceneLights({ ambient, directional });
 
@@ -248,6 +262,23 @@ document.addEventListener('keyup', (e: KeyboardEvent) => {
   }
 });
 
+// Directional shadow: render scene depth from the light's point of view into the shadow map, which the
+// classic (BlinnPhong) shading then PCF-samples so the knights cast onto the floor and each other. The
+// orthographic light camera is sized to a static bound covering the 5000×5000 floor and the knight
+// field above it; direction and bounds never change, so the camera is configured once. The depth pass
+// applies the same morph as the forward pass, so re-rendering each frame gives shadows that track the
+// knights' animation (as AwayJS's shadow mapper does).
+const shadowCamera = createCamera({
+  near: 1,
+  far: 1,
+  projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
+});
+const sceneBounds = {
+  min: { x: -2600, y: 0, z: -2600 },
+  max: { x: 2600, y: 700, z: 2600 },
+};
+configureDirectionalShadowCamera(shadowCamera, directional.direction, sceneBounds);
+
 let lastTime = 0;
 
 function frame(now: number): void {
@@ -275,6 +306,7 @@ function frame(now: number): void {
   } else {
     resizeGlRenderTarget(state, renderTarget, w, h);
   }
+  drawGlSceneShadowMap(state, scene, shadowCamera);
   presentGlScene(state, renderTarget, scene, camera, lights);
   verifyFrame();
   requestAnimationFrame(frame);

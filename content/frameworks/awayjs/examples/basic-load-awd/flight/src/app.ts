@@ -40,7 +40,7 @@ if (mount) {
 document.body.style.margin = '0';
 
 const state = createGlRenderState(canvas, {
-  backgroundColor: 0x1e2125ff,
+  backgroundColor: 0x030404ff,
   contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
   pixelRatio,
 });
@@ -61,8 +61,8 @@ const { directional, ambient } = createDirectionalLightFromAway({
   ambient: 0.5,
   ambientColor: 0x30353b,
   tuning: {
-    diffuse: 0.45,
-    ambient: 0.25,
+    diffuse: 0.7,
+    ambient: 0.2,
   },
 });
 const lights = createSceneLights({ ambient, directional });

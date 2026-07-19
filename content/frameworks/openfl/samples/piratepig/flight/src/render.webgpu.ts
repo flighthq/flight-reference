@@ -52,6 +52,7 @@ document.body.appendChild(canvas);
 
 export const container = canvas;
 export const state = await createWgpuRenderState(canvas, {
+  pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
@@ -61,7 +62,8 @@ registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
 registerWgpuShapeCommands([defaultWgpuBeginFill, defaultWgpuDrawRectangle, defaultWgpuEndFill]);
 registerDefaultWgpuMaterial(state);
 enableWgpuRenderCache(state);
-export const scale = pixelRatio;
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+export const scale = 1;
 
 export function setSize(w: number, h: number): void {
   canvas.width = w * pixelRatio;

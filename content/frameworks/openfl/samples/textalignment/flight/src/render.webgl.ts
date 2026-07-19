@@ -10,6 +10,7 @@ import {
   renderGlBackground,
   renderGlDisplayObject,
   RichTextKind,
+  createMatrix,
 } from '@flighthq/sdk';
 
 const WIDTH = 800;
@@ -26,13 +27,15 @@ document.getElementById('app')?.remove();
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(canvas, {
+  pixelRatio,
   backgroundColor: 0xa0a0a0ff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerDefaultGlMaterial(state);
-export const scale = pixelRatio;
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+export const scale = 1;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;

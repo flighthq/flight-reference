@@ -10,6 +10,7 @@ import {
   renderWgpuDisplayObject,
   submitWgpuRenderPass,
   TextLabelKind,
+  createMatrix,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -18,12 +19,14 @@ document.getElementById('app')?.remove();
 document.body.appendChild(canvas);
 
 export const state = await createWgpuRenderState(canvas, {
+  pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
 registerDefaultWgpuMaterial(state);
-export const scale = pixelRatio;
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+export const scale = 1;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;

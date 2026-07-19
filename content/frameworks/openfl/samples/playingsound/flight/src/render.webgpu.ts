@@ -13,6 +13,7 @@ import {
   renderWgpuDisplayObject,
   ShapeKind,
   submitWgpuRenderPass,
+  createMatrix,
 } from '@flighthq/sdk';
 
 const WIDTH = 550;
@@ -24,13 +25,15 @@ document.body.appendChild(canvas);
 
 export const container = canvas;
 export const state = await createWgpuRenderState(canvas, {
+  pixelRatio,
   backgroundColor: 0xffffffff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands([defaultWgpuBeginFill, defaultWgpuDrawRectangle]);
 registerDefaultWgpuMaterial(state);
-export const scale = pixelRatio;
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+export const scale = 1;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;

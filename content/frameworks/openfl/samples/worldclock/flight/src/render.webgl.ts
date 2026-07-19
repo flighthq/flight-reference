@@ -17,6 +17,7 @@ import {
   registerRenderer,
   renderGlBackground,
   renderGlDisplayObject,
+  createMatrix,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -26,6 +27,7 @@ document.body.appendChild(canvas);
 
 export const container = canvas;
 export const state = createGlRenderState(canvas, {
+  pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
@@ -40,7 +42,8 @@ registerGlShapeCommands([
 ]);
 registerDefaultGlMaterial(state);
 
-export const scale = pixelRatio;
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+export const scale = 1;
 
 export function setSize(width: number, height: number): void {
   canvas.width = width * pixelRatio;

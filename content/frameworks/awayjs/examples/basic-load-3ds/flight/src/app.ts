@@ -25,16 +25,14 @@ import {
   endGlRenderEffectPipeline,
   getNodeChildren,
   getPbrRoughnessFromPhongShininess,
-  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   registerDefaultGlRenderEffects,
   registerSpecularPbrGlMaterial,
   registerStandardPbrGlMaterial,
   renderGlBackground,
-  scaleMatrix4,
   setDirectionalLightDirection,
-  setMatrix4Identity,
-  translateMatrix4,
+  setSceneNodePosition,
+  setSceneNodeScale,
 } from '@flighthq/sdk';
 
 import {
@@ -151,12 +149,8 @@ for (const child of getNodeChildren(modelScene)) {
   addNodeChild(modelContainer, child);
 }
 
-setMatrix4Identity(modelContainer.localMatrix);
-// AwayJS places the loader at z = -200; flipped to +200 for Flight's right-handed z. The 3DS
-// Z-up->Y-up rotation lands the ant at ~-195 in world z after scaling, so +200 centers it.
-translateMatrix4(modelContainer.localMatrix, modelContainer.localMatrix, 0, 0, 200);
-scaleMatrix4(modelContainer.localMatrix, modelContainer.localMatrix, 300, 300, 300);
-invalidateNodeLocalTransform(modelContainer);
+setSceneNodePosition(modelContainer, 0, 0, 200);
+setSceneNodeScale(modelContainer, 300, 300, 300);
 addNodeChild(scene, modelContainer);
 
 const orbit = createOrbitControllerFromAway(camera, {

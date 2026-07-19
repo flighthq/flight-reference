@@ -34,6 +34,7 @@ import {
   createTexture,
   createTilingSampler,
   createUnlitMaterial,
+  createQuaternion,
   createVector3,
   DEG_TO_RAD,
   drawGlEnvironmentSkybox,
@@ -44,7 +45,6 @@ import {
   getPbrRoughnessFromPhongShininess,
   getNodeChildByName,
   getNodeChildren,
-  invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
   parseMd5Anim,
@@ -53,12 +53,12 @@ import {
   renderGlBackground,
   resolveGlRenderTarget,
   resizeGlRenderTarget,
-  rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
-  setMatrix4Identity,
   setCubeTextureFace,
+  setQuaternionFromAxisAngle,
+  setSceneNodePosition,
+  setSceneNodeRotationQuaternion,
   setTextureUvScale,
-  translateMatrix4,
   updateMeshSkin,
 } from '@flighthq/sdk';
 
@@ -198,8 +198,6 @@ bodyMaterial.normalMap = createTexture({ image: bodyNormal, colorSpace: 'linear'
 bodyMaterial.metallicRoughnessMap = createTexture({ image: bodySpecular, colorSpace: 'linear' });
 
 const groundMesh = createMesh(createPlaneMeshGeometry(50000, 50000, 1, 1), [groundMaterial]);
-setMatrix4Identity(groundMesh.localMatrix);
-invalidateNodeLocalTransform(groundMesh);
 addNodeChild(scene, groundMesh);
 
 // AwayJS's EffectFogMethod fades the ground to black from half the camera far distance to the far
@@ -255,6 +253,8 @@ if (skeletonNode) {
 const md5Children = getNodeChildren(md5Scene);
 const characterPositionNode = createScene();
 const characterNode = createScene();
+const yAxisVec = createVector3(0, 1, 0);
+const characterQuat = createQuaternion();
 const skinnedMeshes: Mesh[] = [];
 for (const child of md5Children) {
   if (isMesh(child)) {
@@ -264,8 +264,6 @@ for (const child of md5Children) {
   }
   addNodeChild(characterNode, child);
 }
-setMatrix4Identity(characterNode.localMatrix);
-invalidateNodeLocalTransform(characterNode);
 addNodeChild(characterPositionNode, characterNode);
 addNodeChild(scene, characterPositionNode);
 
@@ -452,13 +450,9 @@ function frame(ts: number): void {
 
   // Keep root-motion translation and visual yaw on separate nodes. This makes the yaw pivot the
   // character's local origin and prevents turning from rotating its accumulated world displacement.
-  setMatrix4Identity(characterPositionNode.localMatrix);
-  translateMatrix4(characterPositionNode.localMatrix, characterPositionNode.localMatrix, characterX, 0, characterZ);
-  invalidateNodeLocalTransform(characterPositionNode);
-  setMatrix4Identity(characterNode.localMatrix);
-  const yAxis = createVector3(0, 1, 0);
-  rotateMatrix4(characterNode.localMatrix, characterNode.localMatrix, yAxis, spriteRotY + CHARACTER_YAW_OFFSET);
-  invalidateNodeLocalTransform(characterNode);
+  setSceneNodePosition(characterPositionNode, characterX, 0, characterZ);
+  setQuaternionFromAxisAngle(characterQuat, yAxisVec, spriteRotY + CHARACTER_YAW_OFFSET);
+  setSceneNodeRotationQuaternion(characterNode, characterQuat);
 
   setAwayPosition(
     redLight.position,

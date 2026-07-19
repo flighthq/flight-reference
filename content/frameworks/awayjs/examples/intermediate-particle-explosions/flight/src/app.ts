@@ -17,13 +17,13 @@ import {
   createPointLight,
   createScene,
   createSceneLights,
+  createQuaternion,
   DEG_TO_RAD,
   emitParticleBurst3D,
-  invalidateNodeLocalTransform,
   presentGlScene,
   resizeGlRenderTarget,
-  rotateMatrix4,
-  setMatrix4Identity,
+  setQuaternionFromAxisAngle,
+  setSceneNodeRotationQuaternion,
   stepParticleEmitter3D,
 } from '@flighthq/sdk';
 
@@ -184,9 +184,9 @@ for (let a = 0; a < NUM_ANIMATORS; a++) {
     const state: ParticleEmitterState = createParticleEmitterState();
     const emitter: ParticleEmitter3D = createParticleEmitter3D();
 
-    setMatrix4Identity(emitter.localMatrix);
-    rotateMatrix4(emitter.localMatrix, emitter.localMatrix, { x: 0, y: 1, z: 0 }, rotationY);
-    invalidateNodeLocalTransform(emitter);
+    const emitterQuat = createQuaternion();
+    setQuaternionFromAxisAngle(emitterQuat, { x: 0, y: 1, z: 0 }, rotationY);
+    setSceneNodeRotationQuaternion(emitter, emitterQuat);
     addNodeChild(scene, emitter);
 
     logoEmitters.push({ emitter, state, config, pixels, offset: logoOffsets[g]!, animator: a });

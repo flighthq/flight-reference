@@ -13,15 +13,15 @@ import {
   createStandardPbrMaterial,
   createTexture,
   createTorusMeshGeometry,
+  createQuaternion,
   createVector3,
-  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
-  rotateMatrix4,
   scaleMeshGeometryUvs,
   setDirectionalLightDirection,
-  setMatrix4Identity,
+  setQuaternionFromAxisAngle,
+  setSceneNodePosition,
+  setSceneNodeRotationQuaternion,
   setTextureUvScale,
-  translateMatrix4,
 } from '@flighthq/sdk';
 
 import {
@@ -103,23 +103,17 @@ const torusMaterial = createStandardPbrMaterial({
 
 const planeGeometry = createPlaneMeshGeometry(1000, 1000, 1, 1);
 const plane = createMesh(planeGeometry, [planeMaterial]);
-setMatrix4Identity(plane.localMatrix);
-translateMatrix4(plane.localMatrix, plane.localMatrix, 0, -20, 0);
-invalidateNodeLocalTransform(plane);
+setSceneNodePosition(plane, 0, -20, 0);
 addNodeChild(scene, plane);
 
 const sphereGeometry = createSphereMeshGeometry(150, 40, 20);
 const sphere = createMesh(sphereGeometry, [sphereMaterial]);
-setMatrix4Identity(sphere.localMatrix);
-translateMatrix4(sphere.localMatrix, sphere.localMatrix, ...awayPosition(300, 160, 300));
-invalidateNodeLocalTransform(sphere);
+setSceneNodePosition(sphere, ...awayPosition(300, 160, 300));
 addNodeChild(scene, sphere);
 
 const cubeGeometry = createBoxMeshGeometry(200, 200, 200);
 const cube = createMesh(cubeGeometry, [cubeMaterial]);
-setMatrix4Identity(cube.localMatrix);
-translateMatrix4(cube.localMatrix, cube.localMatrix, ...awayPosition(300, 160, -250));
-invalidateNodeLocalTransform(cube);
+setSceneNodePosition(cube, ...awayPosition(300, 160, -250));
 addNodeChild(scene, cube);
 
 const torusGeometry = createTorusMeshGeometry(150, 60, 40, 20);
@@ -128,12 +122,10 @@ const torusGeometry = createTorusMeshGeometry(150, 60, 40, 20);
 // weave stays crisp instead of aliasing into speckle on the ring's minified far side.
 scaleMeshGeometryUvs(torusGeometry, 10, 5);
 const torus = createMesh(torusGeometry, [torusMaterial]);
-setMatrix4Identity(torus.localMatrix);
-translateMatrix4(torus.localMatrix, torus.localMatrix, ...awayPosition(-250, 160, -250));
-// AwayJS builds this torus with the default yUp=true (ring in the XZ plane, lying flat); Flight's
-// torus ring is in the XY plane, so tilt it 90° about X to lay it flat like the original.
-rotateMatrix4(torus.localMatrix, torus.localMatrix, createVector3(1, 0, 0), Math.PI / 2);
-invalidateNodeLocalTransform(torus);
+setSceneNodePosition(torus, ...awayPosition(-250, 160, -250));
+const torusRotation = createQuaternion();
+setQuaternionFromAxisAngle(torusRotation, createVector3(1, 0, 0), Math.PI / 2);
+setSceneNodeRotationQuaternion(torus, torusRotation);
 addNodeChild(scene, torus);
 
 function applyTextures(

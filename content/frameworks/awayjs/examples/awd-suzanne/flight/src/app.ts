@@ -2,7 +2,6 @@ import type { BlinnPhongMaterial, GlRenderTarget, Material, Mesh, SceneHit } fro
 import {
   addNodeChild,
   appendMatrix4,
-  copyMatrix4,
   createBlinnPhongMaterial,
   createGlCanvasElement,
   createGlRenderState,
@@ -15,7 +14,7 @@ import {
   createVector3,
   DEG_TO_RAD,
   findNode,
-  invalidateNodeLocalTransform,
+  getNodeLocalMatrix4,
   isMesh,
   loadSceneFromAwd,
   pickScene,
@@ -27,6 +26,7 @@ import {
   setCameraViewMatrix4FromLookAt,
   setDirectionalLightTarget,
   setMatrix4Identity,
+  setNodeLocalMatrix4,
   translateMatrix4,
 } from '@flighthq/sdk';
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
@@ -104,20 +104,21 @@ applyAwayGloss(defaultMaterial, { gloss: 50, specular: 1.8 });
 // on every instance (append = applied first to the vertex). For this asset the mesh sits directly
 // under the scene root, so its localMatrix is already the world orientation.
 const orient = createMatrix4();
-copyMatrix4(orient, templateMesh.localMatrix);
+const orientSource = getNodeLocalMatrix4(templateMesh);
+orient.m.set(orientSource.m);
 
 const yAxis = createVector3(0, 1, 0);
 
-// TRS order: translate, then rotate, then scale (innermost). The scale is uniform so it commutes with
-// the rotation, so tx/ty/tz stay in world space — no need to divide by scale.
+const scratchMatrix = createMatrix4();
+
 function placeMesh(scale: number, tx: number, ty: number, tz: number, rotationY: number): Mesh {
   const mesh = createMesh(templateGeometry, [defaultMaterial]);
-  setMatrix4Identity(mesh.localMatrix);
-  translateMatrix4(mesh.localMatrix, mesh.localMatrix, tx, ty, tz);
-  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, yAxis, rotationY);
-  scaleMatrix4(mesh.localMatrix, mesh.localMatrix, scale, scale, scale);
-  appendMatrix4(mesh.localMatrix, mesh.localMatrix, orient);
-  invalidateNodeLocalTransform(mesh);
+  setMatrix4Identity(scratchMatrix);
+  translateMatrix4(scratchMatrix, scratchMatrix, tx, ty, tz);
+  rotateMatrix4(scratchMatrix, scratchMatrix, yAxis, rotationY);
+  scaleMatrix4(scratchMatrix, scratchMatrix, scale, scale, scale);
+  appendMatrix4(scratchMatrix, scratchMatrix, orient);
+  setNodeLocalMatrix4(mesh, scratchMatrix);
   addNodeChild(scene, mesh);
   return mesh;
 }

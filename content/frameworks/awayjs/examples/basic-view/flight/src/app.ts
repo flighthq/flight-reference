@@ -7,17 +7,17 @@ import {
   createGlRenderTarget,
   createMesh,
   createPlaneMeshGeometry,
+  createQuaternion,
   createTexture,
   createUnlitMaterial,
   createVector3,
   DEG_TO_RAD,
-  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   presentGlScene,
   registerUnlitGlMaterial,
   resizeGlRenderTarget,
-  rotateMatrix4,
-  setMatrix4Identity,
+  setQuaternionFromAxisAngle,
+  setSceneNodeRotationQuaternion,
 } from '@flighthq/sdk';
 
 import { createCameraFromAway } from '../../../_shared/flight/src/camera';
@@ -56,6 +56,7 @@ const camera = createCameraFromAway({ y: 500, z: -600, fov: 60 });
 
 const lights: SceneLights = { ambient: null, directional: null };
 const yAxis = createVector3(0, 1, 0);
+const scratchQuat = createQuaternion();
 
 const image = await loadImageResourceFromUrl('awayjs/assets/floor_diffuse.jpg');
 const texture = createTexture({ image });
@@ -66,9 +67,8 @@ let angle = 0;
 function frame(): void {
   angle -= DEG_TO_RAD;
 
-  setMatrix4Identity(mesh.localMatrix);
-  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, yAxis, angle);
-  invalidateNodeLocalTransform(mesh);
+  setQuaternionFromAxisAngle(scratchQuat, yAxis, angle);
+  setSceneNodeRotationQuaternion(mesh, scratchQuat);
 
   const w = canvas.width;
   const h = canvas.height;

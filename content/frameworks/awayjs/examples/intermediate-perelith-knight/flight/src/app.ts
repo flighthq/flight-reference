@@ -20,17 +20,15 @@ import {
   drawGlSceneShadowMap,
   getNodeChildren,
   importMd2,
-  invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
   presentGlScene,
   registerBlinnPhongGlMaterial,
   resizeGlRenderTarget,
   sampleAnimationTrack,
-  scaleMatrix4,
-  setMatrix4Identity,
+  setSceneNodePosition,
+  setSceneNodeScale,
   setTextureUvScale,
-  translateMatrix4,
   updateMeshMorph,
 } from '@flighthq/sdk';
 
@@ -115,8 +113,6 @@ for (let i = 0; i < 4; i++) {
 
 const floorGeometry = createPlaneMeshGeometry(5000, 5000, 1, 1);
 const floor = createMesh(floorGeometry, [floorMaterial]);
-setMatrix4Identity(floor.localMatrix);
-invalidateNodeLocalTransform(floor);
 addNodeChild(scene, floor);
 
 const md2Buffer = await fetch('awayjs/assets/pknight.md2').then((r) => r.arrayBuffer());
@@ -164,10 +160,8 @@ for (let i = 0; i < numWide; i++) {
 
     const x = ((i - (numWide - 1) / 2) * 5000) / numWide;
     const z = ((j - (numDeep - 1) / 2) * 5000) / numDeep;
-    setMatrix4Identity(knight.localMatrix);
-    translateMatrix4(knight.localMatrix, knight.localMatrix, x, 120, z);
-    scaleMatrix4(knight.localMatrix, knight.localMatrix, 5, 5, 5);
-    invalidateNodeLocalTransform(knight);
+    setSceneNodePosition(knight, x, 120, z);
+    setSceneNodeScale(knight, 5, 5, 5);
     addNodeChild(scene, knight);
     knights.push({ mesh: knight, player, track: md2Track });
   }

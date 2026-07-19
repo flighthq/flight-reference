@@ -12,17 +12,18 @@ import {
   createStandardPbrMaterial,
   createTexture,
   createTorusMeshGeometry,
+  createQuaternion,
   createVector3,
   getPbrRoughnessFromPhongShininess,
-  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
+  multiplyQuaternion,
   presentGlScene,
   registerStandardPbrGlMaterial,
   resizeGlRenderTarget,
-  rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
-  setMatrix4Identity,
-  translateMatrix4,
+  setQuaternionFromAxisAngle,
+  setSceneNodePosition,
+  setSceneNodeRotationQuaternion,
 } from '@flighthq/sdk';
 
 import { awayDirection, awayPosition, createCameraFromAway } from '../../../_shared/flight/src/camera';
@@ -85,9 +86,7 @@ addNodeChild(scene, torus);
 
 const cubeGeometry = createBoxMeshGeometry(20, 20, 20);
 const cube = createMesh(cubeGeometry, [material]);
-setMatrix4Identity(cube.localMatrix);
-translateMatrix4(cube.localMatrix, cube.localMatrix, ...awayPosition(130, 0, 40));
-invalidateNodeLocalTransform(cube);
+setSceneNodePosition(cube, ...awayPosition(130, 0, 40));
 addNodeChild(scene, cube);
 
 const eye = createVector3(130, 0, 0);
@@ -95,6 +94,8 @@ const lookTarget = createVector3(...awayPosition(130, 0, 40));
 const up = createVector3(0, 1, 0);
 const xAxis = createVector3(1, 0, 0);
 const yAxis = createVector3(0, 1, 0);
+const scratchQuatA = createQuaternion();
+const scratchQuatB = createQuaternion();
 
 let cameraAngle = 0;
 let torusAngleY = 0;
@@ -115,18 +116,16 @@ function frame(): void {
 
   setCameraViewMatrix4FromLookAt(camera, eye, lookTarget, up);
 
-  setMatrix4Identity(torus.localMatrix);
-  rotateMatrix4(torus.localMatrix, torus.localMatrix, yAxis, torusAngleY);
-  // AwayJS builds this torus with yUp=true (ring in the XZ plane); Flight's torus ring
-  // is in the XY plane, so tilt it 90° about X to put the camera down the tube's length.
-  rotateMatrix4(torus.localMatrix, torus.localMatrix, xAxis, Math.PI / 2);
-  invalidateNodeLocalTransform(torus);
+  setQuaternionFromAxisAngle(scratchQuatA, yAxis, torusAngleY);
+  setQuaternionFromAxisAngle(scratchQuatB, xAxis, Math.PI / 2);
+  multiplyQuaternion(scratchQuatA, scratchQuatA, scratchQuatB);
+  setSceneNodeRotationQuaternion(torus, scratchQuatA);
 
-  setMatrix4Identity(cube.localMatrix);
-  translateMatrix4(cube.localMatrix, cube.localMatrix, ...awayPosition(130, 0, 40));
-  rotateMatrix4(cube.localMatrix, cube.localMatrix, yAxis, cubeAngleY);
-  rotateMatrix4(cube.localMatrix, cube.localMatrix, xAxis, cubeAngleX);
-  invalidateNodeLocalTransform(cube);
+  setSceneNodePosition(cube, ...awayPosition(130, 0, 40));
+  setQuaternionFromAxisAngle(scratchQuatA, yAxis, cubeAngleY);
+  setQuaternionFromAxisAngle(scratchQuatB, xAxis, cubeAngleX);
+  multiplyQuaternion(scratchQuatA, scratchQuatA, scratchQuatB);
+  setSceneNodeRotationQuaternion(cube, scratchQuatA);
 
   const w = canvas.width;
   const h = canvas.height;

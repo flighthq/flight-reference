@@ -48,7 +48,7 @@ import {
   flipSurfaceHorizontal,
   flipSurfaceVertical,
   getNodeChildren,
-  invalidateNodeLocalTransform,
+  getNodeLocalMatrix4,
   loadImageResourceFromUrl,
   parseObjMaterialLibrary,
   registerStandardPbrGlMaterial,
@@ -60,8 +60,10 @@ import {
   SceneResourceRefKind,
   setCameraViewMatrix4FromLookAt,
   setNodeEnabled,
+  setNodeLocalMatrix4,
   setCubeTextureFace,
   setMatrix4Identity,
+  setSceneNodePosition,
   translateMatrix4,
   updateParticleEmitter3D,
 } from '@flighthq/sdk';
@@ -170,8 +172,6 @@ seaMaterial.doubleSided = true;
 
 const seaGeometry = createPlaneMeshGeometry(50000, 50000, 1, 1);
 const seaMesh: Mesh = createMesh(seaGeometry, [seaMaterial]);
-setMatrix4Identity(seaMesh.localMatrix);
-invalidateNodeLocalTransform(seaMesh);
 addNodeChild(scene, seaMesh);
 
 // F14 aircraft — OBJ geometry textured per-part from its MTL library. The upstream AwayJS demo lets
@@ -306,9 +306,7 @@ for (const mesh of f14Meshes) {
 }
 
 const f14Container = createScene();
-setMatrix4Identity(f14Container.localMatrix);
-translateMatrix4(f14Container.localMatrix, f14Container.localMatrix, 0, 200, 0);
-invalidateNodeLocalTransform(f14Container);
+setSceneNodePosition(f14Container, 0, 200, 0);
 
 for (const child of getNodeChildren(f14Scene)) {
   addNodeChild(f14Container, child);
@@ -414,8 +412,8 @@ function addVaporEmitter(config: ParticleEmitterConfig, locate: (out: Vector3) =
 // Engine nozzles: offset out to each engine and back a bit forward of the nozzle exit (deeper in the
 // model, so the trail emerges from within the fuselage), transformed each step by the jet's world
 // matrix so the emit origin tracks the flying jet's roll.
-addVaporEmitter(exhaustConfig, (out) => transformModelPoint(out, f14Mesh.localMatrix, 1.35, -8, -0.1));
-addVaporEmitter(exhaustConfig, (out) => transformModelPoint(out, f14Mesh.localMatrix, -1.35, -8, -0.1));
+addVaporEmitter(exhaustConfig, (out) => transformModelPoint(out, getNodeLocalMatrix4(f14Mesh), 1.35, -8, -0.1));
+addVaporEmitter(exhaustConfig, (out) => transformModelPoint(out, getNodeLocalMatrix4(f14Mesh), -1.35, -8, -0.1));
 
 // Camera orbits the aircraft continuously
 const eye = createVector3(0, 250, 500);
@@ -487,23 +485,25 @@ const WING_SWEEP = 52 * DEG_TO_RAD;
 const LEFT_WING_PIVOT = createVector3(-2.3, -2, 0);
 const RIGHT_WING_PIVOT = createVector3(2.3, -2, 0);
 
+const wingMatrix = createMatrix4();
+
 function sweepWing(meshes: readonly Mesh[], pivot: Vector3, angle: number): void {
   for (const mesh of meshes) {
-    const m = mesh.localMatrix;
-    setMatrix4Identity(m);
-    translateMatrix4(m, m, pivot.x, pivot.y, pivot.z);
-    rotateMatrix4(m, m, zAxis, angle);
-    translateMatrix4(m, m, -pivot.x, -pivot.y, -pivot.z);
-    invalidateNodeLocalTransform(mesh);
+    setMatrix4Identity(wingMatrix);
+    translateMatrix4(wingMatrix, wingMatrix, pivot.x, pivot.y, pivot.z);
+    rotateMatrix4(wingMatrix, wingMatrix, zAxis, angle);
+    translateMatrix4(wingMatrix, wingMatrix, -pivot.x, -pivot.y, -pivot.z);
+    setNodeLocalMatrix4(mesh, wingMatrix);
   }
 }
 
 let renderTarget: GlRenderTarget | null = null;
 
 function updateCameraLookAt(): void {
-  cameraTarget.x = f14Mesh.localMatrix.m[12];
-  cameraTarget.y = f14Mesh.localMatrix.m[13];
-  cameraTarget.z = f14Mesh.localMatrix.m[14];
+  const lm = getNodeLocalMatrix4(f14Mesh);
+  cameraTarget.x = lm.m[12];
+  cameraTarget.y = lm.m[13];
+  cameraTarget.z = lm.m[14];
   setCameraViewMatrix4FromLookAt(camera, eye, cameraTarget, up);
 }
 
@@ -511,16 +511,15 @@ function updateCameraLookAt(): void {
 // the emitters spawn (so the exhaust origins track the flying jet); renderScene then just reads it.
 // The disabled maneuver loop that once lived here is gone — the jet now flies straight forward via
 // flightZ instead of cycling a vertical loop.
+const jetMatrix = createMatrix4();
+
 function updateJetTransform(): void {
-  const m = f14Mesh.localMatrix;
-  setMatrix4Identity(m);
-  translateMatrix4(m, m, 0, 200, flightZ);
-  // TRS after the position translate: roll (Z), resting pitch (X = -90), then the 20x scale — mirrors
-  // the AwayJS f14 transform (scaleTo(20,20,20) + rotationX=90).
-  rotateMatrix4(m, m, zAxis, Math.sin(rollIncrement) * ROLL_AMPLITUDE);
-  rotateMatrix4(m, m, xAxis, F14_RESTING_PITCH);
-  scaleMatrix4(m, m, F14_SCALE, F14_SCALE, F14_SCALE);
-  invalidateNodeLocalTransform(f14Mesh);
+  setMatrix4Identity(jetMatrix);
+  translateMatrix4(jetMatrix, jetMatrix, 0, 200, flightZ);
+  rotateMatrix4(jetMatrix, jetMatrix, zAxis, Math.sin(rollIncrement) * ROLL_AMPLITUDE);
+  rotateMatrix4(jetMatrix, jetMatrix, xAxis, F14_RESTING_PITCH);
+  scaleMatrix4(jetMatrix, jetMatrix, F14_SCALE, F14_SCALE, F14_SCALE);
+  setNodeLocalMatrix4(f14Mesh, jetMatrix);
 }
 
 // A click toggles between the open (landing) and closed (clean/flight) configurations.
@@ -590,9 +589,7 @@ function renderScene(): void {
 
   // The sea follows the jet's flight (translate by flightZ) so it stays underneath — jet, camera, and
   // sea move together, leaving only the world-space contrail to reveal the motion.
-  setMatrix4Identity(seaMesh.localMatrix);
-  translateMatrix4(seaMesh.localMatrix, seaMesh.localMatrix, 0, 0, flightZ);
-  invalidateNodeLocalTransform(seaMesh);
+  setSceneNodePosition(seaMesh, 0, 0, flightZ);
 
   // Orbit with a slow vertical drift + click pulse; add flightZ so the whole orbit follows the flying
   // jet (keeps eye.z - target.z constant, so the framing stays put). Clamp the height so a downward bob

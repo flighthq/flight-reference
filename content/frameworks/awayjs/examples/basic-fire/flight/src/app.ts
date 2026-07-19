@@ -27,16 +27,14 @@ import {
   createTextureAtlas,
   createTilingSampler,
   createUnlitMaterial,
-  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   presentGlScene,
   registerStandardPbrGlMaterial,
   registerUnlitGlMaterial,
   resizeGlRenderTarget,
-  setMatrix4Identity,
+  setSceneNodePosition,
   setTextureUvScale,
   stepParticleEmitter3D,
-  translateMatrix4,
 } from '@flighthq/sdk';
 
 import {
@@ -120,9 +118,7 @@ planeMaterial.doubleSided = true;
 
 const planeGeometry = createPlaneMeshGeometry(1000, 1000, 1, 1);
 const plane = createMesh(planeGeometry, [planeMaterial]);
-setMatrix4Identity(plane.localMatrix);
-translateMatrix4(plane.localMatrix, plane.localMatrix, 0, -20, 0);
-invalidateNodeLocalTransform(plane);
+setSceneNodePosition(plane, 0, -20, 0);
 addNodeChild(scene, plane);
 
 // Bakes AwayJS's specular gloss mask into a glTF metallic-roughness map: roughness in G (bright
@@ -258,9 +254,7 @@ for (let i = 0; i < NUM_FIRES; i++) {
   const z = -Math.cos(angle) * FIRE_RADIUS;
   const y = 5;
 
-  setMatrix4Identity(emitter.localMatrix);
-  translateMatrix4(emitter.localMatrix, emitter.localMatrix, x, y, z);
-  invalidateNodeLocalTransform(emitter);
+  setSceneNodePosition(emitter, x, y, z);
 
   const decalMaterial = createUnlitMaterial({ baseColor: 0xffffff00, baseColorMap: glowTexture });
   decalMaterial.alphaMode = 'blend';

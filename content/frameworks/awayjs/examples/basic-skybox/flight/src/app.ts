@@ -27,18 +27,19 @@ import {
   endGlRenderPass,
   flipSurfaceHorizontal,
   flipSurfaceVertical,
-  invalidateNodeLocalTransform,
+  createQuaternion,
   loadImageResourceFromUrl,
+  multiplyQuaternion,
   registerEmissiveGlMaterial,
   registerStandardPbrGlMaterial,
   renderGlBackground,
   resolveGlRenderTarget,
   resizeGlRenderTarget,
-  rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
   setCubeTextureFace,
-  setMatrix4Identity,
-  translateMatrix4,
+  setQuaternionFromAxisAngle,
+  setSceneNodePosition,
+  setSceneNodeRotationQuaternion,
 } from '@flighthq/sdk';
 
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
@@ -93,9 +94,7 @@ const beam = 4;
 
 function addBoundsBeam(w: number, h: number, d: number, x: number, y: number, z: number): void {
   const edge = createMesh(createBoxMeshGeometry(w, h, d), [boundsMaterial]);
-  setMatrix4Identity(edge.localMatrix);
-  translateMatrix4(edge.localMatrix, edge.localMatrix, x, y, z);
-  invalidateNodeLocalTransform(edge);
+  setSceneNodePosition(edge, x, y, z);
   addNodeChild(torus, edge);
 }
 
@@ -178,6 +177,8 @@ const up = createVector3(0, 1, 0);
 
 const xAxis = createVector3(1, 0, 0);
 const yAxis = createVector3(0, 1, 0);
+const scratchQuatA = createQuaternion();
+const scratchQuatB = createQuaternion();
 
 document.addEventListener('mousemove', (event: MouseEvent) => {
   mouseX = event.clientX;
@@ -192,10 +193,10 @@ function frame(): void {
   torusRotX -= 2 * DEG_TO_RAD;
   torusRotY -= 1 * DEG_TO_RAD;
 
-  setMatrix4Identity(torus.localMatrix);
-  rotateMatrix4(torus.localMatrix, torus.localMatrix, xAxis, torusRotX);
-  rotateMatrix4(torus.localMatrix, torus.localMatrix, yAxis, torusRotY);
-  invalidateNodeLocalTransform(torus);
+  setQuaternionFromAxisAngle(scratchQuatA, xAxis, torusRotX);
+  setQuaternionFromAxisAngle(scratchQuatB, yAxis, torusRotY);
+  multiplyQuaternion(scratchQuatA, scratchQuatA, scratchQuatB);
+  setSceneNodeRotationQuaternion(torus, scratchQuatA);
 
   cameraRotationY += (0.5 * (mouseX - window.innerWidth / 2)) / 800;
   const rotRad = cameraRotationY * DEG_TO_RAD;

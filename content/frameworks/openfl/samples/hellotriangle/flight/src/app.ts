@@ -7,12 +7,12 @@ import {
   createMesh,
   createMeshGeometry,
   createOrthographicProjection,
+  createQuaternion,
   createVector3,
   createVertexColorMaterial,
-  invalidateNodeLocalTransform,
-  rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
-  setMatrix4Identity,
+  setQuaternionFromAxisAngle,
+  setSceneNodeRotationQuaternion,
 } from '@flighthq/sdk';
 
 import { render } from './render';
@@ -46,11 +46,11 @@ setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 1), createVector3(0, 
 
 const lights: SceneLights = { ambient: null, directional: null };
 const zAxis = createVector3(0, 0, 1);
+const scratchQuat = createQuaternion();
 
 function frame(): void {
-  setMatrix4Identity(mesh.localMatrix);
-  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, zAxis, (performance.now() / 40) * (Math.PI / 180));
-  invalidateNodeLocalTransform(mesh);
+  setQuaternionFromAxisAngle(scratchQuat, zAxis, (performance.now() / 40) * (Math.PI / 180));
+  setSceneNodeRotationQuaternion(mesh, scratchQuat);
   render(scene, camera, lights);
   requestAnimationFrame(frame);
 }

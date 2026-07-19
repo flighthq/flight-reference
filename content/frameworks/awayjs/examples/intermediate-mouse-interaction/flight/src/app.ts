@@ -15,20 +15,21 @@ import {
   createSphereMeshGeometry,
   createStandardPbrMaterial,
   createTorusMeshGeometry,
+  createMatrix4,
   createVector3,
   DEG_TO_RAD,
   getNodeChildren,
   getPbrRoughnessFromPhongShininess,
-  invalidateNodeLocalTransform,
   packOpaqueColor,
   pickScene,
   presentGlScene,
   registerStandardPbrGlMaterial,
   resizeGlRenderTarget,
   rotateMatrix4,
-  scaleMatrix4,
   setMatrix4Identity,
+  setNodeLocalMatrix4,
   setSceneNodePosition,
+  setSceneNodeScale,
   translateMatrix4,
 } from '@flighthq/sdk';
 
@@ -177,8 +178,9 @@ function createRandomObject(): ObjectInfo {
 
   const zAxis = createVector3(0, 0, 1);
   const rotZ = 360 * Math.random() * DEG_TO_RAD;
-  setMatrix4Identity(mesh.localMatrix);
-  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, zAxis, rotZ);
+  const m = createMatrix4();
+  setMatrix4Identity(m);
+  rotateMatrix4(m, m, zAxis, rotZ);
 
   const r = 200 + 100 * Math.random();
   const azimuth = 2 * Math.PI * Math.random();
@@ -186,8 +188,8 @@ function createRandomObject(): ObjectInfo {
   const px = r * Math.cos(elevation) * Math.sin(azimuth);
   const py = r * Math.sin(elevation);
   const pz = r * Math.cos(elevation) * Math.cos(azimuth);
-  translateMatrix4(mesh.localMatrix, mesh.localMatrix, px, py, pz);
-  invalidateNodeLocalTransform(mesh);
+  translateMatrix4(m, m, px, py, pz);
+  setNodeLocalMatrix4(mesh, m);
 
   addNodeChild(scene, mesh);
   objectInfos.push(info);
@@ -216,9 +218,7 @@ try {
     const m = child as Mesh;
     // AwayJS loads head.obj through new OBJParser(25), which scales the geometry 25x;
     // createSceneFromObj applies no scale, so match it here or the head renders 1/25 size.
-    setMatrix4Identity(m.localMatrix);
-    scaleMatrix4(m.localMatrix, m.localMatrix, 25, 25, 25);
-    invalidateNodeLocalTransform(m);
+    setSceneNodeScale(m, 25, 25, 25);
     if (m.materials) {
       m.materials = [headMaterial];
       headMesh = m;
@@ -298,6 +298,7 @@ canvas.addEventListener('wheel', (e: WheelEvent) => {
 
 const hit: SceneHit = createSceneHit();
 let previousHoveredInfo: ObjectInfo | null = null;
+const tracerMatrix = createMatrix4();
 
 function positionNormalTracer(
   tracer: Mesh,
@@ -308,7 +309,7 @@ function positionNormalTracer(
   ny: number,
   nz: number,
 ): void {
-  setMatrix4Identity(tracer.localMatrix);
+  setMatrix4Identity(tracerMatrix);
 
   const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
   if (len > 0.001) {
@@ -321,12 +322,12 @@ function positionNormalTracer(
 
     const yAxis = createVector3(0, 1, 0);
     const xAxis = createVector3(1, 0, 0);
-    rotateMatrix4(tracer.localMatrix, tracer.localMatrix, yAxis, yaw);
-    rotateMatrix4(tracer.localMatrix, tracer.localMatrix, xAxis, pitch + Math.PI / 2);
+    rotateMatrix4(tracerMatrix, tracerMatrix, yAxis, yaw);
+    rotateMatrix4(tracerMatrix, tracerMatrix, xAxis, pitch + Math.PI / 2);
   }
 
-  translateMatrix4(tracer.localMatrix, tracer.localMatrix, px, py, pz);
-  invalidateNodeLocalTransform(tracer);
+  translateMatrix4(tracerMatrix, tracerMatrix, px, py, pz);
+  setNodeLocalMatrix4(tracer, tracerMatrix);
 }
 
 canvas.addEventListener('mousemove', (e: MouseEvent) => {

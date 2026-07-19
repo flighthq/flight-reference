@@ -30,20 +30,20 @@ import {
   drawGlScene,
   endGlRenderEffectPipeline,
   fillSurfaceLinearGradient,
+  createQuaternion,
   getNodeChildren,
-  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   packOpaqueColor,
   registerDefaultGlRenderEffects,
   registerEmissiveGlMaterial,
   registerStandardPbrGlMaterial,
   renderGlBackground,
-  rotateMatrix4,
-  scaleMatrix4,
   setCubeTextureFace,
-  setMatrix4Identity,
+  setQuaternionFromAxisAngle,
+  setSceneNodePosition,
+  setSceneNodeRotationQuaternion,
+  setSceneNodeScale,
   setTextureUvScale,
-  translateMatrix4,
 } from '@flighthq/sdk';
 
 import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
@@ -129,9 +129,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
 const lights = createSceneLights({ ambient, directional });
 
 const spartanContainer = createSceneNode();
-setMatrix4Identity(spartanContainer.localMatrix);
-scaleMatrix4(spartanContainer.localMatrix, spartanContainer.localMatrix, 0.25, 0.25, 0.25);
-invalidateNodeLocalTransform(spartanContainer);
+setSceneNodeScale(spartanContainer, 0.25, 0.25, 0.25);
 addNodeChild(scene, spartanContainer);
 
 const [spartanObjText, terrainObjText, masterchiefImage, stoneImage] = await Promise.all([
@@ -345,12 +343,11 @@ for (const child of getNodeChildren(terrainScene)) {
 }
 
 if (terrainNode) {
-  setMatrix4Identity(terrainNode.localMatrix);
-  translateMatrix4(terrainNode.localMatrix, terrainNode.localMatrix, 0, 98, 0);
-  invalidateNodeLocalTransform(terrainNode);
+  setSceneNodePosition(terrainNode, 0, 98, 0);
 }
 
 const yAxis = createVector3(0, 1, 0);
+const scratchQuat = createQuaternion();
 let spartanRotationY = 0;
 let terrainRotationY = 0;
 
@@ -358,16 +355,14 @@ function frame(): void {
   spartanRotationY -= 0.4 * DEG_TO_RAD;
   terrainRotationY -= 0.4 * DEG_TO_RAD;
 
-  setMatrix4Identity(spartanContainer.localMatrix);
-  scaleMatrix4(spartanContainer.localMatrix, spartanContainer.localMatrix, 0.25, 0.25, 0.25);
-  rotateMatrix4(spartanContainer.localMatrix, spartanContainer.localMatrix, yAxis, spartanRotationY);
-  invalidateNodeLocalTransform(spartanContainer);
+  setSceneNodeScale(spartanContainer, 0.25, 0.25, 0.25);
+  setQuaternionFromAxisAngle(scratchQuat, yAxis, spartanRotationY);
+  setSceneNodeRotationQuaternion(spartanContainer, scratchQuat);
 
   if (terrainNode) {
-    setMatrix4Identity(terrainNode.localMatrix);
-    translateMatrix4(terrainNode.localMatrix, terrainNode.localMatrix, 0, 98, 0);
-    rotateMatrix4(terrainNode.localMatrix, terrainNode.localMatrix, yAxis, terrainRotationY);
-    invalidateNodeLocalTransform(terrainNode);
+    setSceneNodePosition(terrainNode, 0, 98, 0);
+    setQuaternionFromAxisAngle(scratchQuat, yAxis, terrainRotationY);
+    setSceneNodeRotationQuaternion(terrainNode, scratchQuat);
   }
 
   // Draw into the pipeline's HDR target, then ACES tone-map to the canvas so the warm key compresses

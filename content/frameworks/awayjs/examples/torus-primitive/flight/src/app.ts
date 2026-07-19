@@ -12,17 +12,17 @@ import {
   createTexture,
   createToneMapEffect,
   createTorusMeshGeometry,
+  createQuaternion,
   createVector3,
   drawGlScene,
   endGlRenderEffectPipeline,
   getPbrRoughnessFromPhongShininess,
-  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   registerDefaultGlRenderEffects,
   registerStandardPbrGlMaterial,
   renderGlBackground,
-  rotateMatrix4,
-  setMatrix4Identity,
+  setQuaternionFromAxisAngle,
+  setSceneNodeRotationQuaternion,
 } from '@flighthq/sdk';
 
 import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
@@ -92,14 +92,14 @@ const torus = createMesh(geometry, [material]);
 addNodeChild(scene, torus);
 
 const yAxis = createVector3(0, 1, 0);
+const scratchQuat = createQuaternion();
 let rotationY = 0;
 
 function frame(): void {
   rotationY -= DEG;
 
-  setMatrix4Identity(torus.localMatrix);
-  rotateMatrix4(torus.localMatrix, torus.localMatrix, yAxis, rotationY);
-  invalidateNodeLocalTransform(torus);
+  setQuaternionFromAxisAngle(scratchQuat, yAxis, rotationY);
+  setSceneNodeRotationQuaternion(torus, scratchQuat);
 
   // Draw into the pipeline's HDR target, then ACES tone-map to the canvas so the single directional
   // light's highlights compress into range instead of clipping (matches basic-load-3ds).

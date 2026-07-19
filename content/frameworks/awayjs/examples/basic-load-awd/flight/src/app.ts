@@ -2,7 +2,6 @@ import type { BlinnPhongMaterial, GlRenderTarget, Mesh } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendMatrix4,
-  copyMatrix4,
   createGlCanvasElement,
   createGlRenderState,
   createGlRenderTarget,
@@ -12,7 +11,7 @@ import {
   createVector3,
   DEG_TO_RAD,
   findNode,
-  invalidateNodeLocalTransform,
+  getNodeLocalMatrix4,
   isMesh,
   loadSceneFromAwd,
   presentGlScene,
@@ -21,6 +20,7 @@ import {
   rotateMatrix4,
   scaleMatrix4,
   setMatrix4Identity,
+  setNodeLocalMatrix4,
   translateMatrix4,
 } from '@flighthq/sdk';
 
@@ -76,21 +76,23 @@ const defaultMaterial = templateMesh.materials[0] as BlinnPhongMaterial;
 applyAwayGloss(defaultMaterial, { gloss: 50, specular: 1.8 });
 
 const orient = createMatrix4();
-copyMatrix4(orient, templateMesh.localMatrix);
+const orientSource = getNodeLocalMatrix4(templateMesh);
+orient.m.set(orientSource.m);
 
 addNodeChild(scene, templateMesh);
 
 const yAxis = createVector3(0, 1, 0);
+const scratchMatrix = createMatrix4();
 let rotationAngle = 0;
 
 function frame(): void {
   rotationAngle += -1 * DEG_TO_RAD;
-  setMatrix4Identity(templateMesh!.localMatrix);
-  translateMatrix4(templateMesh!.localMatrix, templateMesh!.localMatrix, 0, -300, 0);
-  rotateMatrix4(templateMesh!.localMatrix, templateMesh!.localMatrix, yAxis, rotationAngle);
-  scaleMatrix4(templateMesh!.localMatrix, templateMesh!.localMatrix, 900, 900, 900);
-  appendMatrix4(templateMesh!.localMatrix, templateMesh!.localMatrix, orient);
-  invalidateNodeLocalTransform(templateMesh!);
+  setMatrix4Identity(scratchMatrix);
+  translateMatrix4(scratchMatrix, scratchMatrix, 0, -300, 0);
+  rotateMatrix4(scratchMatrix, scratchMatrix, yAxis, rotationAngle);
+  scaleMatrix4(scratchMatrix, scratchMatrix, 900, 900, 900);
+  appendMatrix4(scratchMatrix, scratchMatrix, orient);
+  setNodeLocalMatrix4(templateMesh!, scratchMatrix);
 
   const w = canvas.width;
   const h = canvas.height;

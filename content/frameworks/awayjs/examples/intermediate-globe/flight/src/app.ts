@@ -26,7 +26,7 @@ import {
   createTexture,
   createVector3,
   DEG_TO_RAD,
-  invalidateNodeLocalTransform,
+  createQuaternion,
   loadImageResourceFromUrl,
   packOpaqueColor,
   beginGlRenderPass,
@@ -41,10 +41,10 @@ import {
   renderGlBackground,
   resizeGlRenderTarget,
   resolveGlRenderTarget,
-  rotateMatrix4,
   setCubeTextureFace,
-  setMatrix4Identity,
-  translateMatrix4,
+  setQuaternionFromAxisAngle,
+  setSceneNodePosition,
+  setSceneNodeRotationQuaternion,
 } from '@flighthq/sdk';
 
 import {
@@ -161,9 +161,9 @@ const lights = createSceneLights({
 
 const tiltContainer = createSceneNode();
 const axisX = createVector3(1, 0, 0);
-setMatrix4Identity(tiltContainer.localMatrix);
-rotateMatrix4(tiltContainer.localMatrix, tiltContainer.localMatrix, axisX, -23 * DEG_TO_RAD);
-invalidateNodeLocalTransform(tiltContainer);
+const tiltQuat = createQuaternion();
+setQuaternionFromAxisAngle(tiltQuat, axisX, -23 * DEG_TO_RAD);
+setSceneNodeRotationQuaternion(tiltContainer, tiltQuat);
 addNodeChild(scene, tiltContainer);
 
 // Earth: the day/night custom shader (day texture + specular on the lit side, city lights on the
@@ -324,6 +324,9 @@ canvas.addEventListener('wheel', (event: WheelEvent) => {
 });
 
 const axisY = createVector3(0, 1, 0);
+const scratchQuat = createQuaternion();
+let earthAngle = 0;
+let cloudAngle = 0;
 let lastTime = 0;
 
 function frame(ts: number): void {
@@ -334,11 +337,13 @@ function frame(ts: number): void {
   const cloudSpeed = 0.21 * DEG_TO_RAD * (dt / 16);
   const orbitSpeed = 0.02 * DEG_TO_RAD * (dt / 16);
 
-  rotateMatrix4(earth.localMatrix, earth.localMatrix, axisY, earthSpeed);
-  invalidateNodeLocalTransform(earth);
+  earthAngle += earthSpeed;
+  setQuaternionFromAxisAngle(scratchQuat, axisY, earthAngle);
+  setSceneNodeRotationQuaternion(earth, scratchQuat);
 
-  rotateMatrix4(clouds.localMatrix, clouds.localMatrix, axisY, cloudSpeed);
-  invalidateNodeLocalTransform(clouds);
+  cloudAngle += cloudSpeed;
+  setQuaternionFromAxisAngle(scratchQuat, axisY, cloudAngle);
+  setSceneNodeRotationQuaternion(clouds, scratchQuat);
 
   sunAngle += orbitSpeed;
   sunLight.direction.x = Math.sin(sunAngle);
@@ -346,16 +351,7 @@ function frame(ts: number): void {
   earthSunDir[0] = Math.sin(sunAngle);
   earthSunDir[2] = Math.cos(sunAngle);
 
-  // Keep the sun disc opposite the light direction (light travels from the sun toward the globe).
-  setMatrix4Identity(sun.localMatrix);
-  translateMatrix4(
-    sun.localMatrix,
-    sun.localMatrix,
-    -Math.sin(sunAngle) * SUN_DISTANCE,
-    0,
-    -Math.cos(sunAngle) * SUN_DISTANCE,
-  );
-  invalidateNodeLocalTransform(sun);
+  setSceneNodePosition(sun, -Math.sin(sunAngle) * SUN_DISTANCE, 0, -Math.cos(sunAngle) * SUN_DISTANCE);
 
   orbit.update();
   orientSceneBillboardsToCamera(scene, camera);

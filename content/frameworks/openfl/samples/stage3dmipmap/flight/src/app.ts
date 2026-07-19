@@ -4,17 +4,18 @@ import type { SceneLights } from '@flighthq/sdk';
 import {
   addNodeChild,
   createCamera,
+  createMatrix4,
   createMesh,
   createPerspectiveProjection,
   createTexture,
   createUnlitMaterial,
   createVector3,
-  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   rotateMatrix4,
   scaleMatrix4,
   setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
+  setNodeLocalMatrix4,
   translateMatrix4,
 } from '@flighthq/sdk';
 
@@ -56,6 +57,7 @@ const cameraTarget = createVector3(0, 0, 1);
 const up = createVector3(0, 1, 0);
 const xAxis = createVector3(1, 0, 0);
 const yAxis = createVector3(0, 1, 0);
+const scratchMatrix = createMatrix4();
 
 let cameraLinearAcceleration = 0;
 let cameraLinearVelocity = 0;
@@ -108,12 +110,12 @@ function frame(): void {
   cameraTarget.z = cameraEye.z - Math.cos((cameraYaw * Math.PI) / 180);
   setCameraViewMatrix4FromLookAt(camera, cameraEye, cameraTarget, up);
 
-  setMatrix4Identity(mesh.localMatrix);
-  translateMatrix4(mesh.localMatrix, mesh.localMatrix, 0, 0, 1);
-  scaleMatrix4(mesh.localMatrix, mesh.localMatrix, 1, 1, -1);
-  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, xAxis, (performance.now() / 10) * (Math.PI / 180));
-  rotateMatrix4(mesh.localMatrix, mesh.localMatrix, yAxis, (performance.now() / 30) * (Math.PI / 180));
-  invalidateNodeLocalTransform(mesh);
+  setMatrix4Identity(scratchMatrix);
+  translateMatrix4(scratchMatrix, scratchMatrix, 0, 0, 1);
+  scaleMatrix4(scratchMatrix, scratchMatrix, 1, 1, -1);
+  rotateMatrix4(scratchMatrix, scratchMatrix, xAxis, (performance.now() / 10) * (Math.PI / 180));
+  rotateMatrix4(scratchMatrix, scratchMatrix, yAxis, (performance.now() / 30) * (Math.PI / 180));
+  setNodeLocalMatrix4(mesh, scratchMatrix);
 
   render(scene, camera, lights);
   requestAnimationFrame(frame);

@@ -11,15 +11,13 @@ import {
   createTexture,
   getNodeChildren,
   getPbrRoughnessFromPhongShininess,
-  invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
   presentGlScene,
   registerStandardPbrGlMaterial,
   resizeGlRenderTarget,
-  scaleMatrix4,
-  setMatrix4Identity,
-  translateMatrix4,
+  setSceneNodePosition,
+  setSceneNodeScale,
 } from '@flighthq/sdk';
 
 import {
@@ -133,12 +131,8 @@ function assignMaterialToMeshes(node: SceneNode): void {
 assignMaterialToMeshes(awdScene);
 
 for (const child of getNodeChildren(awdScene)) {
-  setMatrix4Identity(child.localMatrix);
-  // Translate before scale so the -20 world offset matches AwayJS (node y=-20 with a
-  // geometry-only scale of 4); scaling first would multiply the offset to -80.
-  translateMatrix4(child.localMatrix, child.localMatrix, 0, -20, 0);
-  scaleMatrix4(child.localMatrix, child.localMatrix, 4, 4, 4);
-  invalidateNodeLocalTransform(child);
+  setSceneNodePosition(child, 0, -20, 0);
+  setSceneNodeScale(child, 4, 4, 4);
   addNodeChild(scene, child);
 }
 

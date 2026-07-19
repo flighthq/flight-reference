@@ -11,15 +11,14 @@ import {
   createGlRenderTarget,
   createScene,
   createSceneLights,
-  createSceneFromAwd,
-  createStandardPbrMaterial,
+  createBlinnPhongMaterial,
   getNodeChildren,
-  getPbrRoughnessFromPhongShininess,
   isMesh,
+  loadSceneFromAwd,
   packOpaqueColor,
   parseAwdSkeletonAnimation,
   presentGlScene,
-  registerStandardPbrGlMaterial,
+  registerBlinnPhongGlMaterial,
   resizeGlRenderTarget,
 } from '@flighthq/sdk';
 import {
@@ -47,7 +46,7 @@ const state = createGlRenderState(canvas, {
   pixelRatio,
 });
 
-registerStandardPbrGlMaterial(state);
+registerBlinnPhongGlMaterial(state);
 const verifyFrame = createGlFrameVerifier(state);
 
 let renderTarget: GlRenderTarget | null = null;
@@ -67,10 +66,11 @@ const lights: SceneLights = createSceneLights({ ambient, directional });
 const awdBuffer = await fetch('awayjs/assets/shambler.awd').then((r) => r.arrayBuffer());
 const awdBytes = new Uint8Array(awdBuffer);
 
-const bodyMaterial = createStandardPbrMaterial({
-  baseColor: packOpaqueColor(0x808080),
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(10),
+// Fallback for any sub-mesh the AWD leaves without a material. The shambler's own meshes carry
+// textured BlinnPhong materials from the file (resolved by loadSceneFromAwd), so this is rarely used.
+const bodyMaterial = createBlinnPhongMaterial({
+  diffuse: packOpaqueColor(0x808080),
+  specular: 0x000000ff,
 });
 
 function assignMaterial(node: SceneNode): void {
@@ -85,7 +85,7 @@ function assignMaterial(node: SceneNode): void {
   }
 }
 
-const awdScene = createSceneFromAwd(awdBytes);
+const awdScene = await loadSceneFromAwd(awdBytes);
 assignMaterial(awdScene);
 
 const skinnedMeshes: Mesh[] = [];

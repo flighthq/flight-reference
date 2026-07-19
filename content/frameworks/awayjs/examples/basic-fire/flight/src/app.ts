@@ -97,7 +97,7 @@ const lights: SceneLights = createSceneLights({
 const planeMaterial: StandardPbrMaterial = createStandardPbrMaterial({
   baseColor: 0xffffffff,
   metallic: 0,
-  roughness: 0.4,
+  roughness: 1,
 });
 planeMaterial.doubleSided = true;
 
@@ -151,7 +151,7 @@ const config: ParticleEmitterConfig = createParticleEmitterConfig({
   colorEndG: 0,
   colorEndB: 0,
   alphaStart: 1,
-  alphaEnd: 0,
+  alphaEnd: 1,
   blendMode: 'add',
 });
 

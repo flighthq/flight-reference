@@ -61,9 +61,8 @@ const { directional, ambient } = createDirectionalLightFromAway({
   ambient: 0.5,
   ambientColor: 0x30353b,
   tuning: {
-    diffuse: 0.95,
-    ambient: 0.6,
-    ambientColor: 0xa06038,
+    diffuse: 0.45,
+    ambient: 0.25,
   },
 });
 const lights = createSceneLights({ ambient, directional });

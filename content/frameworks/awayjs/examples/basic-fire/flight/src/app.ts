@@ -167,6 +167,7 @@ const fires: FireEntry[] = [];
 
 for (let i = 0; i < NUM_FIRES; i++) {
   const emitter = createParticleEmitter3D();
+  emitter.blendMode = 'add';
   emitter.data.atlas = fireAtlas;
   const state = createParticleEmitterState();
 

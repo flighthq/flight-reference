@@ -41,6 +41,7 @@ comparison.alpha = 0;
 addNodeChild(root, comparison);
 
 const label = createRichText();
+label.data.defaultTextFormat = { font: 'serif' };
 label.data.text = 'HTML5';
 label.data.width = 220;
 addNodeChild(root, label);
@@ -63,6 +64,7 @@ const textFields = [50, 175, 300, 425].map((y) => {
 
 const instructions = createRichText();
 instructions.y = 20;
+instructions.data.defaultTextFormat = { font: 'serif' };
 instructions.data.text =
   'Showing demo (0). Left/Right: Change demo; 1/2: Compare to Flash/Legacy; Up/Down: Change comparison alphas';
 instructions.data.width = 800;
@@ -73,7 +75,7 @@ let comparisonAlpha = 1;
 let comparisonRenderer: 'flash' | 'legacy' | 'html5' | null = null;
 let demo = 0;
 
-function getFont(demoIndex: number): string | undefined {
+function getFont(demoIndex: number): string {
   if (demoIndex === 1 || demoIndex === 3) {
     return embeddedFonts.liberation.name;
   }
@@ -82,7 +84,7 @@ function getFont(demoIndex: number): string | undefined {
     return embeddedFonts.nokia.name;
   }
 
-  return undefined;
+  return 'serif';
 }
 
 function getSize(demoIndex: number): number {

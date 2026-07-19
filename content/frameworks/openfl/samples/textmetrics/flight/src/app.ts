@@ -107,6 +107,7 @@ drawLineMetrics(vizLines, FIELD_W, FIELD_H, BUFFER, GUTTER, bmpW, bmpH, textWidt
 const outText = createRichText();
 outText.x = 0;
 outText.y = 0;
+outText.data.defaultTextFormat = { font: 'serif' };
 outText.data.height = 1000;
 outText.data.multiline = true;
 outText.data.text = buildMetricsString(TEXT_X, TEXT_Y, FIELD_W, FIELD_H, textWidth, textHeight, tlm, result);
@@ -124,6 +125,7 @@ appendShapeRectangle(whiteBg, 0, 0, 200, 100);
 const loremText = createRichText();
 loremText.x = 0;
 loremText.y = 250;
+loremText.data.defaultTextFormat = { font: 'serif' };
 loremText.data.text =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.';
 loremText.data.width = 200;

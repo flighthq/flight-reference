@@ -1,29 +1,34 @@
-import type { GlRenderTarget, Mesh, StandardPbrMaterial } from '@flighthq/sdk';
+import type { AnimationPlayer, AnimationTrack, GlRenderTarget, Mesh, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
+  advanceAnimationPlayer,
+  cloneMeshGeometry,
+  createAnimationPlayer,
   createGlCanvasElement,
   createGlRenderState,
   createGlRenderTarget,
   createMesh,
   createPlaneMeshGeometry,
   createScene,
-  createSceneFromMd2,
   createSceneLights,
   createStandardPbrMaterial,
   createTexture,
   createTilingSampler,
   getNodeChildren,
   getPbrRoughnessFromPhongShininess,
+  importMd2,
   invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
   presentGlScene,
   registerStandardPbrGlMaterial,
   resizeGlRenderTarget,
+  sampleAnimationTrack,
   scaleMatrix4,
   setMatrix4Identity,
   setTextureUvScale,
   translateMatrix4,
+  updateMeshMorph,
 } from '@flighthq/sdk';
 
 import {
@@ -104,27 +109,48 @@ invalidateNodeLocalTransform(floor);
 addNodeChild(scene, floor);
 
 const md2Buffer = await fetch('awayjs/assets/pknight.md2').then((r) => r.arrayBuffer());
-const md2Scene = createSceneFromMd2(new Uint8Array(md2Buffer));
+const md2Result = importMd2(new Uint8Array(md2Buffer));
+const md2Scene = md2Result.scene;
+const md2Clip = md2Result.animations[0] ?? null;
+const md2Track: AnimationTrack | null = md2Clip?.channels[0]?.track ?? null;
 
-let knightGeometry = null;
+let templateMesh: Mesh | null = null;
 for (const child of getNodeChildren(md2Scene)) {
   if (isMesh(child)) {
-    knightGeometry = (child as Mesh).geometry;
+    templateMesh = child as Mesh;
     break;
   }
 }
 
-if (!knightGeometry) {
+if (!templateMesh?.geometry) {
   throw new Error('No mesh found in MD2 file');
 }
 
+const templateGeometry = templateMesh.geometry;
+const templateMorph = templateMesh.morph;
+
+interface KnightInstance {
+  mesh: Mesh;
+  player: AnimationPlayer | null;
+  track: AnimationTrack | null;
+}
+
+const knights: KnightInstance[] = [];
 const numWide = 20;
 const numDeep = 20;
 
 for (let i = 0; i < numWide; i++) {
   for (let j = 0; j < numDeep; j++) {
     const material = knightMaterials[Math.floor(Math.random() * knightMaterials.length)]!;
-    const knight = createMesh(knightGeometry, [material]);
+    const geometry = cloneMeshGeometry(templateGeometry);
+    const knight = createMesh(geometry, [material]);
+
+    let player: AnimationPlayer | null = null;
+    if (templateMorph != null && md2Clip != null) {
+      knight.morph = { targets: templateMorph.targets, weights: new Float32Array(templateMorph.weights.length) };
+      player = createAnimationPlayer(md2Clip, { loop: true, time: Math.random() * md2Clip.duration });
+    }
+
     const x = ((i - (numWide - 1) / 2) * 5000) / numWide;
     const z = ((j - (numDeep - 1) / 2) * 5000) / numDeep;
     setMatrix4Identity(knight.localMatrix);
@@ -132,6 +158,7 @@ for (let i = 0; i < numWide; i++) {
     scaleMatrix4(knight.localMatrix, knight.localMatrix, 5, 5, 5);
     invalidateNodeLocalTransform(knight);
     addNodeChild(scene, knight);
+    knights.push({ mesh: knight, player, track: md2Track });
   }
 }
 
@@ -224,11 +251,24 @@ document.addEventListener('keyup', (e: KeyboardEvent) => {
   }
 });
 
-function frame(): void {
+let lastTime = 0;
+
+function frame(now: number): void {
+  const dt = lastTime === 0 ? 1 / 60 : Math.min(0.1, (now - lastTime) / 1000);
+  lastTime = now;
+
   if (keyUp) orbit.target.x -= 10;
   if (keyDown) orbit.target.x += 10;
   if (keyLeft) orbit.target.z += 10;
   if (keyRight) orbit.target.z -= 10;
+
+  for (const { mesh, player, track } of knights) {
+    if (player !== null && track !== null && mesh.morph != null) {
+      advanceAnimationPlayer(player, dt);
+      sampleAnimationTrack(mesh.morph.weights, track, player.time);
+      updateMeshMorph(mesh);
+    }
+  }
 
   orbit.update();
   const w = canvas.width;

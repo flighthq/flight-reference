@@ -49,6 +49,7 @@ import {
   flipSurfaceVertical,
   getNodeChildren,
   getNodeLocalMatrix4,
+  getSceneNodePosition,
   loadImageResourceFromUrl,
   parseObjMaterialLibrary,
   registerStandardPbrGlMaterial,
@@ -500,10 +501,7 @@ function sweepWing(meshes: readonly Mesh[], pivot: Vector3, angle: number): void
 let renderTarget: GlRenderTarget | null = null;
 
 function updateCameraLookAt(): void {
-  const lm = getNodeLocalMatrix4(f14Mesh);
-  cameraTarget.x = lm.m[12];
-  cameraTarget.y = lm.m[13];
-  cameraTarget.z = lm.m[14];
+  getSceneNodePosition(cameraTarget, f14Mesh);
   setCameraViewMatrix4FromLookAt(camera, eye, cameraTarget, up);
 }
 

@@ -8,6 +8,7 @@ import {
   createGlRenderState,
   createGlRenderTarget,
   createMesh,
+  createQuaternion,
   createScene,
   createSceneFromObj,
   createSceneHit,
@@ -15,22 +16,19 @@ import {
   createSphereMeshGeometry,
   createStandardPbrMaterial,
   createTorusMeshGeometry,
-  createMatrix4,
-  createVector3,
   DEG_TO_RAD,
   getNodeChildren,
   getPbrRoughnessFromPhongShininess,
+  multiplyQuaternion,
   packOpaqueColor,
   pickScene,
   presentGlScene,
   registerStandardPbrGlMaterial,
   resizeGlRenderTarget,
-  rotateMatrix4,
-  setMatrix4Identity,
-  setNodeLocalMatrix4,
+  setQuaternionFromAxisAngle,
   setSceneNodePosition,
+  setSceneNodeRotationQuaternion,
   setSceneNodeScale,
-  translateMatrix4,
 } from '@flighthq/sdk';
 
 import {
@@ -132,6 +130,12 @@ addNodeChild(scene, sceneNormalTracer);
 
 const tracerMeshes = new Set<Mesh>([pickingTracer, sceneTracer, pickingNormalTracer, sceneNormalTracer]);
 
+const xAxis = { x: 1, y: 0, z: 0 };
+const yAxis = { x: 0, y: 1, z: 0 };
+const zAxis = { x: 0, y: 0, z: 1 };
+const scratchQuatA = createQuaternion();
+const scratchQuatB = createQuaternion();
+
 interface ObjectInfo {
   mesh: Mesh;
   mouseEnabled: boolean;
@@ -176,20 +180,18 @@ function createRandomObject(): ObjectInfo {
   info.baseMaterial = chooseMaterial(info);
   mesh.materials = [info.baseMaterial];
 
-  const zAxis = createVector3(0, 0, 1);
   const rotZ = 360 * Math.random() * DEG_TO_RAD;
-  const m = createMatrix4();
-  setMatrix4Identity(m);
-  rotateMatrix4(m, m, zAxis, rotZ);
-
   const r = 200 + 100 * Math.random();
   const azimuth = 2 * Math.PI * Math.random();
   const elevation = 0.25 * Math.PI * Math.random();
-  const px = r * Math.cos(elevation) * Math.sin(azimuth);
-  const py = r * Math.sin(elevation);
-  const pz = r * Math.cos(elevation) * Math.cos(azimuth);
-  translateMatrix4(m, m, px, py, pz);
-  setNodeLocalMatrix4(mesh, m);
+  setSceneNodePosition(
+    mesh,
+    r * Math.cos(elevation) * Math.sin(azimuth),
+    r * Math.sin(elevation),
+    r * Math.cos(elevation) * Math.cos(azimuth),
+  );
+  setQuaternionFromAxisAngle(scratchQuatA, zAxis, rotZ);
+  setSceneNodeRotationQuaternion(mesh, scratchQuatA);
 
   addNodeChild(scene, mesh);
   objectInfos.push(info);
@@ -298,7 +300,6 @@ canvas.addEventListener('wheel', (e: WheelEvent) => {
 
 const hit: SceneHit = createSceneHit();
 let previousHoveredInfo: ObjectInfo | null = null;
-const tracerMatrix = createMatrix4();
 
 function positionNormalTracer(
   tracer: Mesh,
@@ -309,7 +310,7 @@ function positionNormalTracer(
   ny: number,
   nz: number,
 ): void {
-  setMatrix4Identity(tracerMatrix);
+  setSceneNodePosition(tracer, px, py, pz);
 
   const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
   if (len > 0.001) {
@@ -320,14 +321,16 @@ function positionNormalTracer(
     const yaw = Math.atan2(dnx, dnz);
     const pitch = Math.asin(-dny);
 
-    const yAxis = createVector3(0, 1, 0);
-    const xAxis = createVector3(1, 0, 0);
-    rotateMatrix4(tracerMatrix, tracerMatrix, yAxis, yaw);
-    rotateMatrix4(tracerMatrix, tracerMatrix, xAxis, pitch + Math.PI / 2);
+    setQuaternionFromAxisAngle(scratchQuatA, yAxis, yaw);
+    setQuaternionFromAxisAngle(scratchQuatB, xAxis, pitch + Math.PI / 2);
+    multiplyQuaternion(scratchQuatA, scratchQuatA, scratchQuatB);
+  } else {
+    scratchQuatA.x = 0;
+    scratchQuatA.y = 0;
+    scratchQuatA.z = 0;
+    scratchQuatA.w = 1;
   }
-
-  translateMatrix4(tracerMatrix, tracerMatrix, px, py, pz);
-  setNodeLocalMatrix4(tracer, tracerMatrix);
+  setSceneNodeRotationQuaternion(tracer, scratchQuatA);
 }
 
 canvas.addEventListener('mousemove', (e: MouseEvent) => {

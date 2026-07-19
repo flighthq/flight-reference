@@ -260,9 +260,7 @@ for (let i = 0; i < NUM_FIRES; i++) {
   decalMaterial.alphaMode = 'blend';
   decalMaterial.doubleSided = true;
   const decal = createMesh(decalGeometry, [decalMaterial]);
-  setMatrix4Identity(decal.localMatrix);
-  translateMatrix4(decal.localMatrix, decal.localMatrix, x, DECAL_Y_BASE + i * DECAL_Y_STEP, z);
-  invalidateNodeLocalTransform(decal);
+  setSceneNodePosition(decal, x, DECAL_Y_BASE + i * DECAL_Y_STEP, z);
 
   addNodeChild(scene, emitter);
   addNodeChild(scene, decal);

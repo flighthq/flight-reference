@@ -1,4 +1,4 @@
-import type { ImageResource } from '@flighthq/sdk';
+import type { ImageResource, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   createBitmap,
@@ -7,7 +7,7 @@ import {
   createSurfaceFromImageResource,
   loadImageResourceFromUrl,
 } from '@flighthq/sdk';
-import { compareSurface } from '@flighthq/surface';
+import { compareSurface } from '@flighthq/sdk';
 
 import { render, scale } from './render';
 
@@ -55,7 +55,7 @@ const [
   loadImageResourceFromUrl(`openfl/assets/${SIZE}/error.png`),
 ]);
 
-const sourceSurfaces = sourceImages.map((img) => createSurfaceFromImageResource(img));
+const sourceSurfaces: Surface[] = sourceImages.map((img) => createSurfaceFromImageResource(img));
 
 const entries: ImageResource[] = [...sourceImages, indicatorNull, indicatorDisposed];
 const count = entries.length;
@@ -68,7 +68,7 @@ function addImage(image: ImageResource, x: number, y: number): void {
   addNodeChild(root, bmp);
 }
 
-function getSurface(index: number) {
+function getSurface(index: number): Surface | null {
   return index < sourceSurfaces.length ? sourceSurfaces[index] : null;
 }
 

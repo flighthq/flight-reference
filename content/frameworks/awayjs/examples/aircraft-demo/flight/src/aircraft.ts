@@ -1,14 +1,11 @@
-import type { BlinnPhongMaterial, Mesh, Scene, StandardPbrMaterial, Vector3 } from '@flighthq/sdk';
+import type { BlinnPhongMaterial, Mesh, SceneNode, StandardPbrMaterial, Vector3 } from '@flighthq/sdk';
 import {
-  addNodeChild,
   computeMeshGeometryNormals,
-  createScene,
   createSceneFromObj,
   createStandardPbrMaterial,
   createTexture,
   createVector3,
   getNodeChildren,
-  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   parseObjMaterialLibrary,
   SceneResourceRefKind,
@@ -22,7 +19,7 @@ import {
 // material per texture). Parts with no map_Kd fall back to a plain metallic material.
 export interface Aircraft {
   // Root node the demo scales/rotates/flies. Not yet parented — the caller adds it to the scene.
-  container: Scene;
+  container: SceneNode;
   // Articulated groups, driven by the caller each frame.
   gearMeshes: Mesh[];
   leftWing: Mesh[];

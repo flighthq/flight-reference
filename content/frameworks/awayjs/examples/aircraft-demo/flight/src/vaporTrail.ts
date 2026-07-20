@@ -87,7 +87,7 @@ interface VaporEmitter {
 export interface VaporTrail {
   // Attach an exhaust emitter to a model-space nozzle offset on `mesh`. The offset is transformed by the
   // mesh's world matrix each step so the emit origin tracks the flying jet's roll.
-  attachToNozzle(mesh: Scene, x: number, y: number, z: number): void;
+  attachToNozzle(mesh: SceneNode, x: number, y: number, z: number): void;
   // Advance every attached emitter by one fixed timestep, refreshing each nozzle's world position first.
   step(dt: number): void;
 }

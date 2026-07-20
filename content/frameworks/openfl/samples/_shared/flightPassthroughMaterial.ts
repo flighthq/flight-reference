@@ -16,7 +16,7 @@ import {
   registerGlMeshMaterialRenderer,
   setGlMeshViewProjection,
 } from '@flighthq/sdk';
-import { UnlitMaterialKind } from '@flighthq/types';
+import { UnlitMaterialKind } from '@flighthq/sdk';
 
 import type { GlMeshProgram } from '@flighthq/scene-gl';
 

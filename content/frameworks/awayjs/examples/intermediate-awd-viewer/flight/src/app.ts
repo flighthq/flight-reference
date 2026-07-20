@@ -24,7 +24,6 @@ import {
   isMesh,
   loadSceneFromAwd,
   packOpaqueColor,
-  parseAwdSkeletonAnimation,
   presentGlScene,
   registerBlinnPhongGlMaterial,
   resizeGlRenderTarget,
@@ -114,7 +113,7 @@ for (const child of getNodeChildren(awdScene.root)) {
 
 const joints = skinnedMeshes[0]?.skin?.skeleton.joints ?? [];
 // The shambler AWD ships several clips (idle, walk, attack01–05); the reference plays the idle loop.
-const clip: AnimationClip | null = parseAwdSkeletonAnimation(awdBytes, joints, undefined, 'idle');
+const clip: AnimationClip | null = awdScene.animations['idle'];
 if (!clip) throw new Error('Failed to parse AWD skeleton animation');
 
 const player: AnimationPlayer = createAnimationPlayer(clip, { loop: true, speed: 1 });

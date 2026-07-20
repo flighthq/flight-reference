@@ -153,9 +153,7 @@ export async function createAircraft(): Promise<Aircraft> {
     else if (inWingBand && center.x < -2) leftWing.push(mesh);
   }
 
-  const container = f14Scene;
-  // const container = createScene();
-  // addNodeChild(container, f14Scene);
+  const container = f14Scene.root;
 
   return { container, gearMeshes, leftWing, rightWing };
 }

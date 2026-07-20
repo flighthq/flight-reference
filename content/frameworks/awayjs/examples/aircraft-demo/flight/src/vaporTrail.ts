@@ -4,6 +4,7 @@ import type {
   ParticleEmitterConfig,
   ParticleEmitterState,
   Scene,
+  SceneNode,
   Vector3,
 } from '@flighthq/sdk';
 import {
@@ -18,6 +19,7 @@ import {
   getNodeLocalMatrix4,
   loadImageResourceFromUrl,
   setMatrix4Identity,
+  setVector3,
   translateMatrix4,
   updateParticleEmitter3D,
 } from '@flighthq/sdk';
@@ -80,25 +82,6 @@ interface VaporEmitter {
   emitter: ParticleEmitter3D;
   state: ParticleEmitterState;
   config: ParticleEmitterConfig;
-  // A pure-translation world matrix, refreshed each step to the nozzle's world position; passed to
-  // updateParticleEmitter3D so puffs are baked into world space there (no scale/rotation, so their sizes
-  // and drift stay in world units regardless of the jet's 20x scale).
-  worldMatrix: Matrix4;
-  locate: (out: Vector3) => void;
-}
-
-// Applies a Matrix4 (column-major `.m`) to a model-space point, writing the world point into `out`.
-function transformModelPoint(
-  out: Vector3,
-  matrix: { readonly m: ArrayLike<number> },
-  x: number,
-  y: number,
-  z: number,
-): void {
-  const e = matrix.m;
-  out.x = e[0] * x + e[4] * y + e[8] * z + e[12];
-  out.y = e[1] * x + e[5] * y + e[9] * z + e[13];
-  out.z = e[2] * x + e[6] * y + e[10] * z + e[14];
 }
 
 export interface VaporTrail {
@@ -115,24 +98,20 @@ export async function createVaporTrail(scene: Scene): Promise<VaporTrail> {
   addTextureAtlasRegion(vaporAtlas, 0, 0, vaporImage.width, vaporImage.height);
 
   const emitters: VaporEmitter[] = [];
-  const scratch = createVector3(0, 0, 0);
 
-  function attachToNozzle(mesh: Scene, x: number, y: number, z: number): void {
+  function attachToNozzle(mesh: SceneNode, x: number, y: number, z: number): void {
     // Offset out to the engine and back a bit forward of the nozzle exit (deeper in the model, so the
     // trail emerges from within the fuselage).
-    const locate = (out: Vector3) => transformModelPoint(out, getNodeLocalMatrix4(mesh.root), x, y, z);
     const emitter = createParticleEmitter3D();
     emitter.data.atlas = vaporAtlas;
     const state = createParticleEmitterState();
-    addNodeChild(scene.root, emitter);
-    emitters.push({ emitter, state, config: exhaustConfig, worldMatrix: createMatrix4(), locate });
+    setVector3(emitter.position, x, y, z);
+    addNodeChild(mesh, emitter);
+    emitters.push({ emitter, state, config: exhaustConfig });
   }
 
   function step(dt: number): void {
     for (const vapor of emitters) {
-      vapor.locate(scratch);
-      setMatrix4Identity(vapor.worldMatrix);
-      translateMatrix4(vapor.worldMatrix, vapor.worldMatrix, scratch.x, scratch.y, scratch.z);
       updateParticleEmitter3D(vapor.emitter, vapor.state, vapor.config, dt);
     }
   }

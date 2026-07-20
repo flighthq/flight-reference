@@ -9,6 +9,7 @@ import {
   createMatrix4,
   createScene,
   createSceneLights,
+  createSceneNode,
   createVector3,
   DEG_TO_RAD,
   drawGlEnvironmentSkybox,
@@ -16,6 +17,7 @@ import {
   drawGlScene,
   endGlRenderPass,
   getQuaternionEuler,
+  invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   renderGlBackground,
   resizeGlRenderTarget,
@@ -87,15 +89,18 @@ const sea = await createSea();
 addNodeChild(scene.root, sea.mesh);
 
 const aircraft = await createAircraft();
-addNodeChild(scene.root, aircraft.container.root);
-const f14Mesh = aircraft.container;
-f14Mesh.root.position.y = 200;
-setVector3(f14Mesh.root.scale, F14_SCALE, F14_SCALE, F14_SCALE);
+setVector3(aircraft.container.scale, F14_SCALE, F14_SCALE, F14_SCALE);
+
+const f14Mesh = createSceneNode();
+addNodeChild(f14Mesh, aircraft.container);
+f14Mesh.position.y = 200;
+
+addNodeChild(scene.root, f14Mesh);
 
 const vaporTrail = await createVaporTrail(scene);
 // Engine nozzles: one per engine, offset out to each side and back into the fuselage.
-vaporTrail.attachToNozzle(f14Mesh, 1.35, -8, -0.1);
-vaporTrail.attachToNozzle(f14Mesh, -1.35, -8, -0.1);
+vaporTrail.attachToNozzle(f14Mesh, 1.35 * F14_SCALE, -8 * F14_SCALE, -0.1 * F14_SCALE);
+vaporTrail.attachToNozzle(f14Mesh, -1.35 * F14_SCALE, -8 * F14_SCALE, -0.1 * F14_SCALE);
 
 // Camera orbits the aircraft continuously
 const eye = createVector3(0, 250, 500);
@@ -147,16 +152,16 @@ function sweepWing(meshes: readonly Mesh[], pivot: Vector3, angle: number): void
 let renderTarget: GlRenderTarget | null = null;
 
 function updateCameraLookAt(): void {
-  copyVector3(cameraTarget, f14Mesh.root.position);
+  copyVector3(cameraTarget, f14Mesh.position);
   setCameraViewMatrix4FromLookAt(camera, eye, cameraTarget, up);
 }
 
 // Builds the jet's world transform from the current flight/roll state. Called in stepSimulation before
 // the emitters spawn (so the exhaust origins track the flying jet); renderScene then just reads it.
 function updateJetTransform(): void {
-  f14Mesh.root.position.z = flightZ;
-  setQuaternionFromEuler(f14Mesh.root.rotation, F14_RESTING_PITCH, 0, Math.sin(rollIncrement) * ROLL_AMPLITUDE);
-  invalidateNodeLocalTransform(f14Mesh.root);
+  f14Mesh.position.z = flightZ;
+  setQuaternionFromEuler(f14Mesh.rotation, F14_RESTING_PITCH, 0, Math.sin(rollIncrement) * ROLL_AMPLITUDE);
+  invalidateNodeLocalTransform(f14Mesh);
 }
 
 // A click toggles between the open (landing) and closed (clean/flight) configurations.
@@ -215,7 +220,8 @@ function renderScene(): void {
   const gearVisible = gearFade > 0.004;
   for (const gear of aircraft.gearMeshes) {
     gear.alpha = gearFade;
-    if (gear.enabled !== gearVisible) setNodeEnabled(gear, gearVisible);
+    gear.visible = gearVisible;
+    invalidateNodeAppearance(gear);
   }
 
   // The sea follows the jet's flight (translate by flightZ) so it stays underneath — jet, camera, and

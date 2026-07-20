@@ -66,7 +66,7 @@ function packColor(r: number, g: number, b: number): number {
 function buildBatmanLogo(fillColor: number, strokeColor: number): Shape {
   const shape = createShape();
   appendShapeBeginFill(shape, fillColor, 1);
-  appendShapeLineStyle(shape, 5, strokeColor, 1, false, null, 'round', 'miter', 1.8);
+  appendShapeLineStyle(shape, 5, strokeColor, 1, false, 'normal', 'round', 'miter', 1.8);
   appendShapeMoveTo(shape, 50, 50);
   appendShapeLineTo(shape, 50, 50);
   appendShapeLineTo(shape, 50, 50);

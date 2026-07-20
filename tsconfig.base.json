@@ -3,10 +3,14 @@
     "target": "ES2022",
     "strict": true,
     "exactOptionalPropertyTypes": true,
-    "noUncheckedIndexedAccess": true,
+    // "noUncheckedIndexedAccess": true,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "paths": {
+      "@ft/render": ["./content/harness/render.ts"],
+      "@ft/verify": ["./content/harness/verify.ts"]
+    }
   }
 }

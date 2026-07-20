@@ -90,7 +90,7 @@ const material = createStandardPbrMaterial({
 // the ring), so the counts swap to reproduce the original's tessellation (smoother ring, coarser tube).
 const geometry = createTorusMeshGeometry(220, 80, 16, 32);
 const torus = createMesh(geometry, [material]);
-addNodeChild(scene, torus);
+addNodeChild(scene.root, torus);
 
 const yAxis = createVector3(0, 1, 0);
 const scratchQuat = createQuaternion();
@@ -114,7 +114,7 @@ function frame(): void {
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  drawGlScene(state, scene, camera, lights);
+  drawGlScene(state, scene.root, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, effects);
   verifyFrame();
   requestAnimationFrame(frame);

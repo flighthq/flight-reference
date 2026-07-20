@@ -1,4 +1,11 @@
-import type { GlRenderEffectPipeline, ImageResource, Mesh, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
+import type {
+  GlRenderEffectPipeline,
+  ImageResource,
+  Mesh,
+  PerspectiveProjection,
+  SceneNode,
+  StandardPbrMaterial,
+} from '@flighthq/sdk';
 import {
   addNodeChild,
   bakeEnvironmentIbl,
@@ -97,7 +104,7 @@ const skyMaterial = createEmissiveMaterial({
 });
 skyMaterial.doubleSided = true;
 const skyDome = createMesh(createSphereMeshGeometry(6000, 32, 16), [skyMaterial]);
-addNodeChild(scene, skyDome);
+addNodeChild(scene.root, skyDome);
 
 // Metallic surfaces need an environment to reflect. There's no HDR map here, so bake a cheap IBL from a
 // solid-color cube — sky blue overhead (+Y), warm dirt below (-Y), horizon on the sides. The bake blurs
@@ -131,7 +138,7 @@ const lights = createSceneLights({ ambient, directional });
 const spartanContainer = createSceneNode();
 setVector3(spartanContainer.scale, 0.25, 0.25, 0.25);
 invalidateNodeLocalTransform(spartanContainer);
-addNodeChild(scene, spartanContainer);
+addNodeChild(scene.root, spartanContainer);
 
 const [spartanObjText, terrainObjText, masterchiefImage, stoneImage] = await Promise.all([
   fetch('awayjs/assets/Halo_3_SPARTAN4.obj').then((r) => r.text()),
@@ -330,16 +337,16 @@ function applyMaterialToObjScene(objScene: SceneNode, material: StandardPbrMater
 }
 
 const spartanScene = createSceneFromObj(spartanObjText);
-applyMaterialToObjScene(spartanScene, masterchiefMaterial);
-for (const child of getNodeChildren(spartanScene)) {
+applyMaterialToObjScene(spartanScene.root, masterchiefMaterial);
+for (const child of getNodeChildren(spartanScene.root)) {
   addNodeChild(spartanContainer, child);
 }
 
 const terrainScene = createSceneFromObj(terrainObjText);
-applyMaterialToObjScene(terrainScene, stoneMaterial);
+applyMaterialToObjScene(terrainScene.root, stoneMaterial);
 let terrainNode: SceneNode | undefined;
-for (const child of getNodeChildren(terrainScene)) {
-  addNodeChild(scene, child);
+for (const child of getNodeChildren(terrainScene.root)) {
+  addNodeChild(scene.root, child);
   if (!terrainNode) terrainNode = child;
 }
 
@@ -380,7 +387,7 @@ function frame(): void {
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  drawGlScene(state, scene, camera, lights);
+  drawGlScene(state, scene.root, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, effects);
   verifyFrame();
   requestAnimationFrame(frame);
@@ -395,7 +402,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   state.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 requestAnimationFrame(frame);

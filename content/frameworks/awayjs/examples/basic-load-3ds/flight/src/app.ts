@@ -1,4 +1,4 @@
-import type { GlRenderEffectPipeline, Mesh } from '@flighthq/sdk';
+import type { GlRenderEffectPipeline, Mesh, PerspectiveProjection } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -108,7 +108,7 @@ groundMaterial.doubleSided = true;
 
 const groundGeometry = createPlaneMeshGeometry(1000, 1000, 1, 1);
 const ground = createMesh(groundGeometry, [groundMaterial]);
-addNodeChild(scene, ground);
+addNodeChild(scene.root, ground);
 
 const [modelBuffer, antImage, sandImage] = await Promise.all([
   fetch('awayjs/assets/soldier_ant.3ds').then((r) => r.arrayBuffer()),
@@ -128,7 +128,7 @@ const antMaterial = createStandardPbrMaterial({
 });
 antMaterial.baseColorMap = antTexture;
 
-for (const child of getNodeChildren(modelScene)) {
+for (const child of getNodeChildren(modelScene.root)) {
   const mesh = child as Mesh;
   if (mesh.geometry) {
     computeMeshGeometryNormals(mesh.geometry, mesh.geometry);
@@ -145,14 +145,14 @@ for (const child of getNodeChildren(modelScene)) {
 }
 
 const modelContainer = createSceneNode();
-for (const child of getNodeChildren(modelScene)) {
+for (const child of getNodeChildren(modelScene.root)) {
   addNodeChild(modelContainer, child);
 }
 
 modelContainer.position.z = 200;
 setVector3(modelContainer.scale, 300, 300, 300);
 invalidateNodeLocalTransform(modelContainer);
-addNodeChild(scene, modelContainer);
+addNodeChild(scene.root, modelContainer);
 
 const orbit = createOrbitControllerFromAway(camera, {
   distance: 1000,
@@ -199,7 +199,7 @@ function frame(ts: number): void {
 
   // Shadow depth pass from the light's view, before the lit scene draw samples it.
   configureDirectionalShadowCamera(shadowCamera, dir, shadowBounds);
-  drawGlSceneShadowMap(state, scene, shadowCamera);
+  drawGlSceneShadowMap(state, scene.root, shadowCamera);
 
   // Effect-pipeline present: draw the scene into the pipeline's HDR target (clearing background and
   // depth as a direct present would), then run the post-process stack (ACES tone map) to the canvas.
@@ -212,7 +212,7 @@ function frame(ts: number): void {
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  drawGlScene(state, scene, camera, lights);
+  drawGlScene(state, scene.root, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, effects);
   verifyFrame();
   requestAnimationFrame(frame);
@@ -227,7 +227,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   state.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 requestAnimationFrame(frame);

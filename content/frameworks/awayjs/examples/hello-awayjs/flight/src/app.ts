@@ -1,4 +1,4 @@
-import type { GlRenderTarget, Mesh, SceneLights } from '@flighthq/sdk';
+import type { GlRenderTarget, Mesh, PerspectiveProjection, SceneLights } from '@flighthq/sdk';
 import {
   createScene,
   addNodeChild,
@@ -67,7 +67,7 @@ for (let i = 0; i < 100; i++) {
   invalidateNodeLocalTransform(mesh);
 
   spheres.push(mesh);
-  addNodeChild(scene, mesh);
+  addNodeChild(scene.root, mesh);
 }
 
 const hit = createSceneHit();
@@ -76,7 +76,7 @@ function pickSphere(event: MouseEvent): Mesh | null {
   const rect = canvas.getBoundingClientRect();
   const screenX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   const screenY = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
-  const result = pickScene(scene, camera, screenX, screenY, hit);
+  const result = pickScene(scene.root, camera, screenX, screenY, hit);
   if (result) {
     const index = spheres.indexOf(result.node as Mesh);
     if (index !== -1) {
@@ -115,7 +115,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   state.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 function frame(): void {
@@ -126,7 +126,7 @@ function frame(): void {
   } else {
     resizeGlRenderTarget(state, renderTarget, w, h);
   }
-  presentGlScene(state, renderTarget, scene, camera, lights);
+  presentGlScene(state, renderTarget, scene.root, camera, lights);
   verifyFrame();
   requestAnimationFrame(frame);
 }

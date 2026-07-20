@@ -1,4 +1,11 @@
-import type { AnimationPlayer, AnimationTrack, BlinnPhongMaterial, GlRenderTarget, Mesh } from '@flighthq/sdk';
+import type {
+  AnimationPlayer,
+  AnimationTrack,
+  BlinnPhongMaterial,
+  GlRenderTarget,
+  Mesh,
+  PerspectiveProjection,
+} from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceAnimationPlayer,
@@ -14,12 +21,12 @@ import {
   createOrthographicProjection,
   createPlaneMeshGeometry,
   createScene,
+  createSceneFromMd2,
   createSceneLights,
   createTexture,
   createTilingSampler,
   drawGlSceneShadowMap,
   getNodeChildren,
-  importMd2,
   isMesh,
   loadImageResourceFromUrl,
   presentGlScene,
@@ -113,16 +120,15 @@ for (let i = 0; i < 4; i++) {
 
 const floorGeometry = createPlaneMeshGeometry(5000, 5000, 1, 1);
 const floor = createMesh(floorGeometry, [floorMaterial]);
-addNodeChild(scene, floor);
+addNodeChild(scene.root, floor);
 
 const md2Buffer = await fetch('awayjs/assets/pknight.md2').then((r) => r.arrayBuffer());
-const md2Result = importMd2(new Uint8Array(md2Buffer));
-const md2Scene = md2Result.scene;
-const md2Clip = md2Result.animations[0] ?? null;
+const md2Scene = await createSceneFromMd2(new Uint8Array(md2Buffer));
+const md2Clip = md2Scene.animations[0] ?? null;
 const md2Track: AnimationTrack | null = md2Clip?.channels[0]?.track ?? null;
 
 let templateMesh: Mesh | null = null;
-for (const child of getNodeChildren(md2Scene)) {
+for (const child of getNodeChildren(md2Scene.root)) {
   if (isMesh(child)) {
     templateMesh = child as Mesh;
     break;
@@ -163,7 +169,7 @@ for (let i = 0; i < numWide; i++) {
     setVector3(knight.position, x, 120, z);
     setVector3(knight.scale, 5, 5, 5);
     invalidateNodeLocalTransform(knight);
-    addNodeChild(scene, knight);
+    addNodeChild(scene.root, knight);
     knights.push({ mesh: knight, player, track: md2Track });
   }
 }
@@ -301,8 +307,8 @@ function frame(now: number): void {
   } else {
     resizeGlRenderTarget(state, renderTarget, w, h);
   }
-  drawGlSceneShadowMap(state, scene, shadowCamera);
-  presentGlScene(state, renderTarget, scene, camera, lights);
+  drawGlSceneShadowMap(state, scene.root, shadowCamera);
+  presentGlScene(state, renderTarget, scene.root, camera, lights);
   verifyFrame();
   requestAnimationFrame(frame);
 }
@@ -316,7 +322,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   state.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 requestAnimationFrame(frame);

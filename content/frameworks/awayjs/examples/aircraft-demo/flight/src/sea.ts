@@ -24,7 +24,8 @@ export async function createSea(): Promise<Sea> {
   const seaNormalTex = createTexture({ image: seaNormalImage });
   // Tile the ripples finely so they read as small, distant waves seen from altitude rather than large
   // close-up swells (the AwayJS look, which is wrong for a jet's height).
-  seaNormalTex.uvScale = { x: 300, y: 300 };
+  seaNormalTex.uvScale.x = 300;
+  seaNormalTex.uvScale.y = 300;
 
   // Water surface — a distant sea read via StandardPbrMaterial: low roughness makes it reflect the sky
   // environment (a Fresnel sheen strongest toward the horizon), with only a faint, slow normal-map

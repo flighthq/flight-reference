@@ -81,7 +81,7 @@ const torusMaterial = createStandardPbrMaterial({
 
 const geometry = createTorusMeshGeometry(150, 60, 40, 20);
 const torus = createMesh(geometry, [torusMaterial]);
-addNodeChild(scene, torus);
+addNodeChild(scene.root, torus);
 
 // AwayJS torus.boundsVisible = true draws the torus's bounding box outline, rotating with the torus.
 // Flight's GL wireframe draws every triangle edge (diagonals) and ignores thickness, so build a clean,
@@ -220,7 +220,7 @@ function frame(): void {
   beginGlRenderPass(state, renderTarget, { preserveColor: true });
   renderGlBackground(state);
   drawGlEnvironmentSkybox(state, environment, camera, aspect);
-  drawGlScene(state, scene, camera, lights);
+  drawGlScene(state, scene.root, camera, lights);
   endGlRenderPass(state);
   resolveGlRenderTarget(state, renderTarget);
   drawGlLinearToSrgbPass(state, renderTarget, null);

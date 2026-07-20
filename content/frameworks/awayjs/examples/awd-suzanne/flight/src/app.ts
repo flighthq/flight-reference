@@ -1,4 +1,11 @@
-import type { BlinnPhongMaterial, GlRenderTarget, Material, Mesh, SceneHit } from '@flighthq/sdk';
+import type {
+  BlinnPhongMaterial,
+  GlRenderTarget,
+  Material,
+  Mesh,
+  PerspectiveProjection,
+  SceneHit,
+} from '@flighthq/sdk';
 import {
   addNodeChild,
   appendMatrix4,
@@ -90,7 +97,7 @@ const hoverMaterial: Material = createBlinnPhongMaterial({
 const buffer = await fetch('awayjs/assets/suzanne.awd').then((r) => r.arrayBuffer());
 const modelScene = await loadSceneFromAwd(new Uint8Array(buffer));
 
-const templateMesh = findNode(modelScene, isMesh) as Mesh | null;
+const templateMesh = findNode(modelScene.root, isMesh) as Mesh | null;
 if (!templateMesh?.geometry) throw new Error('No mesh found in suzanne.awd');
 const templateGeometry = templateMesh.geometry;
 const defaultMaterial = templateMesh.materials[0] as BlinnPhongMaterial;
@@ -119,7 +126,7 @@ function placeMesh(scale: number, tx: number, ty: number, tz: number, rotationY:
   scaleMatrix4(scratchMatrix, scratchMatrix, scale, scale, scale);
   appendMatrix4(scratchMatrix, scratchMatrix, orient);
   setNodeLocalMatrix4(mesh, scratchMatrix);
-  addNodeChild(scene, mesh);
+  addNodeChild(scene.root, mesh);
   return mesh;
 }
 
@@ -156,7 +163,7 @@ canvas.addEventListener('mousemove', (e: MouseEvent) => {
   // Y grows down, NDC Y grows up). Using rect dimensions keeps this correct under devicePixelRatio.
   const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
   const ndcY = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-  const result = pickScene(scene, camera, ndcX, ndcY, hit);
+  const result = pickScene(scene.root, camera, ndcX, ndcY, hit);
 
   if (lastHovered && lastHovered !== result?.node) {
     lastHovered.materials[0] = defaultMaterial;
@@ -187,7 +194,7 @@ function frame(): void {
   } else {
     resizeGlRenderTarget(state, renderTarget, w, h);
   }
-  presentGlScene(state, renderTarget, scene, camera, lights);
+  presentGlScene(state, renderTarget, scene.root, camera, lights);
   verifyFrame();
   requestAnimationFrame(frame);
 }
@@ -201,7 +208,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   state.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 requestAnimationFrame(frame);

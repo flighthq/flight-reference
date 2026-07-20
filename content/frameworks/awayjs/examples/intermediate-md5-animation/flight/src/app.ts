@@ -4,6 +4,7 @@ import type {
   CubeTexture,
   GlRenderTarget,
   Mesh,
+  PerspectiveProjection,
   SceneLights,
   SceneNode,
   StandardPbrMaterial,
@@ -199,7 +200,7 @@ bodyMaterial.normalMap = createTexture({ image: bodyNormal, colorSpace: 'linear'
 bodyMaterial.metallicRoughnessMap = createTexture({ image: bodySpecular, colorSpace: 'linear' });
 
 const groundMesh = createMesh(createPlaneMeshGeometry(50000, 50000, 1, 1), [groundMaterial]);
-addNodeChild(scene, groundMesh);
+addNodeChild(scene.root, groundMesh);
 
 // AwayJS's EffectFogMethod fades the ground to black from half the camera far distance to the far
 // plane. Flight has no scene-fog pass yet, so approximate that ground-specific fade with narrow,
@@ -230,14 +231,14 @@ for (let ring = 0; ring < FOG_RINGS; ring++) {
   fogMaterial.alphaMode = 'blend';
   fogMaterial.doubleSided = true;
   const fogRing = createMesh(createMeshGeometryFromAttributes({ positions, indices }), [fogMaterial]);
-  addNodeChild(scene, fogRing);
+  addNodeChild(scene.root, fogRing);
 }
 
 const meshText = await fetch('awayjs/assets/hellknight/hellknight.md5mesh').then((r) => r.text());
 const md5Scene = createSceneFromMd5Mesh(meshText);
 
 // Extract skeleton joint nodes from the parsed scene for animation clip binding.
-const skeletonNode = getNodeChildByName(md5Scene, 'skeleton');
+const skeletonNode = getNodeChildByName(md5Scene.root, 'skeleton');
 const jointNodes: SceneNode[] = [];
 if (skeletonNode) {
   const collectDescendants = (parent: SceneNode): void => {
@@ -251,7 +252,7 @@ if (skeletonNode) {
 
 // Add all mesh children from the parsed scene to our render scene and assign materials.
 // The MD5 parser sets mesh.skin on each mesh — updateMeshSkin drives skinning per frame.
-const md5Children = getNodeChildren(md5Scene);
+const md5Children = getNodeChildren(md5Scene.root);
 const characterPositionNode = createScene();
 const characterNode = createScene();
 const yAxisVec = createVector3(0, 1, 0);
@@ -263,10 +264,10 @@ for (const child of md5Children) {
     computeMeshGeometryNormals(child.geometry, child.geometry);
     skinnedMeshes.push(child);
   }
-  addNodeChild(characterNode, child);
+  addNodeChild(characterNode.root, child);
 }
-addNodeChild(characterPositionNode, characterNode);
-addNodeChild(scene, characterPositionNode);
+addNodeChild(characterPositionNode.root, characterNode.root);
+addNodeChild(scene.root, characterPositionNode.root);
 
 const animTexts = await Promise.all(
   ANIM_NAMES.map((name) => fetch(`awayjs/assets/hellknight/${name}.md5anim`).then((r) => r.text())),
@@ -451,11 +452,11 @@ function frame(ts: number): void {
 
   // Keep root-motion translation and visual yaw on separate nodes. This makes the yaw pivot the
   // character's local origin and prevents turning from rotating its accumulated world displacement.
-  setVector3(characterPositionNode.position, characterX, 0, characterZ);
-  invalidateNodeLocalTransform(characterPositionNode);
+  setVector3(characterPositionNode.root.position, characterX, 0, characterZ);
+  invalidateNodeLocalTransform(characterPositionNode.root);
   setQuaternionFromAxisAngle(characterQuat, yAxisVec, spriteRotY + CHARACTER_YAW_OFFSET);
-  copyQuaternion(characterNode.rotation, characterQuat);
-  invalidateNodeLocalTransform(characterNode);
+  copyQuaternion(characterNode.root.rotation, characterQuat);
+  invalidateNodeLocalTransform(characterNode.root);
 
   setAwayPosition(
     redLight.position,
@@ -475,7 +476,7 @@ function frame(ts: number): void {
   updateCamera();
 
   configureDirectionalShadowCamera(shadowCamera, whiteLight.direction, shadowBounds);
-  drawGlSceneShadowMap(glState, scene, shadowCamera);
+  drawGlSceneShadowMap(glState, scene.root, shadowCamera);
 
   const w = canvas.width;
   const h = canvas.height;
@@ -489,7 +490,7 @@ function frame(ts: number): void {
   beginGlRenderPass(glState, renderTarget, { preserveColor: true });
   renderGlBackground(glState);
   drawGlEnvironmentSkybox(glState, environment, camera, w / h);
-  drawGlScene(glState, scene, camera, lights);
+  drawGlScene(glState, scene.root, camera, lights);
   endGlRenderPass(glState);
   resolveGlRenderTarget(glState, renderTarget);
   drawGlLinearToSrgbPass(glState, renderTarget, null);
@@ -508,7 +509,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   glState.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 updateCamera();

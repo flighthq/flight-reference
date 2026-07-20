@@ -1,4 +1,4 @@
-import type { BlinnPhongMaterial, GlRenderTarget, Mesh } from '@flighthq/sdk';
+import type { BlinnPhongMaterial, GlRenderTarget, Mesh, PerspectiveProjection } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendMatrix4,
@@ -70,7 +70,7 @@ const lights = createSceneLights({ ambient, directional });
 const buffer = await fetch('awayjs/assets/suzanne.awd').then((r) => r.arrayBuffer());
 const modelScene = await loadSceneFromAwd(new Uint8Array(buffer));
 
-const templateMesh = findNode(modelScene, isMesh) as Mesh | null;
+const templateMesh = findNode(modelScene.root, isMesh) as Mesh | null;
 if (!templateMesh?.geometry) throw new Error('No mesh found in suzanne.awd');
 const defaultMaterial = templateMesh.materials[0] as BlinnPhongMaterial;
 applyAwayGloss(defaultMaterial, { gloss: 50, specular: 1.8 });
@@ -79,7 +79,7 @@ const orient = createMatrix4();
 const orientSource = getNodeLocalMatrix4(templateMesh);
 orient.m.set(orientSource.m);
 
-addNodeChild(scene, templateMesh);
+addNodeChild(scene.root, templateMesh);
 
 const yAxis = createVector3(0, 1, 0);
 const scratchMatrix = createMatrix4();
@@ -101,7 +101,7 @@ function frame(): void {
   } else {
     resizeGlRenderTarget(state, renderTarget, w, h);
   }
-  presentGlScene(state, renderTarget, scene, camera, lights);
+  presentGlScene(state, renderTarget, scene.root, camera, lights);
   verifyFrame();
   requestAnimationFrame(frame);
 }
@@ -115,7 +115,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   state.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 requestAnimationFrame(frame);

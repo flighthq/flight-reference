@@ -1,4 +1,4 @@
-import type { GlRenderTarget, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
+import type { GlRenderTarget, PerspectiveProjection, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   createGlCanvasElement,
@@ -128,13 +128,13 @@ function assignMaterialToMeshes(node: SceneNode): void {
   }
 }
 
-assignMaterialToMeshes(awdScene);
+assignMaterialToMeshes(awdScene.root);
 
-for (const child of getNodeChildren(awdScene)) {
+for (const child of getNodeChildren(awdScene.root)) {
   child.position.y = -20;
   setVector3(child.scale, 4, 4, 4);
   invalidateNodeLocalTransform(child);
-  addNodeChild(scene, child);
+  addNodeChild(scene.root, child);
 }
 
 const orbit = createOrbitControllerFromAway(camera, {
@@ -178,7 +178,7 @@ function frame(): void {
   } else {
     resizeGlRenderTarget(state, renderTarget, w, h);
   }
-  presentGlScene(state, renderTarget, scene, camera, lights);
+  presentGlScene(state, renderTarget, scene.root, camera, lights);
   verifyFrame();
   requestAnimationFrame(frame);
 }
@@ -192,7 +192,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   state.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 requestAnimationFrame(frame);

@@ -1,4 +1,4 @@
-import type { BlurEffect } from '@flighthq/effects';
+import type { BlurEffect } from '@flighthq/sdk';
 import { applyGaussianBlurToGl } from '@flighthq/effects-gl';
 import type { DisplayObject, Matrix, GlRenderTarget } from '@flighthq/sdk';
 import {

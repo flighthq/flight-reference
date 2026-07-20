@@ -75,11 +75,11 @@ function parseAtfLocal(bytes: Uint8Array): AtfBlock[] | null {
   const isNew = bytes[6] === 0xff;
   const hdr = isNew ? 12 : 6;
   if (bytes.length < hdr + 4) return null;
-  const code = bytes[hdr] & 0x7f;
-  const cube = (bytes[hdr] & 0x80) !== 0;
-  const w = 1 << bytes[hdr + 1];
-  const h = 1 << bytes[hdr + 2];
-  const mips = Math.max(1, bytes[hdr + 3]);
+  const code = bytes[hdr]! & 0x7f;
+  const cube = (bytes[hdr]! & 0x80) !== 0;
+  const w = 1 << bytes[hdr + 1]!;
+  const h = 1 << bytes[hdr + 2]!;
+  const mips = Math.max(1, bytes[hdr + 3]!);
   const faces = cube ? 6 : 1;
   const fmtTable: Record<number, readonly ('bc1' | 'bc3' | 'etc1' | 'etc2Rgba')[]> = {
     2: ['bc1', 'etc1' as const],
@@ -93,8 +93,8 @@ function parseAtfLocal(bytes: Uint8Array): AtfBlock[] | null {
   const lenSize = isNew ? 4 : 3;
   const readLen = (off: number) =>
     lenSize === 4
-      ? ((bytes[off] << 24) | (bytes[off + 1] << 16) | (bytes[off + 2] << 8) | bytes[off + 3]) >>> 0
-      : (bytes[off] << 16) | (bytes[off + 1] << 8) | bytes[off + 2];
+      ? ((bytes[off]! << 24) | (bytes[off + 1]! << 16) | (bytes[off + 2]! << 8) | bytes[off + 3]!) >>> 0
+      : (bytes[off]! << 16) | (bytes[off + 1]! << 8) | bytes[off + 2]!;
 
   const blocks: AtfBlock[] = [];
   let off = hdr + 4;
@@ -110,7 +110,7 @@ function parseAtfLocal(bytes: Uint8Array): AtfBlock[] | null {
         if (off + len > bytes.length) return null;
         if (rawFmts && (f === 0 || f === fmtCount - 1)) {
           const fmt = f === 0 ? rawFmts[0] : rawFmts[1];
-          blocks.push({ format: fmt, byteOffset: off, byteLength: len, width: mw, height: mh });
+          blocks.push({ format: fmt!, byteOffset: off, byteLength: len, width: mw, height: mh });
         }
         off += len;
       }

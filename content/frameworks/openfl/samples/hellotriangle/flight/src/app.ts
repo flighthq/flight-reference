@@ -36,7 +36,7 @@ const scene = createScene();
 const material = createVertexColorMaterial({ tint: 0xffffffff });
 material.doubleSided = true;
 const mesh = createMesh(geometry, [material]);
-addNodeChild(scene, mesh);
+addNodeChild(scene.root, mesh);
 
 const camera = createCamera({
   far: 10,
@@ -53,7 +53,7 @@ function frame(): void {
   setQuaternionFromAxisAngle(scratchQuat, zAxis, (performance.now() / 40) * (Math.PI / 180));
   copyQuaternion(mesh.rotation, scratchQuat);
   invalidateNodeLocalTransform(mesh);
-  render(scene, camera, lights);
+  render(scene.root, camera, lights);
   requestAnimationFrame(frame);
 }
 

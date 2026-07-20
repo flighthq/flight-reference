@@ -4,6 +4,7 @@ import type {
   ParticleEmitter3D,
   ParticleEmitterConfig,
   ParticleEmitterState,
+  PerspectiveProjection,
   StandardPbrMaterial,
   Texture,
   UnlitMaterial,
@@ -121,7 +122,7 @@ const planeGeometry = createPlaneMeshGeometry(1000, 1000, 1, 1);
 const plane = createMesh(planeGeometry, [planeMaterial]);
 plane.position.y = -20;
 invalidateNodeLocalTransform(plane);
-addNodeChild(scene, plane);
+addNodeChild(scene.root, plane);
 
 // Bakes AwayJS's specular gloss mask into a glTF metallic-roughness map: roughness in G (bright
 // specular → glossy, dark → matte), metallic left 0 in B. Marked linear so the gloss values are used
@@ -266,8 +267,8 @@ for (let i = 0; i < NUM_FIRES; i++) {
   setVector3(decal.position, x, DECAL_Y_BASE + i * DECAL_Y_STEP, z);
   invalidateNodeLocalTransform(decal);
 
-  addNodeChild(scene, emitter);
-  addNodeChild(scene, decal);
+  addNodeChild(scene.root, emitter);
+  addNodeChild(scene.root, decal);
   fires.push({ emitter, state, active: false, strength: 0, decalMaterial });
 }
 
@@ -342,7 +343,7 @@ function frame(ts: number): void {
     resizeGlRenderTarget(glState, renderTarget, w, h);
   }
 
-  presentGlScene(glState, renderTarget, scene, camera, lights);
+  presentGlScene(glState, renderTarget, scene.root, camera, lights);
 
   verifyFrame();
 
@@ -358,7 +359,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   glState.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 requestAnimationFrame(frame);

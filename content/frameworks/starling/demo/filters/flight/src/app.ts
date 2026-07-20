@@ -1,4 +1,4 @@
-import type { BlurEffect, DisplacementEffect, DropShadowEffect, OuterGlowEffect } from '@flighthq/effects';
+import type { BlurEffect, DisplacementEffect, DropShadowEffect, OuterGlowEffect } from '@flighthq/sdk';
 import {
   createBlurEffect,
   createDisplacementEffect,
@@ -13,7 +13,7 @@ import {
   applyGlEffectBoxBlur,
   applyOuterGlowEffectToGl,
 } from '@flighthq/effects-gl';
-import type { ColorMatrixAdjustment } from '@flighthq/adjustments';
+import type { ColorMatrixAdjustment } from '@flighthq/sdk';
 import {
   createBrightnessColorMatrix,
   createContrastColorMatrix,

@@ -120,11 +120,11 @@ export async function createVaporTrail(scene: Scene): Promise<VaporTrail> {
   function attachToNozzle(mesh: Scene, x: number, y: number, z: number): void {
     // Offset out to the engine and back a bit forward of the nozzle exit (deeper in the model, so the
     // trail emerges from within the fuselage).
-    const locate = (out: Vector3) => transformModelPoint(out, getNodeLocalMatrix4(mesh), x, y, z);
+    const locate = (out: Vector3) => transformModelPoint(out, getNodeLocalMatrix4(mesh.root), x, y, z);
     const emitter = createParticleEmitter3D();
     emitter.data.atlas = vaporAtlas;
     const state = createParticleEmitterState();
-    addNodeChild(scene, emitter);
+    addNodeChild(scene.root, emitter);
     emitters.push({ emitter, state, config: exhaustConfig, worldMatrix: createMatrix4(), locate });
   }
 
@@ -133,7 +133,7 @@ export async function createVaporTrail(scene: Scene): Promise<VaporTrail> {
       vapor.locate(scratch);
       setMatrix4Identity(vapor.worldMatrix);
       translateMatrix4(vapor.worldMatrix, vapor.worldMatrix, scratch.x, scratch.y, scratch.z);
-      updateParticleEmitter3D(vapor.emitter, vapor.state, vapor.config, dt, vapor.worldMatrix);
+      updateParticleEmitter3D(vapor.emitter, vapor.state, vapor.config, dt);
     }
   }
 

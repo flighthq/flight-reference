@@ -1,4 +1,4 @@
-import type { GlRenderTarget, Mesh, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
+import type { GlRenderTarget, Mesh, PerspectiveProjection, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   createGlCanvasElement,
@@ -152,10 +152,10 @@ function walkAndAssignMaterials(node: SceneNode): void {
 
 const awdScene = createSceneFromAwd(new Uint8Array(awdBuffer));
 
-walkAndAssignMaterials(awdScene);
+walkAndAssignMaterials(awdScene.root);
 
-for (const child of getNodeChildren(awdScene)) {
-  addNodeChild(scene, child);
+for (const child of getNodeChildren(awdScene.root)) {
+  addNodeChild(scene.root, child);
 }
 
 const fps = createFirstPersonControllerFromAway(camera, {
@@ -240,7 +240,7 @@ function frame(): void {
   } else {
     resizeGlRenderTarget(state, renderTarget, w, h);
   }
-  presentGlScene(state, renderTarget, scene, camera, lights);
+  presentGlScene(state, renderTarget, scene.root, camera, lights);
   verifyFrame();
   requestAnimationFrame(frame);
 }
@@ -254,7 +254,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   state.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 requestAnimationFrame(frame);

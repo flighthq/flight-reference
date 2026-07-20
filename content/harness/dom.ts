@@ -39,8 +39,8 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
   document.body.appendChild(container);
 
   const state = createDomRenderState(container, {
-    backgroundColor: options.background,
-    sceneGraphSyncPolicy: options.syncPolicy,
+    backgroundColor: options.background || 0,
+    sceneGraphSyncPolicy: options.syncPolicy || 'refreshDerivedState',
   });
 
   for (const kind of options.kinds ?? []) {

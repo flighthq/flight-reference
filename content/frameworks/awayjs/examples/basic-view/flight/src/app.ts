@@ -1,4 +1,4 @@
-import type { GlRenderTarget, SceneLights } from '@flighthq/sdk';
+import type { GlRenderTarget, PerspectiveProjection, SceneLights } from '@flighthq/sdk';
 import {
   createScene,
   addNodeChild,
@@ -51,7 +51,7 @@ const scene = createScene();
 const material = createUnlitMaterial({ baseColor: 0xffffffff });
 const geometry = createPlaneMeshGeometry(700, 700);
 const mesh = createMesh(geometry, [material]);
-addNodeChild(scene, mesh);
+addNodeChild(scene.root, mesh);
 
 const camera = createCameraFromAway({ y: 500, z: -600, fov: 60 });
 
@@ -79,7 +79,7 @@ function frame(): void {
   } else {
     resizeGlRenderTarget(state, renderTarget, w, h);
   }
-  presentGlScene(state, renderTarget, scene, camera, lights);
+  presentGlScene(state, renderTarget, scene.root, camera, lights);
   verifyFrame();
   requestAnimationFrame(frame);
 }
@@ -93,7 +93,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   state.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 frame();

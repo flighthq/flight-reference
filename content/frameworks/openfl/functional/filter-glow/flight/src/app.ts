@@ -7,7 +7,7 @@
 //   - Gl:  offscreen render target + applyOuterGlowEffectToGl /
 //             applyInnerGlowEffectToGl shader passes
 // CSS only covers sourceMode:'draw' outer glow; inner glow and knockout/hide modes are Gl-only.
-import type { InnerGlowEffect, OuterGlowEffect } from '@flighthq/effects';
+import type { InnerGlowEffect, OuterGlowEffect } from '@flighthq/sdk';
 import { computeGaussianSigmaFromRadius, createInnerGlowEffect, createOuterGlowEffect } from '@flighthq/effects';
 import { computeOuterGlowEffectCss } from '@flighthq/effects-canvas';
 import { applyInnerGlowEffectToGl, applyOuterGlowEffectToGl } from '@flighthq/effects-gl';

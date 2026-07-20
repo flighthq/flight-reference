@@ -3,6 +3,7 @@ import type {
   ParticleEmitter3D,
   ParticleEmitterConfig,
   ParticleEmitterState,
+  PerspectiveProjection,
   SceneLights,
 } from '@flighthq/sdk';
 import {
@@ -189,7 +190,7 @@ for (let a = 0; a < NUM_ANIMATORS; a++) {
     setQuaternionFromAxisAngle(emitterQuat, { x: 0, y: 1, z: 0 }, rotationY);
     copyQuaternion(emitter.rotation, emitterQuat);
     invalidateNodeLocalTransform(emitter);
-    addNodeChild(scene, emitter);
+    addNodeChild(scene.root, emitter);
 
     logoEmitters.push({ emitter, state, config, pixels, offset: logoOffsets[g]!, animator: a });
   }
@@ -252,7 +253,7 @@ function frame(ts: number): void {
     resizeGlRenderTarget(glState, renderTarget, w, h);
   }
 
-  presentGlScene(glState, renderTarget, scene, camera, lights);
+  presentGlScene(glState, renderTarget, scene.root, camera, lights);
 
   verifyFrame();
 
@@ -268,7 +269,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   glState.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 requestAnimationFrame(frame);

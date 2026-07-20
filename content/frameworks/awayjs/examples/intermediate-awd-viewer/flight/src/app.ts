@@ -1,4 +1,12 @@
-import type { AnimationClip, AnimationPlayer, GlRenderTarget, Mesh, SceneLights, SceneNode } from '@flighthq/sdk';
+import type {
+  AnimationClip,
+  AnimationPlayer,
+  GlRenderTarget,
+  Mesh,
+  PerspectiveProjection,
+  SceneLights,
+  SceneNode,
+} from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceAnimationPlayer,
@@ -91,17 +99,17 @@ function assignMaterial(node: SceneNode): void {
 }
 
 const awdScene = await loadSceneFromAwd(awdBytes);
-assignMaterial(awdScene);
+assignMaterial(awdScene.root);
 
 const skinnedMeshes: Mesh[] = [];
 function collectSkinnedMeshes(node: SceneNode): void {
   if (isMesh(node) && node.skin) skinnedMeshes.push(node);
   for (const child of getNodeChildren(node)) collectSkinnedMeshes(child);
 }
-collectSkinnedMeshes(awdScene);
+collectSkinnedMeshes(awdScene.root);
 
-for (const child of getNodeChildren(awdScene)) {
-  addNodeChild(scene, child);
+for (const child of getNodeChildren(awdScene.root)) {
+  addNodeChild(scene.root, child);
 }
 
 const joints = skinnedMeshes[0]?.skin?.skeleton.joints ?? [];
@@ -152,7 +160,7 @@ function frame(ts: number): void {
   lastTs = ts;
 
   advanceAnimationPlayer(player, dt);
-  applyAnimationClipToScene(clip, player.time);
+  if (clip) applyAnimationClipToScene(clip, player.time);
 
   orbit.update();
   const w = canvas.width;
@@ -162,7 +170,7 @@ function frame(ts: number): void {
   } else {
     resizeGlRenderTarget(state, renderTarget, w, h);
   }
-  presentGlScene(state, renderTarget, scene, camera, lights);
+  presentGlScene(state, renderTarget, scene.root, camera, lights);
   verifyFrame();
   requestAnimationFrame(frame);
 }
@@ -176,7 +184,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   state.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 requestAnimationFrame(frame);

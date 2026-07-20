@@ -1,7 +1,7 @@
 import { applyGaussianBlurToWgpu, clearWgpuEffectTarget } from '@flighthq/effects-wgpu';
 import type { DisplayObject, RenderCache, WgpuRenderState, WgpuRenderTarget } from '@flighthq/sdk';
 import {
-  beginWgpuRenderTarget,
+  beginWgpuRenderPass,
   BitmapKind,
   computeNodeBoundsRectangle,
   computeRenderCacheTransform,
@@ -18,7 +18,7 @@ import {
   defaultWgpuShapeRenderer,
   defaultWgpuTextLabelRenderer,
   enableWgpuRenderCache,
-  endWgpuRenderTarget,
+  endWgpuRenderPass,
   ensureWgpuRenderCacheTarget,
   getWgpuRenderCacheTarget,
   invalidateNodeLocalTransform,
@@ -149,10 +149,10 @@ function bakeBackgroundBlur(): void {
     resizeWgpuRenderTarget(state, _blurTemp, src.width, src.height);
   }
 
-  beginWgpuRenderTarget(state, out, _identity);
+  beginWgpuRenderPass(state, out);
   clearWgpuEffectTarget(state, out);
   applyGaussianBlurToWgpu(state, src, out, _blurTemp, { blurX: 10, blurY: 10 });
-  endWgpuRenderTarget(state);
+  endWgpuRenderPass(state);
 }
 
 let _blurNode: DisplayObject | null = null;

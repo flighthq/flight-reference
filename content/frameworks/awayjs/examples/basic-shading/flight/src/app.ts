@@ -1,4 +1,4 @@
-import type { StandardPbrMaterial } from '@flighthq/sdk';
+import type { PerspectiveProjection, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   createBoxMeshGeometry,
@@ -106,19 +106,19 @@ const planeGeometry = createPlaneMeshGeometry(1000, 1000, 1, 1);
 const plane = createMesh(planeGeometry, [planeMaterial]);
 plane.position.y = -20;
 invalidateNodeLocalTransform(plane);
-addNodeChild(scene, plane);
+addNodeChild(scene.root, plane);
 
 const sphereGeometry = createSphereMeshGeometry(150, 40, 20);
 const sphere = createMesh(sphereGeometry, [sphereMaterial]);
 setVector3(sphere.position, ...awayPosition(300, 160, 300));
 invalidateNodeLocalTransform(sphere);
-addNodeChild(scene, sphere);
+addNodeChild(scene.root, sphere);
 
 const cubeGeometry = createBoxMeshGeometry(200, 200, 200);
 const cube = createMesh(cubeGeometry, [cubeMaterial]);
 setVector3(cube.position, ...awayPosition(300, 160, -250));
 invalidateNodeLocalTransform(cube);
-addNodeChild(scene, cube);
+addNodeChild(scene.root, cube);
 
 const torusGeometry = createTorusMeshGeometry(150, 60, 40, 20);
 // Match AwayJS's scaleUV(10, 5) weave density. Baking the tiling into the vertex UVs (rather than a
@@ -131,7 +131,7 @@ const torusRotation = createQuaternion();
 setQuaternionFromAxisAngle(torusRotation, createVector3(1, 0, 0), Math.PI / 2);
 copyQuaternion(torus.rotation, torusRotation);
 invalidateNodeLocalTransform(torus);
-addNodeChild(scene, torus);
+addNodeChild(scene.root, torus);
 
 function applyTextures(
   material: StandardPbrMaterial,
@@ -143,7 +143,7 @@ function applyTextures(
     const url = maps.diffuse;
     jobs.push(
       loadImageResourceFromUrl(url).then((image) => {
-        const tex = createTexture({ image, sampler: uvScale ? tilingSampler() : undefined });
+        const tex = createTexture({ image, sampler: uvScale ? tilingSampler() : createSampler() });
         if (uvScale) setTextureUvScale(tex, uvScale.x, uvScale.y);
         material.baseColorMap = tex;
       }),
@@ -155,7 +155,11 @@ function applyTextures(
       loadImageResourceFromUrl(url).then((image) => {
         // Normal maps are data, not color — they must stay linear (an sRGB decode would bend the
         // packed normals and flatten/skew the surface relief).
-        const tex = createTexture({ image, colorSpace: 'linear', sampler: uvScale ? tilingSampler() : undefined });
+        const tex = createTexture({
+          image,
+          colorSpace: 'linear',
+          sampler: uvScale ? tilingSampler() : createSampler(),
+        });
         if (uvScale) setTextureUvScale(tex, uvScale.x, uvScale.y);
         material.normalMap = tex;
       }),
@@ -273,7 +277,7 @@ function frame(ts: number): void {
   setDirectionalLightDirection(directional, lightX, -0.35, lightZ);
 
   orbit.update();
-  ctx.render(scene, camera, lights);
+  ctx.render(scene.root, camera, lights);
   requestAnimationFrame(frame);
 }
 
@@ -286,7 +290,7 @@ window.addEventListener('resize', () => {
   ctx.canvas.style.width = `${w}px`;
   ctx.canvas.style.height = `${h}px`;
   ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 requestAnimationFrame(frame);

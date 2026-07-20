@@ -46,9 +46,9 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
 
   const state = createCanvasRenderState(canvas, {
     pixelRatio,
-    backgroundColor: options.background,
+    backgroundColor: options.background || 0,
     contextAttributes: options.contextAttributes ?? { alpha: false },
-    sceneGraphSyncPolicy: options.syncPolicy,
+    sceneGraphSyncPolicy: options.syncPolicy || 'refreshDerivedState',
   });
 
   // Device transform carries DPI: the scene is authored in logical units, scaled to the backing

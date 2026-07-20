@@ -216,19 +216,21 @@ function measureGlFramebufferCoverage(gl: WebGL2RenderingContext, canvas: Readon
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   const pixels = new Uint8Array(total * 4);
   gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-  const bgR = pixels[0];
-  const bgG = pixels[1];
-  const bgB = pixels[2];
-  const tolerance = BACKGROUND_CHANNEL_TOLERANCE;
   let nonBackground = 0;
-  for (let i = 0; i < total; i++) {
-    const o = i * 4;
-    if (
-      Math.abs(pixels[o] - bgR) > tolerance ||
-      Math.abs(pixels[o + 1] - bgG) > tolerance ||
-      Math.abs(pixels[o + 2] - bgB) > tolerance
-    ) {
-      nonBackground++;
+  if (pixels.length >= total) {
+    const bgR = pixels[0]!;
+    const bgG = pixels[1]!;
+    const bgB = pixels[2]!;
+    const tolerance = BACKGROUND_CHANNEL_TOLERANCE;
+    for (let i = 0; i < total; i++) {
+      const o = i * 4;
+      if (
+        Math.abs(pixels[o]! - bgR) > tolerance ||
+        Math.abs(pixels[o + 1]! - bgG) > tolerance ||
+        Math.abs(pixels[o + 2]! - bgB) > tolerance
+      ) {
+        nonBackground++;
+      }
     }
   }
   return nonBackground / total;

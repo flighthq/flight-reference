@@ -75,7 +75,7 @@ export async function createAircraft(): Promise<Aircraft> {
   const f14Library = parseObjMaterialLibrary(f14MtlText);
 
   const f14Scene = createSceneFromObj(f14ObjText, f14Library);
-  const f14Meshes = getNodeChildren(f14Scene).map((child) => child as Mesh);
+  const f14Meshes = getNodeChildren(f14Scene.root).map((child) => child as Mesh);
 
   const f14PlainMaterial: StandardPbrMaterial = createStandardPbrMaterial({
     baseColor: 0xccccccff,

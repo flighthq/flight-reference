@@ -5,7 +5,7 @@ export interface FunctionalTargetOptions {
   width: number;
   height: number;
   background?: number;
-  kinds?: readonly symbol[];
+  kinds?: readonly string[];
   contextAttributes?: { alpha?: boolean };
   syncPolicy?: SceneGraphSyncPolicy;
   clip?: boolean;

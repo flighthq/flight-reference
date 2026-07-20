@@ -1,8 +1,8 @@
-import type { BlurEffect } from '@flighthq/effects';
+import type { BlurEffect } from '@flighthq/sdk';
 import { applyGaussianBlurToWgpu } from '@flighthq/effects-wgpu';
 import type { DisplayObject, Matrix, WgpuRenderTarget } from '@flighthq/sdk';
 import {
-  beginWgpuRenderTarget,
+  beginWgpuRenderPass,
   BitmapKind,
   computeNodeBoundsRectangle,
   computeRenderCacheTransform,
@@ -18,7 +18,7 @@ import {
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   drawWgpuRenderTargetResult,
-  endWgpuRenderTarget,
+  endWgpuRenderPass,
   getRenderProxy2D,
   prepareDisplayObjectRender,
   registerDefaultWgpuMaterial,
@@ -121,10 +121,10 @@ export function render(root: DisplayObject): void {
     // Map the node into target space with a baked vertical flip (see header note).
     setFlippedTransform(renderProxy.transform2D, padding - _bounds.x, padding - _bounds.y, h);
 
-    beginWgpuRenderTarget(state, source, _identity);
+    beginWgpuRenderPass(state, source);
     renderWgpuDisplayObject(state, node);
     applyGaussianBlurToWgpu(state, source, blurred, scratch, filter);
-    endWgpuRenderTarget(state);
+    endWgpuRenderPass(state);
   }
 
   // Main pass: restore scene transforms, hide the blurred source nodes so the sharp originals

@@ -47,11 +47,11 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
 
   const state = createGlRenderState(canvas, {
     pixelRatio,
-    backgroundColor: options.background,
+    backgroundColor: options.background || 0,
     // preserveDrawingBuffer so the verifier (and the differential/fingerprint runner) can read the
     // frame back after rendering — harmless for tests, where throughput does not matter.
     contextAttributes: { alpha: false, preserveDrawingBuffer: false, ...options.contextAttributes },
-    sceneGraphSyncPolicy: options.syncPolicy,
+    sceneGraphSyncPolicy: options.syncPolicy || 'refreshDerivedState',
   });
 
   // Device transform carries DPI: the scene is authored in logical units, scaled to the backing

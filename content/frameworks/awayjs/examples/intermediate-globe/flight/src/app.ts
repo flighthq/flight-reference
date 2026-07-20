@@ -1,4 +1,4 @@
-import type { GlRenderTarget, ShadedMaterial } from '@flighthq/sdk';
+import type { GlRenderTarget, PerspectiveProjection, ShadedMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   BlendMode,
@@ -166,7 +166,7 @@ const tiltQuat = createQuaternion();
 setQuaternionFromAxisAngle(tiltQuat, axisX, -23 * DEG_TO_RAD);
 copyQuaternion(tiltContainer.rotation, tiltQuat);
 invalidateNodeLocalTransform(tiltContainer);
-addNodeChild(scene, tiltContainer);
+addNodeChild(scene.root, tiltContainer);
 
 // Earth: the day/night custom shader (day texture + specular on the lit side, city lights on the
 // dark side). u_sunDir is refreshed each frame so the terminator tracks the orbiting sun.
@@ -220,11 +220,11 @@ const clouds = createMesh(createSphereMeshGeometry(204, 200, 100), [cloudMateria
 addNodeChild(tiltContainer, clouds);
 
 const atmosphere = createBillboard(createPlaneMeshGeometry(900, 900, 1, 1), [atmosphereMaterial], 'screenAligned');
-addNodeChild(scene, atmosphere);
+addNodeChild(scene.root, atmosphere);
 
 const SUN_DISTANCE = 10000;
 const sun = createMesh(createSphereMeshGeometry(700, 32, 16), [sunMaterial]);
-addNodeChild(scene, sun);
+addNodeChild(scene.root, sun);
 
 const [dayImage, specImage] = await Promise.all([
   loadImageResourceFromUrl('awayjs/assets/globe/land_ocean_ice_2048_match.jpg'),
@@ -359,7 +359,7 @@ function frame(ts: number): void {
   invalidateNodeLocalTransform(sun);
 
   orbit.update();
-  orientSceneBillboardsToCamera(scene, camera);
+  orientSceneBillboardsToCamera(scene.root, camera);
   const w = canvas.width;
   const h = canvas.height;
   if (renderTarget === null) {
@@ -370,7 +370,7 @@ function frame(ts: number): void {
   beginGlRenderPass(state, renderTarget, { preserveColor: true });
   renderGlBackground(state);
   drawGlEnvironmentSkybox(state, environment, camera, w / h);
-  drawGlScene(state, scene, camera, lights);
+  drawGlScene(state, scene.root, camera, lights);
   endGlRenderPass(state);
   resolveGlRenderTarget(state, renderTarget);
   drawGlLinearToSrgbPass(state, renderTarget, null);
@@ -387,7 +387,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   state.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 requestAnimationFrame(frame);

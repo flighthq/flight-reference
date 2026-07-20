@@ -1,4 +1,4 @@
-import type { GlRenderTarget, Mesh, SceneHit, StandardPbrMaterial } from '@flighthq/sdk';
+import type { GlRenderTarget, Mesh, PerspectiveProjection, SceneHit, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
@@ -111,20 +111,20 @@ const blueTracerMaterial = createStandardPbrMaterial({
 
 const pickingTracer = createMesh(createSphereMeshGeometry(2, 8, 6), [greenTracerMaterial]);
 pickingTracer.visible = false;
-addNodeChild(scene, pickingTracer);
+addNodeChild(scene.root, pickingTracer);
 
 const sceneTracer = createMesh(createSphereMeshGeometry(2, 8, 6), [blueTracerMaterial]);
 sceneTracer.visible = false;
-addNodeChild(scene, sceneTracer);
+addNodeChild(scene.root, sceneTracer);
 
-const normalTracerGeometry = createCylinderMeshGeometry(0.5, 0.5, 25, 6, 1);
+const normalTracerGeometry = createCylinderMeshGeometry(0.5, 0.5, 25, 6, true);
 const pickingNormalTracer = createMesh(normalTracerGeometry, [whiteMaterial]);
 pickingNormalTracer.visible = false;
-addNodeChild(scene, pickingNormalTracer);
+addNodeChild(scene.root, pickingNormalTracer);
 
-const sceneNormalTracer = createMesh(createCylinderMeshGeometry(0.5, 0.5, 25, 6, 1), [whiteMaterial]);
+const sceneNormalTracer = createMesh(createCylinderMeshGeometry(0.5, 0.5, 25, 6, true), [whiteMaterial]);
 sceneNormalTracer.visible = false;
-addNodeChild(scene, sceneNormalTracer);
+addNodeChild(scene.root, sceneNormalTracer);
 
 const tracerMeshes = new Set<Mesh>([pickingTracer, sceneTracer, pickingNormalTracer, sceneNormalTracer]);
 
@@ -159,7 +159,7 @@ function createRandomObject(): ObjectInfo {
   } else if (rand > 0.5) {
     mesh = createMesh(createSphereMeshGeometry(12, 16, 12), [grayMaterial]);
   } else if (rand > 0.25) {
-    mesh = createMesh(createCylinderMeshGeometry(12, 12, 25, 16, 1), [grayMaterial]);
+    mesh = createMesh(createCylinderMeshGeometry(12, 12, 25, 16, true), [grayMaterial]);
   } else {
     mesh = createMesh(createTorusMeshGeometry(12, 12, 16, 12), [grayMaterial]);
   }
@@ -192,7 +192,7 @@ function createRandomObject(): ObjectInfo {
   copyQuaternion(mesh.rotation, scratchQuatA);
   invalidateNodeLocalTransform(mesh);
 
-  addNodeChild(scene, mesh);
+  addNodeChild(scene.root, mesh);
   objectInfos.push(info);
   meshToInfo.set(mesh, info);
 
@@ -213,9 +213,9 @@ const headMaterial = createStandardPbrMaterial({
 try {
   const objText = await fetch('awayjs/assets/head.obj').then((r) => r.text());
   const headScene = createSceneFromObj(objText);
-  const children = getNodeChildren(headScene);
+  const children = getNodeChildren(headScene.root);
   for (const child of children) {
-    addNodeChild(scene, child);
+    addNodeChild(scene.root, child);
     const m = child as Mesh;
     // AwayJS loads head.obj through new OBJParser(25), which scales the geometry 25x;
     // createSceneFromObj applies no scale, so match it here or the head renders 1/25 size.
@@ -270,7 +270,7 @@ function updateCamera(): void {
 
   orbit.update();
 
-  pointLight.position = { x: orbit.eye.x, y: orbit.eye.y, z: orbit.eye.z };
+  setVector3(pointLight.position, orbit.eye.x, orbit.eye.y, orbit.eye.z);
 }
 
 canvas.addEventListener('mousedown', (e: MouseEvent) => {
@@ -339,7 +339,7 @@ canvas.addEventListener('mousemove', (e: MouseEvent) => {
   const screenX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
   const screenY = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
 
-  const result = pickScene(scene, camera, screenX, screenY, hit, {
+  const result = pickScene(scene.root, camera, screenX, screenY, hit, {
     predicate: (node) => !tracerMeshes.has(node as Mesh),
   });
 
@@ -452,7 +452,7 @@ function frame(): void {
   } else {
     resizeGlRenderTarget(state, renderTarget, w, h);
   }
-  presentGlScene(state, renderTarget, scene, camera, lights);
+  presentGlScene(state, renderTarget, scene.root, camera, lights);
   verifyFrame();
   requestAnimationFrame(frame);
 }
@@ -466,7 +466,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   state.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 requestAnimationFrame(frame);

@@ -55,6 +55,7 @@
     "@flighthq/surface": "*",
     "@flighthq/textlayout": "*",
     "@flighthq/types": "*",
+    "@types/stats.js": "^0.17.4",
     "openfl": "^9.4.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

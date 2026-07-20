@@ -1,4 +1,4 @@
-import type { GlRenderTarget, Matrix4, Mesh, SceneLights, Vector3 } from '@flighthq/sdk';
+import type { GlRenderTarget, Matrix4, Mesh, PerspectiveProjection, SceneLights, Vector3 } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceClock,
@@ -84,13 +84,13 @@ const lights: SceneLights = createSceneLights({ ambient, directional });
 const environment = await createSkyEnvironment(glState);
 
 const sea = await createSea();
-addNodeChild(scene, sea.mesh);
+addNodeChild(scene.root, sea.mesh);
 
 const aircraft = await createAircraft();
-addNodeChild(scene, aircraft.container);
+addNodeChild(scene.root, aircraft.container.root);
 const f14Mesh = aircraft.container;
-f14Mesh.position.y = 200;
-setVector3(f14Mesh.scale, F14_SCALE, F14_SCALE, F14_SCALE);
+f14Mesh.root.position.y = 200;
+setVector3(f14Mesh.root.scale, F14_SCALE, F14_SCALE, F14_SCALE);
 
 const vaporTrail = await createVaporTrail(scene);
 // Engine nozzles: one per engine, offset out to each side and back into the fuselage.
@@ -147,16 +147,16 @@ function sweepWing(meshes: readonly Mesh[], pivot: Vector3, angle: number): void
 let renderTarget: GlRenderTarget | null = null;
 
 function updateCameraLookAt(): void {
-  copyVector3(cameraTarget, f14Mesh.position);
+  copyVector3(cameraTarget, f14Mesh.root.position);
   setCameraViewMatrix4FromLookAt(camera, eye, cameraTarget, up);
 }
 
 // Builds the jet's world transform from the current flight/roll state. Called in stepSimulation before
 // the emitters spawn (so the exhaust origins track the flying jet); renderScene then just reads it.
 function updateJetTransform(): void {
-  f14Mesh.position.z = flightZ;
-  setQuaternionFromEuler(f14Mesh.rotation, F14_RESTING_PITCH, 0, Math.sin(rollIncrement) * ROLL_AMPLITUDE);
-  invalidateNodeLocalTransform(f14Mesh);
+  f14Mesh.root.position.z = flightZ;
+  setQuaternionFromEuler(f14Mesh.root.rotation, F14_RESTING_PITCH, 0, Math.sin(rollIncrement) * ROLL_AMPLITUDE);
+  invalidateNodeLocalTransform(f14Mesh.root);
 }
 
 // A click toggles between the open (landing) and closed (clean/flight) configurations.
@@ -255,7 +255,7 @@ function renderScene(): void {
   beginGlRenderPass(glState, renderTarget, { preserveColor: true });
   renderGlBackground(glState);
   drawGlEnvironmentSkybox(glState, environment, camera, width / height);
-  drawGlScene(glState, scene, camera, lights);
+  drawGlScene(glState, scene.root, camera, lights);
   endGlRenderPass(glState);
   resolveGlRenderTarget(glState, renderTarget);
   drawGlLinearToSrgbPass(glState, renderTarget, null);
@@ -293,7 +293,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   glState.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 requestAnimationFrame(frame);

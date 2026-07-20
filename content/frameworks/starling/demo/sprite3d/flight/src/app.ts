@@ -280,19 +280,19 @@ function renderCube(now: number): void {
       return r;
     });
 
-    const edge1 = sub(verts[1], verts[0]);
-    const edge2 = sub(verts[3], verts[0]);
+    const edge1 = sub(verts[1]!, verts[0]!);
+    const edge2 = sub(verts[3]!, verts[0]!);
     const normal = cross(edge1, edge2);
-    if (normal[2] <= 0) continue;
+    if (normal[2]! <= 0) continue;
 
-    const depth = (verts[0][2] + verts[1][2] + verts[2][2] + verts[3][2]) / 4;
+    const depth = (verts[0]![2]! + verts[1]![2]! + verts[2]![2]! + verts[3]![2]!) / 4;
     transformed.push({ verts, depth, textureIndex: face.textureIndex });
   }
 
   transformed.sort((a, b) => b.depth - a.depth);
 
   for (const face of transformed) {
-    drawTexturedQuad(cubeCtx, tintedFaces[face.textureIndex], face.verts);
+    drawTexturedQuad(cubeCtx, tintedFaces[face.textureIndex]!, face.verts);
   }
 
   invalidateImageResource(cubeImage);

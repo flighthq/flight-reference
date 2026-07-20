@@ -1,4 +1,4 @@
-import type { GlRenderTarget } from '@flighthq/sdk';
+import type { GlRenderTarget, PerspectiveProjection } from '@flighthq/sdk';
 import {
   addNodeChild,
   BlendMode,
@@ -83,13 +83,13 @@ material.doubleSided = true;
 
 const torusGeometry = createTorusMeshGeometry(150, 80, 32, 16);
 const torus = createMesh(torusGeometry, [material]);
-addNodeChild(scene, torus);
+addNodeChild(scene.root, torus);
 
 const cubeGeometry = createBoxMeshGeometry(20, 20, 20);
 const cube = createMesh(cubeGeometry, [material]);
 setVector3(cube.position, ...awayPosition(130, 0, 40));
 invalidateNodeLocalTransform(cube);
-addNodeChild(scene, cube);
+addNodeChild(scene.root, cube);
 
 const eye = createVector3(130, 0, 0);
 const lookTarget = createVector3(...awayPosition(130, 0, 40));
@@ -137,7 +137,7 @@ function frame(): void {
   } else {
     resizeGlRenderTarget(state, renderTarget, w, h);
   }
-  presentGlScene(state, renderTarget, scene, camera, lights);
+  presentGlScene(state, renderTarget, scene.root, camera, lights);
   verifyFrame();
   requestAnimationFrame(frame);
 }
@@ -151,7 +151,7 @@ window.addEventListener('resize', () => {
   canvas.style.width = `${w}px`;
   canvas.style.height = `${h}px`;
   state.gl.viewport(0, 0, canvas.width, canvas.height);
-  camera.projection.aspect = w / h;
+  (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 
 frame();

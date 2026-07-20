@@ -6,6 +6,7 @@ import {
   BitmapKind,
   createBitmap,
   createColorTransform,
+  createColorTransformAdjustment,
   createDisplayContainer,
   createRichText,
   createShape,
@@ -15,6 +16,7 @@ import {
   loadImageResourceFromUrl,
   RichTextKind,
   ShapeKind,
+  setDisplayObjectColorAdjustments,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -68,7 +70,9 @@ bmp3.scaleX = pos(1.0);
 bmp3.scaleY = pos(1.0);
 if (target.kind === 'webgl') {
   enableGlColorAdjustment(target.state);
-  bmp3.colorTransform = createColorTransform({ greenMultiplier: 0 });
+  setDisplayObjectColorAdjustments(bmp3, [
+    createColorTransformAdjustment(createColorTransform({ greenMultiplier: 0 })),
+  ]);
 }
 addNodeChild(posters, bmp3);
 

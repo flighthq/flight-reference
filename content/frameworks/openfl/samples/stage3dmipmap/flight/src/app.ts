@@ -43,7 +43,7 @@ const scene = createScene();
 const material = createUnlitMaterial({ baseColor: 0xffffffff, baseColorMap: texture });
 material.doubleSided = true;
 const mesh = createMesh(createTexturedQuadGeometry(0.6, 0.6), [material]);
-addNodeChild(scene, mesh);
+addNodeChild(scene.root, mesh);
 
 const camera = createCamera({
   far: 1000,
@@ -117,7 +117,7 @@ function frame(): void {
   rotateMatrix4(scratchMatrix, scratchMatrix, yAxis, (performance.now() / 30) * (Math.PI / 180));
   setNodeLocalMatrix4(mesh, scratchMatrix);
 
-  render(scene, camera, lights);
+  render(scene.root, camera, lights);
   requestAnimationFrame(frame);
 }
 

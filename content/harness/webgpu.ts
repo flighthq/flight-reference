@@ -49,8 +49,8 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
 
   const state = await createWgpuRenderState(canvas, {
     pixelRatio,
-    backgroundColor: options.background,
-    sceneGraphSyncPolicy: options.syncPolicy,
+    backgroundColor: options.background || 0,
+    sceneGraphSyncPolicy: options.syncPolicy || 'refreshDerivedState',
   });
 
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);

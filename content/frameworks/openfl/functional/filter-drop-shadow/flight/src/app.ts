@@ -1,4 +1,4 @@
-import type { DropShadowEffect, InnerShadowEffect } from '@flighthq/effects';
+import type { DropShadowEffect, InnerShadowEffect } from '@flighthq/sdk';
 import { computeGaussianSigmaFromRadius, createDropShadowEffect, createInnerShadowEffect } from '@flighthq/effects';
 import { computeDropShadowEffectCss } from '@flighthq/effects-canvas';
 import { applyDropShadowEffectToGl, applyInnerShadowEffectToGl } from '@flighthq/effects-gl';

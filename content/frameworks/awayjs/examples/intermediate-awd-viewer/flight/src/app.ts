@@ -77,41 +77,10 @@ const lights: SceneLights = createSceneLights({ ambient, directional });
 
 const awdBuffer = await fetch('awayjs/assets/shambler.awd').then((r) => r.arrayBuffer());
 const awdBytes = new Uint8Array(awdBuffer);
-
-// Fallback for any sub-mesh the AWD leaves without a material. The shambler's own meshes carry
-// textured BlinnPhong materials from the file (resolved by loadSceneFromAwd), so this is rarely used.
-const bodyMaterial = createBlinnPhongMaterial({
-  diffuse: packOpaqueColor(0x808080),
-  specular: 0x000000ff,
-});
-
-function assignMaterial(node: SceneNode): void {
-  if (isMesh(node)) {
-    if (node.materials.length === 0) node.materials.push(bodyMaterial);
-    for (let i = 0; i < node.materials.length; i++) {
-      if (!node.materials[i]) node.materials[i] = bodyMaterial;
-    }
-  }
-  for (const child of getNodeChildren(node)) {
-    assignMaterial(child);
-  }
-}
-
 const awdScene = await loadSceneFromAwd(awdBytes);
-assignMaterial(awdScene.root);
+addNodeChild(scene.root, awdScene.root);
 
-const skinnedMeshes: Mesh[] = [];
-function collectSkinnedMeshes(node: SceneNode): void {
-  if (isMesh(node) && node.skin) skinnedMeshes.push(node);
-  for (const child of getNodeChildren(node)) collectSkinnedMeshes(child);
-}
-collectSkinnedMeshes(awdScene.root);
-
-for (const child of getNodeChildren(awdScene.root)) {
-  addNodeChild(scene.root, child);
-}
-
-const joints = skinnedMeshes[0]?.skin?.skeleton.joints ?? [];
+// const joints = skinnedMeshes[0]?.skin?.skeleton.joints ?? [];
 // The shambler AWD ships several clips (idle, walk, attack01–05); the reference plays the idle loop.
 const clip: AnimationClip | null = awdScene.animations['idle'];
 if (!clip) throw new Error('Failed to parse AWD skeleton animation');

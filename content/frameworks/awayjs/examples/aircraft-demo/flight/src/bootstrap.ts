@@ -1,4 +1,11 @@
-import { createGlCanvasElement, createGlRenderState, registerStandardPbrGlMaterial } from '@flighthq/sdk';
+import {
+  createGlCanvasElement,
+  createGlRenderState,
+  registerDefaultGlRenderEffects,
+  registerEmissiveGlMaterial,
+  registerStandardPbrGlMaterial,
+  registerUnlitGlMaterial,
+} from '@flighthq/sdk';
 
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
@@ -25,5 +32,11 @@ export const glState = createGlRenderState(canvas, {
   pixelRatio,
 });
 registerStandardPbrGlMaterial(glState);
+// The ribbon contrail uses UnlitMaterial and the engine glow uses EmissiveMaterial; both need their GL
+// renderers registered here or drawGlScene silently skips them (no renderer for the material kind).
+registerUnlitGlMaterial(glState);
+registerEmissiveGlMaterial(glState);
+// Post-process runners (bloom lives here) for the render-effect pipeline used in app.ts renderScene.
+registerDefaultGlRenderEffects(glState);
 
 export const verifyFrame = createGlFrameVerifier(glState);

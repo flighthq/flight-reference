@@ -1,11 +1,12 @@
-import type { GlRenderTarget, Matrix4, Mesh, PerspectiveProjection, SceneLights, Vector3 } from '@flighthq/sdk';
+import type { GlRenderEffectPipeline, Matrix4, Mesh, PerspectiveProjection, SceneLights, Vector3 } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceClock,
-  beginGlRenderPass,
+  beginGlRenderEffectPipeline,
   copyVector3,
+  createBloomEffect,
   createClock,
-  createGlRenderTarget,
+  createGlRenderEffectPipeline,
   createMatrix4,
   createScene,
   createSceneLights,
@@ -13,15 +14,12 @@ import {
   createVector3,
   DEG_TO_RAD,
   drawGlEnvironmentSkybox,
-  drawGlLinearToSrgbPass,
   drawGlScene,
-  endGlRenderPass,
+  endGlRenderEffectPipeline,
   getQuaternionEuler,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   renderGlBackground,
-  resizeGlRenderTarget,
-  resolveGlRenderTarget,
   rotateMatrix4,
   scaleMatrix4,
   setCameraViewMatrix4FromLookAt,
@@ -37,8 +35,10 @@ import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
 import { createAircraft } from './aircraft';
 import { canvas, glState, height, verifyFrame, width } from './bootstrap';
+import { createEngineGlow } from './engineGlow';
 import { createSea } from './sea';
 import { createSkyEnvironment } from './skyEnvironment';
+import { createVaporRibbon } from './vaporRibbon';
 import { createVaporTrail } from './vaporTrail';
 
 // Motion rates in units per second. The sim advances at a locked fixed timestep (see the frame loop),
@@ -97,10 +97,27 @@ f14Mesh.position.y = 200;
 
 addNodeChild(scene.root, f14Mesh);
 
-const vaporTrail = await createVaporTrail(scene);
+// Contrail implementation: the particle trail (vaporTrail.ts — many camera-facing billboards) or the
+// ribbon-mesh trail (vaporRibbon.ts — one continuous strip per nozzle). Flip USE_RIBBON to compare.
+const USE_RIBBON = true;
+const vaporTrail = USE_RIBBON ? null : await createVaporTrail(scene);
+const vaporRibbon = USE_RIBBON ? await createVaporRibbon(scene) : null;
+// A hot glowing exit at each nozzle — the close-range engine read. The contrail is offset aft (see
+// CONTRAIL_START_GAP) so it condenses in the wake, leaving a nozzle-to-trail gap the glow sits at the head
+// of. Heat-haze distortion would fill that gap next.
+const engineGlow = createEngineGlow(scene);
 // Engine nozzles: one per engine, offset out to each side and back into the fuselage.
-vaporTrail.attachToNozzle(f14Mesh, 1.35 * F14_SCALE, -8 * F14_SCALE, -0.1 * F14_SCALE);
-vaporTrail.attachToNozzle(f14Mesh, -1.35 * F14_SCALE, -8 * F14_SCALE, -0.1 * F14_SCALE);
+const nozzleOffsets: ReadonlyArray<readonly [number, number, number]> = [
+  [1.35 * F14_SCALE, -8 * F14_SCALE, -0.2 * F14_SCALE],
+  [-1.35 * F14_SCALE, -8 * F14_SCALE, -0.2 * F14_SCALE],
+];
+for (const [nx, ny, nz] of nozzleOffsets) {
+  // vaporTrail?.attachToNozzle(f14Mesh, nx, ny, nz);
+  // vaporRibbon?.attachToNozzle(f14Mesh, nx, ny, nz);
+  // The engine glow now comes from the real nozzle-interior geometry (aircraft.ts, Part187/188 given a hot
+  // emissive), not this fake emissive sphere. Re-enable to compare the two approaches.
+  // engineGlow.attachToNozzle(f14Mesh, nx, ny, nz);
+}
 
 // Camera orbits the aircraft continuously
 const eye = createVector3(0, 250, 500);
@@ -149,7 +166,19 @@ function sweepWing(meshes: readonly Mesh[], pivot: Vector3, angle: number): void
   }
 }
 
-let renderTarget: GlRenderTarget | null = null;
+// Post-process pipeline: the scene renders into an HDR (rgba16f) target so bloom can pick up the hot
+// emissive nozzles (emissiveStrength 3, well above the bright-pass threshold) and bright highlights, then
+// the pipeline presents with a single linear→sRGB encode.
+const effectPipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(glState, {
+  format: 'rgba16f',
+  depth: 'depth-stencil',
+  // 4× MSAA on the scene target (multisample renderbuffer, resolved before bloom runs) — smooths the jet
+  // silhouette and the thin ribbon/wing edges that alias badly against the sky.
+  sampleCount: 4,
+});
+// Bloom knobs: `threshold` is the linear-light bright-pass cutoff, `intensity` the additive strength,
+// `radius`/`passes` the spread and quality of the halo.
+const bloom = createBloomEffect({ threshold: 1, intensity: 1.1, radius: 12, passes: 2 });
 
 function updateCameraLookAt(): void {
   copyVector3(cameraTarget, f14Mesh.position);
@@ -160,7 +189,11 @@ function updateCameraLookAt(): void {
 // the emitters spawn (so the exhaust origins track the flying jet); renderScene then just reads it.
 function updateJetTransform(): void {
   f14Mesh.position.z = flightZ;
-  setQuaternionFromEuler(f14Mesh.rotation, F14_RESTING_PITCH, 0, Math.sin(rollIncrement) * ROLL_AMPLITUDE);
+  // Bank goes in the Euler-Y (model nose/longitudinal) slot, not Z. At the -90° resting pitch the Euler-Z
+  // axis is gimbal-locked onto world up, so a Z roll would yaw the nose off the flight path — and off its
+  // own world-space contrail — instead of banking. Rolling about +Y (the nose axis) is a true bank that
+  // keeps the nose on -Z, so the trail still flows straight out the back.
+  setQuaternionFromEuler(f14Mesh.rotation, F14_RESTING_PITCH, Math.sin(rollIncrement) * ROLL_AMPLITUDE, 0);
   invalidateNodeLocalTransform(f14Mesh);
 }
 
@@ -206,7 +239,7 @@ function stepSimulation(dt: number): void {
   // nozzle (which reads the jet's freshly-built world matrix).
   flightZ -= FLIGHT_SPEED * dt;
   updateJetTransform();
-  vaporTrail.step(dt);
+  vaporTrail?.step(dt);
 }
 
 // Applies the current animation state to the scene and draws one frame. The jet transform is built in
@@ -242,29 +275,22 @@ function renderScene(): void {
   eye.z += flightZ;
   updateCameraLookAt();
 
-  const w = canvas.width;
-  const h = canvas.height;
+  // Rebuild the ribbon contrail against the finished camera eye (billboarding needs it). Runs here, not in
+  // the fixed-step sim, since it depends on the camera and its spine sampling is distance-based.
+  vaporRibbon?.update(eye);
 
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(glState, {
-      width: w,
-      height: h,
-      format: 'rgba16f',
-      depth: 'depth-stencil',
-    });
-  } else {
-    resizeGlRenderTarget(glState, renderTarget, w, h);
-  }
-
-  // The pass clears depth (to renderTarget.clearDepth = 1); renderGlBackground clears color, so
-  // color is preserved on begin. No display-object 2D transform is involved in this 3D pass.
-  beginGlRenderPass(glState, renderTarget, { preserveColor: true });
+  // Render the scene into the pipeline's HDR target, then run bloom and present (the pipeline owns sizing
+  // and the single linear→sRGB encode at present). renderGlBackground clears color; depth is cleared
+  // explicitly because the pipeline preserves it between frames (mirrors the shared scene3d helper).
+  beginGlRenderEffectPipeline(glState, effectPipeline);
   renderGlBackground(glState);
+  const gl = glState.gl;
+  gl.depthMask(true);
+  gl.clearDepth(1);
+  gl.clear(gl.DEPTH_BUFFER_BIT);
   drawGlEnvironmentSkybox(glState, environment, camera, width / height);
   drawGlScene(glState, scene.root, camera, lights);
-  endGlRenderPass(glState);
-  resolveGlRenderTarget(glState, renderTarget);
-  drawGlLinearToSrgbPass(glState, renderTarget, null);
+  endGlRenderEffectPipeline(glState, effectPipeline, [bloom]);
 
   verifyFrame();
 }

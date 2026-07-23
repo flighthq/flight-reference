@@ -1,6 +1,7 @@
 import type {
   Camera3D,
   GlMeshMaterialRenderer,
+  GlMeshProgram,
   GlRenderState,
   Material,
   MeshGeometry,
@@ -17,8 +18,6 @@ import {
   setGlMeshViewProjection,
 } from '@flighthq/sdk';
 import { UnlitMaterialKind } from '@flighthq/sdk';
-
-import type { GlMeshProgram } from '@flighthq/scene-gl';
 
 interface PassthroughProgram extends GlMeshProgram {
   locColor: WebGLUniformLocation | null;

@@ -7,3 +7,4 @@ coverage
 test-results
 .capture-output
 *.tsbuildinfo
+tsconfig.flight.json

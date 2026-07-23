@@ -2,21 +2,22 @@ import type {
   AnimationPlayer,
   AnimationTrack,
   BlinnPhongMaterial,
-  GlRenderTarget,
+  GlRenderEffectPipeline,
   Mesh,
   PerspectiveProjection,
 } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceAnimationPlayer,
+  beginGlRenderEffectPipeline,
   cloneMeshGeometry,
-  configureDirectionalShadowCamera,
+  configureDirectionalShadowCamera3D,
   createAnimationPlayer,
   createBlinnPhongMaterial,
-  createCamera,
+  createCamera3D,
   createGlCanvasElement,
+  createGlRenderEffectPipeline,
   createGlRenderState,
-  createGlRenderTarget,
   createMesh,
   createOrthographicProjection,
   createPlaneMeshGeometry,
@@ -25,17 +26,19 @@ import {
   createSceneLights,
   createTexture,
   createTilingSampler,
+  drawGlScene,
   drawGlSceneShadowMap,
+  endGlRenderEffectPipeline,
   getNodeChildren,
+  invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
-  presentGlScene,
   registerBlinnPhongGlMaterial,
-  resizeGlRenderTarget,
+  registerDefaultGlRenderEffects,
+  renderGlBackground,
   sampleAnimationTrack,
-  invalidateNodeLocalTransform,
-  setVector3,
   setTextureUvScale,
+  setVector3,
   updateMeshMorph,
 } from '@flighthq/sdk';
 
@@ -66,9 +69,10 @@ const state = createGlRenderState(canvas, {
 });
 
 registerBlinnPhongGlMaterial(state);
+registerDefaultGlRenderEffects(state);
 const verifyFrame = createGlFrameVerifier(state);
 
-let renderTarget: GlRenderTarget | null = null;
+let pipeline: GlRenderEffectPipeline | null = null;
 
 const scene = createScene();
 
@@ -124,7 +128,7 @@ addNodeChild(scene.root, floor);
 
 const md2Buffer = await fetch('awayjs/assets/pknight.md2').then((r) => r.arrayBuffer());
 const md2Scene = await createSceneFromMd2(new Uint8Array(md2Buffer));
-const md2Clip = md2Scene.animations[0] ?? null;
+const md2Clip = md2Scene.animations['default'] ?? null;
 const md2Track: AnimationTrack | null = md2Clip?.channels[0]?.track ?? null;
 
 let templateMesh: Mesh | null = null;
@@ -269,7 +273,7 @@ document.addEventListener('keyup', (e: KeyboardEvent) => {
 // field above it; direction and bounds never change, so the camera is configured once. The depth pass
 // applies the same morph as the forward pass, so re-rendering each frame gives shadows that track the
 // knights' animation (as AwayJS's shadow mapper does).
-const shadowCamera = createCamera({
+const shadowCamera = createCamera3D({
   near: 1,
   far: 1,
   projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
@@ -278,7 +282,7 @@ const sceneBounds = {
   min: { x: -2600, y: 0, z: -2600 },
   max: { x: 2600, y: 700, z: 2600 },
 };
-configureDirectionalShadowCamera(shadowCamera, directional.direction, sceneBounds);
+configureDirectionalShadowCamera3D(shadowCamera, directional.direction, sceneBounds);
 
 let lastTime = 0;
 
@@ -300,15 +304,17 @@ function frame(now: number): void {
   }
 
   orbit.update();
-  const w = canvas.width;
-  const h = canvas.height;
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
-  } else {
-    resizeGlRenderTarget(state, renderTarget, w, h);
-  }
   drawGlSceneShadowMap(state, scene.root, shadowCamera);
-  presentGlScene(state, renderTarget, scene.root, camera, lights);
+  if (pipeline === null) {
+    pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
+  }
+  beginGlRenderEffectPipeline(state, pipeline);
+  renderGlBackground(state);
+  state.gl.depthMask(true);
+  state.gl.clearDepth(1);
+  state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
+  drawGlScene(state, scene.root, camera, lights);
+  endGlRenderEffectPipeline(state, pipeline, []);
   verifyFrame();
   requestAnimationFrame(frame);
 }

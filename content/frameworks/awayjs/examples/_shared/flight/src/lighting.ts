@@ -113,16 +113,25 @@ export interface AwayPointLightOptions {
   diffuse?: number;
   range: number;
   shading?: AwayShadingModel;
+  // AwayJS point lights deliver constant brightness across their range. Flight uses inverse-square
+  // falloff (brightness = intensity / d²). To match the AwayJS look at a chosen distance, set
+  // referenceDistance — the Flight intensity is scaled by d² so both engines agree at that distance.
+  // Objects closer than referenceDistance will be brighter, objects farther will be dimmer — this is
+  // physically correct but different from AwayJS's flat model. Omit to pass intensity through without
+  // inverse-square compensation (the original behaviour).
+  referenceDistance?: number;
 }
 
 export function createPointLightFromAway(opts: Readonly<AwayPointLightOptions>): PointLight {
   const color = opts.color ?? 0xffffff;
   const diffuse = opts.diffuse ?? 1;
   const shading = opts.shading ?? DEFAULT_SHADING_MODEL;
+  const d = opts.referenceDistance;
+  const falloffScale = d != null ? d * d : 1;
 
   return createPointLight({
     color: awayLightColor(color),
-    intensity: awayIntensity(diffuse, shading),
+    intensity: awayIntensity(diffuse, shading) * falloffScale,
     range: opts.range,
   });
 }

@@ -1,50 +1,28 @@
-import type { GlRenderTarget, PerspectiveProjection, SceneLights } from '@flighthq/sdk';
+import type { PerspectiveProjection } from '@flighthq/sdk';
 import {
-  createScene,
   addNodeChild,
-  createGlCanvasElement,
-  createGlRenderState,
-  createGlRenderTarget,
+  copyQuaternion,
   createMesh,
   createPlaneMeshGeometry,
   createQuaternion,
+  createScene,
+  createSceneLights,
   createTexture,
   createUnlitMaterial,
   createVector3,
   DEG_TO_RAD,
-  loadImageResourceFromUrl,
-  presentGlScene,
-  registerUnlitGlMaterial,
-  resizeGlRenderTarget,
-  copyQuaternion,
   invalidateNodeLocalTransform,
+  loadImageResourceFromUrl,
   setQuaternionFromAxisAngle,
 } from '@flighthq/sdk';
 
 import { createCameraFromAway } from '../../../_shared/flight/src/camera';
-import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
+import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
-const pixelRatio = window.devicePixelRatio || 1;
-
-const mount = document.getElementById('app');
-const canvas = createGlCanvasElement(window.innerWidth, window.innerHeight, pixelRatio);
-if (mount) {
-  mount.replaceWith(canvas);
-} else {
-  document.body.appendChild(canvas);
-}
-document.body.style.margin = '0';
-
-const state = createGlRenderState(canvas, {
-  backgroundColor: 0x000000ff,
-  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
-  pixelRatio,
+const ctx = createScene3DContext({
+  width: window.innerWidth,
+  height: window.innerHeight,
 });
-
-registerUnlitGlMaterial(state);
-const verifyFrame = createGlFrameVerifier(state);
-
-let renderTarget: GlRenderTarget | null = null;
 
 const scene = createScene();
 
@@ -55,7 +33,7 @@ addNodeChild(scene.root, mesh);
 
 const camera = createCameraFromAway({ y: 500, z: -600, fov: 60 });
 
-const lights: SceneLights = { ambient: null, directional: null };
+const lights = createSceneLights();
 const yAxis = createVector3(0, 1, 0);
 const scratchQuat = createQuaternion();
 
@@ -72,15 +50,7 @@ function frame(): void {
   copyQuaternion(mesh.rotation, scratchQuat);
   invalidateNodeLocalTransform(mesh);
 
-  const w = canvas.width;
-  const h = canvas.height;
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
-  } else {
-    resizeGlRenderTarget(state, renderTarget, w, h);
-  }
-  presentGlScene(state, renderTarget, scene.root, camera, lights);
-  verifyFrame();
+  ctx.render(scene.root, camera, lights);
   requestAnimationFrame(frame);
 }
 
@@ -88,11 +58,11 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const pixelRatio = window.devicePixelRatio || 1;
-  canvas.width = w * pixelRatio;
-  canvas.height = h * pixelRatio;
-  canvas.style.width = `${w}px`;
-  canvas.style.height = `${h}px`;
-  state.gl.viewport(0, 0, canvas.width, canvas.height);
+  ctx.canvas.width = w * pixelRatio;
+  ctx.canvas.height = h * pixelRatio;
+  ctx.canvas.style.width = `${w}px`;
+  ctx.canvas.style.height = `${h}px`;
+  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
   (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 

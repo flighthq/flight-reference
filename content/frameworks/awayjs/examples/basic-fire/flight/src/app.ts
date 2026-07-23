@@ -1,5 +1,4 @@
 import type {
-  GlRenderTarget,
   ImageResource,
   ParticleEmitter3D,
   ParticleEmitterConfig,
@@ -11,10 +10,6 @@ import type {
 } from '@flighthq/sdk';
 import {
   addNodeChild,
-  addTextureAtlasRegion,
-  createGlCanvasElement,
-  createGlRenderState,
-  createGlRenderTarget,
   createImageResource,
   createMesh,
   createParticleEmitter3D,
@@ -25,15 +20,10 @@ import {
   createSceneLights,
   createStandardPbrMaterial,
   createTexture,
-  createTextureAtlas,
   createTilingSampler,
   createUnlitMaterial,
-  loadImageResourceFromUrl,
-  presentGlScene,
-  registerStandardPbrGlMaterial,
-  registerUnlitGlMaterial,
-  resizeGlRenderTarget,
   invalidateNodeLocalTransform,
+  loadImageResourceFromUrl,
   setTextureUvScale,
   setVector3,
   stepParticleEmitter3D,
@@ -46,7 +36,10 @@ import {
   AWAY_MOUSE_SENSITIVITY,
 } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
-import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
+import { createSingleSpriteAtlas } from '../../../_shared/flight/src/particles';
+import { createMetallicRoughnessImage } from '../../../_shared/flight/src/pbrConvert';
+import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+
 const NUM_FIRES = 10;
 const FIRE_RADIUS = 400;
 const FIRE_START_INTERVAL = 1000;
@@ -74,28 +67,10 @@ const DECAL_Y_STEP = 0.1;
 const FLOOR_ROUGHNESS_GLOSSY = 0.3;
 const FLOOR_ROUGHNESS_MATTE = 0.85;
 
-const width = window.innerWidth;
-const height = window.innerHeight;
-const pixelRatio = window.devicePixelRatio || 1;
-
-const mount = document.getElementById('app');
-const canvas = createGlCanvasElement(width, height, pixelRatio);
-if (mount) {
-  mount.replaceWith(canvas);
-} else {
-  document.body.appendChild(canvas);
-}
-document.body.style.margin = '0';
-
-const glState = createGlRenderState(canvas, {
-  backgroundColor: 0x000000ff,
-  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
-  pixelRatio,
+const ctx = createScene3DContext({
+  width: window.innerWidth,
+  height: window.innerHeight,
 });
-registerStandardPbrGlMaterial(glState);
-registerUnlitGlMaterial(glState);
-
-const verifyFrame = createGlFrameVerifier(glState);
 
 const scene = createScene();
 
@@ -124,31 +99,14 @@ plane.position.y = -20;
 invalidateNodeLocalTransform(plane);
 addNodeChild(scene.root, plane);
 
-// Bakes AwayJS's specular gloss mask into a glTF metallic-roughness map: roughness in G (bright
-// specular → glossy, dark → matte), metallic left 0 in B. Marked linear so the gloss values are used
-// as authored rather than gamma-decoded. The material's scalar roughness stays 1 so G drives it fully.
 function specularToRoughnessTexture(specular: ImageResource): Texture {
-  const w = specular.width;
-  const h = specular.height;
-  const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d')!;
-  ctx.drawImage(specular.source as CanvasImageSource, 0, 0, w, h);
-  const image = ctx.getImageData(0, 0, w, h);
-  const px = image.data;
   const spread = FLOOR_ROUGHNESS_MATTE - FLOOR_ROUGHNESS_GLOSSY;
-  for (let i = 0; i < px.length; i += 4) {
-    const gloss = px[i]! / 255;
-    px[i] = 0;
-    px[i + 1] = Math.round((FLOOR_ROUGHNESS_MATTE - spread * gloss) * 255);
-    px[i + 2] = 0;
-    px[i + 3] = 255;
-  }
-  ctx.putImageData(image, 0, 0);
-
+  const mrImage = createMetallicRoughnessImage(specular, (r) => ({
+    roughness: FLOOR_ROUGHNESS_MATTE - spread * r,
+    metallic: 0,
+  }));
   const tex = createTexture({
-    image: createImageResource(canvas),
+    image: mrImage,
     sampler: createTilingSampler(),
     colorSpace: 'linear',
   });
@@ -164,8 +122,8 @@ function createGlowTexture(): Texture {
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
-  const ctx = canvas.getContext('2d')!;
-  const image = ctx.createImageData(size, size);
+  const canvasCtx = canvas.getContext('2d')!;
+  const image = canvasCtx.createImageData(size, size);
   const px = image.data;
   const c = (size - 1) / 2;
   for (let y = 0; y < size; y++) {
@@ -179,7 +137,7 @@ function createGlowTexture(): Texture {
       px[i + 3] = Math.round(255 * t ** 2);
     }
   }
-  ctx.putImageData(image, 0, 0);
+  canvasCtx.putImageData(image, 0, 0);
   return createTexture({ image: createImageResource(canvas) });
 }
 
@@ -204,8 +162,7 @@ async function loadPlaneTextures(): Promise<void> {
 }
 
 const fireImage = await loadImageResourceFromUrl('awayjs/assets/blue.png');
-const fireAtlas = createTextureAtlas({ image: fireImage });
-addTextureAtlasRegion(fireAtlas, 0, 0, fireImage.width, fireImage.height);
+const fireAtlas = createSingleSpriteAtlas(fireImage);
 
 const config: ParticleEmitterConfig = createParticleEmitterConfig({
   maxParticles: 500,
@@ -296,14 +253,14 @@ let lastMouseY = 0;
 let savedPan = orbit.panAngle;
 let savedTilt = orbit.tiltAngle;
 
-canvas.addEventListener('mousedown', (e: MouseEvent) => {
+ctx.canvas.addEventListener('mousedown', (e: MouseEvent) => {
   dragging = true;
   lastMouseX = e.clientX;
   lastMouseY = e.clientY;
   savedPan = orbit.panAngle;
   savedTilt = orbit.tiltAngle;
 });
-canvas.addEventListener('mousemove', (e: MouseEvent) => {
+ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
   if (!dragging) return;
   orbit.panAngle = AWAY_MOUSE_SENSITIVITY * (e.clientX - lastMouseX) + savedPan;
   orbit.tiltAngle = AWAY_MOUSE_SENSITIVITY * (e.clientY - lastMouseY) + savedTilt;
@@ -314,7 +271,6 @@ window.addEventListener('mouseup', () => {
 
 loadPlaneTextures();
 
-let renderTarget: GlRenderTarget | null = null;
 let lastTs = 0;
 
 function frame(ts: number): void {
@@ -334,18 +290,7 @@ function frame(ts: number): void {
 
   orbit.update();
 
-  const w = canvas.width;
-  const h = canvas.height;
-
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(glState, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
-  } else {
-    resizeGlRenderTarget(glState, renderTarget, w, h);
-  }
-
-  presentGlScene(glState, renderTarget, scene.root, camera, lights);
-
-  verifyFrame();
+  ctx.render(scene.root, camera, lights);
 
   requestAnimationFrame(frame);
 }
@@ -354,11 +299,11 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const pr = window.devicePixelRatio || 1;
-  canvas.width = w * pr;
-  canvas.height = h * pr;
-  canvas.style.width = `${w}px`;
-  canvas.style.height = `${h}px`;
-  glState.gl.viewport(0, 0, canvas.width, canvas.height);
+  ctx.canvas.width = w * pr;
+  ctx.canvas.height = h * pr;
+  ctx.canvas.style.width = `${w}px`;
+  ctx.canvas.style.height = `${h}px`;
+  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
   (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 

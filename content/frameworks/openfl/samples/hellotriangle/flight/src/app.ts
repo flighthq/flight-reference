@@ -1,16 +1,17 @@
 import { createScene } from '@flighthq/scene';
 
-import type { SceneLights, VertexAttributeLayout } from '@flighthq/sdk';
+import type { VertexAttributeLayout } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createCamera,
+  createCamera3D,
   createMesh,
   createMeshGeometry,
   createOrthographicProjection,
   createQuaternion,
+  createSceneLights,
   createVector3,
   createVertexColorMaterial,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   copyQuaternion,
   invalidateNodeLocalTransform,
   setQuaternionFromAxisAngle,
@@ -38,14 +39,14 @@ material.doubleSided = true;
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene.root, mesh);
 
-const camera = createCamera({
+const camera = createCamera3D({
   far: 10,
   near: 0.1,
   projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 1), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 1), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
-const lights: SceneLights = { ambient: null, directional: null };
+const lights = createSceneLights();
 const zAxis = createVector3(0, 0, 1);
 const scratchQuat = createQuaternion();
 

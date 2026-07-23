@@ -1,12 +1,4 @@
-import type {
-  AnimationClip,
-  AnimationPlayer,
-  GlRenderTarget,
-  Mesh,
-  PerspectiveProjection,
-  SceneLights,
-  SceneNode,
-} from '@flighthq/sdk';
+import type { AnimationClip, AnimationPlayer, PerspectiveProjection, SceneLights } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceAnimationPlayer,
@@ -14,19 +6,9 @@ import {
   createAmbientLight,
   createAnimationPlayer,
   createDirectionalLight,
-  createGlCanvasElement,
-  createGlRenderState,
-  createGlRenderTarget,
   createScene,
   createSceneLights,
-  createBlinnPhongMaterial,
-  getNodeChildren,
-  isMesh,
-  loadSceneFromAwd,
-  packOpaqueColor,
-  presentGlScene,
-  registerBlinnPhongGlMaterial,
-  resizeGlRenderTarget,
+  createSceneFromAwd,
 } from '@flighthq/sdk';
 import {
   createCameraFromAway,
@@ -34,32 +16,16 @@ import {
   AWAY_MOUSE_SENSITIVITY,
   awayDirection,
 } from '../../../_shared/flight/src/camera';
-import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
+import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
-const pixelRatio = window.devicePixelRatio || 1;
-
-const mount = document.getElementById('app');
-const canvas = createGlCanvasElement(window.innerWidth, window.innerHeight, pixelRatio);
-if (mount) {
-  mount.replaceWith(canvas);
-} else {
-  document.body.appendChild(canvas);
-}
-document.body.style.margin = '0';
-
-const state = createGlRenderState(canvas, {
+const ctx = createScene3DContext({
+  width: window.innerWidth,
+  height: window.innerHeight,
   // AwayJS used the sRGB display color 0x333338. Flight clears into the linear-HDR scene target and the
   // present pass applies the linear->sRGB encode, so a raw 0x333338 clear would display much lighter
   // (~0x7c7c81). Pre-linearize to the value that presents back as 0x333338.
   backgroundColor: 0x08080aff,
-  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
-  pixelRatio,
 });
-
-registerBlinnPhongGlMaterial(state);
-const verifyFrame = createGlFrameVerifier(state);
-
-let renderTarget: GlRenderTarget | null = null;
 
 const scene = createScene();
 
@@ -77,7 +43,7 @@ const lights: SceneLights = createSceneLights({ ambient, directional });
 
 const awdBuffer = await fetch('awayjs/assets/shambler.awd').then((r) => r.arrayBuffer());
 const awdBytes = new Uint8Array(awdBuffer);
-const awdScene = await loadSceneFromAwd(awdBytes);
+const awdScene = createSceneFromAwd(awdBytes);
 addNodeChild(scene.root, awdScene.root);
 
 // const joints = skinnedMeshes[0]?.skin?.skeleton.joints ?? [];
@@ -102,14 +68,14 @@ let lastMouseY = 0;
 let savedPan = orbit.panAngle;
 let savedTilt = orbit.tiltAngle;
 
-canvas.addEventListener('mousedown', (e: MouseEvent) => {
+ctx.canvas.addEventListener('mousedown', (e: MouseEvent) => {
   dragging = true;
   lastMouseX = e.clientX;
   lastMouseY = e.clientY;
   savedPan = orbit.panAngle;
   savedTilt = orbit.tiltAngle;
 });
-canvas.addEventListener('mousemove', (e: MouseEvent) => {
+ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
   if (!dragging) return;
   orbit.panAngle = AWAY_MOUSE_SENSITIVITY * (e.clientX - lastMouseX) + savedPan;
   orbit.tiltAngle = AWAY_MOUSE_SENSITIVITY * (e.clientY - lastMouseY) + savedTilt;
@@ -117,7 +83,7 @@ canvas.addEventListener('mousemove', (e: MouseEvent) => {
 window.addEventListener('mouseup', () => {
   dragging = false;
 });
-canvas.addEventListener('wheel', (e: WheelEvent) => {
+ctx.canvas.addEventListener('wheel', (e: WheelEvent) => {
   orbit.distance = Math.max(100, Math.min(2000, orbit.distance - e.deltaY / 2));
 });
 
@@ -131,15 +97,7 @@ function frame(ts: number): void {
   if (clip) applyAnimationClipToScene(clip, player.time);
 
   orbit.update();
-  const w = canvas.width;
-  const h = canvas.height;
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
-  } else {
-    resizeGlRenderTarget(state, renderTarget, w, h);
-  }
-  presentGlScene(state, renderTarget, scene.root, camera, lights);
-  verifyFrame();
+  ctx.render(scene.root, camera, lights);
   requestAnimationFrame(frame);
 }
 
@@ -147,11 +105,11 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const pr = window.devicePixelRatio || 1;
-  canvas.width = w * pr;
-  canvas.height = h * pr;
-  canvas.style.width = `${w}px`;
-  canvas.style.height = `${h}px`;
-  state.gl.viewport(0, 0, canvas.width, canvas.height);
+  ctx.canvas.width = w * pr;
+  ctx.canvas.height = h * pr;
+  ctx.canvas.style.width = `${w}px`;
+  ctx.canvas.style.height = `${h}px`;
+  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
   (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 

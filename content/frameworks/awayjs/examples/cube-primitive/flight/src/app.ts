@@ -1,59 +1,36 @@
-import type { GlRenderTarget, PerspectiveProjection } from '@flighthq/sdk';
+import type { PerspectiveProjection } from '@flighthq/sdk';
 import {
   addNodeChild,
   BlendMode,
+  copyQuaternion,
   createBoxMeshGeometry,
-  createGlCanvasElement,
-  createGlRenderState,
-  createGlRenderTarget,
   createMesh,
+  createQuaternion,
   createScene,
   createSceneLights,
   createStandardPbrMaterial,
   createTexture,
   createTorusMeshGeometry,
-  createQuaternion,
   createVector3,
   getPbrRoughnessFromPhongShininess,
+  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   multiplyQuaternion,
-  presentGlScene,
-  registerStandardPbrGlMaterial,
-  resizeGlRenderTarget,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
-  copyQuaternion,
-  invalidateNodeLocalTransform,
   setVector3,
 } from '@flighthq/sdk';
 
 import { awayDirection, awayPosition, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
-import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
+import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const DEG = Math.PI / 180;
 
-const pixelRatio = window.devicePixelRatio || 1;
-
-const mount = document.getElementById('app');
-const canvas = createGlCanvasElement(window.innerWidth, window.innerHeight, pixelRatio);
-if (mount) {
-  mount.replaceWith(canvas);
-} else {
-  document.body.appendChild(canvas);
-}
-document.body.style.margin = '0';
-
-const state = createGlRenderState(canvas, {
-  backgroundColor: 0x000000ff,
-  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
-  pixelRatio,
+const ctx = createScene3DContext({
+  width: window.innerWidth,
+  height: window.innerHeight,
 });
-
-registerStandardPbrGlMaterial(state);
-const verifyFrame = createGlFrameVerifier(state);
-
-let renderTarget: GlRenderTarget | null = null;
 
 const scene = createScene();
 
@@ -104,7 +81,7 @@ let torusAngleY = 0;
 let cubeAngleX = 0;
 let cubeAngleY = 0;
 
-setCameraViewMatrix4FromLookAt(camera, eye, lookTarget, up);
+setCamera3DViewMatrix4FromLookAt(camera, eye, lookTarget, up);
 
 function frame(): void {
   cameraAngle += DEG;
@@ -116,7 +93,7 @@ function frame(): void {
   up.y = Math.cos(cameraAngle);
   up.z = 0;
 
-  setCameraViewMatrix4FromLookAt(camera, eye, lookTarget, up);
+  setCamera3DViewMatrix4FromLookAt(camera, eye, lookTarget, up);
 
   setQuaternionFromAxisAngle(scratchQuatA, yAxis, torusAngleY);
   setQuaternionFromAxisAngle(scratchQuatB, xAxis, Math.PI / 2);
@@ -130,15 +107,7 @@ function frame(): void {
   copyQuaternion(cube.rotation, scratchQuatA);
   invalidateNodeLocalTransform(cube);
 
-  const w = canvas.width;
-  const h = canvas.height;
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
-  } else {
-    resizeGlRenderTarget(state, renderTarget, w, h);
-  }
-  presentGlScene(state, renderTarget, scene.root, camera, lights);
-  verifyFrame();
+  ctx.render(scene.root, camera, lights);
   requestAnimationFrame(frame);
 }
 
@@ -146,11 +115,11 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const pixelRatio = window.devicePixelRatio || 1;
-  canvas.width = w * pixelRatio;
-  canvas.height = h * pixelRatio;
-  canvas.style.width = `${w}px`;
-  canvas.style.height = `${h}px`;
-  state.gl.viewport(0, 0, canvas.width, canvas.height);
+  ctx.canvas.width = w * pixelRatio;
+  ctx.canvas.height = h * pixelRatio;
+  ctx.canvas.style.width = `${w}px`;
+  ctx.canvas.style.height = `${h}px`;
+  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
   (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 

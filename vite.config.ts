@@ -28,9 +28,10 @@ function resolveFlightWorkspaceRoot(): string | null {
 }
 
 function buildFlightPackageAliases(workspaceRoot: string): Record<string, string> {
-  const aliases: Record<string, string> = {};
+  const main: Record<string, string> = {};
+  const subpaths: Record<string, string> = {};
   const packagesDir = join(workspaceRoot, 'packages');
-  if (!existsSync(packagesDir)) return aliases;
+  if (!existsSync(packagesDir)) return main;
 
   for (const entry of readdirSync(packagesDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
@@ -40,16 +41,28 @@ function buildFlightPackageAliases(workspaceRoot: string): Record<string, string
     if (!existsSync(packageJson) || !existsSync(sourceIndex)) continue;
 
     try {
-      const manifest = JSON.parse(readFileSync(packageJson, 'utf8')) as { name?: string };
+      const manifest = JSON.parse(readFileSync(packageJson, 'utf8')) as {
+        name?: string;
+        exports?: Record<string, unknown>;
+      };
       if (manifest.name?.startsWith('@flighthq/')) {
-        aliases[manifest.name] = sourceIndex;
+        main[manifest.name] = sourceIndex;
+        if (manifest.exports) {
+          for (const subpath of Object.keys(manifest.exports)) {
+            if (subpath === '.' || !subpath.startsWith('./')) continue;
+            const srcFile = join(packagesDir, entry.name, 'src', subpath.slice(2) + '.ts');
+            if (existsSync(srcFile)) {
+              subpaths[manifest.name + '/' + subpath.slice(2)] = srcFile;
+            }
+          }
+        }
       }
     } catch {
       // Ignore malformed manifests while enumerating the upstream workspace.
     }
   }
 
-  return aliases;
+  return { ...subpaths, ...main };
 }
 
 function buildFlightHarnessAliases(workspaceRoot: string): Record<string, string> {

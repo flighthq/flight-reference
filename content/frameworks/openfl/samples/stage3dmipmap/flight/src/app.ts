@@ -1,19 +1,19 @@
 import { createScene } from '@flighthq/scene';
 
-import type { SceneLights } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createCamera,
+  createCamera3D,
   createMatrix4,
   createMesh,
   createPerspectiveProjection,
+  createSceneLights,
   createTexture,
   createUnlitMaterial,
   createVector3,
   loadImageResourceFromUrl,
   rotateMatrix4,
   scaleMatrix4,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   setMatrix4Identity,
   setNodeLocalMatrix4,
   translateMatrix4,
@@ -45,13 +45,13 @@ material.doubleSided = true;
 const mesh = createMesh(createTexturedQuadGeometry(0.6, 0.6), [material]);
 addNodeChild(scene.root, mesh);
 
-const camera = createCamera({
+const camera = createCamera3D({
   far: 1000,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: 4 / 3, fovY: (45 * Math.PI) / 180 }),
 });
 
-const lights: SceneLights = { ambient: null, directional: null };
+const lights = createSceneLights();
 const cameraEye = createVector3(0, 0, 2);
 const cameraTarget = createVector3(0, 0, 1);
 const up = createVector3(0, 1, 0);
@@ -108,7 +108,7 @@ function frame(): void {
   cameraTarget.x = cameraEye.x + Math.sin((cameraYaw * Math.PI) / 180);
   cameraTarget.y = 0;
   cameraTarget.z = cameraEye.z - Math.cos((cameraYaw * Math.PI) / 180);
-  setCameraViewMatrix4FromLookAt(camera, cameraEye, cameraTarget, up);
+  setCamera3DViewMatrix4FromLookAt(camera, cameraEye, cameraTarget, up);
 
   setMatrix4Identity(scratchMatrix);
   translateMatrix4(scratchMatrix, scratchMatrix, 0, 0, 1);

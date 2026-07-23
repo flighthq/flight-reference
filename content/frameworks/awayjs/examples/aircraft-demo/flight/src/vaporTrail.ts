@@ -9,12 +9,10 @@ import type {
 } from '@flighthq/sdk';
 import {
   addNodeChild,
-  addTextureAtlasRegion,
   createMatrix4,
   createParticleEmitter3D,
   createParticleEmitterConfig,
   createParticleEmitterState,
-  createTextureAtlas,
   createVector3,
   getNodeLocalMatrix4,
   loadImageResourceFromUrl,
@@ -23,6 +21,8 @@ import {
   translateMatrix4,
   updateParticleEmitter3D,
 } from '@flighthq/sdk';
+
+import { createSingleSpriteAtlas } from '../../../_shared/flight/src/particles';
 
 // Engine exhaust vapor. drawGlScene draws emitter nodes on its own; each emitter is a scene child stepped
 // in step(); its world position is refreshed each step so the two trails ride the nozzles. The bundled
@@ -44,32 +44,19 @@ function createSoftVaporSpriteUrl(): string {
   return c.toDataURL('image/png');
 }
 
-// Alpha over the 0→1 lifetime (uniform samples, linearly interpolated), which maps directly to distance
-// down the trail: 0 = just aft of the nozzle, 1 = the far tail. A real contrail ramps up within a short
-// run behind the engines, then holds a dense white for most of its length and only diffuses away
-// gradually at the very end — it does not fade out soon after the jet passes. So: a quick ramp-in (which
-// also keeps the youngest puffs from hazing the jet when the camera looks down the trail), a long high
-// plateau that sells a high, fast jet's persistent trail, then a gentle taper over the final third. The
-// trail runs on few, large, sparsely-overlapping puffs (see exhaustConfig), so per-puff alpha carries the
-// opacity directly rather than accumulating from many overlapping layers — hence the higher values here.
-// No scale curve — young puffs still need to be big enough to overlap into a line (a thin start reads as
-// discrete dots at the spawn spacing).
-const CONTRAIL_ALPHA_CURVE = [0, 0.38, 0.48, 0.52, 0.52, 0.52, 0.5, 0.47, 0.43, 0.37, 0.26, 0.14, 0];
+// Alpha look-up table over 0→1 lifetime (uniform samples, linearly interpolated): fades in fast just aft
+// of the nozzle, plateaus, then slowly diffuses out. The faint start also keeps the youngest puffs from
+// hazing the jet when the camera looks down the trail. No scale curve — young puffs need to be big enough
+// to overlap into a line (a thin start reads as discrete dots at the spawn spacing).
+const CONTRAIL_ALPHA_CURVE = [0, 0.3, 0.3, 0.25, 0.19, 0.11, 0.05, 0];
 
 // White 'normal'-blend vapor. worldSpace: true bakes each puff into world coordinates at spawn, so puffs
 // hang in the air while the jet flies away from them — a genuine contrail rather than a fake. They barely
 // drift (near-zero speed), live long, and expand a lot as they age, like ice crystals spreading.
-//
-// Sparse, large puffs stream into one continuous ribbon far more cheaply than many small ones. The trail
-// stays unbroken as long as each puff is at least as wide as the spawn spacing (FLIGHT_SPEED / spawnRate =
-// 220 / 20 ≈ 11 world units), so a low spawnRate paired with a spawn scale above that spacing merges into
-// a line at ~160 live particles instead of ~500 — a large CPU saving per frame. The billboards are
-// camera-facing, so this is round-puff overlap, not a true velocity streak: the renderer can't stretch a
-// puff along the world trail axis, so continuity comes from size, not elongation.
 const exhaustConfig: ParticleEmitterConfig = createParticleEmitterConfig({
   worldSpace: true,
-  maxParticles: 200,
-  spawnRate: 20,
+  maxParticles: 560,
+  spawnRate: 60,
   loop: true,
   duration: -1,
   lifetimeMin: 7,
@@ -78,9 +65,9 @@ const exhaustConfig: ParticleEmitterConfig = createParticleEmitterConfig({
   speedMin: 0,
   speedMax: 3,
   gravityY: 2,
-  scaleMin: 12,
-  scaleMax: 15,
-  scaleEnd: 3.5,
+  scaleMin: 5,
+  scaleMax: 7,
+  scaleEnd: 7,
   colorStartR: 1,
   colorStartG: 0.98,
   colorStartB: 0.96,
@@ -107,8 +94,7 @@ export interface VaporTrail {
 
 export async function createVaporTrail(scene: Scene): Promise<VaporTrail> {
   const vaporImage = await loadImageResourceFromUrl(createSoftVaporSpriteUrl());
-  const vaporAtlas = createTextureAtlas({ image: vaporImage });
-  addTextureAtlasRegion(vaporAtlas, 0, 0, vaporImage.width, vaporImage.height);
+  const vaporAtlas = createSingleSpriteAtlas(vaporImage);
 
   const emitters: VaporEmitter[] = [];
 

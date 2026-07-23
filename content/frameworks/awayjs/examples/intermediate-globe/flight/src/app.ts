@@ -1,50 +1,42 @@
-import type { GlRenderTarget, PerspectiveProjection, ShadedMaterial } from '@flighthq/sdk';
+import type { PerspectiveProjection, ShadedMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   BlendMode,
+  copyQuaternion,
   createAmbientLight,
+  createBillboard,
+  createCubeTexture,
+  createCustomShaderMaterial,
   createDirectionalLight,
   createEmissiveModifier,
+  createEnvironment,
   createGlCanvasElement,
-  createImageResourceFromCanvas,
   createGlRenderState,
-  createGlRenderTarget,
-  createBillboard,
-  createCustomShaderMaterial,
+  createImageResourceFromCanvas,
   createMesh,
   createPlaneMeshGeometry,
-  createUnlitMaterial,
-  orientSceneBillboardsToCamera,
-  registerCustomShaderGlMaterial,
-  registerGlCustomMaterialShader,
-  registerUnlitGlMaterial,
+  createQuaternion,
   createScene,
   createSceneLights,
   createSceneNode,
   createShadedMaterial,
   createSphereMeshGeometry,
   createTexture,
+  createUnlitMaterial,
   createVector3,
   DEG_TO_RAD,
-  createQuaternion,
+  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
+  orientSceneBillboardsToCamera,
   packOpaqueColor,
-  beginGlRenderPass,
-  createCubeTexture,
-  createEnvironment,
-  drawGlEnvironmentSkybox,
-  drawGlLinearToSrgbPass,
-  drawGlScene,
-  endGlRenderPass,
   registerBuiltInGlModifierSnippets,
+  registerCustomShaderGlMaterial,
+  registerDefaultGlRenderEffects,
+  registerGlCustomMaterialShader,
   registerShadedGlMaterial,
-  renderGlBackground,
-  resizeGlRenderTarget,
-  resolveGlRenderTarget,
+  registerUnlitGlMaterial,
   setCubeTextureFace,
   setQuaternionFromAxisAngle,
-  copyQuaternion,
-  invalidateNodeLocalTransform,
   setVector3,
 } from '@flighthq/sdk';
 
@@ -54,6 +46,8 @@ import {
   createOrbitControllerFromAway,
 } from '../../../_shared/flight/src/camera';
 import { awayIntensity } from '../../../_shared/flight/src/lighting';
+import type { SkyboxRenderState } from '../../../_shared/flight/src/scene3d';
+import { renderSkyboxScene } from '../../../_shared/flight/src/scene3d';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -81,6 +75,7 @@ const state = createGlRenderState(canvas, {
 registerShadedGlMaterial(state);
 registerBuiltInGlModifierSnippets(state);
 registerUnlitGlMaterial(state);
+registerDefaultGlRenderEffects(state);
 
 // Earth day/night: an opaque custom shader that lights the day texture by the sun and cross-fades to
 // the city-lights texture on the night side (AwayJS composited the night lights as the ambient term).
@@ -139,7 +134,7 @@ void main() {
 
 const verifyFrame = createGlFrameVerifier(state);
 
-let renderTarget: GlRenderTarget | null = null;
+const skyboxRef: SkyboxRenderState = { pipeline: null };
 
 const scene = createScene();
 
@@ -360,20 +355,7 @@ function frame(ts: number): void {
 
   orbit.update();
   orientSceneBillboardsToCamera(scene.root, camera);
-  const w = canvas.width;
-  const h = canvas.height;
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
-  } else {
-    resizeGlRenderTarget(state, renderTarget, w, h);
-  }
-  beginGlRenderPass(state, renderTarget, { preserveColor: true });
-  renderGlBackground(state);
-  drawGlEnvironmentSkybox(state, environment, camera, w / h);
-  drawGlScene(state, scene.root, camera, lights);
-  endGlRenderPass(state);
-  resolveGlRenderTarget(state, renderTarget);
-  drawGlLinearToSrgbPass(state, renderTarget, null);
+  renderSkyboxScene(state, canvas, skyboxRef, environment, scene.root, camera, lights);
   verifyFrame();
   requestAnimationFrame(frame);
 }

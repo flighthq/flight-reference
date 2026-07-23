@@ -3,7 +3,6 @@ import {
   addNodeChild,
   createBoxMeshGeometry,
   createHemisphereLight,
-  createImageResourceFromCanvas,
   createMesh,
   createPlaneMeshGeometry,
   createScene,
@@ -33,6 +32,7 @@ import {
   AWAY_MOUSE_SENSITIVITY,
 } from '../../../_shared/flight/src/camera';
 import { awayIntensity, createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
+import { createMetallicRoughnessImage } from '../../../_shared/flight/src/pbrConvert';
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const ctx = createScene3DContext({
@@ -168,31 +168,13 @@ function applyTextures(
   return Promise.all(jobs);
 }
 
-// Converts an AwayJS specular jpg into a glTF metallic-roughness map. The specular intensity marks
-// shiny (metal) vs matte (wood) regions: bright -> more metallic + smoother (reflective), dark ->
-// dielectric + rougher (matte). Written to the glTF channels the shader reads: G = roughness,
-// B = metalness. Kept linear (it is data, not color).
 async function createMetalRoughnessFromSpecular(url: string): Promise<ReturnType<typeof createTexture>> {
-  const img = new Image();
-  img.src = url;
-  await img.decode();
-  const canvas = document.createElement('canvas');
-  canvas.width = img.naturalWidth;
-  canvas.height = img.naturalHeight;
-  const g2d = canvas.getContext('2d')!;
-  g2d.drawImage(img, 0, 0);
-  const pixels = g2d.getImageData(0, 0, canvas.width, canvas.height);
-  const p = pixels.data;
-  for (let i = 0; i < p.length; i += 4) {
-    const spec = p[i] / 255;
-    const roughness = Math.max(0.12, 1 - spec * 1.7);
-    p[i] = 0;
-    p[i + 1] = Math.round(roughness * 255);
-    p[i + 2] = Math.round(spec * 255);
-    p[i + 3] = 255;
-  }
-  g2d.putImageData(pixels, 0, 0);
-  return createTexture({ image: createImageResourceFromCanvas(canvas), colorSpace: 'linear' });
+  const image = await loadImageResourceFromUrl(url);
+  const mrImage = createMetallicRoughnessImage(image, (r) => ({
+    roughness: Math.max(0.12, 1 - r * 1.7),
+    metallic: r,
+  }));
+  return createTexture({ image: mrImage, colorSpace: 'linear' });
 }
 
 // The 10x5 weave tiling is baked into the torus UVs above, so the weave textures use a plain

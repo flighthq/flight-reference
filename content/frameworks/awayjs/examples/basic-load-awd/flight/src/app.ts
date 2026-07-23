@@ -1,10 +1,7 @@
-import type { BlinnPhongMaterial, GlRenderTarget, Mesh, PerspectiveProjection } from '@flighthq/sdk';
+import type { BlinnPhongMaterial, Mesh, PerspectiveProjection } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendMatrix4,
-  createGlCanvasElement,
-  createGlRenderState,
-  createGlRenderTarget,
   createMatrix4,
   createScene,
   createSceneLights,
@@ -13,10 +10,7 @@ import {
   findNode,
   getNodeLocalMatrix4,
   isMesh,
-  loadSceneFromAwd,
-  presentGlScene,
-  registerBlinnPhongGlMaterial,
-  resizeGlRenderTarget,
+  createSceneFromAwd,
   rotateMatrix4,
   scaleMatrix4,
   setMatrix4Identity,
@@ -26,29 +20,13 @@ import {
 
 import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { applyAwayGloss, createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
-import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
+import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
-const pixelRatio = window.devicePixelRatio || 1;
-
-const mount = document.getElementById('app');
-const canvas = createGlCanvasElement(window.innerWidth, window.innerHeight, pixelRatio);
-if (mount) {
-  mount.replaceWith(canvas);
-} else {
-  document.body.appendChild(canvas);
-}
-document.body.style.margin = '0';
-
-const state = createGlRenderState(canvas, {
+const ctx = createScene3DContext({
+  width: window.innerWidth,
+  height: window.innerHeight,
   backgroundColor: 0x030404ff,
-  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
-  pixelRatio,
 });
-
-registerBlinnPhongGlMaterial(state);
-const verifyFrame = createGlFrameVerifier(state);
-
-let renderTarget: GlRenderTarget | null = null;
 
 const scene = createScene();
 
@@ -68,7 +46,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
 const lights = createSceneLights({ ambient, directional });
 
 const buffer = await fetch('awayjs/assets/suzanne.awd').then((r) => r.arrayBuffer());
-const modelScene = await loadSceneFromAwd(new Uint8Array(buffer));
+const modelScene = createSceneFromAwd(new Uint8Array(buffer));
 
 const templateMesh = findNode(modelScene.root, isMesh) as Mesh | null;
 if (!templateMesh?.geometry) throw new Error('No mesh found in suzanne.awd');
@@ -94,15 +72,7 @@ function frame(): void {
   appendMatrix4(scratchMatrix, scratchMatrix, orient);
   setNodeLocalMatrix4(templateMesh!, scratchMatrix);
 
-  const w = canvas.width;
-  const h = canvas.height;
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
-  } else {
-    resizeGlRenderTarget(state, renderTarget, w, h);
-  }
-  presentGlScene(state, renderTarget, scene.root, camera, lights);
-  verifyFrame();
+  ctx.render(scene.root, camera, lights);
   requestAnimationFrame(frame);
 }
 
@@ -110,11 +80,11 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const pr = window.devicePixelRatio || 1;
-  canvas.width = w * pr;
-  canvas.height = h * pr;
-  canvas.style.width = `${w}px`;
-  canvas.style.height = `${h}px`;
-  state.gl.viewport(0, 0, canvas.width, canvas.height);
+  ctx.canvas.width = w * pr;
+  ctx.canvas.height = h * pr;
+  ctx.canvas.style.width = `${w}px`;
+  ctx.canvas.style.height = `${h}px`;
+  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
   (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 

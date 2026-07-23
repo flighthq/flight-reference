@@ -8,7 +8,7 @@ import {
   getNodeChildren,
   loadImageResourceFromUrl,
   parseObjMaterialLibrary,
-  SceneResourceRefKind,
+  ImageResourceReferenceKind,
 } from '@flighthq/sdk';
 
 // The articulated F14. The upstream AwayJS demo lets the OBJ loader assign a material per part from
@@ -33,7 +33,7 @@ const f14AssetBase = 'awayjs/assets/f14';
 // from the f14 asset directory, and build one PBR material per texture.
 function f14DiffuseUri(material: BlinnPhongMaterial | null): string | null {
   const ref = material?.diffuseMap?.resource;
-  return ref != null && ref.kind === SceneResourceRefKind.External ? ref.uri : null;
+  return ref != null && ref.kind === ImageResourceReferenceKind.External ? ref.uri : null;
 }
 
 // Articulated parts are selected by geometry (createSceneFromObj keeps the group name on the Mesh even
@@ -134,31 +134,6 @@ export async function createAircraft(): Promise<Aircraft> {
       const uri = f14DiffuseUri(source);
       if (uri === 'f14landinggear.jpg') isGear = true;
       materials[i] = (uri !== null ? f14MaterialByUri.get(uri) : undefined) ?? f14PlainMaterial;
-    }
-    // Engine-interior face disc (one per exhaust nozzle, on the engine axis just forward of the nozzle
-    // ring) — the "inside of the engine" seen down the tailpipe. Stack a hot emissive onto the part's real
-    // material, keeping whatever map_Kd it wears as the base, so the actual geometry glows rather than a
-    // fake sprite; emissiveStrength > 1 feeds the bloom pass. Dedicated material so it never tints the
-    // shared fuselage materials. (Widen to Part69–Part92 to also heat the nozzle petals.)
-    if (mesh.name === 'Part187' || mesh.name === 'Part188') {
-      const worn = materials[0] as StandardPbrMaterial | null;
-      const map = worn?.baseColorMap ?? null;
-      // Drive the emissive THROUGH the part's own texture (emissiveMap = its map_Kd), so the incandescence
-      // is modulated by the texture's light/dark detail — panel lines and grime glow cooler, bright metal
-      // hotter — instead of a flat orange wash. A dark warm baseColor keeps the lit texture readable
-      // underneath; emissiveStrength > 1 still feeds the bloom pass. Dedicated material so it never tints
-      // the shared fuselage materials.
-      const engineInterior: StandardPbrMaterial = createStandardPbrMaterial({
-        baseColor: 0x2a1c12ff,
-        baseColorMap: map,
-        metallic: 0.4,
-        roughness: 0.5,
-        emissive: 0xff5a1eff,
-        emissiveMap: map,
-        emissiveStrength: 10,
-      });
-      for (let i = 0; i < materials.length; i++) materials[i] = engineInterior;
-      continue;
     }
     const center = meshCenter(mesh);
     // Landing gear: the gear-textured struts, plus the full main-gear clusters (hanging low, outboard of

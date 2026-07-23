@@ -1,60 +1,32 @@
-import type { GlRenderEffectPipeline, PerspectiveProjection } from '@flighthq/sdk';
+import type { PerspectiveProjection } from '@flighthq/sdk';
 import {
   addNodeChild,
-  beginGlRenderEffectPipeline,
-  createGlCanvasElement,
-  createGlRenderEffectPipeline,
-  createGlRenderState,
+  copyQuaternion,
   createMesh,
+  createQuaternion,
   createScene,
   createSceneLights,
-  createStandardPbrMaterial,
   createTexture,
   createToneMapEffect,
   createTorusMeshGeometry,
-  createQuaternion,
   createVector3,
-  drawGlScene,
-  endGlRenderEffectPipeline,
-  getPbrRoughnessFromPhongShininess,
-  loadImageResourceFromUrl,
-  registerDefaultGlRenderEffects,
-  registerStandardPbrGlMaterial,
-  renderGlBackground,
-  setQuaternionFromAxisAngle,
-  copyQuaternion,
   invalidateNodeLocalTransform,
+  loadImageResourceFromUrl,
+  setQuaternionFromAxisAngle,
 } from '@flighthq/sdk';
 
 import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
-import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
+import { createAwayMatteMaterial } from '../../../_shared/flight/src/materials';
+import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const DEG = Math.PI / 180;
 
-const pixelRatio = window.devicePixelRatio || 1;
-
-const mount = document.getElementById('app');
-const canvas = createGlCanvasElement(window.innerWidth, window.innerHeight, pixelRatio);
-if (mount) {
-  mount.replaceWith(canvas);
-} else {
-  document.body.appendChild(canvas);
-}
-document.body.style.margin = '0';
-
-const state = createGlRenderState(canvas, {
-  backgroundColor: 0x000000ff,
-  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
-  pixelRatio,
+const ctx = createScene3DContext({
+  width: window.innerWidth,
+  height: window.innerHeight,
+  effects: [createToneMapEffect({ operator: 'aces' })],
 });
-
-registerStandardPbrGlMaterial(state);
-registerDefaultGlRenderEffects(state);
-const verifyFrame = createGlFrameVerifier(state);
-
-const effects = [createToneMapEffect({ operator: 'aces' })];
-let pipeline: GlRenderEffectPipeline | null = null;
 
 const scene = createScene();
 
@@ -78,12 +50,8 @@ const texture = createTexture({ image });
 texture.uvScale.y = -1;
 texture.uvOffset.y = 1;
 
-const material = createStandardPbrMaterial({
-  baseColor: 0xffffffff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(20),
-  baseColorMap: texture,
-});
+const material = createAwayMatteMaterial(0xffffffff);
+material.baseColorMap = texture;
 
 // AwayJS PrimitiveTorusPrefab(radius, tube, segmentsR=32 around the ring, segmentsT=16 around the
 // tube). Flight's signature is (radius, tube, radialSegments=around the tube, tubularSegments=around
@@ -103,20 +71,7 @@ function frame(): void {
   copyQuaternion(torus.rotation, scratchQuat);
   invalidateNodeLocalTransform(torus);
 
-  // Draw into the pipeline's HDR target, then ACES tone-map to the canvas so the single directional
-  // light's highlights compress into range instead of clipping (matches basic-load-3ds).
-  if (pipeline === null) {
-    pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
-  }
-  beginGlRenderEffectPipeline(state, pipeline);
-  renderGlBackground(state);
-  const gl = state.gl;
-  gl.depthMask(true);
-  gl.clearDepth(1);
-  gl.clear(gl.DEPTH_BUFFER_BIT);
-  drawGlScene(state, scene.root, camera, lights);
-  endGlRenderEffectPipeline(state, pipeline, effects);
-  verifyFrame();
+  ctx.render(scene.root, camera, lights);
   requestAnimationFrame(frame);
 }
 
@@ -124,11 +79,11 @@ window.addEventListener('resize', () => {
   const width = window.innerWidth;
   const height = window.innerHeight;
   const pixelRatio = window.devicePixelRatio || 1;
-  canvas.width = width * pixelRatio;
-  canvas.height = height * pixelRatio;
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${height}px`;
-  state.gl.viewport(0, 0, canvas.width, canvas.height);
+  ctx.canvas.width = width * pixelRatio;
+  ctx.canvas.height = height * pixelRatio;
+  ctx.canvas.style.width = `${width}px`;
+  ctx.canvas.style.height = `${height}px`;
+  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
   (camera.projection as PerspectiveProjection).aspect = width / height;
 });
 

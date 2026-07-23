@@ -23,7 +23,7 @@
     "stage:openfl-sample-assets": "tsx scripts/stage-openfl-sample-assets.ts",
     "ci": "npm run check && npm run test:e2e",
     "prepare": "husky",
-    "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "typecheck": "tsx scripts/generate-flight-tsconfig.ts && TSCONFIG=${FLIGHT_REPO:+tsconfig.flight.json} && tsc -p ${TSCONFIG:-tsconfig.app.json} --noEmit",
     "prepush": "tsx scripts/prepush.ts",
     "capture": "tsx scripts/capture.ts",
     "capture:update": "tsx scripts/capture.ts --update-baseline",

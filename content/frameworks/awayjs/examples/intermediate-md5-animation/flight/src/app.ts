@@ -2,70 +2,62 @@ import type {
   AnimationClip,
   AnimationPlayer,
   CubeTexture,
-  GlRenderTarget,
   Mesh,
   PerspectiveProjection,
   SceneLights,
   SceneNode,
-  StandardPbrMaterial,
 } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceAnimationPlayer,
   applyAnimationClipToScene,
-  beginGlRenderPass,
-  configureDirectionalShadowCamera,
-  createAnimationPlayer,
+  computeMeshGeometryNormals,
+  configureDirectionalShadowCamera3D,
+  copyQuaternion,
   createAabb,
-  createCamera,
+  createAnimationPlayer,
+  createCamera3D,
   createCubeTexture,
   createEnvironment,
-  computeMeshGeometryNormals,
   createGlCanvasElement,
   createGlRenderState,
-  createGlRenderTarget,
   createMesh,
   createMeshGeometryFromAttributes,
-  createPlaneMeshGeometry,
   createOrthographicProjection,
+  createPlaneMeshGeometry,
+  createQuaternion,
   createScene,
   createSceneFromMd5Mesh,
   createSceneLights,
-  createStandardPbrMaterial,
   createTexture,
   createTilingSampler,
   createUnlitMaterial,
-  createQuaternion,
   createVector3,
   DEG_TO_RAD,
-  drawGlEnvironmentSkybox,
-  drawGlLinearToSrgbPass,
-  drawGlScene,
   drawGlSceneShadowMap,
-  endGlRenderPass,
-  getPbrRoughnessFromPhongShininess,
   getNodeChildByName,
   getNodeChildren,
+  getPbrRoughnessFromPhongShininess,
+  invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
   parseMd5Anim,
+  registerDefaultGlRenderEffects,
   registerStandardPbrGlMaterial,
   registerUnlitGlMaterial,
-  renderGlBackground,
-  resolveGlRenderTarget,
-  resizeGlRenderTarget,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   setCubeTextureFace,
   setQuaternionFromAxisAngle,
-  copyQuaternion,
-  invalidateNodeLocalTransform,
-  setVector3,
   setTextureUvScale,
+  setVector3,
   updateMeshSkin,
 } from '@flighthq/sdk';
 
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway, createPointLightFromAway } from '../../../_shared/flight/src/lighting';
+import { createAwayMatteMaterial } from '../../../_shared/flight/src/materials';
+import type { SkyboxRenderState } from '../../../_shared/flight/src/scene3d';
+import { renderSkyboxScene } from '../../../_shared/flight/src/scene3d';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 const ANIM_NAMES = [
   'idle2',
@@ -110,6 +102,7 @@ const glState = createGlRenderState(canvas, {
 });
 registerStandardPbrGlMaterial(glState);
 registerUnlitGlMaterial(glState);
+registerDefaultGlRenderEffects(glState);
 
 const verifyFrame = createGlFrameVerifier(glState);
 
@@ -132,16 +125,11 @@ const eye = createVector3(0, 160, -200);
 function updateCamera(): void {
   // AwayJS uses a fixed camera at (0, 160, -200), looking at a y=50 placeholder parented to the
   // character. The MD5 walk cycle moves in place; turning the character does not orbit the camera.
-  setCameraViewMatrix4FromLookAt(camera, eye, cameraTarget, up);
+  setCamera3DViewMatrix4FromLookAt(camera, eye, cameraTarget, up);
 }
 
-const redLight = createPointLightFromAway({ color: 0xff1111, range: 3000 });
-const blueLight = createPointLightFromAway({ color: 0x1111ff, range: 3000 });
-// AwayJS point lights remain at full strength over most of their falloff, while Flight uses physical
-// inverse-square attenuation. Compensate for the roughly 1,500-unit orbit so the colored lighting is
-// as prominent as it is upstream instead of disappearing after division by distance squared.
-redLight.intensity *= 1_500_000;
-blueLight.intensity *= 1_500_000;
+const redLight = createPointLightFromAway({ color: 0xff1111, range: 3000, referenceDistance: 1225 });
+const blueLight = createPointLightFromAway({ color: 0x1111ff, range: 3000, referenceDistance: 1225 });
 const { directional: whiteLight, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(-50, -20, 10),
   color: 0xffffee,
@@ -155,7 +143,7 @@ const lights: SceneLights = createSceneLights({
 });
 
 whiteLight.castsShadow = true;
-const shadowCamera = createCamera({
+const shadowCamera = createCamera3D({
   near: 1,
   far: 10,
   projection: createOrthographicProjection({ halfWidth: 1, halfHeight: 1 }),
@@ -164,16 +152,8 @@ const shadowCamera = createCamera({
 // the full 50,000-unit decorative ground plane.
 const shadowBounds = createAabb(-500, -20, -500, 500, 500, 500);
 
-const bodyMaterial: StandardPbrMaterial = createStandardPbrMaterial({
-  baseColor: 0xffffffff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(20),
-});
-const groundMaterial: StandardPbrMaterial = createStandardPbrMaterial({
-  baseColor: 0xffffffff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(10),
-});
+const bodyMaterial = createAwayMatteMaterial(0xffffffff);
+const groundMaterial = createAwayMatteMaterial(0xffffffff, 10);
 groundMaterial.doubleSided = false;
 
 const [rockDiffuse, rockNormal, bodyDiffuse, bodyNormal, bodySpecular] = await Promise.all([
@@ -308,7 +288,7 @@ let rotationInc = 0;
 let count = 0;
 let characterX = 0;
 let characterZ = 0;
-let renderTarget: GlRenderTarget | null = null;
+const skyboxRef: SkyboxRenderState = { pipeline: null };
 
 function play(name: string): void {
   if (currentAnim === name) return;
@@ -475,25 +455,10 @@ function frame(ts: number): void {
   cameraTarget.z = characterZ;
   updateCamera();
 
-  configureDirectionalShadowCamera(shadowCamera, whiteLight.direction, shadowBounds);
+  configureDirectionalShadowCamera3D(shadowCamera, whiteLight.direction, shadowBounds);
   drawGlSceneShadowMap(glState, scene.root, shadowCamera);
 
-  const w = canvas.width;
-  const h = canvas.height;
-
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(glState, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
-  } else {
-    resizeGlRenderTarget(glState, renderTarget, w, h);
-  }
-
-  beginGlRenderPass(glState, renderTarget, { preserveColor: true });
-  renderGlBackground(glState);
-  drawGlEnvironmentSkybox(glState, environment, camera, w / h);
-  drawGlScene(glState, scene.root, camera, lights);
-  endGlRenderPass(glState);
-  resolveGlRenderTarget(glState, renderTarget);
-  drawGlLinearToSrgbPass(glState, renderTarget, null);
+  renderSkyboxScene(glState, canvas, skyboxRef, environment, scene.root, camera, lights);
 
   verifyFrame();
 

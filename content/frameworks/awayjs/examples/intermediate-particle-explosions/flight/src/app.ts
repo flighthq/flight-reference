@@ -1,5 +1,4 @@
 import type {
-  GlRenderTarget,
   ParticleEmitter3D,
   ParticleEmitterConfig,
   ParticleEmitterState,
@@ -8,24 +7,19 @@ import type {
 } from '@flighthq/sdk';
 import {
   addNodeChild,
+  copyQuaternion,
   createAmbientLight,
-  createGlCanvasElement,
-  createGlRenderState,
-  createGlRenderTarget,
   createParticleEmitter3D,
   createParticleEmitterConfig,
   createParticleEmitterState,
   createPointLight,
+  createQuaternion,
   createScene,
   createSceneLights,
-  createQuaternion,
   DEG_TO_RAD,
   emitParticleBurst3D,
-  presentGlScene,
-  resizeGlRenderTarget,
-  setQuaternionFromAxisAngle,
-  copyQuaternion,
   invalidateNodeLocalTransform,
+  setQuaternionFromAxisAngle,
   stepParticleEmitter3D,
 } from '@flighthq/sdk';
 
@@ -34,35 +28,20 @@ import {
   createCameraFromAway,
   createOrbitControllerFromAway,
 } from '../../../_shared/flight/src/camera';
-import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
+import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
+
 const PARTICLE_SIZE = 2;
 const NUM_LOGOS = 4;
 const NUM_ANIMATORS = 4;
 
-const width = window.innerWidth;
-const height = window.innerHeight;
-const pixelRatio = window.devicePixelRatio || 1;
-
-const mount = document.getElementById('app');
-const canvas = createGlCanvasElement(width, height, pixelRatio);
-if (mount) {
-  mount.replaceWith(canvas);
-} else {
-  document.body.appendChild(canvas);
-}
-document.body.style.margin = '0';
-
-const glState = createGlRenderState(canvas, {
-  backgroundColor: 0x000000ff,
-  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
-  pixelRatio,
+const ctx = createScene3DContext({
+  width: window.innerWidth,
+  height: window.innerHeight,
 });
-
-const verifyFrame = createGlFrameVerifier(glState);
 
 const scene = createScene();
 
-const camera = createCameraFromAway({ fov: 60, aspect: width / height });
+const camera = createCameraFromAway({ fov: 60, aspect: window.innerWidth / window.innerHeight });
 
 const greenLight = createPointLight({ color: 0x00ff00ff, intensity: 5, range: 600 });
 const blueLight = createPointLight({ color: 0x0000ffff, intensity: 5, range: 600 });
@@ -83,14 +62,14 @@ let lastMouseY = 0;
 let lastPanAngle = orbit.panAngle;
 let lastTiltAngle = orbit.tiltAngle;
 
-canvas.addEventListener('mousedown', (e: MouseEvent) => {
+ctx.canvas.addEventListener('mousedown', (e: MouseEvent) => {
   dragging = true;
   lastMouseX = e.clientX;
   lastMouseY = e.clientY;
   lastPanAngle = orbit.panAngle;
   lastTiltAngle = orbit.tiltAngle;
 });
-canvas.addEventListener('mousemove', (e: MouseEvent) => {
+ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
   if (!dragging) return;
   orbit.panAngle = AWAY_MOUSE_SENSITIVITY * (e.clientX - lastMouseX) + lastPanAngle;
   orbit.tiltAngle = AWAY_MOUSE_SENSITIVITY * (e.clientY - lastMouseY) + lastTiltAngle;
@@ -207,7 +186,6 @@ for (const entry of logoEmitters) {
 }
 
 let time = 0;
-let renderTarget: GlRenderTarget | null = null;
 let angle = 0;
 let lastTs = 0;
 
@@ -244,18 +222,7 @@ function frame(ts: number): void {
     }
   }
 
-  const w = canvas.width;
-  const h = canvas.height;
-
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(glState, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
-  } else {
-    resizeGlRenderTarget(glState, renderTarget, w, h);
-  }
-
-  presentGlScene(glState, renderTarget, scene.root, camera, lights);
-
-  verifyFrame();
+  ctx.render(scene.root, camera, lights);
 
   requestAnimationFrame(frame);
 }
@@ -264,11 +231,11 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const pr = window.devicePixelRatio || 1;
-  canvas.width = w * pr;
-  canvas.height = h * pr;
-  canvas.style.width = `${w}px`;
-  canvas.style.height = `${h}px`;
-  glState.gl.viewport(0, 0, canvas.width, canvas.height);
+  ctx.canvas.width = w * pr;
+  ctx.canvas.height = h * pr;
+  ctx.canvas.style.width = `${w}px`;
+  ctx.canvas.style.height = `${h}px`;
+  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
   (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 

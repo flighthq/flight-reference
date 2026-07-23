@@ -1,23 +1,12 @@
-import type {
-  GlRenderEffectPipeline,
-  ImageResource,
-  Mesh,
-  PerspectiveProjection,
-  SceneNode,
-  StandardPbrMaterial,
-} from '@flighthq/sdk';
+import type { ImageResource, Mesh, PerspectiveProjection, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   bakeEnvironmentIbl,
-  beginGlRenderEffectPipeline,
   buildSurfaceGradientRamp,
   computeMeshGeometryNormals,
   createCubeTexture,
   createEmissiveMaterial,
   createEnvironment,
-  createGlCanvasElement,
-  createGlRenderEffectPipeline,
-  createGlRenderState,
   createImageResourceFromSurface,
   createMesh,
   createScene,
@@ -34,17 +23,11 @@ import {
   createToneMapEffect,
   createVector3,
   DEG_TO_RAD,
-  drawGlScene,
-  endGlRenderEffectPipeline,
   fillSurfaceLinearGradient,
   createQuaternion,
   getNodeChildren,
   loadImageResourceFromUrl,
   packOpaqueColor,
-  registerDefaultGlRenderEffects,
-  registerEmissiveGlMaterial,
-  registerStandardPbrGlMaterial,
-  renderGlBackground,
   setCubeTextureFace,
   setQuaternionFromAxisAngle,
   copyQuaternion,
@@ -55,32 +38,15 @@ import {
 
 import { awayDirection, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
-import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
+import { createMetallicRoughnessImage } from '../../../_shared/flight/src/pbrConvert';
+import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
-const pixelRatio = window.devicePixelRatio || 1;
-
-const mount = document.getElementById('app');
-const canvas = createGlCanvasElement(window.innerWidth, window.innerHeight, pixelRatio);
-if (mount) {
-  mount.replaceWith(canvas);
-} else {
-  document.body.appendChild(canvas);
-}
-document.body.style.margin = '0';
-
-const state = createGlRenderState(canvas, {
+const ctx = createScene3DContext({
+  width: window.innerWidth,
+  height: window.innerHeight,
   backgroundColor: packOpaqueColor(0xcec8c6),
-  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
-  pixelRatio,
+  effects: [createToneMapEffect({ operator: 'aces' })],
 });
-
-registerStandardPbrGlMaterial(state);
-registerEmissiveGlMaterial(state);
-registerDefaultGlRenderEffects(state);
-const verifyFrame = createGlFrameVerifier(state);
-
-const effects = [createToneMapEffect({ operator: 'aces' })];
-let pipeline: GlRenderEffectPipeline | null = null;
 
 const scene = createScene();
 
@@ -119,7 +85,7 @@ for (let i = 0; i < 6; i++) {
   setCubeTextureFace(envCube, i, createImageResourceFromSurface(createSurface(8, 8, envFaces[i])));
 }
 const environment = createEnvironment({ environment: envCube, intensity: 0.55 });
-bakeEnvironmentIbl(state, environment);
+bakeEnvironmentIbl(ctx.state, environment);
 
 // Now that the colorized albedo carries the palette, the light just shades it: a warm-white key (a
 // saturated orange key would muddy the olive/orange albedo) with a cool ambient fill for contrast.
@@ -276,23 +242,14 @@ function sampleScalarStops(stops: ReadonlyArray<ScalarStop>, t: number): number 
 }
 
 function buildMetallicRoughnessMap(image: ImageResource): ImageResource {
-  const surface = createSurfaceFromImageResource(image);
-  const data = surface.data;
-  if (data === null) return image;
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-    const luma = Math.min(255, Math.round(0.299 * r + 0.587 * g + 0.114 * b));
-    const isVisor = Math.max(r, g, b) - Math.min(r, g, b) > CHROMA_MASK;
-    const rough = isVisor ? ROUGH_VISOR : sampleScalarStops(ROUGH_STOPS, luma / 255);
-    const metal = isVisor ? METAL_VISOR : sampleScalarStops(METAL_STOPS, luma / 255);
-    data[i] = 0; // R unused
-    data[i + 1] = Math.round(rough * 255); // G = roughness
-    data[i + 2] = Math.round(metal * 255); // B = metallic
-    data[i + 3] = 255;
-  }
-  return createImageResourceFromSurface(surface);
+  return createMetallicRoughnessImage(image, (r, g, b) => {
+    const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+    const isVisor = Math.max(r, g, b) - Math.min(r, g, b) > CHROMA_MASK / 255;
+    return {
+      roughness: isVisor ? ROUGH_VISOR : sampleScalarStops(ROUGH_STOPS, luma),
+      metallic: isVisor ? METAL_VISOR : sampleScalarStops(METAL_STOPS, luma),
+    };
+  });
 }
 
 // Scalars stay 1 so the metallicRoughnessMap fully drives both channels per region.
@@ -376,20 +333,7 @@ function frame(): void {
     invalidateNodeLocalTransform(terrainNode);
   }
 
-  // Draw into the pipeline's HDR target, then ACES tone-map to the canvas so the warm key compresses
-  // into colored range instead of clipping the lit armor/ground to flat white (matches basic-load-3ds).
-  if (pipeline === null) {
-    pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
-  }
-  beginGlRenderEffectPipeline(state, pipeline);
-  renderGlBackground(state);
-  const gl = state.gl;
-  gl.depthMask(true);
-  gl.clearDepth(1);
-  gl.clear(gl.DEPTH_BUFFER_BIT);
-  drawGlScene(state, scene.root, camera, lights);
-  endGlRenderEffectPipeline(state, pipeline, effects);
-  verifyFrame();
+  ctx.render(scene.root, camera, lights);
   requestAnimationFrame(frame);
 }
 
@@ -397,11 +341,11 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const pixelRatio = window.devicePixelRatio || 1;
-  canvas.width = w * pixelRatio;
-  canvas.height = h * pixelRatio;
-  canvas.style.width = `${w}px`;
-  canvas.style.height = `${h}px`;
-  state.gl.viewport(0, 0, canvas.width, canvas.height);
+  ctx.canvas.width = w * pixelRatio;
+  ctx.canvas.height = h * pixelRatio;
+  ctx.canvas.style.width = `${w}px`;
+  ctx.canvas.style.height = `${h}px`;
+  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
   (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 

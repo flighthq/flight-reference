@@ -1,18 +1,8 @@
-import type {
-  BlinnPhongMaterial,
-  GlRenderTarget,
-  Material,
-  Mesh,
-  PerspectiveProjection,
-  SceneHit,
-} from '@flighthq/sdk';
+import type { BlinnPhongMaterial, Material, Mesh, PerspectiveProjection, SceneHit } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendMatrix4,
   createBlinnPhongMaterial,
-  createGlCanvasElement,
-  createGlRenderState,
-  createGlRenderTarget,
   createMatrix4,
   createMesh,
   createScene,
@@ -23,14 +13,11 @@ import {
   findNode,
   getNodeLocalMatrix4,
   isMesh,
-  loadSceneFromAwd,
+  createSceneFromAwd,
   pickScene,
-  presentGlScene,
-  registerBlinnPhongGlMaterial,
-  resizeGlRenderTarget,
   rotateMatrix4,
   scaleMatrix4,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   setDirectionalLightTarget,
   setMatrix4Identity,
   setNodeLocalMatrix4,
@@ -38,29 +25,12 @@ import {
 } from '@flighthq/sdk';
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
 import { applyAwayGloss, createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
-import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
+import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
-const pixelRatio = window.devicePixelRatio || 1;
-
-const mount = document.getElementById('app');
-const canvas = createGlCanvasElement(window.innerWidth, window.innerHeight, pixelRatio);
-if (mount) {
-  mount.replaceWith(canvas);
-} else {
-  document.body.appendChild(canvas);
-}
-document.body.style.margin = '0';
-
-const state = createGlRenderState(canvas, {
-  backgroundColor: 0x000000ff,
-  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
-  pixelRatio,
+const ctx = createScene3DContext({
+  width: window.innerWidth,
+  height: window.innerHeight,
 });
-
-registerBlinnPhongGlMaterial(state);
-const verifyFrame = createGlFrameVerifier(state);
-
-let renderTarget: GlRenderTarget | null = null;
 
 const scene = createScene();
 
@@ -95,7 +65,7 @@ const hoverMaterial: Material = createBlinnPhongMaterial({
 });
 
 const buffer = await fetch('awayjs/assets/suzanne.awd').then((r) => r.arrayBuffer());
-const modelScene = await loadSceneFromAwd(new Uint8Array(buffer));
+const modelScene = createSceneFromAwd(new Uint8Array(buffer));
 
 const templateMesh = findNode(modelScene.root, isMesh) as Mesh | null;
 if (!templateMesh?.geometry) throw new Error('No mesh found in suzanne.awd');
@@ -151,14 +121,14 @@ const eye = createVector3(0, 0, 0);
 
 function updateCamera(): void {
   setAwayPosition(eye, Math.cos(cameraAngle) * distance, 0, Math.sin(cameraAngle) * distance);
-  setCameraViewMatrix4FromLookAt(camera, eye, lookAt, up);
+  setCamera3DViewMatrix4FromLookAt(camera, eye, lookAt, up);
 }
 
 let lastHovered: Mesh | null = null;
 const hit: SceneHit = createSceneHit();
 
-canvas.addEventListener('mousemove', (e: MouseEvent) => {
-  const rect = canvas.getBoundingClientRect();
+ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  const rect = ctx.canvas.getBoundingClientRect();
   // pickScene expects normalized device coordinates in [-1, 1], not pixels; the Y axis flips (screen
   // Y grows down, NDC Y grows up). Using rect dimensions keeps this correct under devicePixelRatio.
   const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -187,15 +157,7 @@ function frame(): void {
   // camera toward the model, so the face the viewer sees is always the lit side.
   setDirectionalLightTarget(directional, eye.x, eye.y, eye.z, lookAt.x, lookAt.y, lookAt.z);
 
-  const w = canvas.width;
-  const h = canvas.height;
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
-  } else {
-    resizeGlRenderTarget(state, renderTarget, w, h);
-  }
-  presentGlScene(state, renderTarget, scene.root, camera, lights);
-  verifyFrame();
+  ctx.render(scene.root, camera, lights);
   requestAnimationFrame(frame);
 }
 
@@ -203,11 +165,11 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const pr = window.devicePixelRatio || 1;
-  canvas.width = w * pr;
-  canvas.height = h * pr;
-  canvas.style.width = `${w}px`;
-  canvas.style.height = `${h}px`;
-  state.gl.viewport(0, 0, canvas.width, canvas.height);
+  ctx.canvas.width = w * pr;
+  ctx.canvas.height = h * pr;
+  ctx.canvas.style.width = `${w}px`;
+  ctx.canvas.style.height = `${h}px`;
+  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
   (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 

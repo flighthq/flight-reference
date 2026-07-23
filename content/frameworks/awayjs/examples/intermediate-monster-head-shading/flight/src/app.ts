@@ -1,22 +1,23 @@
-import type { GlRenderTarget, PerspectiveProjection, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
+import type { GlRenderEffectPipeline, PerspectiveProjection, SceneNode } from '@flighthq/sdk';
 import {
   addNodeChild,
+  beginGlRenderEffectPipeline,
   createGlCanvasElement,
+  createGlRenderEffectPipeline,
   createGlRenderState,
-  createGlRenderTarget,
   createScene,
   createSceneFromAwd,
   createSceneLights,
-  createStandardPbrMaterial,
   createTexture,
+  drawGlScene,
+  endGlRenderEffectPipeline,
   getNodeChildren,
-  getPbrRoughnessFromPhongShininess,
+  invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
-  presentGlScene,
+  registerDefaultGlRenderEffects,
   registerStandardPbrGlMaterial,
-  resizeGlRenderTarget,
-  invalidateNodeLocalTransform,
+  renderGlBackground,
   setVector3,
 } from '@flighthq/sdk';
 
@@ -26,6 +27,7 @@ import {
   createOrbitControllerFromAway,
 } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway, createPointLightFromAway } from '../../../_shared/flight/src/lighting';
+import { createAwayMatteMaterial } from '../../../_shared/flight/src/materials';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -46,9 +48,10 @@ const state = createGlRenderState(canvas, {
 });
 
 registerStandardPbrGlMaterial(state);
+registerDefaultGlRenderEffects(state);
 const verifyFrame = createGlFrameVerifier(state);
 
-let renderTarget: GlRenderTarget | null = null;
+let pipeline: GlRenderEffectPipeline | null = null;
 
 const scene = createScene();
 
@@ -89,11 +92,7 @@ const lights = createSceneLights({
   point: [blueLight, redLight],
 });
 
-const headMaterial: StandardPbrMaterial = createStandardPbrMaterial({
-  baseColor: 0xffffffff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(10),
-});
+const headMaterial = createAwayMatteMaterial(0xffffffff, 10);
 
 async function tryLoadImage(url: string): Promise<Awaited<ReturnType<typeof loadImageResourceFromUrl>> | null> {
   try {
@@ -171,14 +170,16 @@ window.addEventListener('mouseup', () => {
 
 function frame(): void {
   orbit.update();
-  const w = canvas.width;
-  const h = canvas.height;
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
-  } else {
-    resizeGlRenderTarget(state, renderTarget, w, h);
+  if (pipeline === null) {
+    pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
   }
-  presentGlScene(state, renderTarget, scene.root, camera, lights);
+  beginGlRenderEffectPipeline(state, pipeline);
+  renderGlBackground(state);
+  state.gl.depthMask(true);
+  state.gl.clearDepth(1);
+  state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
+  drawGlScene(state, scene.root, camera, lights);
+  endGlRenderEffectPipeline(state, pipeline, []);
   verifyFrame();
   requestAnimationFrame(frame);
 }

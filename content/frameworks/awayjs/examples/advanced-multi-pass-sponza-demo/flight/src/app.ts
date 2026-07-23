@@ -1,21 +1,13 @@
-import type { GlRenderTarget, Mesh, PerspectiveProjection, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
+import type { Mesh, PerspectiveProjection, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createGlCanvasElement,
-  createGlRenderState,
-  createGlRenderTarget,
   createScene,
   createSceneFromAwd,
   createSceneLights,
-  createStandardPbrMaterial,
   createTexture,
   getNodeChildren,
-  getPbrRoughnessFromPhongShininess,
   loadImageResourceFromUrl,
   packOpaqueColor,
-  presentGlScene,
-  registerStandardPbrGlMaterial,
-  resizeGlRenderTarget,
 } from '@flighthq/sdk';
 
 import {
@@ -25,29 +17,14 @@ import {
   AWAY_MOUSE_SENSITIVITY,
 } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
-import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
+import { createAwayMatteMaterial } from '../../../_shared/flight/src/materials';
+import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
-const pixelRatio = window.devicePixelRatio || 1;
-
-const mount = document.getElementById('app');
-const canvas = createGlCanvasElement(window.innerWidth, window.innerHeight, pixelRatio);
-if (mount) {
-  mount.replaceWith(canvas);
-} else {
-  document.body.appendChild(canvas);
-}
-document.body.style.margin = '0';
-
-const state = createGlRenderState(canvas, {
+const ctx = createScene3DContext({
+  width: window.innerWidth,
+  height: window.innerHeight,
   backgroundColor: packOpaqueColor(0x9090e7),
-  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
-  pixelRatio,
 });
-
-registerStandardPbrGlMaterial(state);
-const verifyFrame = createGlFrameVerifier(state);
-
-let renderTarget: GlRenderTarget | null = null;
 
 const scene = createScene();
 
@@ -96,11 +73,7 @@ function getOrCreateMaterial(name: string): StandardPbrMaterial {
   let mat = materialCache.get(name);
   if (mat) return mat;
 
-  mat = createStandardPbrMaterial({
-    baseColor: 0xffffffff,
-    metallic: 0,
-    roughness: getPbrRoughnessFromPhongShininess(20),
-  });
+  mat = createAwayMatteMaterial(0xffffffff);
 
   const textureFile = materialNameToTextureFile[name];
   if (textureFile) {
@@ -112,11 +85,7 @@ function getOrCreateMaterial(name: string): StandardPbrMaterial {
   return mat;
 }
 
-const defaultMaterial = createStandardPbrMaterial({
-  baseColor: packOpaqueColor(0xcccccc),
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(10),
-});
+const defaultMaterial = createAwayMatteMaterial(packOpaqueColor(0xcccccc), 10);
 
 function walkAndAssignMaterials(node: SceneNode): void {
   const mesh = node as Mesh;
@@ -180,7 +149,7 @@ let lastMouseY = 0;
 let savedYaw = fps.yaw;
 let savedPitch = fps.pitch;
 
-canvas.addEventListener('mousedown', (e: MouseEvent) => {
+ctx.canvas.addEventListener('mousedown', (e: MouseEvent) => {
   dragging = true;
   lastMouseX = e.clientX;
   lastMouseY = e.clientY;
@@ -188,7 +157,7 @@ canvas.addEventListener('mousedown', (e: MouseEvent) => {
   savedPitch = fps.pitch;
 });
 
-canvas.addEventListener('mousemove', (e: MouseEvent) => {
+ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
   if (!dragging) return;
   fps.yaw = AWAY_MOUSE_SENSITIVITY * (e.clientX - lastMouseX) + savedYaw;
   fps.pitch = AWAY_MOUSE_SENSITIVITY * (e.clientY - lastMouseY) + savedPitch;
@@ -233,15 +202,7 @@ function frame(): void {
   fps.position.z += fwd.z * walkSpeed + rgt.z * strafeSpeed;
 
   fps.update();
-  const w = canvas.width;
-  const h = canvas.height;
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
-  } else {
-    resizeGlRenderTarget(state, renderTarget, w, h);
-  }
-  presentGlScene(state, renderTarget, scene.root, camera, lights);
-  verifyFrame();
+  ctx.render(scene.root, camera, lights);
   requestAnimationFrame(frame);
 }
 
@@ -249,11 +210,11 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const pr = window.devicePixelRatio || 1;
-  canvas.width = w * pr;
-  canvas.height = h * pr;
-  canvas.style.width = `${w}px`;
-  canvas.style.height = `${h}px`;
-  state.gl.viewport(0, 0, canvas.width, canvas.height);
+  ctx.canvas.width = w * pr;
+  ctx.canvas.height = h * pr;
+  ctx.canvas.style.width = `${w}px`;
+  ctx.canvas.style.height = `${h}px`;
+  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
   (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 

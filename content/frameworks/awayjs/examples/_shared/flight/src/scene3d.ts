@@ -1,8 +1,9 @@
 import type {
-  Camera,
+  Adjustment,
+  Camera3D,
+  Environment,
   GlRenderEffectPipeline,
   GlRenderState,
-  GlRenderTarget,
   RenderEffect,
   SceneLights,
   SceneNode,
@@ -12,24 +13,22 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
-  createGlRenderTarget,
+  drawGlEnvironmentSkybox,
   drawGlScene,
   endGlRenderEffectPipeline,
-  presentGlScene,
   registerBlinnPhongGlMaterial,
   registerDefaultGlRenderEffects,
   registerSpecularPbrGlMaterial,
   registerStandardPbrGlMaterial,
   registerUnlitGlMaterial,
   renderGlBackground,
-  resizeGlRenderTarget,
 } from '@flighthq/sdk';
 import { createGlFrameVerifier } from './verify';
 
 export interface Scene3DContext {
   canvas: HTMLCanvasElement;
   height: number;
-  render: (scene: Readonly<SceneNode>, camera: Readonly<Camera>, lights: Readonly<SceneLights>) => void;
+  render: (scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>) => void;
   state: GlRenderState;
   width: number;
 }
@@ -38,10 +37,7 @@ export interface Scene3DOptions {
   backgroundColor?: number;
   height?: number;
   width?: number;
-  // Optional post-process stack. When non-empty, the frame renders through the SDK render-effect
-  // pipeline (HDR scene target -> effects -> present) instead of presentGlScene. Applied in order,
-  // e.g. [createToneMapEffect(), createVignetteEffect()].
-  effects?: ReadonlyArray<RenderEffect>;
+  effects?: ReadonlyArray<RenderEffect | Adjustment>;
 }
 
 export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Scene3DContext {
@@ -70,54 +66,59 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
   registerStandardPbrGlMaterial(state);
   registerSpecularPbrGlMaterial(state);
 
-  // Publish the GL surface to the capture harness so headless capture reads pixels back via gl.readPixels
-  // instead of screenshotting the canvas, which is compositor-black in Docker.
   const verifyFrame = createGlFrameVerifier(state);
 
   const effects = options.effects ?? [];
-  if (effects.length > 0) registerDefaultGlRenderEffects(state);
+  registerDefaultGlRenderEffects(state);
 
-  let renderTarget: GlRenderTarget | null = null;
   let pipeline: GlRenderEffectPipeline | null = null;
 
   return {
     canvas,
     height,
     render(scene, camera, lights) {
-      const w = canvas.width;
-      const h = canvas.height;
-
-      if (effects.length === 0) {
-        if (renderTarget === null) {
-          renderTarget = createGlRenderTarget(state, {
-            width: w,
-            height: h,
-            format: 'rgba16f',
-            depth: 'depth-stencil',
-          });
-        } else {
-          resizeGlRenderTarget(state, renderTarget, w, h);
-        }
-        presentGlScene(state, renderTarget, scene, camera, lights);
-      } else {
-        // Effect-pipeline path: draw the scene into the pipeline's HDR target (it owns sizing,
-        // background is ours to clear as presentGlScene would), then run the post-process stack.
-        if (pipeline === null) {
-          pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
-        }
-        beginGlRenderEffectPipeline(state, pipeline);
-        renderGlBackground(state);
-        const gl = state.gl;
-        gl.depthMask(true);
-        gl.clearDepth(1);
-        gl.clear(gl.DEPTH_BUFFER_BIT);
-        drawGlScene(state, scene, camera, lights);
-        endGlRenderEffectPipeline(state, pipeline, effects);
+      if (pipeline === null) {
+        pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
       }
+      beginGlRenderEffectPipeline(state, pipeline);
+      renderGlBackground(state);
+      const gl = state.gl;
+      gl.depthMask(true);
+      gl.clearDepth(1);
+      gl.clear(gl.DEPTH_BUFFER_BIT);
+      drawGlScene(state, scene, camera, lights);
+      endGlRenderEffectPipeline(state, pipeline, effects);
 
       verifyFrame();
     },
     state,
     width,
   };
+}
+
+export interface SkyboxRenderState {
+  pipeline: GlRenderEffectPipeline | null;
+}
+
+export function renderSkyboxScene(
+  state: GlRenderState,
+  canvas: HTMLCanvasElement,
+  ref: SkyboxRenderState,
+  environment: Readonly<Environment>,
+  scene: Readonly<SceneNode>,
+  camera: Readonly<Camera3D>,
+  lights: Readonly<SceneLights>,
+): void {
+  if (ref.pipeline === null) {
+    ref.pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
+  }
+  beginGlRenderEffectPipeline(state, ref.pipeline);
+  renderGlBackground(state);
+  const gl = state.gl;
+  gl.depthMask(true);
+  gl.clearDepth(1);
+  gl.clear(gl.DEPTH_BUFFER_BIT);
+  drawGlEnvironmentSkybox(state, environment, camera, canvas.width / canvas.height);
+  drawGlScene(state, scene, camera, lights);
+  endGlRenderEffectPipeline(state, ref.pipeline, []);
 }

@@ -1,12 +1,10 @@
-import type { GlRenderTarget, Mesh, PerspectiveProjection, SceneHit, StandardPbrMaterial } from '@flighthq/sdk';
+import type { Mesh, PerspectiveProjection, SceneHit, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
+  copyQuaternion,
   createAmbientLight,
   createBoxMeshGeometry,
   createCylinderMeshGeometry,
-  createGlCanvasElement,
-  createGlRenderState,
-  createGlRenderTarget,
   createMesh,
   createQuaternion,
   createScene,
@@ -14,20 +12,14 @@ import {
   createSceneHit,
   createSceneLights,
   createSphereMeshGeometry,
-  createStandardPbrMaterial,
   createTorusMeshGeometry,
   DEG_TO_RAD,
   getNodeChildren,
-  getPbrRoughnessFromPhongShininess,
+  invalidateNodeLocalTransform,
   multiplyQuaternion,
   packOpaqueColor,
   pickScene,
-  presentGlScene,
-  registerStandardPbrGlMaterial,
-  resizeGlRenderTarget,
   setQuaternionFromAxisAngle,
-  copyQuaternion,
-  invalidateNodeLocalTransform,
   setVector3,
 } from '@flighthq/sdk';
 
@@ -37,29 +29,13 @@ import {
   AWAY_MOUSE_SENSITIVITY,
 } from '../../../_shared/flight/src/camera';
 import { createPointLightFromAway } from '../../../_shared/flight/src/lighting';
-import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
+import { createAwayMatteMaterial } from '../../../_shared/flight/src/materials';
+import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
-const pixelRatio = window.devicePixelRatio || 1;
-
-const mount = document.getElementById('app');
-const canvas = createGlCanvasElement(window.innerWidth, window.innerHeight, pixelRatio);
-if (mount) {
-  mount.replaceWith(canvas);
-} else {
-  document.body.appendChild(canvas);
-}
-document.body.style.margin = '0';
-
-const state = createGlRenderState(canvas, {
-  backgroundColor: 0x000000ff,
-  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
-  pixelRatio,
+const ctx = createScene3DContext({
+  width: window.innerWidth,
+  height: window.innerHeight,
 });
-
-registerStandardPbrGlMaterial(state);
-const verifyFrame = createGlFrameVerifier(state);
-
-let renderTarget: GlRenderTarget | null = null;
 
 const scene = createScene();
 
@@ -73,41 +49,13 @@ const lights = createSceneLights({
   point: [pointLight],
 });
 
-const whiteMaterial = createStandardPbrMaterial({
-  baseColor: 0xffffffff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(20),
-});
-const blackMaterial = createStandardPbrMaterial({
-  baseColor: packOpaqueColor(0x333333),
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(20),
-});
-const grayMaterial = createStandardPbrMaterial({
-  baseColor: packOpaqueColor(0xcccccc),
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(20),
-});
-const blueMaterial = createStandardPbrMaterial({
-  baseColor: 0x0000ffff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(20),
-});
-const redMaterial = createStandardPbrMaterial({
-  baseColor: 0xff0000ff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(20),
-});
-const greenTracerMaterial = createStandardPbrMaterial({
-  baseColor: 0x00ff00ff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(10),
-});
-const blueTracerMaterial = createStandardPbrMaterial({
-  baseColor: 0x0000ffff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(10),
-});
+const whiteMaterial = createAwayMatteMaterial(0xffffffff);
+const blackMaterial = createAwayMatteMaterial(packOpaqueColor(0x333333));
+const grayMaterial = createAwayMatteMaterial(packOpaqueColor(0xcccccc));
+const blueMaterial = createAwayMatteMaterial(0x0000ffff);
+const redMaterial = createAwayMatteMaterial(0xff0000ff);
+const greenTracerMaterial = createAwayMatteMaterial(0x00ff00ff, 10);
+const blueTracerMaterial = createAwayMatteMaterial(0x0000ffff, 10);
 
 const pickingTracer = createMesh(createSphereMeshGeometry(2, 8, 6), [greenTracerMaterial]);
 pickingTracer.visible = false;
@@ -204,11 +152,7 @@ for (let i = 0; i < 40; i++) {
 }
 
 let headMesh: Mesh | null = null;
-const headMaterial = createStandardPbrMaterial({
-  baseColor: packOpaqueColor(0xcccccc),
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(20),
-});
+const headMaterial = createAwayMatteMaterial(packOpaqueColor(0xcccccc));
 
 try {
   const objText = await fetch('awayjs/assets/head.obj').then((r) => r.text());
@@ -273,7 +217,7 @@ function updateCamera(): void {
   setVector3(pointLight.position, orbit.eye.x, orbit.eye.y, orbit.eye.z);
 }
 
-canvas.addEventListener('mousedown', (e: MouseEvent) => {
+ctx.canvas.addEventListener('mousedown', (e: MouseEvent) => {
   dragging = true;
   lastMouseX = e.clientX;
   lastMouseY = e.clientY;
@@ -281,7 +225,7 @@ canvas.addEventListener('mousedown', (e: MouseEvent) => {
   savedTilt = orbit.tiltAngle;
 });
 
-canvas.addEventListener('mousemove', (e: MouseEvent) => {
+ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
   if (dragging) {
     orbit.panAngle = AWAY_MOUSE_SENSITIVITY * (e.clientX - lastMouseX) + savedPan;
     orbit.tiltAngle = AWAY_MOUSE_SENSITIVITY * (e.clientY - lastMouseY) + savedTilt;
@@ -292,7 +236,7 @@ window.addEventListener('mouseup', () => {
   dragging = false;
 });
 
-canvas.addEventListener('wheel', (e: WheelEvent) => {
+ctx.canvas.addEventListener('wheel', (e: WheelEvent) => {
   orbit.distance -= e.deltaY / 2;
   if (orbit.distance < 100) orbit.distance = 100;
   else if (orbit.distance > 2000) orbit.distance = 2000;
@@ -334,8 +278,8 @@ function positionNormalTracer(
   invalidateNodeLocalTransform(tracer);
 }
 
-canvas.addEventListener('mousemove', (e: MouseEvent) => {
-  const rect = canvas.getBoundingClientRect();
+ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  const rect = ctx.canvas.getBoundingClientRect();
   const screenX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
   const screenY = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
 
@@ -445,15 +389,7 @@ function frame(): void {
   sceneTracer.visible = false;
   sceneNormalTracer.visible = false;
 
-  const w = canvas.width;
-  const h = canvas.height;
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
-  } else {
-    resizeGlRenderTarget(state, renderTarget, w, h);
-  }
-  presentGlScene(state, renderTarget, scene.root, camera, lights);
-  verifyFrame();
+  ctx.render(scene.root, camera, lights);
   requestAnimationFrame(frame);
 }
 
@@ -461,11 +397,11 @@ window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const pr = window.devicePixelRatio || 1;
-  canvas.width = w * pr;
-  canvas.height = h * pr;
-  canvas.style.width = `${w}px`;
-  canvas.style.height = `${h}px`;
-  state.gl.viewport(0, 0, canvas.width, canvas.height);
+  ctx.canvas.width = w * pr;
+  ctx.canvas.height = h * pr;
+  ctx.canvas.style.width = `${w}px`;
+  ctx.canvas.style.height = `${h}px`;
+  ctx.state.gl.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
   (camera.projection as PerspectiveProjection).aspect = w / h;
 });
 

@@ -1,49 +1,38 @@
-import type { GlRenderTarget, ImageResource, SceneLights } from '@flighthq/sdk';
+import type { SceneLights } from '@flighthq/sdk';
 import {
   addNodeChild,
   bakeEnvironmentIbl,
-  beginGlRenderPass,
+  copyQuaternion,
   createAmbientLight,
   createBoxMeshGeometry,
-  createCubeTexture,
   createDirectionalLight,
+  createEmissiveMaterial,
   createEnvironment,
   createGlCanvasElement,
   createGlRenderState,
-  createGlRenderTarget,
   createMesh,
+  createQuaternion,
   createScene,
   createSceneLights,
-  createEmissiveMaterial,
   createStandardPbrMaterial,
-  createSurfaceFromImageResource,
-  createSurfaceRegion,
   createTorusMeshGeometry,
   createVector3,
   DEG_TO_RAD,
-  drawGlEnvironmentSkybox,
-  drawGlLinearToSrgbPass,
-  drawGlScene,
-  endGlRenderPass,
-  flipSurfaceHorizontal,
-  flipSurfaceVertical,
-  createQuaternion,
+  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   multiplyQuaternion,
+  registerDefaultGlRenderEffects,
   registerEmissiveGlMaterial,
   registerStandardPbrGlMaterial,
-  renderGlBackground,
-  resolveGlRenderTarget,
-  resizeGlRenderTarget,
-  setCameraViewMatrix4FromLookAt,
-  setCubeTextureFace,
+  setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
-  copyQuaternion,
-  invalidateNodeLocalTransform,
   setVector3,
 } from '@flighthq/sdk';
 
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
+import { createCubeTextureFromAwayFaces } from '../../../_shared/flight/src/cubemap';
+import type { SkyboxRenderState } from '../../../_shared/flight/src/scene3d';
+import { renderSkyboxScene } from '../../../_shared/flight/src/scene3d';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 const width = window.innerWidth;
 const height = window.innerHeight;
@@ -68,6 +57,7 @@ const state = createGlRenderState(canvas, {
 
 registerStandardPbrGlMaterial(state);
 registerEmissiveGlMaterial(state);
+registerDefaultGlRenderEffects(state);
 
 const verifyFrame = createGlFrameVerifier(state);
 
@@ -127,48 +117,22 @@ const directional = createDirectionalLight({
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
 const lights: SceneLights = createSceneLights({ ambient, directional });
 
-const cubeTexture = createCubeTexture();
-
-// AwayJS uses a left-handed coordinate system (+Z into screen); Flight is right-handed (+Z out). The
-// only axis that flips is Z, which affects cubemap sampling: for each world-space direction d, Flight's
-// shader samples the cubemap at d while AwayJS would sample at (dx, dy, -dz). Working through the
-// OpenGL cubemap face-selection and UV formulas with this Z-negate gives a clean rule:
-//   - ±X and ±Z side faces: same-name for X, Z-swapped for Z, all horizontally flipped
-//   - ±Y top/bottom faces: same slot, vertically flipped
 const faceUrls = [
   'awayjs/assets/skybox/snow_positive_x.jpg',
   'awayjs/assets/skybox/snow_negative_x.jpg',
   'awayjs/assets/skybox/snow_positive_y.jpg',
   'awayjs/assets/skybox/snow_negative_y.jpg',
-  'awayjs/assets/skybox/snow_negative_z.jpg',
   'awayjs/assets/skybox/snow_positive_z.jpg',
+  'awayjs/assets/skybox/snow_negative_z.jpg',
 ];
 
 const faceImages = await Promise.all(faceUrls.map((url) => loadImageResourceFromUrl(url)));
-
-function flipImageH(resource: ImageResource): ImageResource {
-  const surface = createSurfaceFromImageResource(resource);
-  const region = createSurfaceRegion(surface);
-  flipSurfaceHorizontal(region, region);
-  return surface;
-}
-
-function flipImageV(resource: ImageResource): ImageResource {
-  const surface = createSurfaceFromImageResource(resource);
-  const region = createSurfaceRegion(surface);
-  flipSurfaceVertical(region, region);
-  return surface;
-}
-
-for (let i = 0; i < 6; i++) {
-  const isTopOrBottom = i === 2 || i === 3;
-  setCubeTextureFace(cubeTexture, i, isTopOrBottom ? flipImageV(faceImages[i]) : flipImageH(faceImages[i]));
-}
+const cubeTexture = createCubeTextureFromAwayFaces(faceImages);
 
 const environment = createEnvironment({ environment: cubeTexture, intensity: 1 });
 bakeEnvironmentIbl(state, environment);
 
-let renderTarget: GlRenderTarget | null = null;
+const skyboxRef: SkyboxRenderState = { pipeline: null };
 
 let mouseX = width / 2;
 let cameraRotationY = 0;
@@ -185,8 +149,6 @@ const scratchQuatB = createQuaternion();
 document.addEventListener('mousemove', (event: MouseEvent) => {
   mouseX = event.clientX;
 });
-
-const aspect = width / height;
 
 let torusRotX = 0;
 let torusRotY = 0;
@@ -206,24 +168,9 @@ function frame(): void {
 
   setAwayPosition(eye, -600 * Math.sin(rotRad), 0, -600 * Math.cos(rotRad));
 
-  setCameraViewMatrix4FromLookAt(camera, eye, target, up);
+  setCamera3DViewMatrix4FromLookAt(camera, eye, target, up);
 
-  const w = canvas.width;
-  const h = canvas.height;
-
-  if (renderTarget === null) {
-    renderTarget = createGlRenderTarget(state, { width: w, height: h, format: 'rgba16f', depth: 'depth-stencil' });
-  } else {
-    resizeGlRenderTarget(state, renderTarget, w, h);
-  }
-
-  beginGlRenderPass(state, renderTarget, { preserveColor: true });
-  renderGlBackground(state);
-  drawGlEnvironmentSkybox(state, environment, camera, aspect);
-  drawGlScene(state, scene.root, camera, lights);
-  endGlRenderPass(state);
-  resolveGlRenderTarget(state, renderTarget);
-  drawGlLinearToSrgbPass(state, renderTarget, null);
+  renderSkyboxScene(state, canvas, skyboxRef, environment, scene.root, camera, lights);
 
   verifyFrame();
 

@@ -13,6 +13,7 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
+  createToneMapEffect,
   drawGlEnvironmentSkybox,
   drawGlScene,
   endGlRenderEffectPipeline,
@@ -68,7 +69,7 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
 
   const verifyFrame = createGlFrameVerifier(state);
 
-  const effects = options.effects ?? [];
+  const effects = options.effects ?? [createToneMapEffect()];
   registerDefaultGlRenderEffects(state);
 
   let pipeline: GlRenderEffectPipeline | null = null;
@@ -108,6 +109,7 @@ export function renderSkyboxScene(
   scene: Readonly<SceneNode>,
   camera: Readonly<Camera3D>,
   lights: Readonly<SceneLights>,
+  effects: ReadonlyArray<RenderEffect | Adjustment> = [createToneMapEffect()],
 ): void {
   if (ref.pipeline === null) {
     ref.pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
@@ -120,5 +122,5 @@ export function renderSkyboxScene(
   gl.clear(gl.DEPTH_BUFFER_BIT);
   drawGlEnvironmentSkybox(state, environment, camera, canvas.width / canvas.height);
   drawGlScene(state, scene, camera, lights);
-  endGlRenderEffectPipeline(state, ref.pipeline, []);
+  endGlRenderEffectPipeline(state, ref.pipeline, effects);
 }

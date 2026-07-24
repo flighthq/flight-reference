@@ -11,6 +11,7 @@ import {
   createSampler,
   createStandardPbrMaterial,
   createTexture,
+  createTilingSampler,
   createTorusMeshGeometry,
   createQuaternion,
   createVector3,
@@ -45,9 +46,10 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60 });
 
-// Repeating textures are viewed at grazing angles (the ground plane, the ring's tube), so use an
-// anisotropic + mipmapped repeat sampler to keep the tiled detail smooth like the AwayJS original.
-const tilingSampler = () => createSampler({ wrapU: 'repeat', wrapV: 'repeat', anisotropy: 16 });
+// Repeating textures are viewed at grazing angles (the ground plane, the ring's tube), so retain
+// high anisotropy on Flight's mipmapped tiling sampler to keep the detail smooth.
+const tilingSampler = createTilingSampler();
+tilingSampler.anisotropy = 16;
 
 // AwayJS lights the scene with two directionals: a white primary (diffuse 0.7, ambient 0.1) whose
 // direction sweeps the horizon each frame, and a static cyan secondary (0x00ffff, diffuse 0.7,
@@ -143,7 +145,7 @@ function applyTextures(
     const url = maps.diffuse;
     jobs.push(
       loadImageResourceFromUrl(url).then((image) => {
-        const tex = createTexture({ image, sampler: uvScale ? tilingSampler() : createSampler() });
+        const tex = createTexture({ image, sampler: uvScale ? tilingSampler : createSampler() });
         if (uvScale) setTextureUvScale(tex, uvScale.x, uvScale.y);
         material.baseColorMap = tex;
       }),
@@ -158,7 +160,7 @@ function applyTextures(
         const tex = createTexture({
           image,
           colorSpace: 'linear',
-          sampler: uvScale ? tilingSampler() : createSampler(),
+          sampler: uvScale ? tilingSampler : createSampler(),
         });
         if (uvScale) setTextureUvScale(tex, uvScale.x, uvScale.y);
         material.normalMap = tex;
@@ -183,7 +185,7 @@ const torusWeaveNormalImage = await loadImageResourceFromUrl('awayjs/assets/weav
 const torusNormalTex = createTexture({
   image: torusWeaveNormalImage,
   colorSpace: 'linear',
-  sampler: tilingSampler(),
+  sampler: tilingSampler,
 });
 torusMaterial.normalMap = torusNormalTex;
 
@@ -207,7 +209,7 @@ await Promise.all([
     cubeMaterial.metallicRoughnessMap = tex;
   }),
   loadImageResourceFromUrl('awayjs/assets/weave_diffuse.jpg').then((image) => {
-    const tex = createTexture({ image, sampler: tilingSampler() });
+    const tex = createTexture({ image, sampler: tilingSampler });
     torusMaterial.baseColorMap = tex;
   }),
 ]);

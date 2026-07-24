@@ -150,27 +150,40 @@ if (!templateMesh?.geometry) {
 const templateGeometry = templateMesh.geometry;
 const templateMorph = templateMesh.morph;
 
-interface KnightInstance {
-  mesh: Mesh;
+interface KnightAnimationBucket {
+  driver: Mesh;
   player: AnimationPlayer | null;
   track: AnimationTrack | null;
 }
 
-const knights: KnightInstance[] = [];
+const animationBuckets: KnightAnimationBucket[] = [];
 const numWide = 20;
 const numDeep = 20;
+// CPU morphing rewrites and uploads a full geometry each frame. Sixteen independently phased shared
+// geometries retain a lively crowd while reducing deformation work and animated GPU buffers from 400
+// to 16. Every visible knight still has its own transform/material and participates in both shadow and
+// forward passes.
+const animationBucketCount = templateMorph != null && md2Clip != null ? 16 : 1;
+
+for (let i = 0; i < animationBucketCount; i++) {
+  const geometry = cloneMeshGeometry(templateGeometry);
+  const driver = createMesh(geometry, []);
+  let player: AnimationPlayer | null = null;
+  if (templateMorph != null && md2Clip != null) {
+    driver.morph = { targets: templateMorph.targets, weights: new Float32Array(templateMorph.weights.length) };
+    player = createAnimationPlayer(md2Clip, {
+      loop: true,
+      time: (i / animationBucketCount) * md2Clip.duration,
+    });
+  }
+  animationBuckets.push({ driver, player, track: md2Track });
+}
 
 for (let i = 0; i < numWide; i++) {
   for (let j = 0; j < numDeep; j++) {
     const material = knightMaterials[Math.floor(Math.random() * knightMaterials.length)]!;
-    const geometry = cloneMeshGeometry(templateGeometry);
-    const knight = createMesh(geometry, [material]);
-
-    let player: AnimationPlayer | null = null;
-    if (templateMorph != null && md2Clip != null) {
-      knight.morph = { targets: templateMorph.targets, weights: new Float32Array(templateMorph.weights.length) };
-      player = createAnimationPlayer(md2Clip, { loop: true, time: Math.random() * md2Clip.duration });
-    }
+    const bucket = animationBuckets[Math.floor(Math.random() * animationBuckets.length)]!;
+    const knight = createMesh(bucket.driver.geometry, [material]);
 
     const x = ((i - (numWide - 1) / 2) * 5000) / numWide;
     const z = ((j - (numDeep - 1) / 2) * 5000) / numDeep;
@@ -178,7 +191,6 @@ for (let i = 0; i < numWide; i++) {
     setVector3(knight.scale, 5, 5, 5);
     invalidateNodeLocalTransform(knight);
     addNodeChild(scene.root, knight);
-    knights.push({ mesh: knight, player, track: md2Track });
   }
 }
 
@@ -299,7 +311,7 @@ function frame(now: number): void {
   if (keyLeft) orbit.target.z += 10;
   if (keyRight) orbit.target.z -= 10;
 
-  for (const { mesh, player, track } of knights) {
+  for (const { driver: mesh, player, track } of animationBuckets) {
     if (player !== null && track !== null && mesh.morph != null) {
       advanceAnimationPlayer(player, dt);
       sampleAnimationTrack(mesh.morph.weights, track, player.time);

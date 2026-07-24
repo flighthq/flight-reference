@@ -135,6 +135,24 @@ export async function createAircraft(): Promise<Aircraft> {
       if (uri === 'f14landinggear.jpg') isGear = true;
       materials[i] = (uri !== null ? f14MaterialByUri.get(uri) : undefined) ?? f14PlainMaterial;
     }
+    // The two discs just inside the exhaust nozzles are visible down the tailpipes. Keep their original
+    // diffuse texture as both the base and emissive map so panel/grime detail remains visible, then push
+    // the warm emissive above 1.0 so the aircraft demo's bloom pass can form the engine halo.
+    if (mesh.name === 'Part187' || mesh.name === 'Part188') {
+      const worn = materials[0] as StandardPbrMaterial | null;
+      const map = worn?.baseColorMap ?? null;
+      const engineInterior = createStandardPbrMaterial({
+        baseColor: 0x2a1c12ff,
+        baseColorMap: map,
+        metallic: 0.4,
+        roughness: 0.5,
+        emissive: 0xff5a1eff,
+        emissiveMap: map,
+        emissiveStrength: 10,
+      });
+      for (let i = 0; i < materials.length; i++) materials[i] = engineInterior;
+      continue;
+    }
     const center = meshCenter(mesh);
     // Landing gear: the gear-textured struts, plus the full main-gear clusters (hanging low, outboard of
     // centerline, forward of the tail) and the two nose-gear struts by name. The nose gear is otherwise

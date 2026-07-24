@@ -3,6 +3,7 @@ import {
   addNodeChild,
   advanceClock,
   copyVector3,
+  createBloomEffect,
   createClock,
   createFxaaEffect,
   createMatrix4,
@@ -145,6 +146,11 @@ function sweepWing(meshes: readonly Mesh[], pivot: Vector3, angle: number): void
 }
 
 const skyboxRef: SkyboxRenderState = { pipeline: null };
+const aircraftEffects = [
+  createBloomEffect({ threshold: 1, intensity: 1.1, radius: 12, passes: 2 }),
+  createToneMapEffect(),
+  createFxaaEffect(),
+];
 
 function updateCameraLookAt(): void {
   copyVector3(cameraTarget, f14Mesh.position);
@@ -237,10 +243,7 @@ function renderScene(): void {
   eye.z += flightZ;
   updateCameraLookAt();
 
-  renderSkyboxScene(glState, canvas, skyboxRef, environment, scene.root, camera, lights, [
-    createToneMapEffect(),
-    createFxaaEffect(),
-  ]);
+  renderSkyboxScene(glState, canvas, skyboxRef, environment, scene.root, camera, lights, aircraftEffects);
 
   verifyFrame();
 }

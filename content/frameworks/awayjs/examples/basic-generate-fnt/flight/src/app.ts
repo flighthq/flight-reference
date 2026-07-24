@@ -1,31 +1,35 @@
-import type { GlyphAtlas } from '@flighthq/sdk';
+import type { GlyphAtlas, RichText } from '@flighthq/sdk';
 import {
   addNodeChild,
   attachKeyboardInput,
+  attachTextInput,
   attachWheelInput,
+  connectInputToTextInput,
   connectSignal,
-  createBitmapText,
   createDisplayContainer,
   createGlCanvasElement,
   createGlRenderState,
   createGlyphAtlas,
-  createGlyphSourceFromGlyphAtlas,
   createInputManager,
   createMatrix,
+  createRichText,
+  createTextInputManager,
   createWebGlyphRasterizerBackend,
-  defaultGlQuadBatchRenderer,
+  defaultGlRichTextRenderer,
+  enableGlTextInput,
+  enableTextInput,
+  focusTextInput,
   getGlyphAtlasSurface,
-  invalidateNodeLocalContent,
+  getGlyphAtlasEntry,
   invalidateNodeLocalTransform,
   loadFontFromUrl,
   prepareDisplayObjectRender,
-  QuadBatchKind,
   registerDefaultGlMaterial,
   registerRenderer,
   renderGlBackground,
   renderGlDisplayObject,
+  RichTextKind,
   setGlyphRasterizerBackend,
-  updateBitmapText,
 } from '@flighthq/sdk';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
@@ -51,7 +55,8 @@ const state = createGlRenderState(canvas, {
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
 registerDefaultGlMaterial(state);
-registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
+registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
+enableGlTextInput();
 
 const verifyFrame = createGlFrameVerifier(state);
 
@@ -67,31 +72,39 @@ const atlas = createGlyphAtlas({
   padding: 5,
 });
 
-const glyphSource = createGlyphSourceFromGlyphAtlas(atlas);
+// The displayed fields use RichText so they can retain TextField behavior, but this remains an FNT
+// generation demo: rasterize the digits into the generated atlas before showing its backing surface.
+for (const character of '0123456789') {
+  getGlyphAtlasEntry(atlas, character.codePointAt(0)!);
+}
 
 const root = createDisplayContainer();
 root.x = width / 2;
 root.y = height / 2;
 invalidateNodeLocalTransform(root);
 
-const BASE_SIZE = 128;
+const textFields: RichText[] = [];
 
 for (let i = 0; i < 300; i++) {
   const size = Math.round(10 + Math.random() * 100);
-  const scale = size / BASE_SIZE;
-
-  const bt = createBitmapText(glyphSource, {
-    text: '12345\n67890',
-    color: 0xff0000ff,
-  });
-  bt.x = (Math.random() - 0.5) * 1000 * (width / height);
-  bt.y = (Math.random() - 0.5) * 1000;
-  bt.scaleX = scale;
-  bt.scaleY = scale;
-  updateBitmapText(bt);
-  invalidateNodeLocalContent(bt);
-  invalidateNodeLocalTransform(bt);
-  addNodeChild(root, bt);
+  const tf = createRichText();
+  tf.data.defaultTextFormat = {
+    font: font.name,
+    color: 0xff0000,
+    size,
+  };
+  tf.data.text = '12345\n67890';
+  tf.data.autoSize = 'right';
+  tf.data.background = true;
+  tf.data.border = true;
+  tf.data.borderColor = 0xff0000;
+  tf.data.multiline = true;
+  tf.data.selectable = true;
+  tf.x = (Math.random() - 0.5) * 1000 * (width / height);
+  tf.y = (Math.random() - 0.5) * 1000;
+  enableTextInput(tf);
+  addNodeChild(root, tf);
+  textFields.push(tf);
 }
 
 showAtlasSurface(atlas);
@@ -111,7 +124,19 @@ function updateCamera(): void {
 
 const input = createInputManager();
 attachKeyboardInput(input, window);
+attachTextInput(input, canvas);
 attachWheelInput(input, canvas);
+
+const textInputManager = createTextInputManager();
+connectInputToTextInput(input, textInputManager);
+
+let focusIndex = -1;
+connectSignal(input.onKeyDown, (data) => {
+  if (data.key === 'Tab') {
+    focusIndex = (focusIndex + 1) % textFields.length;
+    focusTextInput(textInputManager, textFields[focusIndex]!);
+  }
+});
 
 connectSignal(input.onWheel, (data) => {
   if (data.ctrlKey) {

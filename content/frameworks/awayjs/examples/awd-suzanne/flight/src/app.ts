@@ -3,11 +3,13 @@ import {
   addNodeChild,
   appendMatrix4,
   createBlinnPhongMaterial,
+  createFxaaEffect,
   createMatrix4,
   createMesh,
   createScene,
   createSceneHit,
   createSceneLights,
+  createToneMapEffect,
   createVector3,
   DEG_TO_RAD,
   findNode,
@@ -30,6 +32,7 @@ import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
+  effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
 const scene = createScene();

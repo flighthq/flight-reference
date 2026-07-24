@@ -10,6 +10,7 @@ import type {
 } from '@flighthq/sdk';
 import {
   addNodeChild,
+  createFxaaEffect,
   createImageResource,
   createMesh,
   createParticleEmitter3D,
@@ -21,6 +22,7 @@ import {
   createStandardPbrMaterial,
   createTexture,
   createTilingSampler,
+  createToneMapEffect,
   createUnlitMaterial,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
@@ -70,6 +72,7 @@ const FLOOR_ROUGHNESS_MATTE = 0.85;
 const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
+  effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
 const scene = createScene();

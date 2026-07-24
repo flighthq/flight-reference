@@ -2,6 +2,7 @@ import type { PerspectiveProjection, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   createBoxMeshGeometry,
+  createFxaaEffect,
   createHemisphereLight,
   createMesh,
   createPlaneMeshGeometry,
@@ -12,6 +13,7 @@ import {
   createStandardPbrMaterial,
   createTexture,
   createTilingSampler,
+  createToneMapEffect,
   createTorusMeshGeometry,
   createQuaternion,
   createVector3,
@@ -40,6 +42,7 @@ const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
   backgroundColor: 0x000000ff,
+  effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
 const scene = createScene();

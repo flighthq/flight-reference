@@ -6,9 +6,11 @@ import {
   createAmbientLight,
   createAnimationPlayer,
   createDirectionalLight,
+  createFxaaEffect,
   createScene,
-  createSceneLights,
   createSceneFromAwd2,
+  createSceneLights,
+  createToneMapEffect,
 } from '@flighthq/sdk';
 import {
   createCameraFromAway,
@@ -25,6 +27,7 @@ const ctx = createScene3DContext({
   // present pass applies the linear->sRGB encode, so a raw 0x333338 clear would display much lighter
   // (~0x7c7c81). Pre-linearize to the value that presents back as 0x333338.
   backgroundColor: 0x08080aff,
+  effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
 const scene = createScene();

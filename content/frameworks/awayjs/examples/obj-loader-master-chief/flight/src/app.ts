@@ -7,6 +7,7 @@ import {
   createCubeTexture,
   createEmissiveMaterial,
   createEnvironment,
+  createFxaaEffect,
   createImageResourceFromSurface,
   createMesh,
   createScene,
@@ -45,7 +46,7 @@ const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
   backgroundColor: packOpaqueColor(0xcec8c6),
-  effects: [createToneMapEffect({ operator: 'aces' })],
+  effects: [createToneMapEffect({ operator: 'aces' }), createFxaaEffect()],
 });
 
 const scene = createScene();

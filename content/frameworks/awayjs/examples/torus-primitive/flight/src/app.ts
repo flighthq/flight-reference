@@ -2,6 +2,7 @@ import type { PerspectiveProjection } from '@flighthq/sdk';
 import {
   addNodeChild,
   copyQuaternion,
+  createFxaaEffect,
   createMesh,
   createQuaternion,
   createScene,
@@ -25,7 +26,7 @@ const DEG = Math.PI / 180;
 const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
-  effects: [createToneMapEffect({ operator: 'aces' })],
+  effects: [createToneMapEffect({ operator: 'aces' }), createFxaaEffect()],
 });
 
 const scene = createScene();

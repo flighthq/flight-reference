@@ -3,10 +3,12 @@ import {
   addNodeChild,
   bakeGlEnvironmentIbl,
   createEnvironment,
+  createFxaaEffect,
   createScene,
   createSceneFromAwd2,
   createSceneLights,
   createTexture,
+  createToneMapEffect,
   getNodeChildren,
   loadImageResourceFromUrl,
   packOpaqueColor,
@@ -30,6 +32,7 @@ const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
   backgroundColor: packOpaqueColor(0x9090e7),
+  effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
 const scene = createScene();

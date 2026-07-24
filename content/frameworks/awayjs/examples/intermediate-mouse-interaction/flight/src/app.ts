@@ -5,6 +5,7 @@ import {
   createAmbientLight,
   createBoxMeshGeometry,
   createCylinderMeshGeometry,
+  createFxaaEffect,
   createMesh,
   createQuaternion,
   createScene,
@@ -12,6 +13,7 @@ import {
   createSceneHit,
   createSceneLights,
   createSphereMeshGeometry,
+  createToneMapEffect,
   createTorusMeshGeometry,
   DEG_TO_RAD,
   getNodeChildren,
@@ -35,6 +37,7 @@ import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
+  effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
 const scene = createScene();

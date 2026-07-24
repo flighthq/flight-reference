@@ -2,9 +2,11 @@ import type { BlinnPhongMaterial, Mesh, PerspectiveProjection } from '@flighthq/
 import {
   addNodeChild,
   appendMatrix4,
+  createFxaaEffect,
   createMatrix4,
   createScene,
   createSceneLights,
+  createToneMapEffect,
   createVector3,
   DEG_TO_RAD,
   findNode,
@@ -26,6 +28,7 @@ const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
   backgroundColor: 0x030404ff,
+  effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
 const scene = createScene();

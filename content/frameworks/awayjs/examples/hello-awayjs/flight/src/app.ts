@@ -1,12 +1,14 @@
 import type { Mesh, PerspectiveProjection } from '@flighthq/sdk';
 import {
   addNodeChild,
+  createFxaaEffect,
   createMesh,
   createScene,
   createSceneHit,
   createSceneLights,
   createSphereMeshGeometry,
   createTexture,
+  createToneMapEffect,
   createUnlitMaterial,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
@@ -20,6 +22,7 @@ import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
+  effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
 const scene = createScene();

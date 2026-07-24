@@ -4,12 +4,14 @@ import {
   BlendMode,
   copyQuaternion,
   createBoxMeshGeometry,
+  createFxaaEffect,
   createMesh,
   createQuaternion,
   createScene,
   createSceneLights,
   createStandardPbrMaterial,
   createTexture,
+  createToneMapEffect,
   createTorusMeshGeometry,
   createVector3,
   getPbrRoughnessFromPhongShininess,
@@ -30,6 +32,7 @@ const DEG = Math.PI / 180;
 const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
+  effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
 const scene = createScene();

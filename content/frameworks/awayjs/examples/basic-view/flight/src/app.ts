@@ -2,12 +2,14 @@ import type { PerspectiveProjection } from '@flighthq/sdk';
 import {
   addNodeChild,
   copyQuaternion,
+  createFxaaEffect,
   createMesh,
   createPlaneMeshGeometry,
   createQuaternion,
   createScene,
   createSceneLights,
   createTexture,
+  createToneMapEffect,
   createUnlitMaterial,
   createVector3,
   DEG_TO_RAD,
@@ -22,6 +24,7 @@ import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
+  effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
 const scene = createScene();

@@ -12,11 +12,11 @@ import {
   advanceAnimationPlayer,
   applyAnimationClipToScene,
   computeMeshGeometryNormals,
-  configureDirectionalShadowCamera3D,
+  configureDirectionalShadowCamera,
   copyQuaternion,
   createAabb,
   createAnimationPlayer,
-  createCamera3D,
+  createCamera,
   createCubeTexture,
   createEnvironment,
   createFxaaEffect,
@@ -46,7 +46,7 @@ import {
   registerDefaultGlRenderEffects,
   registerStandardPbrGlMaterial,
   registerUnlitGlMaterial,
-  setCamera3DViewMatrix4FromLookAt,
+  setCameraViewMatrix4FromLookAt,
   setCubeTextureFace,
   setQuaternionFromAxisAngle,
   setTextureUvScale,
@@ -126,7 +126,7 @@ const eye = createVector3(0, 160, -200);
 function updateCamera(): void {
   // AwayJS uses a fixed camera at (0, 160, -200), looking at a y=50 placeholder parented to the
   // character. The MD5 walk cycle moves in place; turning the character does not orbit the camera.
-  setCamera3DViewMatrix4FromLookAt(camera, eye, cameraTarget, up);
+  setCameraViewMatrix4FromLookAt(camera, eye, cameraTarget, up);
 }
 
 const redLight = createPointLightFromAway({ color: 0xff1111, range: 3000, referenceDistance: 1225 });
@@ -145,7 +145,7 @@ const lights: SceneLights = createSceneLights({
 
 whiteLight.castsShadow = true;
 whiteLight.pcfRadius = 2;
-const shadowCamera = createCamera3D({
+const shadowCamera = createCamera({
   near: 1,
   far: 10,
   projection: createOrthographicProjection({ halfWidth: 1, halfHeight: 1 }),
@@ -435,7 +435,7 @@ function frame(ts: number): void {
   cameraTarget.z = characterZ;
   updateCamera();
 
-  configureDirectionalShadowCamera3D(shadowCamera, whiteLight.direction, shadowBounds);
+  configureDirectionalShadowCamera(shadowCamera, whiteLight.direction, shadowBounds);
   drawGlSceneShadowMap(glState, scene.root, shadowCamera);
 
   renderSkyboxScene(glState, canvas, skyboxRef, environment, scene.root, camera, lights, effects);

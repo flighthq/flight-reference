@@ -11,10 +11,10 @@ import {
   advanceAnimationPlayer,
   beginGlRenderEffectPipeline,
   cloneMeshGeometry,
-  configureDirectionalShadowCamera3D,
+  configureDirectionalShadowCamera,
   createAnimationPlayer,
   createBlinnPhongMaterial,
-  createCamera3D,
+  createCamera,
   createFxaaEffect,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -277,7 +277,7 @@ document.addEventListener('keyup', (e: KeyboardEvent) => {
 // field above it; direction and bounds never change, so the camera is configured once. The depth pass
 // applies the same morph as the forward pass, so re-rendering each frame gives shadows that track the
 // knights' animation (as AwayJS's shadow mapper does).
-const shadowCamera = createCamera3D({
+const shadowCamera = createCamera({
   near: 1,
   far: 1,
   projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
@@ -286,7 +286,7 @@ const sceneBounds = {
   min: { x: -2600, y: 0, z: -2600 },
   max: { x: 2600, y: 700, z: 2600 },
 };
-configureDirectionalShadowCamera3D(shadowCamera, directional.direction, sceneBounds);
+configureDirectionalShadowCamera(shadowCamera, directional.direction, sceneBounds);
 
 let lastTime = 0;
 

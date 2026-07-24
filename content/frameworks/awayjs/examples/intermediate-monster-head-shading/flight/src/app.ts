@@ -2,9 +2,9 @@ import type { GlRenderEffectPipeline, PerspectiveProjection, SceneNode } from '@
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
-  configureDirectionalShadowCamera3D,
+  configureDirectionalShadowCamera,
   createAabb,
-  createCamera3D,
+  createCamera,
   createFxaaEffect,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -12,7 +12,7 @@ import {
   createOrthographicProjection,
   createRimModifier,
   createScene,
-  createSceneFromAwd2,
+  createSceneFromAwd,
   createSceneLights,
   createShadedMaterial,
   createTexture,
@@ -87,7 +87,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
 directional.castsShadow = true;
 directional.pcfRadius = 2;
 
-const shadowCamera = createCamera3D({
+const shadowCamera = createCamera({
   near: 1,
   far: 2000,
   projection: createOrthographicProjection({ halfWidth: 300, halfHeight: 300 }),
@@ -139,7 +139,7 @@ if (diffuseImage) headMaterial.diffuseMap = createTexture({ image: diffuseImage 
 if (specularImage) headMaterial.specularMap = createTexture({ image: specularImage, colorSpace: 'linear' });
 if (normalImage) headMaterial.normalMap = createTexture({ image: normalImage, colorSpace: 'linear' });
 
-const awdScene = createSceneFromAwd2(new Uint8Array(awdBuffer));
+const awdScene = createSceneFromAwd(new Uint8Array(awdBuffer));
 
 function assignMaterialToMeshes(node: SceneNode): void {
   if (isMesh(node)) {
@@ -200,7 +200,7 @@ function frame(): void {
     pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
   }
 
-  configureDirectionalShadowCamera3D(shadowCamera, lightDir, shadowBounds);
+  configureDirectionalShadowCamera(shadowCamera, lightDir, shadowBounds);
   drawGlSceneShadowMap(state, scene.root, shadowCamera);
 
   beginGlRenderEffectPipeline(state, pipeline);

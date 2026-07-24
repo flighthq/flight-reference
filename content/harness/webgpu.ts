@@ -5,7 +5,7 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderState,
   defaultWgpuBitmapRenderer,
-  defaultWgpuParticleEmitter2DRenderer,
+  defaultWgpuParticleEmitterRenderer,
   defaultWgpuQuadBatchRenderer,
   defaultWgpuRichTextRenderer,
   defaultWgpuScale9ShapeRenderer,
@@ -19,7 +19,7 @@ import {
   enableWgpuClipSupport,
   enableWgpuFrameCapture,
   enableWgpuRenderCache,
-  ParticleEmitter2DKind,
+  ParticleEmitterKind,
   prepareDisplayObjectRender,
   QuadBatchKind,
   registerDefaultWgpuMaterial,
@@ -71,8 +71,8 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
       registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
     } else if (kind === SpriteKind) {
       registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
-    } else if (kind === ParticleEmitter2DKind) {
-      registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer);
+    } else if (kind === ParticleEmitterKind) {
+      registerRenderer(state, ParticleEmitterKind, defaultWgpuParticleEmitterRenderer);
     } else if (kind === QuadBatchKind) {
       registerRenderer(state, QuadBatchKind, defaultWgpuQuadBatchRenderer);
     } else if (kind === TilemapKind) {

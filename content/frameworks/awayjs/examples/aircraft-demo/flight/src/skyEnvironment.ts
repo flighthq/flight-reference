@@ -1,6 +1,6 @@
 import type { CubeTexture, Environment, GlRenderState } from '@flighthq/sdk';
 import {
-  bakeGlEnvironmentIbl,
+  bakeEnvironmentIbl,
   createCubeTexture,
   createEnvironment,
   createSurfaceFromImageResource,
@@ -42,6 +42,6 @@ export async function createSkyEnvironment(glState: GlRenderState): Promise<Envi
     environment: cubeTexture,
     intensity: 1,
   });
-  bakeGlEnvironmentIbl(glState, environment);
+  bakeEnvironmentIbl(glState, environment);
   return environment;
 }

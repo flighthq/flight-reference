@@ -8,7 +8,7 @@ import {
   getNodeChildren,
   loadImageResourceFromUrl,
   parseObjMaterialLibrary,
-  ImageResourceReferenceKind,
+  SceneResourceRefKind,
 } from '@flighthq/sdk';
 
 // The articulated F14. The upstream AwayJS demo lets the OBJ loader assign a material per part from
@@ -33,7 +33,7 @@ const f14AssetBase = 'awayjs/assets/f14';
 // from the f14 asset directory, and build one PBR material per texture.
 function f14DiffuseUri(material: BlinnPhongMaterial | null): string | null {
   const ref = material?.diffuseMap?.resource;
-  return ref != null && ref.kind === ImageResourceReferenceKind.External ? ref.uri : null;
+  return ref != null && ref.kind === SceneResourceRefKind.External ? ref.uri : null;
 }
 
 // Articulated parts are selected by geometry (createSceneFromObj keeps the group name on the Mesh even

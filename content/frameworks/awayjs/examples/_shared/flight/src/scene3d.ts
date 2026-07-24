@@ -1,6 +1,6 @@
 import type {
   Adjustment,
-  Camera3D,
+  Camera,
   Environment,
   GlRenderEffectPipeline,
   GlRenderState,
@@ -31,7 +31,7 @@ import { createGlFrameVerifier } from './verify';
 export interface Scene3DContext {
   canvas: HTMLCanvasElement;
   height: number;
-  render: (scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>) => void;
+  render: (scene: Readonly<SceneNode>, camera: Readonly<Camera>, lights: Readonly<SceneLights>) => void;
   state: GlRenderState;
   width: number;
 }
@@ -111,7 +111,7 @@ export function renderSkyboxScene(
   ref: SkyboxRenderState,
   environment: Readonly<Environment>,
   scene: Readonly<SceneNode>,
-  camera: Readonly<Camera3D>,
+  camera: Readonly<Camera>,
   lights: Readonly<SceneLights>,
   effects: ReadonlyArray<RenderEffect | Adjustment> = [createToneMapEffect()],
 ): void {

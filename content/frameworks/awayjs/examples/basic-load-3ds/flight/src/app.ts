@@ -3,9 +3,9 @@ import {
   addNodeChild,
   beginGlRenderEffectPipeline,
   computeMeshGeometryNormals,
-  configureDirectionalShadowCamera3D,
+  configureDirectionalShadowCamera,
   createAabb,
-  createCamera3D,
+  createCamera,
   createFxaaEffect,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -88,7 +88,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
 // direction. Bounds cover the 1000x1000 ground plane and the ant standing on it.
 directional.castsShadow = true;
 directional.pcfRadius = 2;
-const shadowCamera = createCamera3D({
+const shadowCamera = createCamera({
   near: 1,
   far: 10,
   projection: createOrthographicProjection({ halfWidth: 1, halfHeight: 1 }),
@@ -195,7 +195,7 @@ function frame(ts: number): void {
   orbit.update();
 
   // Shadow depth pass from the light's view, before the lit scene draw samples it.
-  configureDirectionalShadowCamera3D(shadowCamera, dir, shadowBounds);
+  configureDirectionalShadowCamera(shadowCamera, dir, shadowBounds);
   drawGlSceneShadowMap(state, scene.root, shadowCamera);
 
   // Effect-pipeline present: draw the scene into the pipeline's HDR target (clearing background and

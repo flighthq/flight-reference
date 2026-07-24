@@ -1,5 +1,5 @@
 import type {
-  Camera3D,
+  Camera,
   GlMeshMaterialRenderer,
   GlMeshProgram,
   GlRenderState,
@@ -74,7 +74,7 @@ const passthroughRenderer: GlMeshMaterialRenderer = {
     state: GlRenderState,
     material: Readonly<Material> | null,
     _lights: Readonly<SceneLightBlock>,
-    camera: Readonly<Camera3D>,
+    camera: Readonly<Camera>,
   ): void {
     const gl = state.gl;
     const program = ensureGlSceneProgram<PassthroughProgram>(state, 'passthrough', (gl) => {

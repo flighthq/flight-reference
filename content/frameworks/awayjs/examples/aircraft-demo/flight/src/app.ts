@@ -17,7 +17,7 @@ import {
   invalidateNodeLocalTransform,
   rotateMatrix4,
   scaleMatrix4,
-  setCamera3DViewMatrix4FromLookAt,
+  setCameraViewMatrix4FromLookAt,
   setMatrix4Identity,
   setNodeEnabled,
   setNodeLocalMatrix4,
@@ -148,7 +148,7 @@ const skyboxRef: SkyboxRenderState = { pipeline: null };
 
 function updateCameraLookAt(): void {
   copyVector3(cameraTarget, f14Mesh.position);
-  setCamera3DViewMatrix4FromLookAt(camera, eye, cameraTarget, up);
+  setCameraViewMatrix4FromLookAt(camera, eye, cameraTarget, up);
 }
 
 // Builds the jet's world transform from the current flight/roll state. Called in stepSimulation before

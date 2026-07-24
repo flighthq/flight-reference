@@ -1,30 +1,16 @@
-import type {
-  AnimationChannel,
-  AnimationClip,
-  AnimationCrossfade,
-  AnimationPlayer,
-  PerspectiveProjection,
-  SceneLights,
-} from '@flighthq/sdk';
+import type { AnimationClip, AnimationPlayer, PerspectiveProjection, SceneLights } from '@flighthq/sdk';
 import {
   addNodeChild,
-  advanceAnimationCrossfade,
   advanceAnimationPlayer,
   applyAnimationClipToScene,
   createAmbientLight,
-  createAnimationCrossfade,
   createAnimationPlayer,
   createDirectionalLight,
   createFxaaEffect,
   createScene,
-  createSceneFromAwd2,
+  createSceneFromAwd,
   createSceneLights,
   createToneMapEffect,
-  invalidateNodeLocalTransform,
-  isAnimationCrossfadeComplete,
-  sampleAnimationCrossfade,
-  setQuaternion,
-  setVector3,
 } from '@flighthq/sdk';
 import {
   createCameraFromAway,
@@ -60,7 +46,7 @@ const lights: SceneLights = createSceneLights({ ambient, directional });
 
 const awdBuffer = await fetch('awayjs/assets/shambler.awd').then((r) => r.arrayBuffer());
 const awdBytes = new Uint8Array(awdBuffer);
-const awdScene = createSceneFromAwd2(awdBytes);
+const awdScene = createSceneFromAwd(awdBytes);
 addNodeChild(scene.root, awdScene.root);
 
 const IDLE_NAME = 'idle';
@@ -77,30 +63,6 @@ if (!idleClip) throw new Error('Failed to parse AWD skeleton animation');
 let activePlayer: AnimationPlayer = createAnimationPlayer(idleClip, { loop: true, speed: 1 });
 let currentAnim = IDLE_NAME;
 let onceAnim: string | null = null;
-let crossfade: AnimationCrossfade | null = null;
-
-const CROSSFADE_DURATION = 0.3;
-const _crossfadeScratch = new Float32Array(4);
-
-function applyCrossfadeVisit(sampled: Readonly<number[] | Float32Array>, channel: Readonly<AnimationChannel>): void {
-  const target = channel.targetRef as { node: any; path: string } | null;
-  if (target === null || typeof target !== 'object' || target.node === undefined) return;
-  if (target.path === 'Weights') {
-    const morph = target.node.morph;
-    if (morph == null) return;
-    for (let i = 0; i < morph.weights.length; i++) morph.weights[i] = sampled[i]!;
-    return;
-  }
-  const node = target.node;
-  if (target.path === 'Translation') {
-    setVector3(node.position, sampled[0]!, sampled[1]!, sampled[2]!);
-  } else if (target.path === 'Scale') {
-    setVector3(node.scale, sampled[0]!, sampled[1]!, sampled[2]!);
-  } else {
-    setQuaternion(node.rotation, sampled[0]!, sampled[1]!, sampled[2]!, sampled[3]!);
-  }
-  invalidateNodeLocalTransform(node);
-}
 
 function play(name: string): void {
   if (currentAnim === name) return;
@@ -108,10 +70,7 @@ function play(name: string): void {
   if (!c) return;
   currentAnim = name;
   const looping = name === IDLE_NAME;
-  const nextPlayer = createAnimationPlayer(c, { loop: looping, speed: 1 });
-  const fromPlayer = crossfade !== null ? crossfade.to : activePlayer;
-  crossfade = createAnimationCrossfade(fromPlayer, nextPlayer, CROSSFADE_DURATION);
-  activePlayer = nextPlayer;
+  activePlayer = createAnimationPlayer(c, { loop: looping, speed: 1 });
 }
 
 function playAction(name: string): void {
@@ -167,22 +126,14 @@ function frame(ts: number): void {
   const dt = Math.min((ts - lastTs) / 1000, 0.1);
   lastTs = ts;
 
-  if (crossfade !== null) {
-    advanceAnimationCrossfade(crossfade, dt);
-    sampleAnimationCrossfade(_crossfadeScratch, crossfade, applyCrossfadeVisit);
-    if (isAnimationCrossfadeComplete(crossfade)) {
-      activePlayer = crossfade.to;
-      crossfade = null;
-    }
-  } else {
-    advanceAnimationPlayer(activePlayer, dt);
-    applyAnimationClipToScene(activePlayer.clip, activePlayer.time);
-  }
+  advanceAnimationPlayer(activePlayer, dt);
 
-  if (onceAnim && !activePlayer.playing && crossfade === null) {
+  if (onceAnim && !activePlayer.playing) {
     onceAnim = null;
     play(IDLE_NAME);
   }
+
+  applyAnimationClipToScene(activePlayer.clip, activePlayer.time);
 
   orbit.update();
   ctx.render(scene.root, camera, lights);

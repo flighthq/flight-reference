@@ -1,7 +1,7 @@
 import type { PerspectiveProjection, SceneLights } from '@flighthq/sdk';
 import {
   addNodeChild,
-  bakeGlEnvironmentIbl,
+  bakeEnvironmentIbl,
   copyQuaternion,
   createAmbientLight,
   createBoxMeshGeometry,
@@ -26,7 +26,7 @@ import {
   registerDefaultGlRenderEffects,
   registerEmissiveGlMaterial,
   registerStandardPbrGlMaterial,
-  setCamera3DViewMatrix4FromLookAt,
+  setCameraViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
   setVector3,
 } from '@flighthq/sdk';
@@ -132,7 +132,7 @@ const faceImages = await Promise.all(faceUrls.map((url) => loadImageResourceFrom
 const cubeTexture = createCubeTextureFromAwayFaces(faceImages);
 
 const environment = createEnvironment({ environment: cubeTexture, intensity: 1 });
-bakeGlEnvironmentIbl(state, environment);
+bakeEnvironmentIbl(state, environment);
 
 const skyboxRef: SkyboxRenderState = { pipeline: null };
 
@@ -170,7 +170,7 @@ function frame(): void {
 
   setAwayPosition(eye, -600 * Math.sin(rotRad), 0, -600 * Math.cos(rotRad));
 
-  setCamera3DViewMatrix4FromLookAt(camera, eye, target, up);
+  setCameraViewMatrix4FromLookAt(camera, eye, target, up);
 
   renderSkyboxScene(state, canvas, skyboxRef, environment, scene.root, camera, lights, [
     createToneMapEffect(),

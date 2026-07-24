@@ -1,10 +1,10 @@
-import type { Camera, Vector3Like } from '@flighthq/sdk';
+import type { Camera3D, Vector3Like } from '@flighthq/sdk';
 import {
-  createCamera,
+  createCamera3D,
   createPerspectiveProjection,
   createVector3,
   DEG_TO_RAD,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
 // AwayJS uses a left-handed coordinate system (+Z into screen).
@@ -25,13 +25,13 @@ export interface AwayPerspectiveCameraOptions {
   aspect?: number;
 }
 
-export function createCameraFromAway(opts: Readonly<AwayPerspectiveCameraOptions>): Camera {
+export function createCameraFromAway(opts: Readonly<AwayPerspectiveCameraOptions>): Camera3D {
   const fovDeg = opts.fov ?? 60;
   const near = opts.near ?? 20;
   const far = opts.far ?? 3000;
   const aspect = opts.aspect ?? window.innerWidth / window.innerHeight;
 
-  const camera = createCamera({
+  const camera = createCamera3D({
     near,
     far,
     projection: createPerspectiveProjection({
@@ -43,7 +43,7 @@ export function createCameraFromAway(opts: Readonly<AwayPerspectiveCameraOptions
   const eye = createVector3(opts.x ?? 0, opts.y ?? 0, -(opts.z ?? 0));
   const target = createVector3(opts.targetX ?? 0, opts.targetY ?? 0, -(opts.targetZ ?? 0));
   const up = createVector3(0, 1, 0);
-  setCameraViewMatrix4FromLookAt(camera, eye, target, up);
+  setCamera3DViewMatrix4FromLookAt(camera, eye, target, up);
 
   return camera;
 }
@@ -64,7 +64,7 @@ export interface AwayOrbitOptions {
 }
 
 export interface OrbitController {
-  readonly camera: Camera;
+  readonly camera: Camera3D;
   readonly eye: Vector3Like;
   readonly target: Vector3Like;
   readonly up: Vector3Like;
@@ -74,7 +74,7 @@ export interface OrbitController {
   update(): void;
 }
 
-export function createOrbitControllerFromAway(camera: Camera, opts: Readonly<AwayOrbitOptions>): OrbitController {
+export function createOrbitControllerFromAway(camera: Camera3D, opts: Readonly<AwayOrbitOptions>): OrbitController {
   const minTilt = (opts.minTiltAngle ?? -90) * DEG_TO_RAD;
   const maxTilt = (opts.maxTiltAngle ?? 90) * DEG_TO_RAD;
 
@@ -130,7 +130,7 @@ export function createOrbitControllerFromAway(camera: Camera, opts: Readonly<Awa
       up.y = cosTilt;
       up.z = cosPan * sinTilt;
 
-      setCameraViewMatrix4FromLookAt(camera, eye, target, up);
+      setCamera3DViewMatrix4FromLookAt(camera, eye, target, up);
     },
   };
 
@@ -151,7 +151,7 @@ export interface AwayFirstPersonOptions {
 }
 
 export interface FirstPersonController {
-  readonly camera: Camera;
+  readonly camera: Camera3D;
   readonly position: Vector3Like;
   yaw: number;
   pitch: number;
@@ -161,7 +161,7 @@ export interface FirstPersonController {
 }
 
 export function createFirstPersonControllerFromAway(
-  camera: Camera,
+  camera: Camera3D,
   opts: Readonly<AwayFirstPersonOptions>,
 ): FirstPersonController {
   const minPitch = (opts.minPitch ?? -80) * DEG_TO_RAD;
@@ -184,7 +184,7 @@ export function createFirstPersonControllerFromAway(
       eye.y = pos.y - Math.sin(this.pitch);
       eye.z = pos.z - Math.cos(this.yaw) * Math.cos(this.pitch);
 
-      setCameraViewMatrix4FromLookAt(camera, pos, eye, up);
+      setCamera3DViewMatrix4FromLookAt(camera, pos, eye, up);
     },
 
     forward(out: Vector3Like) {

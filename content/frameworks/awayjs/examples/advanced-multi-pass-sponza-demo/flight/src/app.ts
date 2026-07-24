@@ -1,11 +1,11 @@
 import type { Mesh, PerspectiveProjection, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
-  bakeEnvironmentIbl,
+  bakeGlEnvironmentIbl,
   createEnvironment,
   createFxaaEffect,
   createScene,
-  createSceneFromAwd,
+  createSceneFromAwd2,
   createSceneLights,
   createTexture,
   createToneMapEffect,
@@ -231,7 +231,7 @@ function walkAndAssignMaterials(node: SceneNode): void {
   }
 }
 
-const awdScene = createSceneFromAwd(new Uint8Array(awdBuffer));
+const awdScene = createSceneFromAwd2(new Uint8Array(awdBuffer));
 
 walkAndAssignMaterials(awdScene.root);
 
@@ -244,7 +244,7 @@ const environment = createEnvironment({
   environment: cubeTexture,
   intensity: 1,
 });
-bakeEnvironmentIbl(ctx.state, environment);
+bakeGlEnvironmentIbl(ctx.state, environment);
 const skyboxRef: SkyboxRenderState = { pipeline: null };
 const verifyFrame = createGlFrameVerifier(ctx.state);
 

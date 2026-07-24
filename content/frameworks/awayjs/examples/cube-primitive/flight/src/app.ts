@@ -18,7 +18,7 @@ import {
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   multiplyQuaternion,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
   setVector3,
 } from '@flighthq/sdk';
@@ -84,7 +84,7 @@ let torusAngleY = 0;
 let cubeAngleX = 0;
 let cubeAngleY = 0;
 
-setCameraViewMatrix4FromLookAt(camera, eye, lookTarget, up);
+setCamera3DViewMatrix4FromLookAt(camera, eye, lookTarget, up);
 
 function frame(): void {
   cameraAngle += DEG;
@@ -96,7 +96,7 @@ function frame(): void {
   up.y = Math.cos(cameraAngle);
   up.z = 0;
 
-  setCameraViewMatrix4FromLookAt(camera, eye, lookTarget, up);
+  setCamera3DViewMatrix4FromLookAt(camera, eye, lookTarget, up);
 
   setQuaternionFromAxisAngle(scratchQuatA, yAxis, torusAngleY);
   setQuaternionFromAxisAngle(scratchQuatB, xAxis, Math.PI / 2);

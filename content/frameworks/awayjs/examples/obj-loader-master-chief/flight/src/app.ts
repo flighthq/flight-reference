@@ -1,7 +1,7 @@
 import type { ImageResource, Mesh, PerspectiveProjection, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
-  bakeEnvironmentIbl,
+  bakeGlEnvironmentIbl,
   buildSurfaceGradientRamp,
   computeMeshGeometryNormals,
   createCubeTexture,
@@ -86,7 +86,7 @@ for (let i = 0; i < 6; i++) {
   setCubeTextureFace(envCube, i, createImageResourceFromSurface(createSurface(8, 8, envFaces[i])));
 }
 const environment = createEnvironment({ environment: envCube, intensity: 0.55 });
-bakeEnvironmentIbl(ctx.state, environment);
+bakeGlEnvironmentIbl(ctx.state, environment);
 
 // Now that the colorized albedo carries the palette, the light just shades it: a warm-white key (a
 // saturated orange key would muddy the olive/orange albedo) with a cool ambient fill for contrast.

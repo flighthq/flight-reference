@@ -15,11 +15,11 @@ import {
   findNode,
   getNodeLocalMatrix4,
   isMesh,
-  createSceneFromAwd,
+  createSceneFromAwd2,
   pickScene,
   rotateMatrix4,
   scaleMatrix4,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   setDirectionalLightTarget,
   setMatrix4Identity,
   setNodeLocalMatrix4,
@@ -68,7 +68,7 @@ const hoverMaterial: Material = createBlinnPhongMaterial({
 });
 
 const buffer = await fetch('awayjs/assets/suzanne.awd').then((r) => r.arrayBuffer());
-const modelScene = createSceneFromAwd(new Uint8Array(buffer));
+const modelScene = createSceneFromAwd2(new Uint8Array(buffer));
 
 const templateMesh = findNode(modelScene.root, isMesh) as Mesh | null;
 if (!templateMesh?.geometry) throw new Error('No mesh found in suzanne.awd');
@@ -124,7 +124,7 @@ const eye = createVector3(0, 0, 0);
 
 function updateCamera(): void {
   setAwayPosition(eye, Math.cos(cameraAngle) * distance, 0, Math.sin(cameraAngle) * distance);
-  setCameraViewMatrix4FromLookAt(camera, eye, lookAt, up);
+  setCamera3DViewMatrix4FromLookAt(camera, eye, lookAt, up);
 }
 
 let lastHovered: Mesh | null = null;

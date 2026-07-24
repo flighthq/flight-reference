@@ -7,6 +7,7 @@ import {
   appendShapeLineTo,
   appendShapeMoveTo,
   clearShapeCommands,
+  convertNodeVector2LocalToGlobal,
   createDisplayContainer,
   createGlCanvasElement,
   createGlRenderState,
@@ -28,7 +29,6 @@ import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
 let WIDTH = window.innerWidth;
 let HEIGHT = window.innerHeight;
-const DEG_TO_RAD = Math.PI / 180;
 const MAX_PATH_LENGTH = 500;
 
 interface PathPoint {
@@ -88,7 +88,7 @@ movingRect.x = WIDTH / 2;
 movingRect.y = HEIGHT / 2;
 invalidateNodeLocalTransform(movingRect);
 
-for (const [dx, dy] of offsets) {
+const markers = offsets.map(([dx, dy]) => {
   const c = createShape();
   appendShapeBeginFill(c, 0xdddddd, 1);
   appendShapeCircle(c, 0, 0, 5);
@@ -97,26 +97,26 @@ for (const [dx, dy] of offsets) {
   c.y = dy;
   invalidateNodeLocalTransform(c);
   addNodeChild(movingRect, c);
-}
+  return c;
+});
 
 addNodeChild(root, movingRect);
 
 let dirX = 0;
 let dirY = 0;
-let rotationRate = 3 * DEG_TO_RAD;
+// DisplayObject.rotation is degrees (matching AwayJS), not radians.
+let rotationRate = 3;
 let scaleChange = 0;
+const markerOrigin = { x: 0, y: 0 };
+const markerWorld = { x: 0, y: 0 };
 
 function drawTracerShape(): void {
-  const cos = Math.cos(movingRect.rotation);
-  const sin = Math.sin(movingRect.rotation);
-  const sx = movingRect.scaleX;
-  const sy = movingRect.scaleY;
-
-  for (let i = 0; i < 4; i++) {
-    const [dx, dy] = offsets[i];
-    const worldX = movingRect.x + (dx * cos - dy * sin) * sx;
-    const worldY = movingRect.y + (dx * sin + dy * cos) * sy;
-    drawingPath[i].push({ x: worldX, y: worldY });
+  for (let i = 0; i < markers.length; i++) {
+    // Read the same composed parent + child matrix the renderer uses for the circle. The former manual
+    // formula treated movingRect.rotation as radians even though the SDK stores degrees, so the tracer
+    // and marker diverged as soon as the container rotated.
+    convertNodeVector2LocalToGlobal(markerWorld, markers[i]!, markerOrigin);
+    drawingPath[i].push({ x: markerWorld.x, y: markerWorld.y });
     if (drawingPath[i].length > MAX_PATH_LENGTH) {
       drawingPath[i].shift();
     }
@@ -156,7 +156,7 @@ function drawTracerShape(): void {
 }
 
 function enterFrame(): void {
-  rotationRate += (0.1 - Math.random() * 0.2) * DEG_TO_RAD;
+  rotationRate += 0.1 - Math.random() * 0.2;
   scaleChange = 0.005 - Math.random() * 0.01;
   dirX += 0.1 - Math.random() * 0.2;
   dirY += 0.1 - Math.random() * 0.2;

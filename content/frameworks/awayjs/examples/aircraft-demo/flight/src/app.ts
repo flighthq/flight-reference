@@ -44,7 +44,7 @@ const PULSE_RATE = Math.PI / 5; // one 0→peak→0 elevation pulse over ~5s (ro
 const ROLL_RATE = 0.09; // roll-phase rad/s
 const ROLL_AMPLITUDE = 6 * DEG_TO_RAD; // a subtle bank now that the camera carries the vertical motion
 const WATER_RATE = 0.5; // sea normal-map scroll units/s — a slow, distant shimmer
-const CONFIG_RATE = 1 / 2.4; // full open↔closed in 2.4s
+const CONFIG_RATE = 1 / 6.4; // full open↔closed in 6.4s, matching the cited 1e718eb animation
 const GEAR_FADE_RATE = 1 / 1.2; // gear fade over 1.2s
 
 // AwayJS applies scaleTo(20,20,20) and a resting rotationX=90 to the f14 (awayjs/src/app.ts:126-127).
@@ -112,7 +112,7 @@ let pulseDirection = 1;
 
 // Open (landing) vs closed (clean/flight) configuration. Open = gear down + wings forward; closed =
 // gear up + wings swept. A click toggles the target; configProgress ramps toward it and flightConfig
-// smoothsteps it for feel, so a full open↔closed takes CONFIG_RATE's 2.4s. Starts already closed (clean:
+// smoothsteps it for feel, so a full open↔closed takes CONFIG_RATE's 6.4s. Starts already closed (clean:
 // gear up, wings swept) — a jet cruises clean, not in the landing configuration; a click opens it.
 let configClosed = true;
 let configProgress = 1;
@@ -157,7 +157,10 @@ function updateCameraLookAt(): void {
 // the emitters spawn (so the exhaust origins track the flying jet); renderScene then just reads it.
 function updateJetTransform(): void {
   f14Mesh.position.z = flightZ;
-  setQuaternionFromEuler(f14Mesh.rotation, F14_RESTING_PITCH, 0, Math.sin(rollIncrement) * ROLL_AMPLITUDE);
+  // Match 1e718eb: after the -90° resting pitch, model-space Y is the jet's longitudinal/nose axis.
+  // Banking in Euler Y keeps the nose on its -Z flight path; the old Euler-Z roll instead becomes a yaw
+  // at this gimbal orientation and makes the aircraft veer away from its own straight contrail.
+  setQuaternionFromEuler(f14Mesh.rotation, F14_RESTING_PITCH, Math.sin(rollIncrement) * ROLL_AMPLITUDE, 0);
   invalidateNodeLocalTransform(f14Mesh);
 }
 
@@ -247,7 +250,7 @@ function renderScene(): void {
 
 // Fixed-timestep loop. A clock is advanced by the real frame delta, then the simulation is stepped in
 // locked FIXED_STEP increments (catching up when the display ran slow) and rendered once. This locks
-// animation speed to wall-clock time, so the 2.4s config and the per-second rates hold at any refresh.
+// animation speed to wall-clock time, so the 6.4s config and the per-second rates hold at any refresh.
 const clock = createClock();
 const FIXED_STEP = 1 / 60;
 let simAccumulator = 0;

@@ -190,9 +190,10 @@ interface ParticleCloud {
   phase: number;
 }
 
-// AwayJS builds one combined particle sprite, then clones it four times. Mirroring that layout cuts
-// Flight's draw calls from 16 per-logo emitters to four combined clouds. Positions follow the same
-// quadratic Bezier equation continuously, so logos explode and reform without burst respawns or fades.
+// AwayJS builds the four logo silhouettes out of particles, then clones that combined particle sprite
+// four times. There are no separate static logo objects: a recognizable "logo" is simply one cloud at
+// t=0, while its phase-shifted siblings can be visibly exploded at the same moment. Mirroring that layout
+// cuts Flight's draw calls from 16 per-logo emitters to four combined clouds.
 const particleClouds: ParticleCloud[] = [];
 for (let animator = 0; animator < NUM_ANIMATORS; animator++) {
   const emitter = createParticleEmitter3D();
@@ -214,7 +215,11 @@ for (let animator = 0; animator < NUM_ANIMATORS; animator++) {
 }
 
 function updateParticleCloud(cloud: ParticleCloud, time: number): void {
-  const t = (Math.sin(time / CURVE_TIME_SCALE_SECONDS + cloud.phase) + 1) * 0.5;
+  // Exact AwayJS input: animator.update(1000 * (sin(time / 5000 + phase) + 1)). ParticleTimeState divides
+  // milliseconds by 1000, yielding a Bezier lifetime t in [0, 2]. ParticleAnimationSet's default
+  // usesDuration=false keeps every particle visible throughout; t>1 deliberately extrapolates the curve
+  // into the wide explosion before it reverses and reforms.
+  const t = Math.sin(time / CURVE_TIME_SCALE_SECONDS + cloud.phase) + 1;
   const curveWeight = 2 * t * (1 - t);
   const endWeight = t * t;
   const transforms = cloud.emitter.data.transforms;

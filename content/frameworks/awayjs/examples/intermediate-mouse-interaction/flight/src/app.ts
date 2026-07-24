@@ -37,7 +37,7 @@ import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
-  effects: [createToneMapEffect(), createFxaaEffect()],
+  effects: [createToneMapEffect({ exposure: 1.5 }), createFxaaEffect()],
 });
 
 const scene = createScene();

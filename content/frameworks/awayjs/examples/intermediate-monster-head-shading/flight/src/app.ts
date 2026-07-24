@@ -122,7 +122,7 @@ const lights = createSceneLights({
 
 // ShadedMaterial with rim modifier reproduces the AwayJS FresnelSpecularMethod look —
 // the AS3 applied this at runtime, not stored in the AWD file.
-const rimModifier = createRimModifier({ color: 0xc8d0e0ff, power: 3, intensity: 0.6 });
+const rimModifier = createRimModifier({ color: 0xc8d0e0ff, power: 5, intensity: 0.3 });
 const headMaterial = createShadedMaterial({
   diffuse: 0xffffffff,
   shininess: 10,

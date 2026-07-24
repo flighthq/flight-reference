@@ -42,7 +42,7 @@ const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
   backgroundColor: 0x000000ff,
-  effects: [createToneMapEffect(), createFxaaEffect()],
+  effects: [createToneMapEffect({ exposure: 1.8 }), createFxaaEffect()],
 });
 
 const scene = createScene();
@@ -269,7 +269,7 @@ function frame(ts: number): void {
   // that grazing angle is what lights the metal frame/ring and the floor's normal relief.
   const lightX = Math.sin(ts / 2500);
   const lightZ = -Math.cos(ts / 2500);
-  setDirectionalLightDirection(directional, lightX, -0.35, lightZ);
+  setDirectionalLightDirection(directional, lightX, -0.01, lightZ);
 
   orbit.update();
   ctx.render(scene.root, camera, lights);

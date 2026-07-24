@@ -92,7 +92,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(-0.5, -1, -1),
   ambient: 0.4,
   shading: 'phong',
-  tuning: { diffuse: 1.15, ambient: 1.9 },
+  tuning: { diffuse: 1.4, ambient: 2.5 },
 });
 directional.castsShadow = true;
 directional.pcfRadius = 2;
@@ -330,7 +330,7 @@ function frame(now: number): void {
   state.gl.clearDepth(1);
   state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
   drawGlScene(state, scene.root, camera, lights);
-  endGlRenderEffectPipeline(state, pipeline, [createToneMapEffect({ exposure: 1.5 }), createFxaaEffect()]);
+  endGlRenderEffectPipeline(state, pipeline, [createToneMapEffect({ exposure: 2.0 }), createFxaaEffect()]);
   verifyFrame();
   requestAnimationFrame(frame);
 }

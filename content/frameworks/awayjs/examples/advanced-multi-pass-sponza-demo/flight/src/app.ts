@@ -1,4 +1,4 @@
-import type { Mesh, PerspectiveProjection, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
+import type { Material, Mesh, PerspectiveProjection, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   bakeGlEnvironmentIbl,
@@ -206,7 +206,8 @@ const materialNamesBySpecificity = Object.keys(materialNameToTextureFile).sort((
 function walkAndAssignMaterials(node: SceneNode): void {
   const mesh = node as Mesh;
   if (mesh.materials) {
-    const materialName = mesh.name ?? '';
+    const awdMat = mesh.materials[0] as Material | undefined;
+    const materialName = awdMat?.name ?? mesh.name ?? '';
     const nameParts = materialName.split('_');
     const matchedName = materialNamesBySpecificity.find(
       (name) => materialName.includes(name) || nameParts.some((part) => part === name),

@@ -310,7 +310,7 @@ function frame(now: number): void {
   orbit.update();
   drawGlSceneShadowMap(state, scene.root, shadowCamera);
   if (pipeline === null) {
-    pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
+    pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil-sampled' });
   }
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
@@ -318,7 +318,7 @@ function frame(now: number): void {
   state.gl.clearDepth(1);
   state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
   drawGlScene(state, scene.root, camera, lights);
-  endGlRenderEffectPipeline(state, pipeline, [createToneMapEffect(), createFxaaEffect()]);
+  endGlRenderEffectPipeline(state, pipeline, [createToneMapEffect({ exposure: 1.5 }), createFxaaEffect()]);
   verifyFrame();
   requestAnimationFrame(frame);
 }

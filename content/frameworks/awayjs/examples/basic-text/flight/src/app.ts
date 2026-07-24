@@ -27,8 +27,8 @@ import {
 } from '@flighthq/sdk';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
-const width = window.innerWidth;
-const height = window.innerHeight;
+let width = window.innerWidth;
+let height = window.innerHeight;
 
 const pixelRatio = window.devicePixelRatio || 1;
 
@@ -131,5 +131,17 @@ function frame(): void {
   verifyFrame();
   requestAnimationFrame(frame);
 }
+
+window.addEventListener('resize', () => {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  const pr = window.devicePixelRatio || 1;
+  canvas.width = width * pr;
+  canvas.height = height * pr;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  state.gl.viewport(0, 0, canvas.width, canvas.height);
+  updateCamera();
+});
 
 frame();

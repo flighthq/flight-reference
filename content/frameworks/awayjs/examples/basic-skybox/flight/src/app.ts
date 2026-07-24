@@ -1,4 +1,4 @@
-import type { SceneLights } from '@flighthq/sdk';
+import type { PerspectiveProjection, SceneLights } from '@flighthq/sdk';
 import {
   addNodeChild,
   bakeGlEnvironmentIbl,
@@ -176,5 +176,17 @@ function frame(): void {
 
   requestAnimationFrame(frame);
 }
+
+window.addEventListener('resize', () => {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const pr = window.devicePixelRatio || 1;
+  canvas.width = w * pr;
+  canvas.height = h * pr;
+  canvas.style.width = `${w}px`;
+  canvas.style.height = `${h}px`;
+  state.gl.viewport(0, 0, canvas.width, canvas.height);
+  (camera.projection as PerspectiveProjection).aspect = w / h;
+});
 
 frame();

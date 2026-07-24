@@ -12,7 +12,7 @@ import {
   createOrthographicProjection,
   createRimModifier,
   createScene,
-  createSceneFromAwd,
+  createSceneFromAwd2,
   createSceneLights,
   createShadedMaterial,
   createTexture,
@@ -138,7 +138,7 @@ if (diffuseImage) headMaterial.diffuseMap = createTexture({ image: diffuseImage 
 if (specularImage) headMaterial.specularMap = createTexture({ image: specularImage, colorSpace: 'linear' });
 if (normalImage) headMaterial.normalMap = createTexture({ image: normalImage, colorSpace: 'linear' });
 
-const awdScene = createSceneFromAwd(new Uint8Array(awdBuffer));
+const awdScene = createSceneFromAwd2(new Uint8Array(awdBuffer));
 
 function assignMaterialToMeshes(node: SceneNode): void {
   if (isMesh(node)) {

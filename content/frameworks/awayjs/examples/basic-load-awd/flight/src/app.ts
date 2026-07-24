@@ -10,7 +10,7 @@ import {
   findNode,
   getNodeLocalMatrix4,
   isMesh,
-  createSceneFromAwd,
+  createSceneFromAwd2,
   rotateMatrix4,
   scaleMatrix4,
   setMatrix4Identity,
@@ -46,7 +46,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
 const lights = createSceneLights({ ambient, directional });
 
 const buffer = await fetch('awayjs/assets/suzanne.awd').then((r) => r.arrayBuffer());
-const modelScene = createSceneFromAwd(new Uint8Array(buffer));
+const modelScene = createSceneFromAwd2(new Uint8Array(buffer));
 
 const templateMesh = findNode(modelScene.root, isMesh) as Mesh | null;
 if (!templateMesh?.geometry) throw new Error('No mesh found in suzanne.awd');

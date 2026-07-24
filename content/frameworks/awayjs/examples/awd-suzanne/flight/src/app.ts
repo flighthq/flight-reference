@@ -13,7 +13,7 @@ import {
   findNode,
   getNodeLocalMatrix4,
   isMesh,
-  createSceneFromAwd,
+  createSceneFromAwd2,
   pickScene,
   rotateMatrix4,
   scaleMatrix4,
@@ -65,7 +65,7 @@ const hoverMaterial: Material = createBlinnPhongMaterial({
 });
 
 const buffer = await fetch('awayjs/assets/suzanne.awd').then((r) => r.arrayBuffer());
-const modelScene = createSceneFromAwd(new Uint8Array(buffer));
+const modelScene = createSceneFromAwd2(new Uint8Array(buffer));
 
 const templateMesh = findNode(modelScene.root, isMesh) as Mesh | null;
 if (!templateMesh?.geometry) throw new Error('No mesh found in suzanne.awd');

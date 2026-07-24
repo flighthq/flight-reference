@@ -4,7 +4,7 @@ import {
   bakeGlEnvironmentIbl,
   createEnvironment,
   createScene,
-  createSceneFromAwd,
+  createSceneFromAwd2,
   createSceneLights,
   createTexture,
   getNodeChildren,
@@ -228,7 +228,7 @@ function walkAndAssignMaterials(node: SceneNode): void {
   }
 }
 
-const awdScene = createSceneFromAwd(new Uint8Array(awdBuffer));
+const awdScene = createSceneFromAwd2(new Uint8Array(awdBuffer));
 
 walkAndAssignMaterials(awdScene.root);
 

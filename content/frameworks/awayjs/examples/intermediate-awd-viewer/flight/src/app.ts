@@ -8,7 +8,7 @@ import {
   createDirectionalLight,
   createScene,
   createSceneLights,
-  createSceneFromAwd,
+  createSceneFromAwd2,
 } from '@flighthq/sdk';
 import {
   createCameraFromAway,
@@ -43,7 +43,7 @@ const lights: SceneLights = createSceneLights({ ambient, directional });
 
 const awdBuffer = await fetch('awayjs/assets/shambler.awd').then((r) => r.arrayBuffer());
 const awdBytes = new Uint8Array(awdBuffer);
-const awdScene = createSceneFromAwd(awdBytes);
+const awdScene = createSceneFromAwd2(awdBytes);
 addNodeChild(scene.root, awdScene.root);
 
 const IDLE_NAME = 'idle';

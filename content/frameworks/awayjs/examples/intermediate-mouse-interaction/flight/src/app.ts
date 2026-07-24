@@ -37,7 +37,7 @@ import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
-  effects: [createToneMapEffect({ exposure: 1.5 }), createFxaaEffect()],
+  effects: [createToneMapEffect({ exposure: 1.2 }), createFxaaEffect()],
 });
 
 const scene = createScene();
@@ -45,7 +45,7 @@ const scene = createScene();
 const camera = createCameraFromAway({ fov: 60 });
 
 const pointLight = createPointLightFromAway({ range: 10000, referenceDistance: 300 });
-const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
+const ambient = createAmbientLight({ color: 0xffffffff, intensity: 0.6 });
 const lights = createSceneLights({
   ambient,
   directional: null,

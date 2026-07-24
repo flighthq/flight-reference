@@ -315,7 +315,7 @@ function frame(now: number): void {
 
   for (const { driver: mesh, player, track } of animationBuckets) {
     if (player !== null && track !== null && mesh.morph != null) {
-      advanceAnimationPlayer(player, dt);
+      advanceAnimationPlayer(player, dt * 0.5);
       sampleAnimationTrack(mesh.morph.weights, track, player.time);
       updateMeshMorph(mesh);
     }

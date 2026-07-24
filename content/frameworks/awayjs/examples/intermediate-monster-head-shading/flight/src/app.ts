@@ -10,7 +10,6 @@ import {
   createGlRenderEffectPipeline,
   createGlRenderState,
   createOrthographicProjection,
-  createRimModifier,
   createScene,
   createSceneFromAwd2,
   createSceneLights,
@@ -24,7 +23,6 @@ import {
   invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
-  registerBuiltInGlModifierSnippets,
   registerDefaultGlRenderEffects,
   registerShadedGlMaterial,
   renderGlBackground,
@@ -57,7 +55,6 @@ const state = createGlRenderState(canvas, {
 });
 
 registerShadedGlMaterial(state);
-registerBuiltInGlModifierSnippets(state);
 registerDefaultGlRenderEffects(state);
 const verifyFrame = createGlFrameVerifier(state);
 
@@ -120,14 +117,15 @@ const lights = createSceneLights({
   point: [blueLight, redLight],
 });
 
-// ShadedMaterial with rim modifier reproduces the AwayJS FresnelSpecularMethod look —
-// the AS3 applied this at runtime, not stored in the AWD file.
-const rimModifier = createRimModifier({ color: 0xc8d0e0ff, power: 5, intensity: 0.3 });
+// AwayJS applies SpecularFresnelMethod (fresnelPower=3, strength=3, gloss=10) which
+// modulates specular reflections by Fresnel angle — NOT a rim glow. ShadedMaterial's
+// specular + shininess carry the broad, strong highlight; no rim modifier is needed
+// (the rim was adding a white edge glow to everything including the eyes, which the
+// source never had).
 const headMaterial = createShadedMaterial({
   diffuse: 0xffffffff,
   shininess: 10,
-  specular: 0.3,
-  modifiers: [rimModifier],
+  specular: 0.8,
 });
 
 async function tryLoadImage(url: string): Promise<Awaited<ReturnType<typeof loadImageResourceFromUrl>> | null> {

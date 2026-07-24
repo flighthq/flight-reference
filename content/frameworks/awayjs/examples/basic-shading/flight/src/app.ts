@@ -42,7 +42,7 @@ const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
   backgroundColor: 0x000000ff,
-  effects: [createToneMapEffect({ exposure: 1.8 }), createFxaaEffect()],
+  effects: [createToneMapEffect({ exposure: 1.3 }), createFxaaEffect()],
 });
 
 const scene = createScene();
@@ -64,12 +64,12 @@ tilingSampler.anisotropy = 16;
 const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(0, -1, 0),
   diffuse: 0.7,
-  ambient: 0.2,
+  ambient: 0.1,
 });
 const cyanFill = createHemisphereLight({
   skyColor: 0x00ffffff,
   groundColor: 0x000000ff,
-  intensity: awayIntensity(0.5),
+  intensity: awayIntensity(0.7),
 });
 const lights = createSceneLights({ ambient, directional, hemisphere: [cyanFill] });
 

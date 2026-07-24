@@ -81,6 +81,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
   color: 0xffeedd,
   ambient: 1,
   ambientColor: 0x101025,
+  shading: 'phong',
 });
 
 directional.castsShadow = true;
@@ -93,12 +94,12 @@ const shadowCamera = createCamera3D({
 });
 const shadowBounds = createAabb(-200, -200, -200, 200, 200, 200);
 
-const blueLight = createPointLightFromAway({ color: 0x4080ff, range: 100000 });
+const blueLight = createPointLightFromAway({ color: 0x4080ff, range: 100000, shading: 'phong' });
 blueLight.position.x = 3000;
 blueLight.position.z = -700;
 blueLight.position.y = 20;
 
-const redLight = createPointLightFromAway({ color: 0x802010, range: 100000 });
+const redLight = createPointLightFromAway({ color: 0x802010, range: 100000, shading: 'phong' });
 redLight.position.x = -2000;
 redLight.position.z = -800;
 redLight.position.y = -400;

@@ -1,7 +1,7 @@
 import type { SceneLights } from '@flighthq/sdk';
 import {
   addNodeChild,
-  bakeEnvironmentIbl,
+  bakeGlEnvironmentIbl,
   copyQuaternion,
   createAmbientLight,
   createBoxMeshGeometry,
@@ -130,7 +130,7 @@ const faceImages = await Promise.all(faceUrls.map((url) => loadImageResourceFrom
 const cubeTexture = createCubeTextureFromAwayFaces(faceImages);
 
 const environment = createEnvironment({ environment: cubeTexture, intensity: 1 });
-bakeEnvironmentIbl(state, environment);
+bakeGlEnvironmentIbl(state, environment);
 
 const skyboxRef: SkyboxRenderState = { pipeline: null };
 

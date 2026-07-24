@@ -1,7 +1,7 @@
 import type { Mesh, PerspectiveProjection, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
-  bakeEnvironmentIbl,
+  bakeGlEnvironmentIbl,
   createEnvironment,
   createScene,
   createSceneFromAwd,
@@ -241,7 +241,7 @@ const environment = createEnvironment({
   environment: cubeTexture,
   intensity: 1,
 });
-bakeEnvironmentIbl(ctx.state, environment);
+bakeGlEnvironmentIbl(ctx.state, environment);
 const skyboxRef: SkyboxRenderState = { pipeline: null };
 const verifyFrame = createGlFrameVerifier(ctx.state);
 

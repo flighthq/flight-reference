@@ -2,23 +2,31 @@ import type { GlRenderEffectPipeline, PerspectiveProjection, SceneNode } from '@
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
+  configureDirectionalShadowCamera3D,
+  createAabb,
+  createCamera3D,
   createFxaaEffect,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
+  createOrthographicProjection,
+  createRimModifier,
   createScene,
   createSceneFromAwd,
   createSceneLights,
+  createShadedMaterial,
   createTexture,
   createToneMapEffect,
   drawGlScene,
+  drawGlSceneShadowMap,
   endGlRenderEffectPipeline,
   getNodeChildren,
   invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
+  registerBuiltInGlModifierSnippets,
   registerDefaultGlRenderEffects,
-  registerStandardPbrGlMaterial,
+  registerShadedGlMaterial,
   renderGlBackground,
   setVector3,
 } from '@flighthq/sdk';
@@ -29,7 +37,6 @@ import {
   createOrbitControllerFromAway,
 } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway, createPointLightFromAway } from '../../../_shared/flight/src/lighting';
-import { createAwayMatteMaterial } from '../../../_shared/flight/src/materials';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -49,7 +56,8 @@ const state = createGlRenderState(canvas, {
   pixelRatio,
 });
 
-registerStandardPbrGlMaterial(state);
+registerShadedGlMaterial(state);
+registerBuiltInGlModifierSnippets(state);
 registerDefaultGlRenderEffects(state);
 const verifyFrame = createGlFrameVerifier(state);
 
@@ -62,22 +70,29 @@ const camera = createCameraFromAway({ fov: 60, far: 1000 });
 const lightDirection = (120 * Math.PI) / 180;
 const lightElevation = (30 * Math.PI) / 180;
 
+const lightDir = {
+  x: Math.sin(lightElevation) * Math.cos(lightDirection),
+  y: -Math.cos(lightElevation),
+  z: -Math.sin(lightElevation) * Math.sin(lightDirection),
+};
+
 const { directional, ambient } = createDirectionalLightFromAway({
-  direction: {
-    x: Math.sin(lightElevation) * Math.cos(lightDirection),
-    y: -Math.cos(lightElevation),
-    z: -Math.sin(lightElevation) * Math.sin(lightDirection),
-  },
+  direction: lightDir,
   color: 0xffeedd,
   ambient: 1,
   ambientColor: 0x101025,
 });
 
-// AwayJS PointLight defaults to fallOff = 100000; map that outer radius to Flight's range so the
-// point lights match the original rather than a hand-picked cutoff. Note Flight's punctual lights
-// use inverse-square attenuation while AwayJS keeps full intensity out to its radius, so these
-// lights (positioned ~2000-3000 units away) read far dimmer here than in the original regardless
-// of range — the head is lit almost entirely by the directional + ambient terms.
+directional.castsShadow = true;
+directional.pcfRadius = 2;
+
+const shadowCamera = createCamera3D({
+  near: 1,
+  far: 2000,
+  projection: createOrthographicProjection({ halfWidth: 300, halfHeight: 300 }),
+});
+const shadowBounds = createAabb(-200, -200, -200, 200, 200, 200);
+
 const blueLight = createPointLightFromAway({ color: 0x4080ff, range: 100000 });
 blueLight.position.x = 3000;
 blueLight.position.z = -700;
@@ -94,7 +109,15 @@ const lights = createSceneLights({
   point: [blueLight, redLight],
 });
 
-const headMaterial = createAwayMatteMaterial(0xffffffff, 10);
+// ShadedMaterial with rim modifier reproduces the AwayJS FresnelSpecularMethod look —
+// the AS3 applied this at runtime, not stored in the AWD file.
+const rimModifier = createRimModifier({ color: 0xc8d0e0ff, power: 3, intensity: 0.6 });
+const headMaterial = createShadedMaterial({
+  diffuse: 0xffffffff,
+  shininess: 10,
+  specular: 0.3,
+  modifiers: [rimModifier],
+});
 
 async function tryLoadImage(url: string): Promise<Awaited<ReturnType<typeof loadImageResourceFromUrl>> | null> {
   try {
@@ -111,8 +134,8 @@ const [diffuseImage, specularImage, normalImage, awdBuffer] = await Promise.all(
   fetch('awayjs/assets/monsterhead/MonsterHead.awd').then((r) => r.arrayBuffer()),
 ]);
 
-if (diffuseImage) headMaterial.baseColorMap = createTexture({ image: diffuseImage });
-if (specularImage) headMaterial.metallicRoughnessMap = createTexture({ image: specularImage, colorSpace: 'linear' });
+if (diffuseImage) headMaterial.diffuseMap = createTexture({ image: diffuseImage });
+if (specularImage) headMaterial.specularMap = createTexture({ image: specularImage, colorSpace: 'linear' });
 if (normalImage) headMaterial.normalMap = createTexture({ image: normalImage, colorSpace: 'linear' });
 
 const awdScene = createSceneFromAwd(new Uint8Array(awdBuffer));
@@ -175,6 +198,10 @@ function frame(): void {
   if (pipeline === null) {
     pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
   }
+
+  configureDirectionalShadowCamera3D(shadowCamera, lightDir, shadowBounds);
+  drawGlSceneShadowMap(state, scene.root, shadowCamera);
+
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   state.gl.depthMask(true);

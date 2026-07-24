@@ -46,12 +46,34 @@ const awdBytes = new Uint8Array(awdBuffer);
 const awdScene = createSceneFromAwd(awdBytes);
 addNodeChild(scene.root, awdScene.root);
 
-// const joints = skinnedMeshes[0]?.skin?.skeleton.joints ?? [];
-// The shambler AWD ships several clips (idle, walk, attack01–05); the reference plays the idle loop.
-const clip: AnimationClip | null = awdScene.animations['idle'];
-if (!clip) throw new Error('Failed to parse AWD skeleton animation');
+const IDLE_NAME = 'idle';
+const ACTION_NAMES = ['walk', 'attack01', 'attack02', 'attack03', 'attack04', 'attack05'];
 
-const player: AnimationPlayer = createAnimationPlayer(clip, { loop: true, speed: 1 });
+const clips: Map<string, AnimationClip> = new Map();
+for (const [name, clip] of Object.entries(awdScene.animations)) {
+  if (clip) clips.set(name, clip);
+}
+
+const idleClip = clips.get(IDLE_NAME);
+if (!idleClip) throw new Error('Failed to parse AWD skeleton animation');
+
+let activePlayer: AnimationPlayer = createAnimationPlayer(idleClip, { loop: true, speed: 1 });
+let currentAnim = IDLE_NAME;
+let onceAnim: string | null = null;
+
+function play(name: string): void {
+  if (currentAnim === name) return;
+  const c = clips.get(name);
+  if (!c) return;
+  currentAnim = name;
+  const looping = name === IDLE_NAME;
+  activePlayer = createAnimationPlayer(c, { loop: looping, speed: 1 });
+}
+
+function playAction(name: string): void {
+  onceAnim = name;
+  play(name);
+}
 
 const orbit = createOrbitControllerFromAway(camera, {
   distance: 150,
@@ -60,6 +82,14 @@ const orbit = createOrbitControllerFromAway(camera, {
   minTiltAngle: 5,
   maxTiltAngle: 60,
   targetY: 60,
+});
+
+document.addEventListener('keydown', (e: KeyboardEvent) => {
+  const idx = parseInt(e.key, 10);
+  if (idx >= 1 && idx <= ACTION_NAMES.length) {
+    const name = ACTION_NAMES[idx - 1];
+    if (name) playAction(name);
+  }
 });
 
 let dragging = false;
@@ -93,8 +123,14 @@ function frame(ts: number): void {
   const dt = Math.min((ts - lastTs) / 1000, 0.1);
   lastTs = ts;
 
-  advanceAnimationPlayer(player, dt);
-  if (clip) applyAnimationClipToScene(clip, player.time);
+  advanceAnimationPlayer(activePlayer, dt);
+
+  if (onceAnim && !activePlayer.playing) {
+    onceAnim = null;
+    play(IDLE_NAME);
+  }
+
+  applyAnimationClipToScene(activePlayer.clip, activePlayer.time);
 
   orbit.update();
   ctx.render(scene.root, camera, lights);

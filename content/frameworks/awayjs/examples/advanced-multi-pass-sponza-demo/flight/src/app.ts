@@ -10,6 +10,7 @@ import {
   createTexture,
   createToneMapEffect,
   getNodeChildren,
+  isMesh,
   loadImageResourceFromUrl,
   packOpaqueColor,
 } from '@flighthq/sdk';
@@ -200,30 +201,21 @@ function getOrCreateMaterial(name: string): StandardPbrMaterial {
   return mat;
 }
 
-const defaultMaterial = createAwayMatteMaterial(packOpaqueColor(0xcccccc), 10);
-const materialNamesBySpecificity = Object.keys(materialNameToTextureFile).sort((a, b) => b.length - a.length);
+const knownMaterialNames = new Set(Object.keys(materialNameToTextureFile));
 
 function walkAndAssignMaterials(node: SceneNode): void {
-  const mesh = node as Mesh;
-  if (mesh.materials) {
+  if (isMesh(node)) {
+    const mesh = node as Mesh;
     const awdMat = mesh.materials[0] as Material | undefined;
     const materialName = awdMat?.name ?? mesh.name ?? '';
-    const nameParts = materialName.split('_');
-    const matchedName = materialNamesBySpecificity.find(
-      (name) => materialName.includes(name) || nameParts.some((part) => part === name),
-    );
+    const matchedName = knownMaterialNames.has(materialName) ? materialName : null;
 
     if (matchedName) {
       mesh.materials[0] = getOrCreateMaterial(matchedName);
     } else {
-      if (mesh.materials.length === 0) {
-        mesh.materials.push(defaultMaterial);
-      } else {
-        const existingMat = mesh.materials[0] as StandardPbrMaterial;
-        if (!existingMat.baseColorMap) {
-          mesh.materials[0] = defaultMaterial;
-        }
-      }
+      // AwayJS skips sprites whose material name isn't in the expected list — these are
+      // non-visual meshes (collision geometry, LOD duplicates, etc.) that should not render.
+      mesh.visible = false;
     }
   }
 

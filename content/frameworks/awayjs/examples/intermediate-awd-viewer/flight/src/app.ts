@@ -71,6 +71,32 @@ for (const [name, clip] of Object.entries(awdScene.animations)) {
   if (clip) clips.set(name, clip);
 }
 
+// The AWD parser creates a fresh {node, path} targetRef per channel per clip. createAnimationCrossfade
+// matches channels by targetRef identity, so clips that animate the same joints will fail to pair
+// (0 matches → crossfade snaps instead of blending). Normalize all clips to share canonical targetRef
+// objects: the first clip seen for each (node, path) pair defines the canonical ref, and all subsequent
+// clips reuse it.
+{
+  const canonicalByNode = new Map<unknown, Map<string, unknown>>();
+  for (const clip of clips.values()) {
+    for (const channel of clip.channels) {
+      const ref = channel.targetRef as { node: unknown; path: string } | null;
+      if (ref === null || typeof ref !== 'object') continue;
+      let pathMap = canonicalByNode.get(ref.node);
+      if (!pathMap) {
+        pathMap = new Map();
+        canonicalByNode.set(ref.node, pathMap);
+      }
+      const existing = pathMap.get(ref.path);
+      if (existing) {
+        (channel as { targetRef: unknown }).targetRef = existing;
+      } else {
+        pathMap.set(ref.path, ref);
+      }
+    }
+  }
+}
+
 const idleClip = clips.get(IDLE_NAME);
 if (!idleClip) throw new Error('Failed to parse AWD skeleton animation');
 

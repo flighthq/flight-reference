@@ -33,6 +33,8 @@ import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 const PARTICLE_SIZE = 2;
 const NUM_LOGOS = 4;
 const NUM_ANIMATORS = 4;
+const EXPLOSION_CYCLE_SECONDS = 6;
+const REFORM_WINDOW = 60;
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -132,6 +134,7 @@ interface LogoEmitter {
   pixels: Array<[number, number, number, number, number]>;
   offset: [number, number, number];
   animator: number;
+  reformWindowActive: boolean;
 }
 
 // The original clones the combined particle cloud NUM_ANIMATORS times, each rotated
@@ -148,22 +151,36 @@ for (let a = 0; a < NUM_ANIMATORS; a++) {
 
   for (let g = 0; g < NUM_LOGOS; g++) {
     const pixels = pixelSets[g]!;
+    const offset = logoOffsets[g]!;
+    const outwardLength = Math.hypot(offset[0], offset[2]);
     const config: ParticleEmitterConfig = createParticleEmitterConfig({
-      maxParticles: pixels.length,
+      // The second bank lets an old explosion finish fading while the logo
+      // reforms at its original pixel positions.
+      maxParticles: pixels.length * 2,
       spawnRate: 0,
       duration: 1,
       loop: true,
-      lifetimeMin: 1,
-      lifetimeMax: 1,
+      lifetimeMin: 2.6,
+      lifetimeMax: 3.4,
+      emitterShape: 'cone3d',
+      emitterConeAngle: 1.5,
+      emitterRadius: 0,
+      directionX: offset[0] / outwardLength,
+      directionY: 0,
+      directionZ: offset[2] / outwardLength,
+      speedMin: 120,
+      speedMax: 240,
       scaleMin: PARTICLE_SIZE,
       scaleMax: PARTICLE_SIZE,
+      scaleEnd: 0.35,
       alphaStart: 1,
-      alphaEnd: 1,
+      alphaEnd: 0,
       blendMode: 'add',
     });
 
     const state: ParticleEmitterState = createParticleEmitterState();
     const emitter: ParticleEmitter3D = createParticleEmitter3D();
+    emitter.blendMode = 'add';
 
     const emitterQuat = createQuaternion();
     setQuaternionFromAxisAngle(emitterQuat, { x: 0, y: 1, z: 0 }, rotationY);
@@ -171,11 +188,19 @@ for (let a = 0; a < NUM_ANIMATORS; a++) {
     invalidateNodeLocalTransform(emitter);
     addNodeChild(scene.root, emitter);
 
-    logoEmitters.push({ emitter, state, config, pixels, offset: logoOffsets[g]!, animator: a });
+    logoEmitters.push({
+      emitter,
+      state,
+      config,
+      pixels,
+      offset,
+      animator: a,
+      reformWindowActive: false,
+    });
   }
 }
 
-for (const entry of logoEmitters) {
+function emitLogoParticles(entry: LogoEmitter): void {
   for (const [px, py, r, g2, b] of entry.pixels) {
     const x = entry.offset[0] + px * PARTICLE_SIZE;
     const y = entry.offset[1] + py * PARTICLE_SIZE;
@@ -183,6 +208,10 @@ for (const entry of logoEmitters) {
     const tint = ((Math.round(r * 255) << 24) | (Math.round(g2 * 255) << 16) | (Math.round(b * 255) << 8) | 0xff) >>> 0;
     emitParticleBurst3D(entry.emitter, entry.state, entry.config, 1, x, y, z, tint);
   }
+}
+
+for (const entry of logoEmitters) {
+  emitLogoParticles(entry);
 }
 
 let time = 0;
@@ -206,20 +235,16 @@ function frame(ts: number): void {
   blueLight.position.z = -Math.cos(angle + Math.PI) * 600;
 
   for (const entry of logoEmitters) {
-    const groupTime = 1000 * (Math.sin(time / 5 + (Math.PI * entry.animator) / 4) + 1);
-
     stepParticleEmitter3D(entry.emitter, entry.state, entry.config, dt);
 
-    if (groupTime < 50) {
-      for (const [px, py, r, g2, b] of entry.pixels) {
-        const x = entry.offset[0] + px * PARTICLE_SIZE;
-        const y = entry.offset[1] + py * PARTICLE_SIZE;
-        const z = entry.offset[2];
-        const tint =
-          ((Math.round(r * 255) << 24) | (Math.round(g2 * 255) << 16) | (Math.round(b * 255) << 8) | 0xff) >>> 0;
-        emitParticleBurst3D(entry.emitter, entry.state, entry.config, 1, x, y, z, tint);
-      }
+    const phase = (Math.PI * 2 * time) / EXPLOSION_CYCLE_SECONDS + (Math.PI * entry.animator) / 4;
+    const groupTime = 1000 * (Math.sin(phase) + 1);
+    const reforming = groupTime < REFORM_WINDOW;
+
+    if (reforming && !entry.reformWindowActive) {
+      emitLogoParticles(entry);
     }
+    entry.reformWindowActive = reforming;
   }
 
   ctx.render(scene.root, camera, lights);

@@ -44,7 +44,7 @@ const scene = createScene();
 
 const camera = createCameraFromAway({ fov: 60 });
 
-const pointLight = createPointLightFromAway({ range: 10000 });
+const pointLight = createPointLightFromAway({ range: 10000, referenceDistance: 300 });
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
 const lights = createSceneLights({
   ambient,

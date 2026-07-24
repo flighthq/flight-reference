@@ -63,11 +63,6 @@ const root = createDisplayContainer();
 let activeStar: Shape | null = null;
 let startX = 0;
 let startY = 0;
-let activeSpikes = 5;
-let activeFillColor = 0;
-let activeStrokeColor = 0;
-let activeAlpha = 1;
-let activeThickness = 2;
 
 function addBackground(): void {
   const bg = createShape();
@@ -86,14 +81,23 @@ function packColor(r: number, g: number, b: number): number {
 function drawStar(star: Shape, radiusOuter: number): void {
   const radiusInner = radiusOuter / 2 + Math.random() * (radiusOuter / 2);
 
+  const r = Math.floor(Math.random() * 255);
+  const g = Math.floor(Math.random() * 255);
+  const b = Math.floor(Math.random() * 255);
+  const spikes = Math.round(2 + Math.random() * 100);
+  const fillColor = packColor(r, g, b);
+  const strokeColor = packColor(255 - r, 255 - g, 255 - b);
+  const thickness = 1 + Math.random() * 3;
+  const alpha = 0.5 + Math.random() * 0.5;
+
   clearShapeCommands(star);
-  appendShapeBeginFill(star, activeFillColor, activeAlpha);
-  appendShapeLineStyle(star, activeThickness, activeStrokeColor, activeAlpha, false, undefined, 'round', 'miter', 1.8);
+  appendShapeBeginFill(star, fillColor, alpha);
+  appendShapeLineStyle(star, thickness, strokeColor, alpha, false, undefined, 'round', 'miter', 1.8);
   appendShapeMoveTo(star, radiusOuter * Math.cos(0), radiusOuter * Math.sin(0));
 
-  const aDelta = (360 / activeSpikes) * 0.5;
+  const aDelta = (360 / spikes) * 0.5;
   let a = 0;
-  for (let i = 0; i < activeSpikes; i++) {
+  for (let i = 0; i < spikes; i++) {
     a += aDelta;
     appendShapeLineTo(star, radiusInner * Math.cos(a * (Math.PI / 180)), radiusInner * Math.sin(a * (Math.PI / 180)));
     a += aDelta;
@@ -110,16 +114,6 @@ attachKeyboardInput(input, window);
 connectSignal(input.onPointerDown, (data) => {
   startX = data.x;
   startY = data.y;
-
-  const r = Math.floor(Math.random() * 255);
-  const g = Math.floor(Math.random() * 255);
-  const b = Math.floor(Math.random() * 255);
-
-  activeSpikes = Math.round(2 + Math.random() * 100);
-  activeFillColor = packColor(r, g, b);
-  activeStrokeColor = packColor(255 - r, 255 - g, 255 - b);
-  activeThickness = 1 + Math.random() * 3;
-  activeAlpha = 0.5 + Math.random() * 0.5;
 
   activeStar = createShape();
   activeStar.x = startX;

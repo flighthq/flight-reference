@@ -59,14 +59,14 @@ const DECAL_MAX_OPACITY = 0.75;
 // so a single shared decal height would z-fight both the floor and the neighbouring decals. Each decal
 // gets its own height just above the floor via the per-index step, keeping every quad on a distinct
 // depth so overlaps resolve cleanly without shimmer.
-const DECAL_Y_BASE = -19.4;
-const DECAL_Y_STEP = 0.1;
+const DECAL_Y_BASE = -19.0;
+const DECAL_Y_STEP = 0.2;
 
 // AwayJS gives the floor its wet-tile sheen with a specular map plus `specularMethod.strength = 10`;
 // Flight's metallic-roughness PBR has no specular map, so we bake `floor_specular.jpg` into a
 // roughness map instead. AwayJS's specular map is a gloss mask (bright = shiny), which is the inverse
 // of PBR roughness, so bright texels map to the glossy end and dark texels to the matte end.
-const FLOOR_ROUGHNESS_GLOSSY = 0.3;
+const FLOOR_ROUGHNESS_GLOSSY = 0.15;
 const FLOOR_ROUGHNESS_MATTE = 0.85;
 
 const ctx = createScene3DContext({

@@ -119,19 +119,19 @@ function drawTracerShape(): void {
     if (drawingPath[p].length === 0) continue;
 
     let color = 0x000000;
-    appendShapeLineStyle(shape, 1, color, 1);
+    appendShapeLineStyle(shape, 1, color, 1, false, undefined, 'round', 'miter', 1.8);
     appendShapeMoveTo(shape, drawingPath[p][0].x, drawingPath[p][0].y);
 
     for (let i = 1; i < drawingPath[p].length; i++) {
       if (i > drawingPath[p].length * 0.9) {
         if (color !== 0xffffff) {
           color = 0xffffff;
-          appendShapeLineStyle(shape, 5, color, 1);
+          appendShapeLineStyle(shape, 5, color, 1, false, undefined, 'round', 'miter', 1.8);
         }
       } else if (i > drawingPath[p].length * 0.5) {
         if (color !== 0xcccccc) {
           color = 0xcccccc;
-          appendShapeLineStyle(shape, 3, color, 1);
+          appendShapeLineStyle(shape, 3, color, 1, false, undefined, 'round', 'miter', 1.8);
         }
       }
       appendShapeLineTo(shape, drawingPath[p][i].x, drawingPath[p][i].y);

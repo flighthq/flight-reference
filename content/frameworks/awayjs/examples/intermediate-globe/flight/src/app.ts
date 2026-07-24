@@ -213,7 +213,7 @@ sunMaterial.blendMode = BlendMode.Add;
 const earth = createMesh(createSphereMeshGeometry(200, 200, 100), [earthMaterial]);
 addNodeChild(tiltContainer, earth);
 
-const clouds = createMesh(createSphereMeshGeometry(204, 200, 100), [cloudMaterial]);
+const clouds = createMesh(createSphereMeshGeometry(202, 200, 100), [cloudMaterial]);
 addNodeChild(tiltContainer, clouds);
 
 const atmosphere = createBillboard(createPlaneMeshGeometry(900, 900, 1, 1), [atmosphereMaterial], 'screenAligned');

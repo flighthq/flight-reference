@@ -15,6 +15,7 @@ import {
   createAnimationPlayer,
   createBlinnPhongMaterial,
   createCamera3D,
+  createFxaaEffect,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
@@ -26,6 +27,7 @@ import {
   createSceneLights,
   createTexture,
   createTilingSampler,
+  createToneMapEffect,
   drawGlScene,
   drawGlSceneShadowMap,
   endGlRenderEffectPipeline,
@@ -314,7 +316,7 @@ function frame(now: number): void {
   state.gl.clearDepth(1);
   state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
   drawGlScene(state, scene.root, camera, lights);
-  endGlRenderEffectPipeline(state, pipeline, []);
+  endGlRenderEffectPipeline(state, pipeline, [createToneMapEffect(), createFxaaEffect()]);
   verifyFrame();
   requestAnimationFrame(frame);
 }

@@ -2,6 +2,7 @@ import type { GlRenderEffectPipeline, PerspectiveProjection, SceneNode } from '@
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
+  createFxaaEffect,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
@@ -9,6 +10,7 @@ import {
   createSceneFromAwd,
   createSceneLights,
   createTexture,
+  createToneMapEffect,
   drawGlScene,
   endGlRenderEffectPipeline,
   getNodeChildren,
@@ -179,7 +181,7 @@ function frame(): void {
   state.gl.clearDepth(1);
   state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
   drawGlScene(state, scene.root, camera, lights);
-  endGlRenderEffectPipeline(state, pipeline, []);
+  endGlRenderEffectPipeline(state, pipeline, [createToneMapEffect(), createFxaaEffect()]);
   verifyFrame();
   requestAnimationFrame(frame);
 }

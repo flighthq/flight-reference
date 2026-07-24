@@ -19,6 +19,7 @@ import {
   createCamera3D,
   createCubeTexture,
   createEnvironment,
+  createFxaaEffect,
   createGlCanvasElement,
   createGlRenderState,
   createMesh,
@@ -190,7 +191,7 @@ const fogEffect = createScreenSpaceFogEffect({
   far: 1,
   density: 8,
 });
-const effects = [fogEffect, createToneMapEffect()];
+const effects = [fogEffect, createToneMapEffect(), createFxaaEffect()];
 
 const meshText = await fetch('awayjs/assets/hellknight/hellknight.md5mesh').then((r) => r.text());
 const md5Scene = createSceneFromMd5Mesh(meshText);

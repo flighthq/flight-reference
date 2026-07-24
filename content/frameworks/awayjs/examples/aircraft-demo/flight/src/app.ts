@@ -4,10 +4,12 @@ import {
   advanceClock,
   copyVector3,
   createClock,
+  createFxaaEffect,
   createMatrix4,
   createScene,
   createSceneLights,
   createSceneNode,
+  createToneMapEffect,
   createVector3,
   DEG_TO_RAD,
   getQuaternionEuler,
@@ -235,7 +237,10 @@ function renderScene(): void {
   eye.z += flightZ;
   updateCameraLookAt();
 
-  renderSkyboxScene(glState, canvas, skyboxRef, environment, scene.root, camera, lights);
+  renderSkyboxScene(glState, canvas, skyboxRef, environment, scene.root, camera, lights, [
+    createToneMapEffect(),
+    createFxaaEffect(),
+  ]);
 
   verifyFrame();
 }

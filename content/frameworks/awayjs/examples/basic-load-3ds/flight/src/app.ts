@@ -6,6 +6,7 @@ import {
   configureDirectionalShadowCamera3D,
   createAabb,
   createCamera3D,
+  createFxaaEffect,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
@@ -68,7 +69,7 @@ const verifyFrame = createGlFrameVerifier(state);
 
 // The ground is HDR-lit and clips to flat white when it fills the view; ACES tone mapping
 // compresses the highlights back into range, matching the LDR AwayJS original.
-const effects = [createToneMapEffect({ operator: 'aces' })];
+const effects = [createToneMapEffect({ operator: 'aces' }), createFxaaEffect()];
 let pipeline: GlRenderEffectPipeline | null = null;
 
 const scene = createScene();

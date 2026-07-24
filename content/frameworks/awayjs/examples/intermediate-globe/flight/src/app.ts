@@ -10,6 +10,7 @@ import {
   createDirectionalLight,
   createEmissiveModifier,
   createEnvironment,
+  createFxaaEffect,
   createGlCanvasElement,
   createGlRenderState,
   createImageResourceFromCanvas,
@@ -22,6 +23,7 @@ import {
   createShadedMaterial,
   createSphereMeshGeometry,
   createTexture,
+  createToneMapEffect,
   createUnlitMaterial,
   createVector3,
   DEG_TO_RAD,
@@ -355,7 +357,10 @@ function frame(ts: number): void {
 
   orbit.update();
   orientSceneBillboardsToCamera(scene.root, camera);
-  renderSkyboxScene(state, canvas, skyboxRef, environment, scene.root, camera, lights);
+  renderSkyboxScene(state, canvas, skyboxRef, environment, scene.root, camera, lights, [
+    createToneMapEffect(),
+    createFxaaEffect(),
+  ]);
   verifyFrame();
   requestAnimationFrame(frame);
 }

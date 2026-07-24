@@ -8,6 +8,7 @@ import {
   createDirectionalLight,
   createEmissiveMaterial,
   createEnvironment,
+  createFxaaEffect,
   createGlCanvasElement,
   createGlRenderState,
   createMesh,
@@ -16,6 +17,7 @@ import {
   createSceneLights,
   createStandardPbrMaterial,
   createTorusMeshGeometry,
+  createToneMapEffect,
   createVector3,
   DEG_TO_RAD,
   invalidateNodeLocalTransform,
@@ -170,7 +172,10 @@ function frame(): void {
 
   setCamera3DViewMatrix4FromLookAt(camera, eye, target, up);
 
-  renderSkyboxScene(state, canvas, skyboxRef, environment, scene.root, camera, lights);
+  renderSkyboxScene(state, canvas, skyboxRef, environment, scene.root, camera, lights, [
+    createToneMapEffect(),
+    createFxaaEffect(),
+  ]);
 
   verifyFrame();
 

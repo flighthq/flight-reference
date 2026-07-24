@@ -201,8 +201,16 @@ await Promise.all([
     },
     { x: 2, y: 2 },
   ),
+  createMetalRoughnessFromSpecular('awayjs/assets/floor_specular.jpg').then((tex) => {
+    tex.sampler = tilingSampler;
+    setTextureUvScale(tex, 2, 2);
+    planeMaterial.metallicRoughnessMap = tex;
+  }),
   applyTextures(sphereMaterial, {
     diffuse: 'awayjs/assets/beachball_diffuse.jpg',
+  }),
+  createMetalRoughnessFromSpecular('awayjs/assets/beachball_specular.jpg').then((tex) => {
+    sphereMaterial.metallicRoughnessMap = tex;
   }),
   applyTextures(cubeMaterial, {
     diffuse: 'awayjs/assets/trinket_diffuse.jpg',

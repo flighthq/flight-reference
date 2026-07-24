@@ -21,6 +21,7 @@ import {
   createEnvironment,
   createFxaaEffect,
   createGlCanvasElement,
+  createGlRenderEffectPipeline,
   createGlRenderState,
   createMesh,
   createOrthographicProjection,
@@ -268,7 +269,9 @@ let rotationInc = 0;
 let count = 0;
 let characterX = 0;
 let characterZ = 0;
-const skyboxRef: SkyboxRenderState = { pipeline: null };
+const skyboxRef: SkyboxRenderState = {
+  pipeline: createGlRenderEffectPipeline(glState, { format: 'rgba16f', depth: 'depth-stencil-sampled' }),
+};
 
 function play(name: string): void {
   if (currentAnim === name) return;

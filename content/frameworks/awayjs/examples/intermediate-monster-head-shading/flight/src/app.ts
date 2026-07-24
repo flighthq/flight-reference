@@ -94,12 +94,22 @@ const shadowCamera = createCamera3D({
 });
 const shadowBounds = createAabb(-200, -200, -200, 200, 200, 200);
 
-const blueLight = createPointLightFromAway({ color: 0x4080ff, range: 100000, shading: 'phong' });
+const blueLight = createPointLightFromAway({
+  color: 0x4080ff,
+  range: 100000,
+  shading: 'phong',
+  referenceDistance: 3000,
+});
 blueLight.position.x = 3000;
 blueLight.position.z = -700;
 blueLight.position.y = 20;
 
-const redLight = createPointLightFromAway({ color: 0x802010, range: 100000, shading: 'phong' });
+const redLight = createPointLightFromAway({
+  color: 0x802010,
+  range: 100000,
+  shading: 'phong',
+  referenceDistance: 2200,
+});
 redLight.position.x = -2000;
 redLight.position.z = -800;
 redLight.position.y = -400;

@@ -322,7 +322,7 @@ function frame(now: number): void {
   orbit.update();
   drawGlSceneShadowMap(state, scene.root, shadowCamera);
   if (pipeline === null) {
-    pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil-sampled' });
+    pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
   }
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);

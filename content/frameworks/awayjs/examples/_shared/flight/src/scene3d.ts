@@ -83,7 +83,7 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
     height,
     render(scene, camera, lights) {
       if (pipeline === null) {
-        pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil-sampled' });
+        pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
       }
       beginGlRenderEffectPipeline(state, pipeline);
       renderGlBackground(state);
@@ -116,7 +116,7 @@ export function renderSkyboxScene(
   effects: ReadonlyArray<RenderEffect | Adjustment> = [createToneMapEffect()],
 ): void {
   if (ref.pipeline === null) {
-    ref.pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil-sampled' });
+    ref.pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
   }
   beginGlRenderEffectPipeline(state, ref.pipeline);
   renderGlBackground(state);

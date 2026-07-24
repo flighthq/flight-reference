@@ -144,6 +144,7 @@ const lights: SceneLights = createSceneLights({
 });
 
 whiteLight.castsShadow = true;
+whiteLight.pcfRadius = 2;
 const shadowCamera = createCamera3D({
   near: 1,
   far: 10,

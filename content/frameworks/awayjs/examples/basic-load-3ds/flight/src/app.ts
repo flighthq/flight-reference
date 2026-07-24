@@ -87,6 +87,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
 // directional shadow map and reconfigure its orthographic light camera each frame to the animated
 // direction. Bounds cover the 1000x1000 ground plane and the ant standing on it.
 directional.castsShadow = true;
+directional.pcfRadius = 2;
 const shadowCamera = createCamera3D({
   near: 1,
   far: 10,

@@ -94,6 +94,8 @@ const { directional, ambient } = createDirectionalLightFromAway({
   shading: 'phong',
   tuning: { diffuse: 1.15, ambient: 1.9 },
 });
+directional.castsShadow = true;
+directional.pcfRadius = 2;
 const lights = createSceneLights({ ambient, directional });
 
 const floorMaterial = createBlinnPhongMaterial({

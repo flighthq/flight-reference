@@ -48,15 +48,15 @@ function createSoftVaporSpriteUrl(): string {
 // of the nozzle, plateaus, then slowly diffuses out. The faint start also keeps the youngest puffs from
 // hazing the jet when the camera looks down the trail. No scale curve — young puffs need to be big enough
 // to overlap into a line (a thin start reads as discrete dots at the spawn spacing).
-const CONTRAIL_ALPHA_CURVE = [0, 0.3, 0.3, 0.25, 0.19, 0.11, 0.05, 0];
+const CONTRAIL_ALPHA_CURVE = [0, 0.55, 0.6, 0.48, 0.32, 0.18, 0.08, 0];
 
 // White 'normal'-blend vapor. worldSpace: true bakes each puff into world coordinates at spawn, so puffs
 // hang in the air while the jet flies away from them — a genuine contrail rather than a fake. They barely
 // drift (near-zero speed), live long, and expand a lot as they age, like ice crystals spreading.
 const exhaustConfig: ParticleEmitterConfig = createParticleEmitterConfig({
   worldSpace: true,
-  maxParticles: 560,
-  spawnRate: 60,
+  maxParticles: 820,
+  spawnRate: 90,
   loop: true,
   duration: -1,
   lifetimeMin: 7,
@@ -65,9 +65,9 @@ const exhaustConfig: ParticleEmitterConfig = createParticleEmitterConfig({
   speedMin: 0,
   speedMax: 3,
   gravityY: 2,
-  scaleMin: 5,
-  scaleMax: 7,
-  scaleEnd: 7,
+  scaleMin: 10,
+  scaleMax: 14,
+  scaleEnd: 6,
   colorStartR: 1,
   colorStartG: 0.98,
   colorStartB: 0.96,
@@ -75,7 +75,7 @@ const exhaustConfig: ParticleEmitterConfig = createParticleEmitterConfig({
   colorEndG: 0.98,
   colorEndB: 0.96,
   alphaCurve: CONTRAIL_ALPHA_CURVE,
-  alphaStart: 0.4,
+  alphaStart: 0.65,
 });
 
 interface VaporEmitter {

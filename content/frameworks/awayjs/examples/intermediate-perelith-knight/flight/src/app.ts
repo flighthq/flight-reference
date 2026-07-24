@@ -132,8 +132,7 @@ addNodeChild(scene.root, floor);
 
 const md2Buffer = await fetch('awayjs/assets/pknight.md2').then((r) => r.arrayBuffer());
 const md2Scene = await createSceneFromMd2(new Uint8Array(md2Buffer));
-const md2Clip = md2Scene.animations['default'] ?? null;
-const md2Track: AnimationTrack | null = md2Clip?.channels[0]?.track ?? null;
+const md2Clips = Object.values(md2Scene.animations);
 
 let templateMesh: Mesh | null = null;
 for (const child of getNodeChildren(md2Scene.root)) {
@@ -163,20 +162,23 @@ const numDeep = 20;
 // geometries retain a lively crowd while reducing deformation work and animated GPU buffers from 400
 // to 16. Every visible knight still has its own transform/material and participates in both shadow and
 // forward passes.
-const animationBucketCount = templateMorph != null && md2Clip != null ? 16 : 1;
+const animationBucketCount = templateMorph != null && md2Clips.length > 0 ? Math.min(16, md2Clips.length) : 1;
 
 for (let i = 0; i < animationBucketCount; i++) {
   const geometry = cloneMeshGeometry(templateGeometry);
   const driver = createMesh(geometry, []);
+  const clip = md2Clips[i % md2Clips.length] ?? null;
   let player: AnimationPlayer | null = null;
-  if (templateMorph != null && md2Clip != null) {
+  let track: AnimationTrack | null = null;
+  if (templateMorph != null && clip != null) {
     driver.morph = { targets: templateMorph.targets, weights: new Float32Array(templateMorph.weights.length) };
-    player = createAnimationPlayer(md2Clip, {
+    player = createAnimationPlayer(clip, {
       loop: true,
-      time: (i / animationBucketCount) * md2Clip.duration,
+      time: (i / animationBucketCount) * clip.duration,
     });
+    track = clip.channels[0]?.track ?? null;
   }
-  animationBuckets.push({ driver, player, track: md2Track });
+  animationBuckets.push({ driver, player, track });
 }
 
 for (let i = 0; i < numWide; i++) {

@@ -1,26 +1,19 @@
-import type {
-  ParticleEmitter3D,
-  ParticleEmitterConfig,
-  ParticleEmitterState,
-  PerspectiveProjection,
-  SceneLights,
-} from '@flighthq/sdk';
+import type { ParticleEmitter3D, PerspectiveProjection, SceneLights } from '@flighthq/sdk';
 import {
   addNodeChild,
+  appendParticleEmitter3DParticle,
   copyQuaternion,
   createAmbientLight,
   createParticleEmitter3D,
-  createParticleEmitterConfig,
-  createParticleEmitterState,
   createPointLight,
   createQuaternion,
   createScene,
   createSceneLights,
   DEG_TO_RAD,
-  emitParticleBurst3D,
   invalidateNodeLocalTransform,
+  reserveParticleEmitter3D,
+  setParticleEmitter3DParticleColor,
   setQuaternionFromAxisAngle,
-  stepParticleEmitter3D,
 } from '@flighthq/sdk';
 
 import {
@@ -31,10 +24,10 @@ import {
 import { createScene3DContext } from '../../../_shared/flight/src/scene3d';
 
 const PARTICLE_SIZE = 2;
-const NUM_LOGOS = 4;
 const NUM_ANIMATORS = 4;
-const EXPLOSION_CYCLE_SECONDS = 6;
-const REFORM_WINDOW = 60;
+// AwayJS feeds sin(time / 5000) into the animator, so one full out-and-back cycle is 10π seconds.
+const CURVE_TIME_SCALE_SECONDS = 5;
+const CONTROL_RADIUS = 500;
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -80,7 +73,15 @@ window.addEventListener('mouseup', () => {
   dragging = false;
 });
 
-function samplePixels(img: HTMLImageElement): Array<[number, number, number, number, number]> {
+interface SampledPixel {
+  x: number;
+  y: number;
+  r: number;
+  g: number;
+  b: number;
+}
+
+function samplePixels(img: HTMLImageElement): SampledPixel[] {
   const offscreen = document.createElement('canvas');
   offscreen.width = img.naturalWidth;
   offscreen.height = img.naturalHeight;
@@ -88,13 +89,18 @@ function samplePixels(img: HTMLImageElement): Array<[number, number, number, num
   ctx2d.drawImage(img, 0, 0);
   const { data, width: w, height: h } = ctx2d.getImageData(0, 0, img.naturalWidth, img.naturalHeight);
 
-  const results: Array<[number, number, number, number, number]> = [];
+  const results: SampledPixel[] = [];
   for (let j = 0; j < h; j++) {
     for (let i = 0; i < w; i++) {
       const idx = (j * w + i) * 4;
-      const alpha = data[idx + 3]!;
-      if (alpha > 0xb0) {
-        results.push([i - w / 2, -(j - h / 2), data[idx]! / 255, data[idx + 1]! / 255, data[idx + 2]! / 255]);
+      if (data[idx + 3]! > 0xb0) {
+        results.push({
+          x: i - w / 2,
+          y: -(j - h / 2),
+          r: data[idx]! / 255,
+          g: data[idx + 1]! / 255,
+          b: data[idx + 2]! / 255,
+        });
       }
     }
   }
@@ -110,145 +116,146 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-const logoUrls = [
-  'awayjs/assets/chrome.png',
-  'awayjs/assets/firefox.png',
-  'awayjs/assets/safari.png',
-  'awayjs/assets/ie.png',
+interface LogoDefinition {
+  url: string;
+  offset: readonly [number, number, number];
+  end: readonly [number, number, number];
+}
+
+const logoDefinitions: readonly LogoDefinition[] = [
+  {
+    url: 'awayjs/assets/chrome.png',
+    offset: [-100 * PARTICLE_SIZE, 0, 0],
+    end: [300 * PARTICLE_SIZE, 0, 0],
+  },
+  {
+    url: 'awayjs/assets/firefox.png',
+    offset: [100 * PARTICLE_SIZE, 0, 0],
+    end: [-300 * PARTICLE_SIZE, 0, 0],
+  },
+  {
+    url: 'awayjs/assets/safari.png',
+    offset: [0, 0, -100 * PARTICLE_SIZE],
+    end: [0, 0, 300 * PARTICLE_SIZE],
+  },
+  {
+    url: 'awayjs/assets/ie.png',
+    offset: [0, 0, 100 * PARTICLE_SIZE],
+    end: [0, 0, -300 * PARTICLE_SIZE],
+  },
 ];
 
-const logoOffsets: [number, number, number][] = [
-  [-100 * PARTICLE_SIZE, 0, 0],
-  [100 * PARTICLE_SIZE, 0, 0],
-  [0, 0, 100 * PARTICLE_SIZE],
-  [0, 0, -100 * PARTICLE_SIZE],
-];
+interface ParticlePath {
+  startX: number;
+  startY: number;
+  startZ: number;
+  controlX: number;
+  controlY: number;
+  controlZ: number;
+  endX: number;
+  endY: number;
+  endZ: number;
+  r: number;
+  g: number;
+  b: number;
+}
 
-const images = await Promise.all(logoUrls.map(loadImage));
-const pixelSets = images.map(samplePixels);
+const images = await Promise.all(logoDefinitions.map((logo) => loadImage(logo.url)));
+const particlePaths: ParticlePath[] = [];
 
-interface LogoEmitter {
+for (let logoIndex = 0; logoIndex < logoDefinitions.length; logoIndex++) {
+  const logo = logoDefinitions[logoIndex]!;
+  for (const pixel of samplePixels(images[logoIndex]!)) {
+    const degree1 = Math.random() * Math.PI * 2;
+    const degree2 = Math.random() * Math.PI * 2;
+    particlePaths.push({
+      startX: logo.offset[0] + pixel.x * PARTICLE_SIZE,
+      startY: logo.offset[1] + pixel.y * PARTICLE_SIZE,
+      startZ: logo.offset[2],
+      controlX: CONTROL_RADIUS * Math.sin(degree1) * Math.cos(degree2),
+      controlY: CONTROL_RADIUS * Math.cos(degree1) * Math.cos(degree2),
+      controlZ: CONTROL_RADIUS * Math.sin(degree2),
+      endX: logo.end[0],
+      endY: logo.end[1],
+      endZ: logo.end[2],
+      r: pixel.r,
+      g: pixel.g,
+      b: pixel.b,
+    });
+  }
+}
+
+interface ParticleCloud {
   emitter: ParticleEmitter3D;
-  state: ParticleEmitterState;
-  config: ParticleEmitterConfig;
-  pixels: Array<[number, number, number, number, number]>;
-  offset: [number, number, number];
-  animator: number;
-  reformWindowActive: boolean;
+  phase: number;
 }
 
-// The original clones the combined particle cloud NUM_ANIMATORS times, each rotated
-// rotationY = 45*(i-1) degrees, producing a fan of rotated explosion clouds. Each clone
-// is driven by its own animator whose phase is offset by PI*i/4. We reproduce this by
-// instancing the full per-logo emitter set once per animator, rotating each instance's
-// emitters about world Y. Y rotation negates for the left-handed → right-handed flip;
-// the per-logo offset is already baked into the burst spawn positions, so the emitter's
-// local matrix carries only the instance rotation.
-const logoEmitters: LogoEmitter[] = [];
+// AwayJS builds one combined particle sprite, then clones it four times. Mirroring that layout cuts
+// Flight's draw calls from 16 per-logo emitters to four combined clouds. Positions follow the same
+// quadratic Bezier equation continuously, so logos explode and reform without burst respawns or fades.
+const particleClouds: ParticleCloud[] = [];
+for (let animator = 0; animator < NUM_ANIMATORS; animator++) {
+  const emitter = createParticleEmitter3D();
+  emitter.blendMode = 'normal';
+  reserveParticleEmitter3D(emitter, particlePaths.length);
 
-for (let a = 0; a < NUM_ANIMATORS; a++) {
-  const rotationY = -45 * (a - 1) * DEG_TO_RAD;
+  for (const path of particlePaths) {
+    const index = appendParticleEmitter3DParticle(emitter, 0, path.startX, path.startY, path.startZ, 0, PARTICLE_SIZE);
+    setParticleEmitter3DParticleColor(emitter, index, path.r, path.g, path.b);
+  }
 
-  for (let g = 0; g < NUM_LOGOS; g++) {
-    const pixels = pixelSets[g]!;
-    const offset = logoOffsets[g]!;
-    const outwardLength = Math.hypot(offset[0], offset[2]);
-    const config: ParticleEmitterConfig = createParticleEmitterConfig({
-      // The second bank lets an old explosion finish fading while the logo
-      // reforms at its original pixel positions.
-      maxParticles: pixels.length * 2,
-      spawnRate: 0,
-      duration: 1,
-      loop: true,
-      lifetimeMin: 2.6,
-      lifetimeMax: 3.4,
-      emitterShape: 'cone3d',
-      emitterConeAngle: 1.5,
-      emitterRadius: 0,
-      directionX: offset[0] / outwardLength,
-      directionY: 0,
-      directionZ: offset[2] / outwardLength,
-      speedMin: 120,
-      speedMax: 240,
-      scaleMin: PARTICLE_SIZE,
-      scaleMax: PARTICLE_SIZE,
-      scaleEnd: 0.35,
-      alphaStart: 1,
-      alphaEnd: 0,
-      blendMode: 'add',
-    });
+  const rotationY = -45 * (animator - 1) * DEG_TO_RAD;
+  const emitterQuat = createQuaternion();
+  setQuaternionFromAxisAngle(emitterQuat, { x: 0, y: 1, z: 0 }, rotationY);
+  copyQuaternion(emitter.rotation, emitterQuat);
+  invalidateNodeLocalTransform(emitter);
+  addNodeChild(scene.root, emitter);
+  particleClouds.push({ emitter, phase: (Math.PI * animator) / 4 });
+}
 
-    const state: ParticleEmitterState = createParticleEmitterState();
-    const emitter: ParticleEmitter3D = createParticleEmitter3D();
-    emitter.blendMode = 'add';
+function updateParticleCloud(cloud: ParticleCloud, time: number): void {
+  const t = (Math.sin(time / CURVE_TIME_SCALE_SECONDS + cloud.phase) + 1) * 0.5;
+  const curveWeight = 2 * t * (1 - t);
+  const endWeight = t * t;
+  const transforms = cloud.emitter.data.transforms;
+  const positionsZ = cloud.emitter.data.positionsZ;
 
-    const emitterQuat = createQuaternion();
-    setQuaternionFromAxisAngle(emitterQuat, { x: 0, y: 1, z: 0 }, rotationY);
-    copyQuaternion(emitter.rotation, emitterQuat);
-    invalidateNodeLocalTransform(emitter);
-    addNodeChild(scene.root, emitter);
-
-    logoEmitters.push({
-      emitter,
-      state,
-      config,
-      pixels,
-      offset,
-      animator: a,
-      reformWindowActive: false,
-    });
+  for (let i = 0; i < particlePaths.length; i++) {
+    const path = particlePaths[i]!;
+    const transformIndex = i * 4;
+    transforms[transformIndex] = path.startX + curveWeight * path.controlX + endWeight * path.endX;
+    transforms[transformIndex + 1] = path.startY + curveWeight * path.controlY + endWeight * path.endY;
+    positionsZ[i] = path.startZ + curveWeight * path.controlZ + endWeight * path.endZ;
   }
 }
 
-function emitLogoParticles(entry: LogoEmitter): void {
-  for (const [px, py, r, g2, b] of entry.pixels) {
-    const x = entry.offset[0] + px * PARTICLE_SIZE;
-    const y = entry.offset[1] + py * PARTICLE_SIZE;
-    const z = entry.offset[2];
-    const tint = ((Math.round(r * 255) << 24) | (Math.round(g2 * 255) << 16) | (Math.round(b * 255) << 8) | 0xff) >>> 0;
-    emitParticleBurst3D(entry.emitter, entry.state, entry.config, 1, x, y, z, tint);
-  }
-}
-
-for (const entry of logoEmitters) {
-  emitLogoParticles(entry);
-}
-
-let time = 0;
-let angle = 0;
+// Start with animator 0 fully reformed instead of halfway through its curve, so the source logos are
+// immediately legible while the other phase-offset clouds demonstrate the explosion.
+let time = -CURVE_TIME_SCALE_SECONDS * (Math.PI / 2);
+let lightAngle = 0;
 let lastTs = 0;
 
 function frame(ts: number): void {
-  const dt = Math.min((ts - lastTs) / 1000, 0.1);
+  const dt = lastTs === 0 ? 1 / 60 : Math.min((ts - lastTs) / 1000, 0.1);
   lastTs = ts;
   time += dt;
 
   orbit.panAngle += 0.2 * DEG_TO_RAD;
   orbit.update();
 
-  angle += (Math.PI * dt) / 180;
-  greenLight.position.x = Math.sin(angle) * 600;
+  lightAngle += (Math.PI * dt) / 180;
+  greenLight.position.x = Math.sin(lightAngle) * 600;
   greenLight.position.y = 0;
-  greenLight.position.z = -Math.cos(angle) * 600;
-  blueLight.position.x = Math.sin(angle + Math.PI) * 600;
+  greenLight.position.z = -Math.cos(lightAngle) * 600;
+  blueLight.position.x = Math.sin(lightAngle + Math.PI) * 600;
   blueLight.position.y = 0;
-  blueLight.position.z = -Math.cos(angle + Math.PI) * 600;
+  blueLight.position.z = -Math.cos(lightAngle + Math.PI) * 600;
 
-  for (const entry of logoEmitters) {
-    stepParticleEmitter3D(entry.emitter, entry.state, entry.config, dt);
-
-    const phase = (Math.PI * 2 * time) / EXPLOSION_CYCLE_SECONDS + (Math.PI * entry.animator) / 4;
-    const groupTime = 1000 * (Math.sin(phase) + 1);
-    const reforming = groupTime < REFORM_WINDOW;
-
-    if (reforming && !entry.reformWindowActive) {
-      emitLogoParticles(entry);
-    }
-    entry.reformWindowActive = reforming;
+  for (const cloud of particleClouds) {
+    updateParticleCloud(cloud, time);
   }
 
   ctx.render(scene.root, camera, lights);
-
   requestAnimationFrame(frame);
 }
 

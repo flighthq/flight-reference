@@ -1,4 +1,4 @@
-import type { Matrix4, Mesh, PerspectiveProjection, SceneLights, Vector3 } from '@flighthq/sdk';
+import type { Mesh, PerspectiveProjection, SceneLights, Vector3 } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceClock,
@@ -13,14 +13,11 @@ import {
   createToneMapEffect,
   createVector3,
   DEG_TO_RAD,
-  getQuaternionEuler,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   rotateMatrix4,
-  scaleMatrix4,
   setCamera3DViewMatrix4FromLookAt,
   setMatrix4Identity,
-  setNodeEnabled,
   setNodeLocalMatrix4,
   setQuaternionFromEuler,
   setVector3,
@@ -32,7 +29,7 @@ import { createDirectionalLightFromAway } from '../../../_shared/flight/src/ligh
 import type { SkyboxRenderState } from '../../../_shared/flight/src/scene3d';
 import { renderSkyboxScene } from '../../../_shared/flight/src/scene3d';
 import { createAircraft } from './aircraft';
-import { canvas, glState, height, verifyFrame, width } from './bootstrap';
+import { canvas, glState, verifyFrame } from './bootstrap';
 import { createSea } from './sea';
 import { createSkyEnvironment } from './skyEnvironment';
 import { createVaporTrail } from './vaporTrail';
@@ -47,7 +44,7 @@ const PULSE_RATE = Math.PI / 5; // one 0→peak→0 elevation pulse over ~5s (ro
 const ROLL_RATE = 0.09; // roll-phase rad/s
 const ROLL_AMPLITUDE = 6 * DEG_TO_RAD; // a subtle bank now that the camera carries the vertical motion
 const WATER_RATE = 0.5; // sea normal-map scroll units/s — a slow, distant shimmer
-const CONFIG_RATE = 1 / 6.4; // full open↔closed in 6.4s
+const CONFIG_RATE = 1 / 2.4; // full open↔closed in 2.4s
 const GEAR_FADE_RATE = 1 / 1.2; // gear fade over 1.2s
 
 // AwayJS applies scaleTo(20,20,20) and a resting rotationX=90 to the f14 (awayjs/src/app.ts:126-127).
@@ -58,8 +55,8 @@ const FLIGHT_SPEED = 220; // world units/s the jet advances (-Z); trail length �
 
 // Variable-sweep wings. In model space X is span, Y is length (+Y is the nose), Z the vertical hinge
 // axis, so each wing sweeps about Z at its glove pivot. The left (-X) wing takes +WING_SWEEP to send
-// its tip aft; the right wing mirrors with the negative angle. Pivots are the wing roots from the OBJ
-// bounds; sweep angle/sign/pivot are the knobs if the sweep reads wrong once rendered.
+// its tip aft (toward negative model Y, where the exhaust sits); the right wing mirrors with the
+// negative angle. Pivots are the wing roots from the OBJ bounds.
 const WING_SWEEP = 52 * DEG_TO_RAD;
 const LEFT_WING_PIVOT = createVector3(-2.3, -2, 0);
 const RIGHT_WING_PIVOT = createVector3(2.3, -2, 0);
@@ -115,7 +112,7 @@ let pulseDirection = 1;
 
 // Open (landing) vs closed (clean/flight) configuration. Open = gear down + wings forward; closed =
 // gear up + wings swept. A click toggles the target; configProgress ramps toward it and flightConfig
-// smoothsteps it for feel, so a full open↔closed takes CONFIG_RATE's 6.4s. Starts already closed (clean:
+// smoothsteps it for feel, so a full open↔closed takes CONFIG_RATE's 2.4s. Starts already closed (clean:
 // gear up, wings swept) — a jet cruises clean, not in the landing configuration; a click opens it.
 let configClosed = true;
 let configProgress = 1;
@@ -132,7 +129,6 @@ let gearFade = 0;
 let flightZ = 0;
 
 const zAxis = createVector3(0, 0, 1);
-const xAxis = createVector3(1, 0, 0);
 const wingMatrix = createMatrix4();
 
 function sweepWing(meshes: readonly Mesh[], pivot: Vector3, angle: number): void {
@@ -165,8 +161,9 @@ function updateJetTransform(): void {
   invalidateNodeLocalTransform(f14Mesh);
 }
 
-// A click toggles between the open (landing) and closed (clean/flight) configurations.
-canvas.addEventListener('mousedown', () => {
+// Match the AwayJS demo's document-level input so a harness overlay cannot intercept the configuration
+// toggle before it reaches the canvas. The state flips on mousedown, not on mouseup/click.
+document.addEventListener('mousedown', () => {
   configClosed = !configClosed;
   pulsePhase = 0;
   // Kick the camera the way its vertical bob is already heading: cos is the bob's velocity, so rising
@@ -250,7 +247,7 @@ function renderScene(): void {
 
 // Fixed-timestep loop. A clock is advanced by the real frame delta, then the simulation is stepped in
 // locked FIXED_STEP increments (catching up when the display ran slow) and rendered once. This locks
-// animation speed to wall-clock time, so the 6.4s config and the per-second rates hold at any refresh.
+// animation speed to wall-clock time, so the 2.4s config and the per-second rates hold at any refresh.
 const clock = createClock();
 const FIXED_STEP = 1 / 60;
 let simAccumulator = 0;

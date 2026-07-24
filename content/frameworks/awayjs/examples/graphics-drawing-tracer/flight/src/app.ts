@@ -71,8 +71,17 @@ const offsets: [number, number][] = [
 
 const root = createDisplayContainer();
 
-const shape = createShape();
-addNodeChild(root, shape);
+// SDK v652's canvas-backed Shape renderer does not flush a pending path when lineStyle changes. If all
+// three styles are appended to one Shape, its final white 5px style strokes the entire path. Separate
+// shapes force separate raster/stroke passes and preserve the black → gray → white tracer progression.
+const tracerShapes = [
+  { shape: createShape(), thickness: 1, color: 0x000000 },
+  { shape: createShape(), thickness: 3, color: 0xcccccc },
+  { shape: createShape(), thickness: 5, color: 0xffffff },
+] as const;
+for (const tracer of tracerShapes) {
+  addNodeChild(root, tracer.shape);
+}
 
 const movingRect = createDisplayContainer();
 movingRect.x = WIDTH / 2;
@@ -113,32 +122,37 @@ function drawTracerShape(): void {
     }
   }
 
-  clearShapeCommands(shape);
+  for (const tracer of tracerShapes) {
+    clearShapeCommands(tracer.shape);
+    appendShapeLineStyle(tracer.shape, tracer.thickness, tracer.color, 1, false, undefined, 'round', 'miter', 1.8);
+  }
 
   for (let p = 0; p < 4; p++) {
-    if (drawingPath[p].length === 0) continue;
+    const path = drawingPath[p];
+    if (path.length < 2) continue;
 
-    let color = 0x000000;
-    appendShapeLineStyle(shape, 1, color, 1, false, undefined, 'round', 'miter', 1.8);
-    appendShapeMoveTo(shape, drawingPath[p][0].x, drawingPath[p][0].y);
+    const grayStart = Math.floor(path.length * 0.5) + 1;
+    const whiteStart = Math.floor(path.length * 0.9) + 1;
+    const ranges: ReadonlyArray<readonly [number, number]> = [
+      [1, Math.min(grayStart, path.length)],
+      [Math.max(1, grayStart), Math.min(whiteStart, path.length)],
+      [Math.max(1, whiteStart), path.length],
+    ];
 
-    for (let i = 1; i < drawingPath[p].length; i++) {
-      if (i > drawingPath[p].length * 0.9) {
-        if (color !== 0xffffff) {
-          color = 0xffffff;
-          appendShapeLineStyle(shape, 5, color, 1, false, undefined, 'round', 'miter', 1.8);
-        }
-      } else if (i > drawingPath[p].length * 0.5) {
-        if (color !== 0xcccccc) {
-          color = 0xcccccc;
-          appendShapeLineStyle(shape, 3, color, 1, false, undefined, 'round', 'miter', 1.8);
-        }
+    for (let styleIndex = 0; styleIndex < tracerShapes.length; styleIndex++) {
+      const [start, end] = ranges[styleIndex]!;
+      if (start >= end) continue;
+      const styledShape = tracerShapes[styleIndex]!.shape;
+      appendShapeMoveTo(styledShape, path[start - 1]!.x, path[start - 1]!.y);
+      for (let i = start; i < end; i++) {
+        appendShapeLineTo(styledShape, path[i]!.x, path[i]!.y);
       }
-      appendShapeLineTo(shape, drawingPath[p][i].x, drawingPath[p][i].y);
     }
   }
 
-  invalidateNodeAppearance(shape);
+  for (const tracer of tracerShapes) {
+    invalidateNodeAppearance(tracer.shape);
+  }
 }
 
 function enterFrame(): void {

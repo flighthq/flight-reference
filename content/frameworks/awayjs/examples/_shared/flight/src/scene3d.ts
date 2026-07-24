@@ -18,7 +18,9 @@ import {
   drawGlScene,
   endGlRenderEffectPipeline,
   registerBlinnPhongGlMaterial,
+  registerBuiltInGlModifierSnippets,
   registerDefaultGlRenderEffects,
+  registerShadedGlMaterial,
   registerSpecularPbrGlMaterial,
   registerStandardPbrGlMaterial,
   registerUnlitGlMaterial,
@@ -66,6 +68,8 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
   registerBlinnPhongGlMaterial(state);
   registerStandardPbrGlMaterial(state);
   registerSpecularPbrGlMaterial(state);
+  registerShadedGlMaterial(state);
+  registerBuiltInGlModifierSnippets(state);
 
   const verifyFrame = createGlFrameVerifier(state);
 

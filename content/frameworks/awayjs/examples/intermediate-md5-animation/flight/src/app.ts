@@ -213,8 +213,7 @@ for (const child of md5Children) {
   }
   addNodeChild(characterNode.root, child);
 }
-const jointNodes: SceneNode[] =
-  (skinnedMeshes[0]?.skin as { skeleton?: { joints?: SceneNode[] } })?.skeleton?.joints ?? [];
+const jointNodes = skinnedMeshes[0]?.skin?.skeleton.joints ?? [];
 addNodeChild(characterPositionNode.root, characterNode.root);
 addNodeChild(scene.root, characterPositionNode.root);
 

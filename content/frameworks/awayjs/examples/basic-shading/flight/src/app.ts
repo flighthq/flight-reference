@@ -190,8 +190,11 @@ const torusNormalTex = createTexture({
 });
 torusMaterial.normalMap = torusNormalTex;
 
-// AwayJS assigns weave_normal.jpg to both the normal and specular maps. Convert the same image
-// into a metallicRoughnessMap so per-texel specular variation is preserved in PBR.
+// AwayJS assigns weave_normal.jpg to both the normal and specular maps (using the red channel
+// as specular intensity). This MR map approximates that by varying roughness from the red
+// channel — bright texels get lower roughness (tighter highlights), dark texels get higher
+// roughness. This does not preserve the exact specular strength semantics, but adds per-texel
+// variation that the flat scalar values alone would miss.
 const torusMrImage = createMetallicRoughnessImage(torusWeaveNormalImage, (r) => ({
   roughness: Math.max(0.08, 1 - r * 1.5),
   metallic: 0,

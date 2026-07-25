@@ -155,15 +155,18 @@ const shadowCamera = createCamera3D({
 const shadowBounds = createAabb(-500, -20, -500, 500, 500, 500);
 
 const bodyMaterial = createAwayMatteMaterial(0xffffffff);
+const gobMaterial = createAwayMatteMaterial(0xffffffff);
+gobMaterial.alphaMode = 'blend';
 const groundMaterial = createAwayMatteMaterial(0xffffffff, 10);
 groundMaterial.doubleSided = false;
 
-const [rockDiffuse, rockNormal, bodyDiffuse, bodyNormal, bodySpecular] = await Promise.all([
+const [rockDiffuse, rockNormal, bodyDiffuse, bodyNormal, bodySpecular, gobImage] = await Promise.all([
   loadImageResourceFromUrl('awayjs/assets/rockbase_diffuse.jpg'),
   loadImageResourceFromUrl('awayjs/assets/rockbase_normals.png'),
   loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_diffuse.jpg'),
   loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_normals.png'),
   loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_specular.png'),
+  loadImageResourceFromUrl('awayjs/assets/hellknight/gob.png'),
 ]);
 
 const groundDiffuseTexture = createTexture({ image: rockDiffuse });
@@ -181,6 +184,9 @@ bodyMaterial.baseColorMap = createTexture({ image: bodyDiffuse });
 bodyMaterial.normalMap = createTexture({ image: bodyNormal, colorSpace: 'linear' });
 bodyMaterial.metallicRoughnessMap = createTexture({ image: bodySpecular, colorSpace: 'linear' });
 
+const gobTexture = createTexture({ image: gobImage });
+gobMaterial.baseColorMap = gobTexture;
+
 const groundMesh = createMesh(createPlaneMeshGeometry(50000, 50000, 1, 1), [groundMaterial]);
 addNodeChild(scene.root, groundMesh);
 
@@ -197,21 +203,26 @@ const effects = [fogEffect, createToneMapEffect(), createFxaaEffect()];
 const meshText = await fetch('awayjs/assets/hellknight/hellknight.md5mesh').then((r) => r.text());
 const md5Scene = createSceneFromMd5Mesh(meshText);
 
-// Add all mesh children from the parsed scene to our render scene and assign materials.
-// The MD5 parser sets mesh.skin on each mesh — updateMeshSkin drives skinning per frame.
+// Skeleton joints stay on scene.root so their world matrices are identity-parented.
+// Only render meshes go under characterNode — otherwise updateMeshSkin bakes the
+// character yaw/position into the skin palette, and the renderer applies it again.
 const md5Children = getNodeChildren(md5Scene.root);
 const characterPositionNode = createScene();
 const characterNode = createScene();
 const yAxisVec = createVector3(0, 1, 0);
 const characterQuat = createQuaternion();
 const skinnedMeshes: Mesh[] = [];
+let meshIndex = 0;
 for (const child of md5Children) {
   if (isMesh(child)) {
-    child.materials[0] = bodyMaterial;
+    child.materials[0] = meshIndex === 0 ? bodyMaterial : gobMaterial;
     computeMeshGeometryNormals(child.geometry, child.geometry);
     skinnedMeshes.push(child);
+    addNodeChild(characterNode.root, child);
+    meshIndex++;
+  } else {
+    addNodeChild(scene.root, child);
   }
-  addNodeChild(characterNode.root, child);
 }
 const jointNodes = skinnedMeshes[0]?.skin?.skeleton.joints ?? [];
 addNodeChild(characterPositionNode.root, characterNode.root);
@@ -224,19 +235,16 @@ const animTexts = await Promise.all(
 const clips: Map<string, AnimationClip> = new Map();
 for (let i = 0; i < ANIM_NAMES.length; i++) {
   const clip = parseMd5Anim(animTexts[i]!, jointNodes);
-  const name = ANIM_NAMES[i]!;
-  if (clip && name === WALK_NAME) {
-    // AwayJS consumes joint zero's translation as owner root motion and omits it from the rendered
-    // skeleton. Flight normally applies every channel to the skeleton, which is what causes walk7 to
-    // jump from its final 130-unit origin translation back to zero on every loop.
-    for (const channel of clip.channels) {
-      const target = channel.targetRef as { node?: SceneNode; path?: string } | null;
-      if (target?.node === jointNodes[0] && target.path === 'Translation') {
-        channel.track.values = new Float32Array(channel.track.values.length);
-      }
+  if (!clip) continue;
+  // AwayJS consumes joint zero's translation as owner root motion and omits it from the rendered
+  // skeleton for every clip. Zero it here so the skeleton doesn't shift inside the mesh.
+  for (const channel of clip.channels) {
+    const target = channel.targetRef as { node?: SceneNode; path?: string } | null;
+    if (target?.node === jointNodes[0] && target.path === 'Translation') {
+      channel.track.values = new Float32Array(channel.track.values.length);
     }
   }
-  if (clip) clips.set(name, clip);
+  clips.set(ANIM_NAMES[i]!, clip);
 }
 
 const idleClip = clips.get(IDLE_NAME);

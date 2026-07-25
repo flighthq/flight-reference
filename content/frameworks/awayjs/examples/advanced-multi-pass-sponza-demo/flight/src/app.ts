@@ -203,18 +203,34 @@ function getOrCreateMaterial(name: string): StandardPbrMaterial {
 
 const knownMaterialNames = new Set(Object.keys(materialNameToTextureFile));
 
+const hiddenMeshNames = new Set(['sponza_04', 'sponza_379']);
+const skippedFlagpoleNums = new Set([260, 261, 263, 265, 268, 269, 271, 273]);
+
 function walkAndAssignMaterials(node: SceneNode): void {
   if (isMesh(node)) {
     const mesh = node as Mesh;
+    const meshName = mesh.name ?? '';
+
+    if (hiddenMeshNames.has(meshName)) {
+      mesh.visible = false;
+      for (const child of getNodeChildren(node)) walkAndAssignMaterials(child as SceneNode);
+      return;
+    }
+
     const awdMat = mesh.materials[0] as Material | undefined;
-    const materialName = awdMat?.name ?? mesh.name ?? '';
+    const materialName = awdMat?.name ?? meshName;
     const matchedName = knownMaterialNames.has(materialName) ? materialName : null;
 
     if (matchedName) {
-      mesh.materials[0] = getOrCreateMaterial(matchedName);
+      const num = Number(meshName.substring(7));
+      if (matchedName === 'column_c' && (num < 22 || num > 33)) {
+        mesh.visible = false;
+      } else if (matchedName === 'flagpole' && skippedFlagpoleNums.has(num)) {
+        mesh.visible = false;
+      } else {
+        mesh.materials[0] = getOrCreateMaterial(matchedName);
+      }
     } else {
-      // AwayJS skips sprites whose material name isn't in the expected list — these are
-      // non-visual meshes (collision geometry, LOD duplicates, etc.) that should not render.
       mesh.visible = false;
     }
   }

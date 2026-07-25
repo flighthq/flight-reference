@@ -42,7 +42,7 @@ const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
   backgroundColor: 0x000000ff,
-  effects: [createToneMapEffect({ exposure: 1.0 }), createFxaaEffect()],
+  effects: [createToneMapEffect({ exposure: 0.7 }), createFxaaEffect()],
 });
 
 const scene = createScene();

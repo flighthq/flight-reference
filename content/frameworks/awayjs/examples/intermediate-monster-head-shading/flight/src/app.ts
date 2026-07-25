@@ -218,7 +218,7 @@ function frame(): void {
   state.gl.clearDepth(1);
   state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
   drawGlScene(state, scene.root, camera, lights);
-  endGlRenderEffectPipeline(state, pipeline, [createToneMapEffect(), createFxaaEffect()]);
+  endGlRenderEffectPipeline(state, pipeline, [createToneMapEffect({ exposure: 1.3 }), createFxaaEffect()]);
   verifyFrame();
   requestAnimationFrame(frame);
 }

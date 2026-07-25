@@ -55,12 +55,14 @@ const CONTRAIL_ALPHA_CURVE = [0, 0.55, 0.6, 0.48, 0.32, 0.18, 0.08, 0];
 // drift (near-zero speed), live long, and expand a lot as they age, like ice crystals spreading.
 const exhaustConfig: ParticleEmitterConfig = createParticleEmitterConfig({
   worldSpace: true,
-  maxParticles: 820,
+  // Keep enough particles for the longest lifetime at this spawn rate, so the far end is not recycled
+  // early. At the jet's 220-unit flight speed, 12–15 seconds produces a roughly 2,640–3,300-unit trail.
+  maxParticles: 1_400,
   spawnRate: 90,
   loop: true,
   duration: -1,
-  lifetimeMin: 7,
-  lifetimeMax: 9,
+  lifetimeMin: 12,
+  lifetimeMax: 15,
   emitterShape: 'point',
   speedMin: 0,
   speedMax: 3,

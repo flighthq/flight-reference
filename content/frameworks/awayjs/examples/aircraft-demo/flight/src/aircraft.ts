@@ -5,7 +5,8 @@ import {
   createStandardPbrMaterial,
   createTexture,
   createVector3,
-  getNodeChildren,
+  forEachNodeDescendant,
+  isMesh,
   loadImageResourceFromUrl,
   parseObjMaterialLibrary,
   ImageResourceReferenceKind,
@@ -28,6 +29,12 @@ export interface Aircraft {
 
 const f14AssetBase = 'awayjs/assets/f14';
 
+// The OBJ splits each movable wing across seven named groups. Bind the articulation to those groups
+// directly: their geometry bounds can change when parser internals or vertex layouts change, while the
+// authored group names describe the model parts that are meant to move.
+const LEFT_WING_PART_NAMES = new Set(['Part174', 'Part176', 'Part177', 'Part178', 'Part179', 'Part180', 'Part181']);
+const RIGHT_WING_PART_NAMES = new Set(['Part165', 'Part166', 'Part168', 'Part169', 'Part170', 'Part171', 'Part172']);
+
 // createSceneFromObj emits each MTL map_Kd as an Unresolved external texture ref keyed by bare filename
 // (f14fuselage.jpg). Read those filenames back off the parser's BlinnPhong slots, load each image once
 // from the f14 asset directory, and build one PBR material per texture.
@@ -36,10 +43,7 @@ function f14DiffuseUri(material: BlinnPhongMaterial | null): string | null {
   return ref != null && ref.kind === ImageResourceReferenceKind.External ? ref.uri : null;
 }
 
-// Articulated parts are selected by geometry (createSceneFromObj keeps the group name on the Mesh even
-// though it drops the material name). A mesh's position-bounds midpoint places it into the gear/wing
-// envelopes below; the wing skin is split across many groups and materials, so classifying by envelope is
-// cleaner than a name list, which would miss panels.
+// A mesh's position-bounds midpoint places landing-gear parts into the gear envelope below.
 function meshCenter(mesh: Mesh): Vector3 | null {
   const geometry = mesh.geometry;
   if (!geometry) return null;
@@ -72,7 +76,12 @@ export async function createAircraft(): Promise<Aircraft> {
   const f14Library = parseObjMaterialLibrary(f14MtlText);
 
   const f14Scene = createSceneFromObj(f14ObjText, f14Library);
-  const f14Meshes = getNodeChildren(f14Scene.root).map((child) => child as Mesh);
+  const f14Meshes: Mesh[] = [];
+  // Parser scene structure is not part of the model's articulation: collect meshes at any depth instead
+  // of assuming that every OBJ group is a direct child of the scene root.
+  forEachNodeDescendant(f14Scene.root, (node) => {
+    if (isMesh(node)) f14Meshes.push(node);
+  });
 
   const f14PlainMaterial: StandardPbrMaterial = createStandardPbrMaterial({
     baseColor: 0xccccccff,
@@ -121,6 +130,9 @@ export async function createAircraft(): Promise<Aircraft> {
   const rightWing: Mesh[] = [];
 
   for (const mesh of f14Meshes) {
+    if (RIGHT_WING_PART_NAMES.has(mesh.name ?? '')) rightWing.push(mesh);
+    else if (LEFT_WING_PART_NAMES.has(mesh.name ?? '')) leftWing.push(mesh);
+
     if (mesh.geometry) computeMeshGeometryNormals(mesh.geometry, mesh.geometry);
     const materials = mesh.materials;
     if (!materials) continue;
@@ -163,9 +175,10 @@ export async function createAircraft(): Promise<Aircraft> {
       gearMeshes.push(mesh);
       continue;
     }
-    const inWingBand = center !== null && center.y > -5.5 && center.y < -1 && center.z > 0.2 && center.z < 0.9;
-    if (inWingBand && center.x > 2) rightWing.push(mesh);
-    else if (inWingBand && center.x < -2) leftWing.push(mesh);
+  }
+
+  if (leftWing.length === 0 || rightWing.length === 0) {
+    console.warn('Aircraft wing articulation could not find both authored wing groups.');
   }
 
   const container = f14Scene.root;

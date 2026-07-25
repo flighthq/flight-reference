@@ -202,6 +202,7 @@ const characterPositionNode = createScene();
 const characterNode = createScene();
 const yAxisVec = createVector3(0, 1, 0);
 const characterQuat = createQuaternion();
+const identityQuat = createQuaternion();
 const skinnedMeshes: Mesh[] = [];
 for (const child of md5Children) {
   if (isMesh(child)) {
@@ -380,6 +381,16 @@ function frame(ts: number): void {
   }
 
   applyAnimationClipToScene(activePlayer.clip, activePlayer.time);
+
+  // Flight's skinning reads joint WORLD matrices (getNodeWorldMatrix4), which include ancestor
+  // transforms. The renderer then applies the mesh's own world transform on top of the already-
+  // world-space skinned vertices — doubling any non-identity ancestor. Clear the character
+  // transforms before skinning so joints resolve in model space, then restore for rendering.
+  copyQuaternion(characterNode.root.rotation, identityQuat);
+  invalidateNodeLocalTransform(characterNode.root);
+  setVector3(characterPositionNode.root.position, 0, 0, 0);
+  invalidateNodeLocalTransform(characterPositionNode.root);
+
   for (const mesh of skinnedMeshes) updateMeshSkin(mesh);
 
   spriteRotY += rotationInc;

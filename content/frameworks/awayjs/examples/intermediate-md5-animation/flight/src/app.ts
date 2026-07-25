@@ -37,7 +37,6 @@ import {
   createVector3,
   DEG_TO_RAD,
   drawGlSceneShadowMap,
-  getNodeChildByName,
   getNodeChildren,
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
@@ -198,19 +197,6 @@ const effects = [fogEffect, createToneMapEffect(), createFxaaEffect()];
 const meshText = await fetch('awayjs/assets/hellknight/hellknight.md5mesh').then((r) => r.text());
 const md5Scene = createSceneFromMd5Mesh(meshText);
 
-// Extract skeleton joint nodes from the parsed scene for animation clip binding.
-const skeletonNode = getNodeChildByName(md5Scene.root, 'skeleton');
-const jointNodes: SceneNode[] = [];
-if (skeletonNode) {
-  const collectDescendants = (parent: SceneNode): void => {
-    for (const child of getNodeChildren(parent)) {
-      jointNodes.push(child as SceneNode);
-      collectDescendants(child as SceneNode);
-    }
-  };
-  collectDescendants(skeletonNode);
-}
-
 // Add all mesh children from the parsed scene to our render scene and assign materials.
 // The MD5 parser sets mesh.skin on each mesh — updateMeshSkin drives skinning per frame.
 const md5Children = getNodeChildren(md5Scene.root);
@@ -227,6 +213,7 @@ for (const child of md5Children) {
   }
   addNodeChild(characterNode.root, child);
 }
+const jointNodes = skinnedMeshes[0]?.skin?.skeleton.joints ?? [];
 addNodeChild(characterPositionNode.root, characterNode.root);
 addNodeChild(scene.root, characterPositionNode.root);
 

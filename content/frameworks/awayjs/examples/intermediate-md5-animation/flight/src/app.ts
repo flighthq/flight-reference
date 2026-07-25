@@ -213,12 +213,10 @@ for (const child of md5Children) {
   }
   addNodeChild(characterNode.root, child);
 }
-const jointNodes = skinnedMeshes[0]?.skin?.skeleton.joints ?? [];
-addNodeChild(characterPositionNode.root, characterNode.root);
-addNodeChild(scene.root, characterPositionNode.root);
-
 const jointNodes: SceneNode[] =
   (skinnedMeshes[0]?.skin as { skeleton?: { joints?: SceneNode[] } })?.skeleton?.joints ?? [];
+addNodeChild(characterPositionNode.root, characterNode.root);
+addNodeChild(scene.root, characterPositionNode.root);
 
 const animTexts = await Promise.all(
   ANIM_NAMES.map((name) => fetch(`awayjs/assets/hellknight/${name}.md5anim`).then((r) => r.text())),

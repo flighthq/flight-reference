@@ -118,14 +118,16 @@ const lights = createSceneLights({
 });
 
 // AwayJS applies SpecularFresnelMethod (fresnelPower=3, strength=3, gloss=10) which
-// modulates specular reflections by Fresnel angle — NOT a rim glow. ShadedMaterial's
-// specular + shininess carry the broad, strong highlight; no rim modifier is needed
-// (the rim was adding a white edge glow to everything including the eyes, which the
-// source never had).
+// suppresses specular at direct incidence and amplifies at glancing angles. Flight has
+// no Fresnel modifier, so the specular must be set low to avoid the white sheen that
+// appears on camera-facing surfaces (especially the eyes). The light's own specular
+// multiplier in AwayJS is 0.3, so effective peak ≈ 0.3×3×Fresnel ≈ 0.27 at glancing
+// angles, near 0 at direct incidence. Specular 0.15 + tighter shininess approximates
+// the average. The 0x303040 diffuse tint matches AwayJS's style.color.
 const headMaterial = createShadedMaterial({
-  diffuse: 0xffffffff,
-  shininess: 10,
-  specular: 0.8,
+  diffuse: 0x606878ff,
+  shininess: 36,
+  specular: 0.15,
 });
 
 async function tryLoadImage(url: string): Promise<Awaited<ReturnType<typeof loadImageResourceFromUrl>> | null> {

@@ -42,7 +42,7 @@ const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
   backgroundColor: 0x000000ff,
-  effects: [createToneMapEffect({ exposure: 1.3 }), createFxaaEffect()],
+  effects: [createToneMapEffect({ exposure: 1.0 }), createFxaaEffect()],
 });
 
 const scene = createScene();
@@ -97,14 +97,14 @@ const cubeMaterial = createStandardPbrMaterial({
   metallic: 0.6,
   roughness: 1,
 });
-// Polished metal ring. With no environment map a fully metallic surface would render black (nothing
-// to reflect), so keep it part-metallic with low roughness: it stays visible (the weave shows) but
-// the low roughness makes the sweeping light throw a bright specular highlight across it that tracks
-// the light — the "shiny metal" read from the AwayJS original.
+// AwayJS uses default Phong (gloss ~50, specular 1) with the weave_normal doubling as specular.
+// In PBR, metallic=0 (dielectric) with low roughness produces a similar tight specular highlight
+// from the sweeping light. The metallicRoughnessMap (generated from weave_normal below) adds the
+// per-texel specular variation that AwayJS gets from using weave_normal as both maps.
 const torusMaterial = createStandardPbrMaterial({
   baseColor: 0xffffffff,
-  metallic: 0.4,
-  roughness: 0.22,
+  metallic: 0,
+  roughness: 0.15,
 });
 
 const planeGeometry = createPlaneMeshGeometry(1000, 1000, 1, 1);
@@ -182,8 +182,6 @@ async function createMetalRoughnessFromSpecular(url: string): Promise<ReturnType
   return createTexture({ image: mrImage, colorSpace: 'linear' });
 }
 
-// The 10x5 weave tiling is baked into the torus UVs above, so the weave textures use a plain
-// repeat sampler with no uvScale.
 const torusWeaveNormalImage = await loadImageResourceFromUrl('awayjs/assets/weave_normal.jpg');
 const torusNormalTex = createTexture({
   image: torusWeaveNormalImage,
@@ -191,6 +189,18 @@ const torusNormalTex = createTexture({
   sampler: tilingSampler,
 });
 torusMaterial.normalMap = torusNormalTex;
+
+// AwayJS assigns weave_normal.jpg to both the normal and specular maps. Convert the same image
+// into a metallicRoughnessMap so per-texel specular variation is preserved in PBR.
+const torusMrImage = createMetallicRoughnessImage(torusWeaveNormalImage, (r) => ({
+  roughness: Math.max(0.08, 1 - r * 1.5),
+  metallic: 0,
+}));
+torusMaterial.metallicRoughnessMap = createTexture({
+  image: torusMrImage,
+  colorSpace: 'linear',
+  sampler: tilingSampler,
+});
 
 await Promise.all([
   applyTextures(
@@ -267,8 +277,8 @@ function frame(ts: number): void {
   // AwayJS sweeps the white light around the horizon (nearly horizontal, a slight downward tilt) so
   // the shading and the metal highlights rotate around the objects. Keep it grazing, not overhead —
   // that grazing angle is what lights the metal frame/ring and the floor's normal relief.
-  const lightX = Math.sin(ts / 2500);
-  const lightZ = -Math.cos(ts / 2500);
+  const lightX = Math.sin(ts / 10000);
+  const lightZ = -Math.cos(ts / 10000);
   setDirectionalLightDirection(directional, lightX, -0.01, lightZ);
 
   orbit.update();

@@ -197,9 +197,6 @@ const effects = [fogEffect, createToneMapEffect(), createFxaaEffect()];
 const meshText = await fetch('awayjs/assets/hellknight/hellknight.md5mesh').then((r) => r.text());
 const md5Scene = createSceneFromMd5Mesh(meshText);
 
-// Skeleton joints stay on scene.root so their world matrices are identity-parented.
-// Only render meshes go under characterNode — otherwise updateMeshSkin bakes the
-// character yaw/position into the skin palette, and the renderer applies it again.
 const md5Children = getNodeChildren(md5Scene.root);
 const characterPositionNode = createScene();
 const characterNode = createScene();
@@ -211,10 +208,8 @@ for (const child of md5Children) {
     child.materials[0] = bodyMaterial;
     computeMeshGeometryNormals(child.geometry, child.geometry);
     skinnedMeshes.push(child);
-    addNodeChild(characterNode.root, child);
-  } else {
-    addNodeChild(scene.root, child);
   }
+  addNodeChild(characterNode.root, child);
 }
 const jointNodes = skinnedMeshes[0]?.skin?.skeleton.joints ?? [];
 addNodeChild(characterPositionNode.root, characterNode.root);

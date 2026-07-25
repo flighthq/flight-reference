@@ -155,18 +155,15 @@ const shadowCamera = createCamera3D({
 const shadowBounds = createAabb(-500, -20, -500, 500, 500, 500);
 
 const bodyMaterial = createAwayMatteMaterial(0xffffffff);
-const gobMaterial = createAwayMatteMaterial(0xffffffff);
-gobMaterial.alphaMode = 'blend';
 const groundMaterial = createAwayMatteMaterial(0xffffffff, 10);
 groundMaterial.doubleSided = false;
 
-const [rockDiffuse, rockNormal, bodyDiffuse, bodyNormal, bodySpecular, gobImage] = await Promise.all([
+const [rockDiffuse, rockNormal, bodyDiffuse, bodyNormal, bodySpecular] = await Promise.all([
   loadImageResourceFromUrl('awayjs/assets/rockbase_diffuse.jpg'),
   loadImageResourceFromUrl('awayjs/assets/rockbase_normals.png'),
   loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_diffuse.jpg'),
   loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_normals.png'),
   loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_specular.png'),
-  loadImageResourceFromUrl('awayjs/assets/hellknight/gob.png'),
 ]);
 
 const groundDiffuseTexture = createTexture({ image: rockDiffuse });
@@ -183,9 +180,6 @@ groundMaterial.normalScale = 0.75;
 bodyMaterial.baseColorMap = createTexture({ image: bodyDiffuse });
 bodyMaterial.normalMap = createTexture({ image: bodyNormal, colorSpace: 'linear' });
 bodyMaterial.metallicRoughnessMap = createTexture({ image: bodySpecular, colorSpace: 'linear' });
-
-const gobTexture = createTexture({ image: gobImage });
-gobMaterial.baseColorMap = gobTexture;
 
 const groundMesh = createMesh(createPlaneMeshGeometry(50000, 50000, 1, 1), [groundMaterial]);
 addNodeChild(scene.root, groundMesh);
@@ -212,14 +206,12 @@ const characterNode = createScene();
 const yAxisVec = createVector3(0, 1, 0);
 const characterQuat = createQuaternion();
 const skinnedMeshes: Mesh[] = [];
-let meshIndex = 0;
 for (const child of md5Children) {
   if (isMesh(child)) {
-    child.materials[0] = meshIndex === 0 ? bodyMaterial : gobMaterial;
+    child.materials[0] = bodyMaterial;
     computeMeshGeometryNormals(child.geometry, child.geometry);
     skinnedMeshes.push(child);
     addNodeChild(characterNode.root, child);
-    meshIndex++;
   } else {
     addNodeChild(scene.root, child);
   }

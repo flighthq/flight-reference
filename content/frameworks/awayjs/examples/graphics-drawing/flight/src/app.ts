@@ -133,7 +133,7 @@ for (let i = 0; i < numSpritesV; i++) {
 
 function frame(): void {
   for (let i = 0; i < animShapes.length; i++) {
-    animShapes[i].rotation += animSpeeds[i] * (Math.PI / 180);
+    animShapes[i].rotation += animSpeeds[i];
     animSpeeds[i] += 1 - 2 * Math.random();
     animSpeeds[i] *= 0.98;
     invalidateNodeLocalTransform(animShapes[i]);

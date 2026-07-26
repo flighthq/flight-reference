@@ -7,7 +7,7 @@ import {
   BitmapKind,
   BlendMode,
   createBitmap,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResourceFromCanvas,
   createRichText,
   createShape,
@@ -54,7 +54,7 @@ const { height, render, width } = await createFunctionalTarget({
   kinds: [BitmapKind, RichTextKind, ShapeKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const W = width;
 const H = height;
@@ -101,10 +101,10 @@ const naturalW = Math.max(squareImg.width, dx + circleImg.width);
 const naturalH = Math.max(squareImg.height, dy + circleImg.height);
 const imgScale = Math.min((cellW - PADDING * 2) / naturalW, (cellH - LABEL_SPACE - PADDING * 2) / naturalH);
 
-const blendLayer = createDisplayContainer();
+const blendLayer = createDisplayObject();
 addNodeChild(root, blendLayer);
 
-const labelLayer = createDisplayContainer();
+const labelLayer = createDisplayObject();
 addNodeChild(root, labelLayer);
 
 for (let i = 0; i < BLEND_ENTRIES.length; i++) {
@@ -114,7 +114,7 @@ for (let i = 0; i < BLEND_ENTRIES.length; i++) {
   const cx = cellW * col + cellW / 2;
   const cy = cellH * row + (cellH - LABEL_SPACE) / 2;
 
-  const group = createDisplayContainer();
+  const group = createDisplayObject();
   group.scaleX = imgScale;
   group.scaleY = imgScale;
   group.x = cx - (naturalW * imgScale) / 2;

@@ -5,14 +5,14 @@ import {
   BitmapKind,
   connectInputToInteraction,
   createBitmap,
-  createDisplayContainer,
+  createDisplayObject,
   createInteractionManager,
   createInputManager,
   createRectangle,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultHitTests,
   TextLabelKind,
 } from '@flighthq/sdk';
@@ -61,7 +61,7 @@ const target = await createFunctionalTarget({
   kinds: [BitmapKind, TextLabelKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
 const bgBmp = createBitmap();
@@ -70,7 +70,7 @@ addNodeChild(root, bgBmp);
 
 const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
 
-const movie = createDisplayContainer();
+const movie = createDisplayObject();
 movie.x = CenterX - FrameSize / 2;
 movie.y = CenterY - FrameSize / 2;
 addNodeChild(root, movie);
@@ -114,7 +114,7 @@ backBtn.root.y = GameHeight - 50 + 4;
 backBtn.connect(interaction);
 addNodeChild(root, backBtn.root);
 
-prepareDisplayObjectRender(target.state, root);
+prepareScene2DRender(target.state, root);
 target.render(root);
 
 let lastFrameTime = performance.now();
@@ -125,7 +125,7 @@ function enterFrame(now: number): void {
     currentFrame = (currentFrame + 1) % frames.length;
     showFrame(currentFrame);
   }
-  prepareDisplayObjectRender(target.state, root);
+  prepareScene2DRender(target.state, root);
   target.render(root);
   requestAnimationFrame(enterFrame);
 }

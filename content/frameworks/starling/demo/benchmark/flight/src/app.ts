@@ -6,7 +6,7 @@ import {
   connectInputToInteraction,
   createBitmap,
   createBitmapText,
-  createDisplayContainer,
+  createDisplayObject,
   createGlyphSourceFromBitmapFont,
   createInteractionManager,
   createInputManager,
@@ -19,7 +19,7 @@ import {
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   parseBitmapFontXml,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   QuadBatchKind,
   registerDefaultHitTests,
   removeNodeChild,
@@ -48,7 +48,7 @@ const target = await createFunctionalTarget({
   kinds: [BitmapKind, QuadBatchKind, RichTextKind, TextLabelKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
 const bgBmp = createBitmap();
@@ -58,7 +58,7 @@ addNodeChild(root, bgBmp);
 const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
 const objectRectangle = createRectangle(770, 173, 32, 32);
 
-const container = createDisplayContainer();
+const container = createDisplayObject();
 container.x = CenterX;
 container.y = CenterY;
 addNodeChild(root, container);
@@ -278,7 +278,7 @@ function enterFrame(now: number): void {
     }
   }
 
-  prepareDisplayObjectRender(target.state, root);
+  prepareScene2DRender(target.state, root);
   target.render(root);
   requestAnimationFrame(enterFrame);
 }

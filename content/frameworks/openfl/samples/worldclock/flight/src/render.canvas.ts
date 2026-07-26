@@ -11,11 +11,11 @@ import {
   defaultCanvasMoveTo,
   defaultCanvasShapeRenderer,
   defaultCanvasTextLabelRenderer,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
+  renderCanvasScene2D,
   createMatrix,
 } from '@flighthq/sdk';
 
@@ -51,7 +51,7 @@ export function setSize(width: number, height: number): void {
 }
 
 export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+  if (!prepareScene2DRender(state, root)) return;
   renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, root);
+  renderCanvasScene2D(state, root);
 }

@@ -1,12 +1,12 @@
-import type { Material, Mesh, PerspectiveProjection, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
+import type { Material, Mesh, PerspectiveProjection, Node3D, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   bakeGlEnvironmentIbl,
   createEnvironment,
   createFxaaEffect,
-  createScene,
-  createSceneFromAwd2,
-  createSceneLights,
+  createScene3D,
+  createScene3DFromAwd2,
+  createScene3DLights,
   createTexture,
   createToneMapEffect,
   getNodeChildren,
@@ -36,7 +36,7 @@ const ctx = createScene3DContext({
   effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
-const scene = createScene();
+const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 60 });
 
@@ -52,7 +52,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
   ambient: 0.35,
   ambientColor: 0x808090,
 });
-const lights = createSceneLights({ ambient, directional });
+const lights = createScene3DLights({ ambient, directional });
 
 const materialNameToTextureFile: Record<string, string> = {
   arch: 'arch_diff.jpg',
@@ -206,14 +206,14 @@ const knownMaterialNames = new Set(Object.keys(materialNameToTextureFile));
 const hiddenMeshNames = new Set(['sponza_04', 'sponza_379']);
 const skippedFlagpoleNums = new Set([260, 261, 263, 265, 268, 269, 271, 273]);
 
-function walkAndAssignMaterials(node: SceneNode): void {
+function walkAndAssignMaterials(node: Node3D): void {
   if (isMesh(node)) {
     const mesh = node as Mesh;
     const meshName = mesh.name ?? '';
 
     if (hiddenMeshNames.has(meshName)) {
       mesh.visible = false;
-      for (const child of getNodeChildren(node)) walkAndAssignMaterials(child as SceneNode);
+      for (const child of getNodeChildren(node)) walkAndAssignMaterials(child as Node3D);
       return;
     }
 
@@ -236,11 +236,11 @@ function walkAndAssignMaterials(node: SceneNode): void {
   }
 
   for (const child of getNodeChildren(node)) {
-    walkAndAssignMaterials(child as SceneNode);
+    walkAndAssignMaterials(child as Node3D);
   }
 }
 
-const awdScene = createSceneFromAwd2(new Uint8Array(awdBuffer));
+const awdScene = createScene3DFromAwd2(new Uint8Array(awdBuffer));
 
 walkAndAssignMaterials(awdScene.root);
 

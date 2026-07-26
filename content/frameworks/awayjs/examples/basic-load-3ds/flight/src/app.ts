@@ -13,15 +13,15 @@ import {
   createMesh,
   createOrthographicProjection,
   createPlaneMeshGeometry,
-  createScene,
-  createSceneFrom3ds,
-  createSceneNode,
-  createSceneLights,
+  createScene3D,
+  createScene3DFrom3ds,
+  createNode3D,
+  createScene3DLights,
   createSpecularPbrMaterial,
   createTexture,
   createToneMapEffect,
-  drawGlScene,
-  drawGlSceneShadowMap,
+  drawGlScene3D,
+  drawGlScene3DShadowMap,
   endGlRenderEffectPipeline,
   getNodeChildren,
   loadImageResourceFromUrl,
@@ -72,7 +72,7 @@ const verifyFrame = createGlFrameVerifier(state);
 const effects = [createToneMapEffect({ operator: 'aces' }), createFxaaEffect()];
 let pipeline: GlRenderEffectPipeline | null = null;
 
-const scene = createScene();
+const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 60, far: 2100 });
 
@@ -95,7 +95,7 @@ const shadowCamera = createCamera3D({
 });
 const shadowBounds = createAabb(-500, -20, -500, 500, 250, 500);
 
-const lights = createSceneLights({ ambient, directional });
+const lights = createScene3DLights({ ambient, directional });
 
 // AwayJS sets the ground's specularMethod.strength = 0 (fully matte). Plain metallic-roughness keeps a
 // fixed 0.04 dielectric spec that can't be zeroed (glossy highlight when panning, or a broad grey wash
@@ -119,7 +119,7 @@ const [modelBuffer, antImage, sandImage] = await Promise.all([
 
 groundMaterial.standard.baseColorMap = createTexture({ image: sandImage });
 
-const modelScene = createSceneFrom3ds(new Uint8Array(modelBuffer));
+const modelScene = createScene3DFrom3ds(new Uint8Array(modelBuffer));
 const antTexture = createTexture({ image: antImage });
 
 const antMaterial = createAwayMatteMaterial(0xffffffff);
@@ -141,7 +141,7 @@ for (const child of getNodeChildren(modelScene.root)) {
   }
 }
 
-const modelContainer = createSceneNode();
+const modelContainer = createNode3D();
 for (const child of getNodeChildren(modelScene.root)) {
   addNodeChild(modelContainer, child);
 }
@@ -196,7 +196,7 @@ function frame(ts: number): void {
 
   // Shadow depth pass from the light's view, before the lit scene draw samples it.
   configureDirectionalShadowCamera3D(shadowCamera, dir, shadowBounds);
-  drawGlSceneShadowMap(state, scene.root, shadowCamera);
+  drawGlScene3DShadowMap(state, scene.root, shadowCamera);
 
   // Effect-pipeline present: draw the scene into the pipeline's HDR target (clearing background and
   // depth as a direct present would), then run the post-process stack (ACES tone map) to the canvas.
@@ -209,7 +209,7 @@ function frame(ts: number): void {
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  drawGlScene(state, scene.root, camera, lights);
+  drawGlScene3D(state, scene.root, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, effects);
   verifyFrame();
   requestAnimationFrame(frame);

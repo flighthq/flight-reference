@@ -5,8 +5,8 @@ import type {
   GlRenderEffectPipeline,
   GlRenderState,
   RenderEffect,
-  SceneLights,
-  SceneNode,
+  Scene3DLights,
+  Node3D,
 } from '@flighthq/sdk';
 import {
   beginGlRenderEffectPipeline,
@@ -15,7 +15,7 @@ import {
   createGlRenderState,
   createToneMapEffect,
   drawGlEnvironmentSkybox,
-  drawGlScene,
+  drawGlScene3D,
   endGlRenderEffectPipeline,
   registerBlinnPhongGlMaterial,
   registerBuiltInGlModifierSnippets,
@@ -31,7 +31,7 @@ import { createGlFrameVerifier } from './verify';
 export interface Scene3DContext {
   canvas: HTMLCanvasElement;
   height: number;
-  render: (scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>) => void;
+  render: (scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>) => void;
   state: GlRenderState;
   width: number;
 }
@@ -91,7 +91,7 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
       gl.depthMask(true);
       gl.clearDepth(1);
       gl.clear(gl.DEPTH_BUFFER_BIT);
-      drawGlScene(state, scene, camera, lights);
+      drawGlScene3D(state, scene, camera, lights);
       endGlRenderEffectPipeline(state, pipeline, effects);
 
       verifyFrame();
@@ -110,9 +110,9 @@ export function renderSkyboxScene(
   canvas: HTMLCanvasElement,
   ref: SkyboxRenderState,
   environment: Readonly<Environment>,
-  scene: Readonly<SceneNode>,
+  scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLights>,
+  lights: Readonly<Scene3DLights>,
   effects: ReadonlyArray<RenderEffect | Adjustment> = [createToneMapEffect()],
 ): void {
   if (ref.pipeline === null) {
@@ -125,6 +125,6 @@ export function renderSkyboxScene(
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   drawGlEnvironmentSkybox(state, environment, camera, canvas.width / canvas.height);
-  drawGlScene(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, ref.pipeline, effects);
 }

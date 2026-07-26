@@ -34,7 +34,7 @@ import {
   computeRenderTargetSize,
   copyMatrix,
   createBitmap,
-  createDisplayContainer,
+  createDisplayObject,
   createMatrix,
   createRectangle,
   createRenderCache,
@@ -47,9 +47,9 @@ import {
   ensureCanvasRenderCacheTarget,
   getRenderProxy2D,
   loadImageResourceFromUrl,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
   setGlRenderTransform2D,
   setDomCssFilter,
   ShapeKind,
@@ -64,7 +64,7 @@ const target = await createFunctionalTarget({
   kinds: [BitmapKind, ShapeKind],
   cache: true,
 });
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 // The functional target's renderTransform2D already carries devicePixelRatio, so the scene is
 // authored directly in logical units — matching the OpenFL reference (800×600, bitmaps at natural
@@ -266,7 +266,7 @@ function renderGlGlowFrame(
   pool: GlRenderTargetPool,
   root: DisplayObject,
 ): void {
-  prepareDisplayObjectRender(state, root);
+  prepareScene2DRender(state, root);
 
   for (const entry of entries) {
     const renderProxy = getRenderProxy2D(state, entry.node);
@@ -284,7 +284,7 @@ function renderGlGlowFrame(
     beginGlRenderPass(state, source, { preserveColor: true, preserveDepth: true });
     setGlRenderTransform2D(state, _identity);
     clearGlRenderTarget(state, source);
-    renderGlDisplayObject(state, node);
+    renderGlScene2D(state, node);
     clearGlRenderTarget(state, dest);
     if (filter.kind === 'InnerGlowEffect') {
       applyInnerGlowEffectToGl(state, source, dest, pool, filter);
@@ -302,7 +302,7 @@ function renderGlGlowFrame(
   }
 
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
 
   for (const entry of entries) {
     const renderProxy = getRenderProxy2D(state, entry.node);

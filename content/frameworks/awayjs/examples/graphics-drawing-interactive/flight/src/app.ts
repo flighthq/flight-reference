@@ -11,7 +11,7 @@ import {
   attachPointerInput,
   clearShapeCommands,
   connectSignal,
-  createDisplayContainer,
+  createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
   createInputManager,
@@ -22,12 +22,12 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   invalidateNodeRender,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
@@ -69,7 +69,7 @@ const verifyFrame = createGlFrameVerifier(state);
 const drawingPath: DrawingPathEntry[] = [];
 let isMouseDown = false;
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const bgShape = createShape();
 appendShapeBeginFill(bgShape, 0xdddddd);
@@ -171,9 +171,9 @@ function enterFrame(): void {
     invalidateNodeLocalTransform(circleGraphic);
   }
 
-  prepareDisplayObjectRender(state, root);
+  prepareScene2DRender(state, root);
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   verifyFrame();
   requestAnimationFrame(enterFrame);
 }

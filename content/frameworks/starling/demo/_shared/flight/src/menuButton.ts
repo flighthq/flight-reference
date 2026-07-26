@@ -3,7 +3,7 @@ import {
   addNodeChild,
   connectInteractionSignal,
   createBitmap,
-  createDisplayContainer,
+  createDisplayObject,
   createRectangle,
   createTextLabel,
   enableInteractionSignals,
@@ -33,7 +33,7 @@ export interface MenuButton {
 }
 
 export function createMenuButton(config: MenuButtonConfig): MenuButton {
-  const container = createDisplayContainer();
+  const container = createDisplayObject();
 
   const baseBmp = createBitmap();
   baseBmp.data.image = config.atlas;

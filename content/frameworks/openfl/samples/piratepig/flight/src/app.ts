@@ -62,7 +62,7 @@ const [bgImage, footerImage, logoImage, font, theme, sound3, sound4, sound5, ...
 
 const sounds = [theme, sound3, sound4, sound5];
 
-// ── Scene ──────────────────────────────────────────────────────────────────
+// ── Scene3D ──────────────────────────────────────────────────────────────────
 
 registerHitTest(DisplayObjectKind, hitTestGraphLocalBounds);
 

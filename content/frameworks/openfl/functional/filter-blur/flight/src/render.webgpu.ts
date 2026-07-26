@@ -20,12 +20,12 @@ import {
   drawWgpuRenderTargetResult,
   endWgpuRenderPass,
   getRenderProxy2D,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultWgpuMaterial,
   registerRenderer,
   registerWgpuShapeCommands,
   renderWgpuBackground,
-  renderWgpuDisplayObject,
+  renderWgpuScene2D,
   RichTextKind,
   ShapeKind,
   submitWgpuRenderPass,
@@ -91,7 +91,7 @@ export function applyBlurEffects(list: { node: DisplayObject; filter: BlurEffect
 export function render(root: DisplayObject): void {
   // One prepare pass builds the render nodes and their scene transforms. Capture each
   // blurred node's scene transform before the offscreen pass overwrites transform2D.
-  prepareDisplayObjectRender(state, root);
+  prepareScene2DRender(state, root);
   for (const entry of _entries) {
     const renderProxy = getRenderProxy2D(state, entry.node);
     if (renderProxy !== undefined) copyMatrix(entry.sceneTransform, renderProxy.transform2D);
@@ -122,7 +122,7 @@ export function render(root: DisplayObject): void {
     setFlippedTransform(renderProxy.transform2D, padding - _bounds.x, padding - _bounds.y, h);
 
     beginWgpuRenderPass(state, source);
-    renderWgpuDisplayObject(state, node);
+    renderWgpuScene2D(state, node);
     applyGaussianBlurToWgpu(state, source, blurred, scratch, filter);
     endWgpuRenderPass(state);
   }
@@ -136,7 +136,7 @@ export function render(root: DisplayObject): void {
     copyMatrix(renderProxy.transform2D, entry.sceneTransform);
     renderProxy.visible = false;
   }
-  renderWgpuDisplayObject(state, root);
+  renderWgpuScene2D(state, root);
   for (const entry of _entries) {
     const renderProxy = getRenderProxy2D(state, entry.node);
     if (renderProxy === undefined) continue;

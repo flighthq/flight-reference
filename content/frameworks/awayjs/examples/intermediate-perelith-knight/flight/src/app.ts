@@ -22,14 +22,14 @@ import {
   createMesh,
   createOrthographicProjection,
   createPlaneMeshGeometry,
-  createScene,
-  createSceneFromMd2,
-  createSceneLights,
+  createScene3D,
+  createScene3DFromMd2,
+  createScene3DLights,
   createTexture,
   createTilingSampler,
   createToneMapEffect,
-  drawGlScene,
-  drawGlSceneShadowMap,
+  drawGlScene3D,
+  drawGlScene3DShadowMap,
   endGlRenderEffectPipeline,
   getNodeChildren,
   invalidateNodeLocalTransform,
@@ -76,7 +76,7 @@ const verifyFrame = createGlFrameVerifier(state);
 
 let pipeline: GlRenderEffectPipeline | null = null;
 
-const scene = createScene();
+const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 60, far: 5000 });
 
@@ -96,7 +96,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
 });
 directional.castsShadow = true;
 directional.pcfRadius = 2;
-const lights = createSceneLights({ ambient, directional });
+const lights = createScene3DLights({ ambient, directional });
 
 const floorMaterial = createBlinnPhongMaterial({
   diffuse: 0xffffffff,
@@ -131,7 +131,7 @@ const floor = createMesh(floorGeometry, [floorMaterial]);
 addNodeChild(scene.root, floor);
 
 const md2Buffer = await fetch('awayjs/assets/pknight.md2').then((r) => r.arrayBuffer());
-const md2Scene = await createSceneFromMd2(new Uint8Array(md2Buffer));
+const md2Scene = await createScene3DFromMd2(new Uint8Array(md2Buffer));
 const md2Clips = Object.values(md2Scene.animations);
 
 let templateMesh: Mesh | null = null;
@@ -322,7 +322,7 @@ function frame(now: number): void {
   }
 
   orbit.update();
-  drawGlSceneShadowMap(state, scene.root, shadowCamera);
+  drawGlScene3DShadowMap(state, scene.root, shadowCamera);
   if (pipeline === null) {
     pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
   }
@@ -331,7 +331,7 @@ function frame(now: number): void {
   state.gl.depthMask(true);
   state.gl.clearDepth(1);
   state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
-  drawGlScene(state, scene.root, camera, lights);
+  drawGlScene3D(state, scene.root, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, [createToneMapEffect({ exposure: 2.0 }), createFxaaEffect()]);
   verifyFrame();
   requestAnimationFrame(frame);

@@ -8,7 +8,7 @@ import {
   appendShapeMoveTo,
   clearShapeCommands,
   convertNodeVector2LocalToGlobal,
-  createDisplayContainer,
+  createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
   createMatrix,
@@ -17,12 +17,12 @@ import {
   defaultGlShapeRenderer,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
@@ -69,7 +69,7 @@ const offsets: [number, number][] = [
   [50, 50],
 ];
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 // SDK v652's canvas-backed Shape renderer does not flush a pending path when lineStyle changes. If all
 // three styles are appended to one Shape, its final white 5px style strokes the entire path. Separate
@@ -83,7 +83,7 @@ for (const tracer of tracerShapes) {
   addNodeChild(root, tracer.shape);
 }
 
-const movingRect = createDisplayContainer();
+const movingRect = createDisplayObject();
 movingRect.x = WIDTH / 2;
 movingRect.y = HEIGHT / 2;
 invalidateNodeLocalTransform(movingRect);
@@ -176,9 +176,9 @@ function enterFrame(): void {
   invalidateNodeLocalTransform(movingRect);
 
   drawTracerShape();
-  prepareDisplayObjectRender(state, root);
+  prepareScene2DRender(state, root);
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   verifyFrame();
   requestAnimationFrame(enterFrame);
 }

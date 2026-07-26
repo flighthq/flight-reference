@@ -8,12 +8,12 @@ import {
   BitmapKind,
   createBitmap,
   createClipRegionFromRectangle,
-  createDisplayContainer,
+  createDisplayObject,
   createRichText,
   createShape,
   loadImageResourceFromUrl,
   RichTextKind,
-  setDisplayObjectClip,
+  setNode2DClip,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -26,7 +26,7 @@ const { height, render, width } = await createFunctionalTarget({
   kinds: [BitmapKind, RichTextKind, ShapeKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const W = width;
 const H = height;
@@ -58,7 +58,7 @@ for (let i = 0; i < 4; i++) {
   const bmpY = ih / 2;
 
   if (i === 2 || i === 3) {
-    const container = createDisplayContainer();
+    const container = createDisplayObject();
     container.x = bmpX;
     container.y = bmpY;
     addNodeChild(root, container);
@@ -69,11 +69,11 @@ for (let i = 0; i < 4; i++) {
     addNodeChild(container, bmp);
 
     if (i === 2) {
-      setDisplayObjectClip(container, createClipRegionFromRectangle({ x: 0, y: 0, width: iw / 2, height: ih / 2 }));
+      setNode2DClip(container, createClipRegionFromRectangle({ x: 0, y: 0, width: iw / 2, height: ih / 2 }));
       bmp.x = -iw / 2;
       bmp.y = -ih / 2;
     } else {
-      setDisplayObjectClip(container, createClipRegionFromRectangle({ x: 0, y: 0, width: W * 10, height: H * 10 }));
+      setNode2DClip(container, createClipRegionFromRectangle({ x: 0, y: 0, width: W * 10, height: H * 10 }));
       bmp.x = -W * 2;
       bmp.y = -H * 2;
     }
@@ -85,8 +85,7 @@ for (let i = 0; i < 4; i++) {
     bmp.y = bmpY;
     addNodeChild(root, bmp);
 
-    if (i === 1)
-      setDisplayObjectClip(bmp, createClipRegionFromRectangle({ x: 0, y: 0, width: iw / 2, height: ih / 2 }));
+    if (i === 1) setNode2DClip(bmp, createClipRegionFromRectangle({ x: 0, y: 0, width: iw / 2, height: ih / 2 }));
   }
 }
 
@@ -98,7 +97,7 @@ for (let i = 0; i < 4; i++) {
   const tfY = H / 2 + H / 4;
 
   if (i === 2 || i === 3) {
-    const container = createDisplayContainer();
+    const container = createDisplayObject();
     container.x = tfX;
     container.y = tfY;
     addNodeChild(root, container);
@@ -111,11 +110,11 @@ for (let i = 0; i < 4; i++) {
     addNodeChild(container, tf);
 
     if (i === 2) {
-      setDisplayObjectClip(container, createClipRegionFromRectangle({ x: 0, y: 0, width: 200, height: 20 }));
+      setNode2DClip(container, createClipRegionFromRectangle({ x: 0, y: 0, width: 200, height: 20 }));
       tf.x = 0;
       tf.y = -40;
     } else {
-      setDisplayObjectClip(container, createClipRegionFromRectangle({ x: 0, y: 0, width: W * 10, height: H * 10 }));
+      setNode2DClip(container, createClipRegionFromRectangle({ x: 0, y: 0, width: W * 10, height: H * 10 }));
       tf.x = -W * 2;
       tf.y = -H * 2;
     }
@@ -129,7 +128,7 @@ for (let i = 0; i < 4; i++) {
     tf.data.text = textValues[i];
     addNodeChild(root, tf);
 
-    if (i === 1) setDisplayObjectClip(tf, createClipRegionFromRectangle({ x: 0, y: 0, width: 200, height: 200 }));
+    if (i === 1) setNode2DClip(tf, createClipRegionFromRectangle({ x: 0, y: 0, width: 200, height: 200 }));
   }
 }
 

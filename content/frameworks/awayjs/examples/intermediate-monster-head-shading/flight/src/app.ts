@@ -1,4 +1,4 @@
-import type { GlRenderEffectPipeline, PerspectiveProjection, SceneNode } from '@flighthq/sdk';
+import type { GlRenderEffectPipeline, PerspectiveProjection, Node3D } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -10,14 +10,14 @@ import {
   createGlRenderEffectPipeline,
   createGlRenderState,
   createOrthographicProjection,
-  createScene,
-  createSceneFromAwd2,
-  createSceneLights,
+  createScene3D,
+  createScene3DFromAwd2,
+  createScene3DLights,
   createShadedMaterial,
   createTexture,
   createToneMapEffect,
-  drawGlScene,
-  drawGlSceneShadowMap,
+  drawGlScene3D,
+  drawGlScene3DShadowMap,
   endGlRenderEffectPipeline,
   getNodeChildren,
   invalidateNodeLocalTransform,
@@ -60,7 +60,7 @@ const verifyFrame = createGlFrameVerifier(state);
 
 let pipeline: GlRenderEffectPipeline | null = null;
 
-const scene = createScene();
+const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 60, far: 1000 });
 
@@ -111,7 +111,7 @@ redLight.position.x = -2000;
 redLight.position.z = -800;
 redLight.position.y = -400;
 
-const lights = createSceneLights({
+const lights = createScene3DLights({
   ambient,
   directional,
   point: [blueLight, redLight],
@@ -148,9 +148,9 @@ if (diffuseImage) headMaterial.diffuseMap = createTexture({ image: diffuseImage 
 if (specularImage) headMaterial.specularMap = createTexture({ image: specularImage, colorSpace: 'linear' });
 if (normalImage) headMaterial.normalMap = createTexture({ image: normalImage, colorSpace: 'linear' });
 
-const awdScene = createSceneFromAwd2(new Uint8Array(awdBuffer));
+const awdScene = createScene3DFromAwd2(new Uint8Array(awdBuffer));
 
-function assignMaterialToMeshes(node: SceneNode): void {
+function assignMaterialToMeshes(node: Node3D): void {
   if (isMesh(node)) {
     if (node.materials.length === 0) node.materials.push(headMaterial);
     for (let i = 0; i < node.materials.length; i++) {
@@ -210,14 +210,14 @@ function frame(): void {
   }
 
   configureDirectionalShadowCamera3D(shadowCamera, lightDir, shadowBounds);
-  drawGlSceneShadowMap(state, scene.root, shadowCamera);
+  drawGlScene3DShadowMap(state, scene.root, shadowCamera);
 
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   state.gl.depthMask(true);
   state.gl.clearDepth(1);
   state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
-  drawGlScene(state, scene.root, camera, lights);
+  drawGlScene3D(state, scene.root, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, [createToneMapEffect({ exposure: 1.3 }), createFxaaEffect()]);
   verifyFrame();
   requestAnimationFrame(frame);

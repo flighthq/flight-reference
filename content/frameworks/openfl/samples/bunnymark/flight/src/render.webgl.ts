@@ -3,7 +3,7 @@ import {
   createGlCanvasElement,
   createGlRenderState,
   defaultGlQuadBatchRenderer,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   QuadBatchKind,
   registerDefaultGlMaterial,
   registerRenderer,
@@ -28,7 +28,7 @@ state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 
 export function render(root: QuadBatch): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+  if (!prepareScene2DRender(state, root)) return;
   renderGlBackground(state);
   renderGlSprite(state, root);
 }

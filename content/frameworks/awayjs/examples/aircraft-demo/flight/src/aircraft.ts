@@ -1,7 +1,7 @@
-import type { BlinnPhongMaterial, Mesh, SceneNode, StandardPbrMaterial, Vector3 } from '@flighthq/sdk';
+import type { BlinnPhongMaterial, Mesh, Node3D, StandardPbrMaterial, Vector3 } from '@flighthq/sdk';
 import {
   computeMeshGeometryNormals,
-  createSceneFromObj,
+  createScene3DFromObj,
   createStandardPbrMaterial,
   createTexture,
   createVector3,
@@ -20,7 +20,7 @@ import {
 // material per texture). Parts with no map_Kd fall back to a plain metallic material.
 export interface Aircraft {
   // Root node the demo scales/rotates/flies. Not yet parented — the caller adds it to the scene.
-  container: SceneNode;
+  container: Node3D;
   // Articulated groups, driven by the caller each frame.
   gearMeshes: Mesh[];
   leftWing: Mesh[];
@@ -35,7 +35,7 @@ const f14AssetBase = 'awayjs/assets/f14';
 const LEFT_WING_PART_NAMES = new Set(['Part174', 'Part176', 'Part177', 'Part178', 'Part179', 'Part180', 'Part181']);
 const RIGHT_WING_PART_NAMES = new Set(['Part165', 'Part166', 'Part168', 'Part169', 'Part170', 'Part171', 'Part172']);
 
-// createSceneFromObj emits each MTL map_Kd as an Unresolved external texture ref keyed by bare filename
+// createScene3DFromObj emits each MTL map_Kd as an Unresolved external texture ref keyed by bare filename
 // (f14fuselage.jpg). Read those filenames back off the parser's BlinnPhong slots, load each image once
 // from the f14 asset directory, and build one PBR material per texture.
 function f14DiffuseUri(material: BlinnPhongMaterial | null): string | null {
@@ -75,7 +75,7 @@ export async function createAircraft(): Promise<Aircraft> {
   const f14MtlText = await fetch(`${f14AssetBase}/f14d.mtl`).then((r) => r.text());
   const f14Library = parseObjMaterialLibrary(f14MtlText);
 
-  const f14Scene = createSceneFromObj(f14ObjText, f14Library);
+  const f14Scene = createScene3DFromObj(f14ObjText, f14Library);
   const f14Meshes: Mesh[] = [];
   // Parser scene structure is not part of the model's articulation: collect meshes at any depth instead
   // of assuming that every OBJ group is a direct child of the scene root.

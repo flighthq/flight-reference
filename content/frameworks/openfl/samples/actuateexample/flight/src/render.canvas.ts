@@ -6,11 +6,11 @@ import {
   defaultCanvasDrawCircle,
   defaultCanvasEndFill,
   defaultCanvasShapeRenderer,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
+  renderCanvasScene2D,
   ShapeKind,
   createMatrix,
 } from '@flighthq/sdk';
@@ -31,7 +31,7 @@ state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 
 export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+  if (!prepareScene2DRender(state, root)) return;
   renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, root);
+  renderCanvasScene2D(state, root);
 }

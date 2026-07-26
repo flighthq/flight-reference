@@ -19,11 +19,11 @@ import {
   drawGlRenderTargetResult,
   endGlRenderPass,
   getRenderProxy2D,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
   setGlRenderTransform2D,
   RichTextKind,
 } from '@flighthq/sdk';
@@ -81,7 +81,7 @@ export function applyBlurEffects(list: { node: DisplayObject; filter: BlurEffect
 export function render(root: DisplayObject): void {
   // One prepare pass builds the render nodes and their scene transforms. Capture each blurred
   // node's scene transform now — the offscreen pass below overwrites transform2D in place.
-  prepareDisplayObjectRender(state, root);
+  prepareScene2DRender(state, root);
   for (const entry of _entries) {
     const renderProxy = getRenderProxy2D(state, entry.node);
     if (renderProxy !== undefined) copyMatrix(entry.sceneTransform, renderProxy.transform2D);
@@ -104,7 +104,7 @@ export function render(root: DisplayObject): void {
     beginGlRenderPass(state, source, { preserveColor: true, preserveDepth: true });
     setGlRenderTransform2D(state, _identity);
     clearGlRenderTarget(state, source);
-    renderGlDisplayObject(state, node);
+    renderGlScene2D(state, node);
     clearGlRenderTarget(state, blurred);
     clearGlRenderTarget(state, scratch);
     applyGaussianBlurToGl(state, source, blurred, scratch, filter);
@@ -121,7 +121,7 @@ export function render(root: DisplayObject): void {
     renderProxy.visible = false;
   }
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   for (const entry of _entries) {
     const renderProxy = getRenderProxy2D(state, entry.node);
     if (renderProxy === undefined) continue;

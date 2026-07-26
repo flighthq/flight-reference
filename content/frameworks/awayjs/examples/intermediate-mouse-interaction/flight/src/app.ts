@@ -1,4 +1,4 @@
-import type { Mesh, PerspectiveProjection, SceneHit, StandardPbrMaterial } from '@flighthq/sdk';
+import type { Mesh, PerspectiveProjection, Scene3DHit, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   copyQuaternion,
@@ -8,10 +8,10 @@ import {
   createFxaaEffect,
   createMesh,
   createQuaternion,
-  createScene,
-  createSceneFromObj,
-  createSceneHit,
-  createSceneLights,
+  createScene3D,
+  createScene3DFromObj,
+  createScene3DHit,
+  createScene3DLights,
   createSphereMeshGeometry,
   createToneMapEffect,
   createTorusMeshGeometry,
@@ -20,7 +20,7 @@ import {
   invalidateNodeLocalTransform,
   multiplyQuaternion,
   packOpaqueColor,
-  pickScene,
+  pickScene3D,
   setQuaternionFromAxisAngle,
   setVector3,
 } from '@flighthq/sdk';
@@ -40,7 +40,7 @@ const ctx = createScene3DContext({
   effects: [createToneMapEffect({ exposure: 1.5 }), createFxaaEffect()],
 });
 
-const scene = createScene();
+const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 60 });
 
@@ -48,7 +48,7 @@ const pointLight = createPointLightFromAway({ range: 10000, referenceDistance: 3
 // AwayJS uses only a point light at the camera — no ambient. A tiny ambient keeps PBR
 // surfaces from going pure black in shadow without washing out the dramatic headlight look.
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 0.05 });
-const lights = createSceneLights({
+const lights = createScene3DLights({
   ambient,
   directional: null,
   point: [pointLight],
@@ -161,13 +161,13 @@ const headMaterial = createAwayMatteMaterial(packOpaqueColor(0xcccccc));
 
 try {
   const objText = await fetch('awayjs/assets/head.obj').then((r) => r.text());
-  const headScene = createSceneFromObj(objText);
+  const headScene = createScene3DFromObj(objText);
   const children = getNodeChildren(headScene.root);
   for (const child of children) {
     addNodeChild(scene.root, child);
     const m = child as Mesh;
     // AwayJS loads head.obj through new OBJParser(25), which scales the geometry 25x;
-    // createSceneFromObj applies no scale, so match it here or the head renders 1/25 size.
+    // createScene3DFromObj applies no scale, so match it here or the head renders 1/25 size.
     setVector3(m.scale, 25, 25, 25);
     invalidateNodeLocalTransform(m);
     if (m.materials) {
@@ -247,7 +247,7 @@ ctx.canvas.addEventListener('wheel', (e: WheelEvent) => {
   else if (orbit.distance > 2000) orbit.distance = 2000;
 });
 
-const hit: SceneHit = createSceneHit();
+const hit: Scene3DHit = createScene3DHit();
 let previousHoveredInfo: ObjectInfo | null = null;
 
 function positionNormalTracer(
@@ -288,7 +288,7 @@ ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
   const screenX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
   const screenY = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
 
-  const result = pickScene(scene.root, camera, screenX, screenY, hit, {
+  const result = pickScene3D(scene.root, camera, screenX, screenY, hit, {
     predicate: (node) => !tracerMeshes.has(node as Mesh),
   });
 

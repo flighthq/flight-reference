@@ -8,7 +8,7 @@ import {
   BlendMode,
   connectInputToInteraction,
   createBitmap,
-  createDisplayContainer,
+  createDisplayObject,
   createInteractionManager,
   createInputManager,
   createRectangle,
@@ -16,7 +16,7 @@ import {
   createTextLabel,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultHitTests,
   setTextLabelString,
   ShapeKind,
@@ -38,7 +38,7 @@ const target = await createFunctionalTarget({
   kinds: [BitmapKind, ShapeKind, TextLabelKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
 const bgBmp = createBitmap();
@@ -134,7 +134,7 @@ backBtn.connect(interaction);
 addNodeChild(root, backBtn.root);
 
 function frame(): void {
-  prepareDisplayObjectRender(target.state, root);
+  prepareScene2DRender(target.state, root);
   target.render(root);
   requestAnimationFrame(frame);
 }

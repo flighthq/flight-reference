@@ -5,15 +5,15 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
-  SceneLightBlock,
-  SceneRenderProxy,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
 } from '@flighthq/sdk';
 import {
   beginGlMeshDraw,
   compileGlProgram,
   drawGlMeshSubset,
-  ensureGlSceneProgram,
-  getGlSceneRuntime,
+  ensureGlScene3DProgram,
+  getGlScene3DRuntime,
   registerGlMeshMaterialRenderer,
   setGlMeshViewProjection,
 } from '@flighthq/sdk';
@@ -73,11 +73,11 @@ const passthroughRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
     material: Readonly<Material> | null,
-    _lights: Readonly<SceneLightBlock>,
+    _lights: Readonly<Scene3DLightBlock>,
     camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
-    const program = ensureGlSceneProgram<PassthroughProgram>(state, 'passthrough', (gl) => {
+    const program = ensureGlScene3DProgram<PassthroughProgram>(state, 'passthrough', (gl) => {
       const prog = compileGlProgram(gl, VERT, FRAG);
       return {
         locColor: gl.getUniformLocation(prog, 'u_color'),
@@ -102,8 +102,8 @@ const passthroughRenderer: GlMeshMaterialRenderer = {
     }
   },
 
-  draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
-    const program = getGlSceneRuntime(state).activeMeshProgram;
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
     if (program === null) return;
     drawGlMeshSubset(state, program, proxy, geometry);
   },

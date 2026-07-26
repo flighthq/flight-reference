@@ -10,11 +10,11 @@ import {
   defaultCanvasShapeRenderer,
   defaultCanvasTextLabelRenderer,
   enableCanvasCssFilter,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
+  renderCanvasScene2D,
   setCanvasCssFilter,
   ShapeKind,
   TextLabelKind,
@@ -52,9 +52,9 @@ export function setSize(w: number, h: number): void {
 }
 
 export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+  if (!prepareScene2DRender(state, root)) return;
   renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, root);
+  renderCanvasScene2D(state, root);
 }
 
 // OpenFL: Background.filters = [new BlurFilter(10, 10)] — a CSS filter applied at draw. The

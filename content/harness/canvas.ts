@@ -19,12 +19,12 @@ import {
   enableCanvasClip,
   enableCanvasRenderCache,
   ParticleEmitter2DKind,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   QuadBatchKind,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
+  renderCanvasScene2D,
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
@@ -93,9 +93,9 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
     height,
     scale: pixelRatio,
     render(root: DisplayObject): void {
-      if (!prepareDisplayObjectRender(state, root)) return;
+      if (!prepareScene2DRender(state, root)) return;
       renderCanvasBackground(state);
-      renderCanvasDisplayObject(state, root);
+      renderCanvasScene2D(state, root);
     },
   });
 }

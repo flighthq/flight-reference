@@ -9,7 +9,7 @@ import {
   connectInputToInteraction,
   createBitmap,
   createClipRegionFromCircle,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResourceFromCanvas,
   createInputManager,
   createInteractionManager,
@@ -19,10 +19,10 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultHitTests,
   RichTextKind,
-  setDisplayObjectClip,
+  setNode2DClip,
   ShapeKind,
   TextLabelKind,
 } from '@flighthq/sdk';
@@ -41,7 +41,7 @@ const target = await createFunctionalTarget({
   kinds: [BitmapKind, RichTextKind, ShapeKind, TextLabelKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
 const bgBmp = createBitmap();
@@ -50,7 +50,7 @@ addNodeChild(root, bgBmp);
 
 const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
 
-const maskedContainer = createDisplayContainer();
+const maskedContainer = createDisplayObject();
 addNodeChild(root, maskedContainer);
 
 const tintedBirdImage = await (async () => {
@@ -92,7 +92,7 @@ const maskRadius = 100;
 const startX = 0;
 const startY = 0;
 
-setDisplayObjectClip(maskedContainer, createClipRegionFromCircle(startX, startY, maskRadius));
+setNode2DClip(maskedContainer, createClipRegionFromCircle(startX, startY, maskRadius));
 
 const indicator = createShape();
 appendShapeBeginFill(indicator, 0xea8220);
@@ -133,7 +133,7 @@ function updateMaskPosition(e: PointerEvent): void {
   const mx = ((e.clientX - rect.left) / rect.width) * GameWidth;
   const my = ((e.clientY - rect.top) / rect.height) * GameHeight;
 
-  setDisplayObjectClip(maskedContainer, createClipRegionFromCircle(mx, my, maskRadius));
+  setNode2DClip(maskedContainer, createClipRegionFromCircle(mx, my, maskRadius));
 
   indicator.x = mx;
   indicator.y = my;
@@ -145,7 +145,7 @@ canvas.addEventListener('pointerdown', updateMaskPosition);
 canvas.addEventListener('pointermove', updateMaskPosition);
 
 function frame(): void {
-  prepareDisplayObjectRender(target.state, root);
+  prepareScene2DRender(target.state, root);
   target.render(root);
   requestAnimationFrame(frame);
 }

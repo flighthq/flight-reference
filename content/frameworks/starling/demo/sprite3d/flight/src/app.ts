@@ -2,12 +2,12 @@ import {
   addNodeChild,
   BitmapKind,
   createBitmap,
-  createDisplayContainer,
+  createDisplayObject,
   createImageResourceFromCanvas,
   invalidateImageResource,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   TextLabelKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -41,7 +41,7 @@ const target = await createFunctionalTarget({
   kinds: [BitmapKind, TextLabelKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
 const bgBmp = createBitmap();
@@ -300,12 +300,12 @@ function renderCube(now: number): void {
 }
 
 renderCube(performance.now());
-prepareDisplayObjectRender(target.state, root);
+prepareScene2DRender(target.state, root);
 target.render(root);
 
 function frame(now: number): void {
   renderCube(now);
-  prepareDisplayObjectRender(target.state, root);
+  prepareScene2DRender(target.state, root);
   target.render(root);
   requestAnimationFrame(frame);
 }

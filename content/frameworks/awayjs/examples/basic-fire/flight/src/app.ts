@@ -17,8 +17,8 @@ import {
   createParticleEmitterConfig,
   createParticleEmitterState,
   createPlaneMeshGeometry,
-  createScene,
-  createSceneLights,
+  createScene3D,
+  createScene3DLights,
   createStandardPbrMaterial,
   createTexture,
   createTilingSampler,
@@ -75,7 +75,7 @@ const ctx = createScene3DContext({
   effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
-const scene = createScene();
+const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 60 });
 
@@ -87,7 +87,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
   ambientColor: 0x808090,
 });
 
-const lights = createSceneLights({ ambient, directional });
+const lights = createScene3DLights({ ambient, directional });
 
 const planeMaterial: StandardPbrMaterial = createStandardPbrMaterial({
   baseColor: 0xffffffff,

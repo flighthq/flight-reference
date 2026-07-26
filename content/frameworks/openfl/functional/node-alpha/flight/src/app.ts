@@ -3,7 +3,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -17,7 +17,7 @@ const { height, render, width } = await createFunctionalTarget({
 });
 
 const ROWS = 9;
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const W = width;
 const H = height;

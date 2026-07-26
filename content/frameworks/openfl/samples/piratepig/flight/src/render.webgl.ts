@@ -21,13 +21,13 @@ import {
   ensureGlRenderCacheTarget,
   getGlRenderCacheTarget,
   invalidateNodeLocalTransform,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   refreshGlRenderCache,
   registerDefaultGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
   ShapeKind,
   TextLabelKind,
   useRenderCache,
@@ -66,9 +66,9 @@ export function setSize(w: number, h: number): void {
 }
 
 export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+  if (!prepareScene2DRender(state, root)) return;
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
 }
 
 // Gl has no CSS filter. Bake the panel into a "sharp" render cache, then blur that into a

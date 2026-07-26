@@ -20,13 +20,13 @@ import {
   enableWgpuFrameCapture,
   enableWgpuRenderCache,
   ParticleEmitter2DKind,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   QuadBatchKind,
   registerDefaultWgpuMaterial,
   registerRenderer,
   registerWgpuShapeCommands,
   renderWgpuBackground,
-  renderWgpuDisplayObject,
+  renderWgpuScene2D,
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
@@ -96,9 +96,9 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
     height,
     scale: pixelRatio,
     render(root: DisplayObject): void {
-      if (!prepareDisplayObjectRender(state, root)) return;
+      if (!prepareScene2DRender(state, root)) return;
       renderWgpuBackground(state);
-      renderWgpuDisplayObject(state, root);
+      renderWgpuScene2D(state, root);
       submitWgpuRenderPass(state);
     },
   });

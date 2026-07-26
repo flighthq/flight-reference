@@ -1,4 +1,4 @@
-import type { Mesh, PerspectiveProjection, SceneLights, Vector3 } from '@flighthq/sdk';
+import type { Mesh, PerspectiveProjection, Scene3DLights, Vector3 } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceClock,
@@ -7,9 +7,9 @@ import {
   createClock,
   createFxaaEffect,
   createMatrix4,
-  createScene,
-  createSceneLights,
-  createSceneNode,
+  createScene3D,
+  createScene3DLights,
+  createNode3D,
   createToneMapEffect,
   createVector3,
   DEG_TO_RAD,
@@ -63,7 +63,7 @@ const RIGHT_WING_PIVOT = createVector3(2.3, -2, 0);
 
 // A click toggles the gear/wing configuration between open (landing) and closed (clean flight).
 
-const scene = createScene();
+const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 60, near: 0.5, far: 14000 });
 
@@ -74,7 +74,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
   ambient: 1,
   ambientColor: 0x7196ac,
 });
-const lights: SceneLights = createSceneLights({ ambient, directional });
+const lights: Scene3DLights = createScene3DLights({ ambient, directional });
 
 const environment = await createSkyEnvironment(glState);
 
@@ -84,7 +84,7 @@ addNodeChild(scene.root, sea.mesh);
 const aircraft = await createAircraft();
 setVector3(aircraft.container.scale, F14_SCALE, F14_SCALE, F14_SCALE);
 
-const f14Mesh = createSceneNode();
+const f14Mesh = createNode3D();
 addNodeChild(f14Mesh, aircraft.container);
 f14Mesh.position.y = 200;
 

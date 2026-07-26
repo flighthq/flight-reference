@@ -45,7 +45,7 @@ import {
   connectInputToInteraction,
   copyMatrix,
   createBitmap,
-  createDisplayContainer,
+  createDisplayObject,
   createInputManager,
   createInteractionManager,
   createMatrix,
@@ -61,10 +61,10 @@ import {
   getRenderProxy2D,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultHitTests,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
   RichTextKind,
   setGlRenderTransform2D,
   setDomCssFilter,
@@ -180,7 +180,7 @@ const target = await createFunctionalTarget({
   kinds: [BitmapKind, RichTextKind, TextLabelKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
 const bgBmp = createBitmap();
@@ -272,7 +272,7 @@ function runGl(state: GlRenderState): void {
   function renderFrame(): void {
     const entry = filterInfos[filterIndex];
 
-    prepareDisplayObjectRender(state, root);
+    prepareScene2DRender(state, root);
     const proxy = getRenderProxy2D(state, rocket);
     if (proxy !== undefined) copyMatrix(sceneTransform, proxy.transform2D);
 
@@ -284,7 +284,7 @@ function runGl(state: GlRenderState): void {
       beginGlRenderPass(state, source, { preserveColor: true, preserveDepth: true });
       setGlRenderTransform2D(state, _identity);
       clearGlRenderTarget(state, source);
-      renderGlDisplayObject(state, rocket);
+      renderGlScene2D(state, rocket);
       clearGlRenderTarget(state, dest);
 
       if (entry.type === 'blur' && entry.blur !== undefined) {
@@ -309,12 +309,12 @@ function runGl(state: GlRenderState): void {
       copyMatrix(proxy.transform2D, sceneTransform);
       proxy.visible = false;
       renderGlBackground(state);
-      renderGlDisplayObject(state, root);
+      renderGlScene2D(state, root);
       proxy.visible = true;
       drawGlRenderTargetResult(state, proxy, dest, cacheTransform);
     } else {
       renderGlBackground(state);
-      renderGlDisplayObject(state, root);
+      renderGlScene2D(state, root);
     }
 
     requestAnimationFrame(renderFrame);

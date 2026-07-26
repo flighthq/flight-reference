@@ -11,7 +11,7 @@ import {
   attachPointerInput,
   clearShapeCommands,
   connectSignal,
-  createDisplayContainer,
+  createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
   createInputManager,
@@ -21,13 +21,13 @@ import {
   defaultGlShapeRenderer,
   invalidateNodeLocalTransform,
   invalidateNodeRender,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   removeNodeChildren,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
@@ -58,7 +58,7 @@ registerGlShapeCommands(defaultGlShapeCommands);
 
 const verifyFrame = createGlFrameVerifier(state);
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 let activeStar: Shape | null = null;
 let startX = 0;
@@ -144,9 +144,9 @@ connectSignal(input.onKeyDown, (data) => {
 });
 
 function frame(): void {
-  prepareDisplayObjectRender(state, root);
+  prepareScene2DRender(state, root);
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   verifyFrame();
   requestAnimationFrame(frame);
 }

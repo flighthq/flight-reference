@@ -1,5 +1,5 @@
 import type { CanvasRenderState, DomRenderState, GlRenderState, WgpuRenderState } from '@flighthq/sdk';
-import type { DisplayObject, SceneGraphSyncPolicy } from '@flighthq/sdk';
+import type { DisplayObject, Scene3DGraphSyncPolicy } from '@flighthq/sdk';
 
 export interface FunctionalTargetOptions {
   width: number;
@@ -7,7 +7,7 @@ export interface FunctionalTargetOptions {
   background?: number;
   kinds?: readonly string[];
   contextAttributes?: { alpha?: boolean };
-  syncPolicy?: SceneGraphSyncPolicy;
+  syncPolicy?: Scene3DGraphSyncPolicy;
   clip?: boolean;
   cache?: boolean;
   blend?: boolean;

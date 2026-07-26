@@ -1,5 +1,5 @@
-import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera3D, GlRenderState, SceneLights, SceneNode } from '@flighthq/sdk';
+import { drawGlScene3D } from '@flighthq/scene3d-gl';
+import type { Camera3D, GlRenderState, Scene3DLights, Node3D } from '@flighthq/sdk';
 import {
   createGlCanvasElement,
   createGlRenderState,
@@ -13,7 +13,7 @@ import { registerPassthroughGlMaterial } from './flightPassthroughMaterial';
 export interface SceneWebglPreview {
   canvas: HTMLCanvasElement;
   height: number;
-  render: (scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>) => void;
+  render: (scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>) => void;
   scale: number;
   state: GlRenderState;
   width: number;
@@ -63,7 +63,7 @@ export function createSceneWebglPreview(options: Readonly<SceneWebglPreviewOptio
       gl.depthMask(true);
       gl.clearDepth(1);
       gl.clear(gl.DEPTH_BUFFER_BIT);
-      drawGlScene(state, scene, camera, lights);
+      drawGlScene3D(state, scene, camera, lights);
     },
     scale: pixelRatio,
     state,

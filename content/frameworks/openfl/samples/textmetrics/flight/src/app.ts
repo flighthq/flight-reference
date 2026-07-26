@@ -131,7 +131,7 @@ loremText.data.text =
 loremText.data.width = 200;
 loremText.data.wordWrap = true;
 
-// ---- Scene graph ----
+// ---- Scene3D graph ----
 
 addNodeChild(root, textField);
 addNodeChild(root, vizLines);

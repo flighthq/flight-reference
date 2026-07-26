@@ -7,7 +7,7 @@ import {
   createBitmap,
   createColorTransform,
   createColorTransformAdjustment,
-  createDisplayContainer,
+  createDisplayObject,
   createRichText,
   createShape,
   enableGlColorAdjustment,
@@ -16,7 +16,7 @@ import {
   loadImageResourceFromUrl,
   RichTextKind,
   ShapeKind,
-  setDisplayObjectColorAdjustments,
+  setNode2DColorAdjustments,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -32,7 +32,7 @@ function pos(i: number): number {
   return (i * height) / 720;
 }
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const W = width;
 const H = height;
@@ -44,7 +44,7 @@ addNodeChild(root, stageBg);
 
 const image = await loadImageResourceFromUrl('openfl/assets/openfl.png');
 
-const posters = createDisplayContainer();
+const posters = createDisplayObject();
 
 const bmp1 = createBitmap();
 bmp1.data.image = image;
@@ -70,15 +70,13 @@ bmp3.scaleX = pos(1.0);
 bmp3.scaleY = pos(1.0);
 if (target.kind === 'webgl') {
   enableGlColorAdjustment(target.state);
-  setDisplayObjectColorAdjustments(bmp3, [
-    createColorTransformAdjustment(createColorTransform({ greenMultiplier: 0 })),
-  ]);
+  setNode2DColorAdjustments(bmp3, [createColorTransformAdjustment(createColorTransform({ greenMultiplier: 0 }))]);
 }
 addNodeChild(posters, bmp3);
 
 addNodeChild(root, posters);
 
-const menuGroup = createDisplayContainer();
+const menuGroup = createDisplayObject();
 
 const menuBg = createShape();
 appendShapeBeginFill(menuBg, 0xff22ff);

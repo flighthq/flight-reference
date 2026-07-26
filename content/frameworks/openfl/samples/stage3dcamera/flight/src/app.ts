@@ -1,4 +1,4 @@
-import { createScene } from '@flighthq/scene';
+import { createScene3D } from '@flighthq/scene3d';
 
 import {
   addNodeChild,
@@ -6,7 +6,7 @@ import {
   createMatrix4,
   createMesh,
   createPerspectiveProjection,
-  createSceneLights,
+  createScene3DLights,
   createTexture,
   createUnlitMaterial,
   createVector3,
@@ -39,7 +39,7 @@ function calculateUpdatedVelocity(curVelocity: number, curAcceleration: number, 
 
 const image = await loadImageResourceFromUrl('openfl/openfl.png');
 const texture = createTexture({ image: image });
-const scene = createScene();
+const scene = createScene3D();
 const material = createUnlitMaterial({ baseColor: 0xffffffff, baseColorMap: texture });
 material.doubleSided = true;
 const mesh = createMesh(createTexturedQuadGeometry(0.6, 0.6), [material]);
@@ -51,7 +51,7 @@ const camera = createCamera3D({
   projection: createPerspectiveProjection({ aspect: 4 / 3, fovY: (45 * Math.PI) / 180 }),
 });
 
-const lights = createSceneLights();
+const lights = createScene3DLights();
 const cameraEye = createVector3(0, 0, 2);
 const cameraTarget = createVector3(0, 0, 1);
 const up = createVector3(0, 1, 0);

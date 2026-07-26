@@ -4,13 +4,13 @@ import type {
   CubeTexture,
   Mesh,
   PerspectiveProjection,
-  SceneLights,
-  SceneNode,
+  Scene3DLights,
+  Node3D,
 } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceAnimationPlayer,
-  applyAnimationClipToScene,
+  applyAnimationClipToScene3D,
   computeMeshGeometryNormals,
   configureDirectionalShadowCamera3D,
   copyQuaternion,
@@ -27,16 +27,16 @@ import {
   createOrthographicProjection,
   createPlaneMeshGeometry,
   createQuaternion,
-  createScene,
-  createSceneFromMd5Mesh,
-  createSceneLights,
+  createScene3D,
+  createScene3DFromMd5Mesh,
+  createScene3DLights,
   createScreenSpaceFogEffect,
   createTexture,
   createTilingSampler,
   createToneMapEffect,
   createVector3,
   DEG_TO_RAD,
-  drawGlSceneShadowMap,
+  drawGlScene3DShadowMap,
   getNodeChildren,
   getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
@@ -107,7 +107,7 @@ registerDefaultGlRenderEffects(glState);
 
 const verifyFrame = createGlFrameVerifier(glState);
 
-const scene = createScene();
+const scene = createScene3D();
 
 const skyFaceNames = ['posX', 'negX', 'posY', 'negY', 'posZ', 'negZ'];
 const skyImages = await Promise.all(
@@ -137,7 +137,7 @@ const { directional: whiteLight, ambient } = createDirectionalLightFromAway({
   ambient: 1,
   ambientColor: 0x303040,
 });
-const lights: SceneLights = createSceneLights({
+const lights: Scene3DLights = createScene3DLights({
   ambient,
   directional: whiteLight,
   point: [redLight, blueLight],
@@ -195,11 +195,11 @@ const fogEffect = createScreenSpaceFogEffect({
 const effects = [fogEffect, createToneMapEffect(), createFxaaEffect()];
 
 const meshText = await fetch('awayjs/assets/hellknight/hellknight.md5mesh').then((r) => r.text());
-const md5Scene = createSceneFromMd5Mesh(meshText);
+const md5Scene = createScene3DFromMd5Mesh(meshText);
 
 const md5Children = getNodeChildren(md5Scene.root);
-const characterPositionNode = createScene();
-const characterNode = createScene();
+const characterPositionNode = createScene3D();
+const characterNode = createScene3D();
 const yAxisVec = createVector3(0, 1, 0);
 const characterQuat = createQuaternion();
 const identityQuat = createQuaternion();
@@ -227,7 +227,7 @@ for (let i = 0; i < ANIM_NAMES.length; i++) {
   // AwayJS consumes joint zero's translation as owner root motion and omits it from the rendered
   // skeleton for every clip. Zero it here so the skeleton doesn't shift inside the mesh.
   for (const channel of clip.channels) {
-    const target = channel.targetRef as { node?: SceneNode; path?: string } | null;
+    const target = channel.targetRef as { node?: Node3D; path?: string } | null;
     if (target?.node === jointNodes[0] && target.path === 'Translation') {
       channel.track.values = new Float32Array(channel.track.values.length);
     }
@@ -380,7 +380,7 @@ function frame(ts: number): void {
     activePlayer.speed = isMoving ? movementDir * (isRunning ? RUN_SPEED : WALK_SPEED) : 1;
   }
 
-  applyAnimationClipToScene(activePlayer.clip, activePlayer.time);
+  applyAnimationClipToScene3D(activePlayer.clip, activePlayer.time);
 
   // Flight's skinning reads joint WORLD matrices (getNodeWorldMatrix4), which include ancestor
   // transforms. The renderer then applies the mesh's own world transform on top of the already-
@@ -432,7 +432,7 @@ function frame(ts: number): void {
   updateCamera();
 
   configureDirectionalShadowCamera3D(shadowCamera, whiteLight.direction, shadowBounds);
-  drawGlSceneShadowMap(glState, scene.root, shadowCamera);
+  drawGlScene3DShadowMap(glState, scene.root, shadowCamera);
 
   renderSkyboxScene(glState, canvas, skyboxRef, environment, scene.root, camera, lights, effects);
 

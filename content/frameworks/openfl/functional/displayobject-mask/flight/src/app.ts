@@ -6,10 +6,10 @@ import {
   BitmapKind,
   createBitmap,
   createClipRegionFromRectangle,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   loadImageResourceFromUrl,
-  setDisplayObjectClip,
+  setNode2DClip,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -22,7 +22,7 @@ const { height, render, width } = await createFunctionalTarget({
   kinds: [BitmapKind, ShapeKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 const W = width;
 const H = height;
 
@@ -71,7 +71,7 @@ for (let i = 0; i < 4; i++) {
   bmp.y = by;
   addNodeChild(root, bmp);
 
-  setDisplayObjectClip(bmp, createClipRegionFromRectangle({ x: dx, y: dy, width: iw, height: ih }));
+  setNode2DClip(bmp, createClipRegionFromRectangle({ x: dx, y: dy, width: iw, height: ih }));
 }
 
 const alphaX = 2 * (W / 3) + W / 6 - iw / 2;

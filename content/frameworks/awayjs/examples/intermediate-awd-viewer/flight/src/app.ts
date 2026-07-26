@@ -4,21 +4,21 @@ import type {
   AnimationCrossfade,
   AnimationPlayer,
   PerspectiveProjection,
-  SceneLights,
+  Scene3DLights,
 } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceAnimationCrossfade,
   advanceAnimationPlayer,
-  applyAnimationClipToScene,
+  applyAnimationClipToScene3D,
   createAmbientLight,
   createAnimationCrossfade,
   createAnimationPlayer,
   createDirectionalLight,
   createFxaaEffect,
-  createScene,
-  createSceneFromAwd2,
-  createSceneLights,
+  createScene3D,
+  createScene3DFromAwd2,
+  createScene3DLights,
   createToneMapEffect,
   invalidateNodeLocalTransform,
   isAnimationCrossfadeComplete,
@@ -44,7 +44,7 @@ const ctx = createScene3DContext({
   effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
-const scene = createScene();
+const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 70, near: 1, far: 5000 });
 
@@ -56,11 +56,11 @@ const directional = createDirectionalLight({
   intensity: 1.1,
 });
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 0.35 });
-const lights: SceneLights = createSceneLights({ ambient, directional });
+const lights: Scene3DLights = createScene3DLights({ ambient, directional });
 
 const awdBuffer = await fetch('awayjs/assets/shambler.awd').then((r) => r.arrayBuffer());
 const awdBytes = new Uint8Array(awdBuffer);
-const awdScene = createSceneFromAwd2(awdBytes);
+const awdScene = createScene3DFromAwd2(awdBytes);
 addNodeChild(scene.root, awdScene.root);
 
 const IDLE_NAME = 'idle';
@@ -202,7 +202,7 @@ function frame(ts: number): void {
     }
   } else {
     advanceAnimationPlayer(activePlayer, dt);
-    applyAnimationClipToScene(activePlayer.clip, activePlayer.time);
+    applyAnimationClipToScene3D(activePlayer.clip, activePlayer.time);
   }
 
   if (onceAnim && !activePlayer.playing && crossfade === null) {

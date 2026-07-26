@@ -17,9 +17,9 @@ import {
   createMesh,
   createPlaneMeshGeometry,
   createQuaternion,
-  createScene,
-  createSceneLights,
-  createSceneNode,
+  createScene3D,
+  createScene3DLights,
+  createNode3D,
   createShadedMaterial,
   createSphereMeshGeometry,
   createTexture,
@@ -29,7 +29,7 @@ import {
   DEG_TO_RAD,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
-  orientSceneBillboardsToCamera,
+  orientScene3DBillboardsToCamera,
   packOpaqueColor,
   registerBuiltInGlModifierSnippets,
   registerCustomShaderGlMaterial,
@@ -81,7 +81,7 @@ registerDefaultGlRenderEffects(state);
 
 // Earth day/night: an opaque custom shader that lights the day texture by the sun and cross-fades to
 // the city-lights texture on the night side (AwayJS composited the night lights as the ambient term).
-// It is one OPAQUE material because custom-shader materials only draw in drawGlScene's opaque pass,
+// It is one OPAQUE material because custom-shader materials only draw in drawGlScene3D's opaque pass,
 // not its transparent pass. Specular is the ocean mask; sRGB textures are decoded to linear here so
 // the linear->sRGB present pass encodes once.
 registerCustomShaderGlMaterial(state);
@@ -138,7 +138,7 @@ const verifyFrame = createGlFrameVerifier(state);
 
 const skyboxRef: SkyboxRenderState = { pipeline: null };
 
-const scene = createScene();
+const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 60, far: 100000 });
 
@@ -152,12 +152,12 @@ const sunLight = createDirectionalLight({
 
 const ambient = createAmbientLight({ color: packOpaqueColor(0x0c1424), intensity: awayIntensity(0.5) });
 
-const lights = createSceneLights({
+const lights = createScene3DLights({
   ambient,
   directional: sunLight,
 });
 
-const tiltContainer = createSceneNode();
+const tiltContainer = createNode3D();
 const axisX = createVector3(1, 0, 0);
 const tiltQuat = createQuaternion();
 setQuaternionFromAxisAngle(tiltQuat, axisX, -23 * DEG_TO_RAD);
@@ -356,7 +356,7 @@ function frame(ts: number): void {
   invalidateNodeLocalTransform(sun);
 
   orbit.update();
-  orientSceneBillboardsToCamera(scene.root, camera);
+  orientScene3DBillboardsToCamera(scene.root, camera);
   renderSkyboxScene(state, canvas, skyboxRef, environment, scene.root, camera, lights, [
     createToneMapEffect(),
     createFxaaEffect(),

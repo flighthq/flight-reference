@@ -1,4 +1,4 @@
-import type { PerspectiveProjection, SceneLights } from '@flighthq/sdk';
+import type { PerspectiveProjection, Scene3DLights } from '@flighthq/sdk';
 import {
   addNodeChild,
   bakeGlEnvironmentIbl,
@@ -13,8 +13,8 @@ import {
   createGlRenderState,
   createMesh,
   createQuaternion,
-  createScene,
-  createSceneLights,
+  createScene3D,
+  createScene3DLights,
   createStandardPbrMaterial,
   createTorusMeshGeometry,
   createToneMapEffect,
@@ -63,7 +63,7 @@ registerDefaultGlRenderEffects(state);
 
 const verifyFrame = createGlFrameVerifier(state);
 
-const scene = createScene();
+const scene = createScene3D();
 
 const torusMaterial = createStandardPbrMaterial({
   baseColor: 0xccccccff,
@@ -117,7 +117,7 @@ const directional = createDirectionalLight({
 });
 
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
-const lights: SceneLights = createSceneLights({ ambient, directional });
+const lights: Scene3DLights = createScene3DLights({ ambient, directional });
 
 const faceUrls = [
   'awayjs/assets/skybox/snow_positive_x.jpg',

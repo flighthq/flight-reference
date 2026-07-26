@@ -2,10 +2,10 @@
 import {
   createDomRenderState,
   defaultDomTextLabelRenderer,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerRenderer,
   renderDomBackground,
-  renderDomDisplayObject,
+  renderDomScene2D,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -24,7 +24,7 @@ registerRenderer(state, TextLabelKind, defaultDomTextLabelRenderer);
 export const scale = 1;
 
 export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+  if (!prepareScene2DRender(state, root)) return;
   renderDomBackground(state);
-  renderDomDisplayObject(state, root);
+  renderDomScene2D(state, root);
 }

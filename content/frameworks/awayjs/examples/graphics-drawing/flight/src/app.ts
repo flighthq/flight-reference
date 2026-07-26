@@ -8,7 +8,7 @@ import {
   appendShapeLineTo,
   appendShapeMoveTo,
   createClipRegionFromCircle,
-  createDisplayContainer,
+  createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
   createMatrix,
@@ -17,13 +17,13 @@ import {
   defaultGlShapeRenderer,
   enableGlClipSupport,
   invalidateNodeLocalTransform,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
-  setDisplayObjectClip,
+  renderGlScene2D,
+  setNode2DClip,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
@@ -57,7 +57,7 @@ enableGlClipSupport(state);
 
 const verifyFrame = createGlFrameVerifier(state);
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 function packColor(r: number, g: number, b: number): number {
   return ((Math.round(r * 255) & 0xff) << 16) | ((Math.round(g * 255) & 0xff) << 8) | (Math.round(b * 255) & 0xff);
@@ -102,7 +102,7 @@ const animSpeeds: number[] = [];
 
 for (let i = 0; i < numSpritesV; i++) {
   for (let j = 0; j < numSpritesH; j++) {
-    const container = createDisplayContainer();
+    const container = createDisplayObject();
     container.x = i * 50;
     container.y = j * 25;
     container.scaleX = gridScale;
@@ -121,7 +121,7 @@ for (let i = 0; i < numSpritesV; i++) {
     sprite.pivotY = logoPivotY;
     invalidateNodeLocalTransform(sprite);
 
-    setDisplayObjectClip(sprite, createClipRegionFromCircle(0, 0, maskRadius));
+    setNode2DClip(sprite, createClipRegionFromCircle(0, 0, maskRadius));
 
     animShapes.push(sprite);
     animSpeeds.push(0);
@@ -139,9 +139,9 @@ function frame(): void {
     invalidateNodeLocalTransform(animShapes[i]);
   }
 
-  prepareDisplayObjectRender(state, root);
+  prepareScene2DRender(state, root);
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   verifyFrame();
 
   requestAnimationFrame(frame);

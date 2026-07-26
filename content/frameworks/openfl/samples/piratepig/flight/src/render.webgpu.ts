@@ -22,13 +22,13 @@ import {
   ensureWgpuRenderCacheTarget,
   getWgpuRenderCacheTarget,
   invalidateNodeLocalTransform,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   refreshWgpuRenderCache,
   registerDefaultWgpuMaterial,
   registerRenderer,
   registerWgpuShapeCommands,
   renderWgpuBackground,
-  renderWgpuDisplayObject,
+  renderWgpuScene2D,
   resizeWgpuRenderTarget,
   ShapeKind,
   submitWgpuRenderPass,
@@ -80,12 +80,12 @@ export function render(root: DisplayObject): void {
   // would fold a stale identity and the composite would be misplaced. Set it here and invalidate
   // the panel so this frame's adapt re-folds the current value.
   prepareBlurTransform();
-  if (!prepareDisplayObjectRender(state, root)) return;
+  if (!prepareScene2DRender(state, root)) return;
   renderWgpuBackground(state);
   // Wgpu records into a per-frame command encoder, so — unlike Gl — the pixels must be baked
   // inside the frame (after renderWgpuBackground opens the encoder), not at setup.
   bakeBackgroundBlur();
-  renderWgpuDisplayObject(state, root);
+  renderWgpuScene2D(state, root);
   submitWgpuRenderPass(state);
 }
 
@@ -134,7 +134,7 @@ function bakeBackgroundBlur(): void {
   // pass back to the screen state, and leaves the sharp target readable. We only blur when the
   // refresh actually re-baked (its return value), and wrap the blur in a render-target bracket —
   // the blur functions leave no active pass, so the bracket restores the canvas pass that the
-  // subsequent renderWgpuDisplayObject draws into. The cache's placement transform is set
+  // subsequent renderWgpuScene2D draws into. The cache's placement transform is set
   // earlier by prepareBlurTransform().
   if (!refreshWgpuRenderCache(_blurCacheState, _sharpCache, _blurNode, { padding: BLUR_PADDING })) return;
 

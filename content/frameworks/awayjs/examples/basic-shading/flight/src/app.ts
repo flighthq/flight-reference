@@ -6,8 +6,8 @@ import {
   createHemisphereLight,
   createMesh,
   createPlaneMeshGeometry,
-  createScene,
-  createSceneLights,
+  createScene3D,
+  createScene3DLights,
   createSphereMeshGeometry,
   createSampler,
   createStandardPbrMaterial,
@@ -45,7 +45,7 @@ const ctx = createScene3DContext({
   effects: [createToneMapEffect({ exposure: 0.7 }), createFxaaEffect()],
 });
 
-const scene = createScene();
+const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 60 });
 
@@ -56,7 +56,7 @@ tilingSampler.anisotropy = 16;
 
 // AwayJS lights the scene with two directionals: a white primary (diffuse 0.7, ambient 0.1) whose
 // direction sweeps the horizon each frame, and a static cyan secondary (0x00ffff, diffuse 0.7,
-// ambient 0.1) pointing straight down. Flight's SceneLights carries one directional, so the animated
+// ambient 0.1) pointing straight down. Flight's Scene3DLights carries one directional, so the animated
 // white primary stays the directional — it's the moving light, grazing the surfaces so the shading
 // and the specular highlights on the metal sweep as it turns (this is what keeps the scene lively).
 // The downward cyan secondary becomes a hemisphere light: cyan from above tints the up-facing floor
@@ -71,7 +71,7 @@ const cyanFill = createHemisphereLight({
   groundColor: 0x000000ff,
   intensity: awayIntensity(0.7),
 });
-const lights = createSceneLights({ ambient, directional, hemisphere: [cyanFill] });
+const lights = createScene3DLights({ ambient, directional, hemisphere: [cyanFill] });
 
 // PBR material intent (per the sample's assets): floor = stone (rough dielectric), beach ball =
 // vinyl (smooth dielectric), trinket = mixed metal + wood (part-metallic), ring = polished metal.

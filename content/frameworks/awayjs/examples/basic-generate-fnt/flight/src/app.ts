@@ -6,7 +6,7 @@ import {
   attachWheelInput,
   connectInputToTextInput,
   connectSignal,
-  createDisplayContainer,
+  createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
   createGlyphAtlas,
@@ -23,11 +23,11 @@ import {
   getGlyphAtlasEntry,
   invalidateNodeLocalTransform,
   loadFontFromUrl,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
   RichTextKind,
   setGlyphRasterizerBackend,
 } from '@flighthq/sdk';
@@ -78,7 +78,7 @@ for (const character of '0123456789') {
   getGlyphAtlasEntry(atlas, character.codePointAt(0)!);
 }
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.x = width / 2;
 root.y = height / 2;
 invalidateNodeLocalTransform(root);
@@ -151,9 +151,9 @@ connectSignal(input.onWheel, (data) => {
 });
 
 function frame(): void {
-  prepareDisplayObjectRender(state, root);
+  prepareScene2DRender(state, root);
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   verifyFrame();
   requestAnimationFrame(frame);
 }

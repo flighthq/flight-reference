@@ -3,8 +3,8 @@ import type {
   ParticleEmitter3D,
   ParticleEmitterConfig,
   ParticleEmitterState,
-  Scene,
-  SceneNode,
+  Scene3D,
+  Node3D,
   Vector3,
 } from '@flighthq/sdk';
 import {
@@ -24,7 +24,7 @@ import {
 
 import { createSingleSpriteAtlas } from '../../../_shared/flight/src/particles';
 
-// Engine exhaust vapor. drawGlScene draws emitter nodes on its own; each emitter is a scene child stepped
+// Engine exhaust vapor. drawGlScene3D draws emitter nodes on its own; each emitter is a scene child stepped
 // in step(); its world position is refreshed each step so the two trails ride the nozzles. The bundled
 // white.png is a hard-edged square, so generate a soft round sprite at runtime: a radial gradient, opaque
 // white core fading to transparent, as a data URL. Gives true-white soft puffs.
@@ -89,18 +89,18 @@ interface VaporEmitter {
 export interface VaporTrail {
   // Attach an exhaust emitter to a model-space nozzle offset on `mesh`. The offset is transformed by the
   // mesh's world matrix each step so the emit origin tracks the flying jet's roll.
-  attachToNozzle(mesh: SceneNode, x: number, y: number, z: number): void;
+  attachToNozzle(mesh: Node3D, x: number, y: number, z: number): void;
   // Advance every attached emitter by one fixed timestep, refreshing each nozzle's world position first.
   step(dt: number): void;
 }
 
-export async function createVaporTrail(scene: Scene): Promise<VaporTrail> {
+export async function createVaporTrail(scene: Scene3D): Promise<VaporTrail> {
   const vaporImage = await loadImageResourceFromUrl(createSoftVaporSpriteUrl());
   const vaporAtlas = createSingleSpriteAtlas(vaporImage);
 
   const emitters: VaporEmitter[] = [];
 
-  function attachToNozzle(mesh: SceneNode, x: number, y: number, z: number): void {
+  function attachToNozzle(mesh: Node3D, x: number, y: number, z: number): void {
     // Offset out to the engine and back a bit forward of the nozzle exit (deeper in the model, so the
     // trail emerges from within the fuselage).
     const emitter = createParticleEmitter3D();

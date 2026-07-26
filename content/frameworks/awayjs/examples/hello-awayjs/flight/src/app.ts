@@ -3,16 +3,16 @@ import {
   addNodeChild,
   createFxaaEffect,
   createMesh,
-  createScene,
-  createSceneHit,
-  createSceneLights,
+  createScene3D,
+  createScene3DHit,
+  createScene3DLights,
   createSphereMeshGeometry,
   createTexture,
   createToneMapEffect,
   createUnlitMaterial,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
-  pickScene,
+  pickScene3D,
   setVector3,
 } from '@flighthq/sdk';
 
@@ -25,11 +25,11 @@ const ctx = createScene3DContext({
   effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
-const scene = createScene();
+const scene = createScene3D();
 
 const camera = createCameraFromAway({ y: 500, z: -600, fov: 60 });
 
-const lights = createSceneLights();
+const lights = createScene3DLights();
 
 const material = createUnlitMaterial({ baseColor: 0xffffffff });
 
@@ -51,13 +51,13 @@ for (let i = 0; i < 100; i++) {
   addNodeChild(scene.root, mesh);
 }
 
-const hit = createSceneHit();
+const hit = createScene3DHit();
 
 function pickSphere(event: MouseEvent): Mesh | null {
   const rect = ctx.canvas.getBoundingClientRect();
   const screenX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   const screenY = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
-  const result = pickScene(scene.root, camera, screenX, screenY, hit);
+  const result = pickScene3D(scene.root, camera, screenX, screenY, hit);
   if (result) {
     const index = spheres.indexOf(result.node as Mesh);
     if (index !== -1) {

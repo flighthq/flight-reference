@@ -5,11 +5,11 @@ import {
   defaultCanvasDrawRectangle,
   defaultDomRichTextRenderer,
   defaultDomShapeRenderer,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerCanvasShapeCommands,
   registerRenderer,
   renderDomBackground,
-  renderDomDisplayObject,
+  renderDomScene2D,
   RichTextKind,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -33,9 +33,9 @@ registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle]
 export const scale = 1;
 
 export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+  if (!prepareScene2DRender(state, root)) return;
   renderDomBackground(state);
-  renderDomDisplayObject(state, root);
+  renderDomScene2D(state, root);
 }
 
 export function setSize(w: number, h: number): void {

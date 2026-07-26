@@ -1,4 +1,4 @@
-import type { ParticleEmitter3D, PerspectiveProjection, SceneLights } from '@flighthq/sdk';
+import type { ParticleEmitter3D, PerspectiveProjection, Scene3DLights } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendParticleEmitter3DParticle,
@@ -7,8 +7,8 @@ import {
   createParticleEmitter3D,
   createPointLight,
   createQuaternion,
-  createScene,
-  createSceneLights,
+  createScene3D,
+  createScene3DLights,
   DEG_TO_RAD,
   invalidateNodeLocalTransform,
   reserveParticleEmitter3D,
@@ -34,14 +34,14 @@ const ctx = createScene3DContext({
   height: window.innerHeight,
 });
 
-const scene = createScene();
+const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 60, aspect: window.innerWidth / window.innerHeight });
 
 const greenLight = createPointLight({ color: 0x00ff00ff, intensity: 5, range: 600 });
 const blueLight = createPointLight({ color: 0x0000ffff, intensity: 5, range: 600 });
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1 });
-const lights: SceneLights = createSceneLights({ ambient, point: [greenLight, blueLight] });
+const lights: Scene3DLights = createScene3DLights({ ambient, point: [greenLight, blueLight] });
 
 const orbit = createOrbitControllerFromAway(camera, {
   distance: 1000,

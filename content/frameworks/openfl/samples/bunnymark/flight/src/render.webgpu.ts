@@ -3,7 +3,7 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderState,
   defaultWgpuQuadBatchRenderer,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   QuadBatchKind,
   registerDefaultWgpuMaterial,
   registerRenderer,
@@ -29,7 +29,7 @@ state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 
 export function render(root: QuadBatch): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+  if (!prepareScene2DRender(state, root)) return;
   renderWgpuBackground(state);
   renderWgpuSprite(state, root);
   submitWgpuRenderPass(state);

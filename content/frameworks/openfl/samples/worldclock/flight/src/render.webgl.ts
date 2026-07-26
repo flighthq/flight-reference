@@ -11,12 +11,12 @@ import {
   defaultGlMoveTo,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
   createMatrix,
 } from '@flighthq/sdk';
 
@@ -53,7 +53,7 @@ export function setSize(width: number, height: number): void {
 }
 
 export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+  if (!prepareScene2DRender(state, root)) return;
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
 }

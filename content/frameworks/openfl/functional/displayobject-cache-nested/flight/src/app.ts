@@ -6,7 +6,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  createDisplayContainer,
+  createDisplayObject,
   createRichText,
   createShape,
   invalidateNodeAppearance,
@@ -33,8 +33,8 @@ function pos(i: number): number {
   return (i * height) / 720;
 }
 
-function makeChild(rects: { color: number; x: number; y: number }[]): ReturnType<typeof createDisplayContainer> {
-  const c = createDisplayContainer();
+function makeChild(rects: { color: number; x: number; y: number }[]): ReturnType<typeof createDisplayObject> {
+  const c = createDisplayObject();
   const bg = createShape();
   appendShapeBeginFill(bg, 0xff0000);
   for (const { x, y } of rects.slice(0, 1)) {
@@ -52,7 +52,7 @@ function makeChild(rects: { color: number; x: number; y: number }[]): ReturnType
   return c;
 }
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const W = width;
 const H = height;
@@ -79,7 +79,7 @@ const child2 = makeChild([
 ]);
 child2.x = pos(150);
 
-const parent = createDisplayContainer();
+const parent = createDisplayObject();
 
 const parentBg = createShape();
 appendShapeBeginFill(parentBg, 0xff0000);

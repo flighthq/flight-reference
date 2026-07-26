@@ -1,4 +1,4 @@
-import type { ImageResource, Mesh, PerspectiveProjection, SceneNode, StandardPbrMaterial } from '@flighthq/sdk';
+import type { ImageResource, Mesh, PerspectiveProjection, Node3D, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   bakeGlEnvironmentIbl,
@@ -10,10 +10,10 @@ import {
   createFxaaEffect,
   createImageResourceFromSurface,
   createMesh,
-  createScene,
-  createSceneFromObj,
-  createSceneLights,
-  createSceneNode,
+  createScene3D,
+  createScene3DFromObj,
+  createScene3DLights,
+  createNode3D,
   createSphereMeshGeometry,
   createStandardPbrMaterial,
   createSurface,
@@ -49,7 +49,7 @@ const ctx = createScene3DContext({
   effects: [createToneMapEffect({ operator: 'aces' }), createFxaaEffect()],
 });
 
-const scene = createScene();
+const scene = createScene3D();
 
 // Far plane raised to enclose the sky dome below.
 const camera = createCameraFromAway({ y: 20, z: -50, targetY: 20, fov: 60, near: 0.1, far: 9000 });
@@ -100,9 +100,9 @@ const { directional, ambient } = createDirectionalLightFromAway({
   ambientColor: 0x85b2cd,
   tuning: { diffuse: 0.45, ambient: 0.5 },
 });
-const lights = createSceneLights({ ambient, directional });
+const lights = createScene3DLights({ ambient, directional });
 
-const spartanContainer = createSceneNode();
+const spartanContainer = createNode3D();
 setVector3(spartanContainer.scale, 0.25, 0.25, 0.25);
 invalidateNodeLocalTransform(spartanContainer);
 addNodeChild(scene.root, spartanContainer);
@@ -276,7 +276,7 @@ const stoneTexture = createTexture({
 setTextureUvScale(stoneTexture, 20, 20);
 stoneMaterial.baseColorMap = stoneTexture;
 
-function applyMaterialToObjScene(objScene: SceneNode, material: StandardPbrMaterial): void {
+function applyMaterialToObjScene(objScene: Node3D, material: StandardPbrMaterial): void {
   for (const child of getNodeChildren(objScene)) {
     const mesh = child as Mesh;
     if (mesh.geometry) {
@@ -294,15 +294,15 @@ function applyMaterialToObjScene(objScene: SceneNode, material: StandardPbrMater
   }
 }
 
-const spartanScene = createSceneFromObj(spartanObjText);
+const spartanScene = createScene3DFromObj(spartanObjText);
 applyMaterialToObjScene(spartanScene.root, masterchiefMaterial);
 for (const child of getNodeChildren(spartanScene.root)) {
   addNodeChild(spartanContainer, child);
 }
 
-const terrainScene = createSceneFromObj(terrainObjText);
+const terrainScene = createScene3DFromObj(terrainObjText);
 applyMaterialToObjScene(terrainScene.root, stoneMaterial);
-let terrainNode: SceneNode | undefined;
+let terrainNode: Node3D | undefined;
 for (const child of getNodeChildren(terrainScene.root)) {
   addNodeChild(scene.root, child);
   if (!terrainNode) terrainNode = child;

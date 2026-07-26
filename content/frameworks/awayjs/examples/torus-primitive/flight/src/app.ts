@@ -5,8 +5,8 @@ import {
   createFxaaEffect,
   createMesh,
   createQuaternion,
-  createScene,
-  createSceneLights,
+  createScene3D,
+  createScene3DLights,
   createTexture,
   createToneMapEffect,
   createTorusMeshGeometry,
@@ -29,7 +29,7 @@ const ctx = createScene3DContext({
   effects: [createToneMapEffect({ operator: 'aces' }), createFxaaEffect()],
 });
 
-const scene = createScene();
+const scene = createScene3D();
 
 const camera = createCameraFromAway({ z: -1000, fov: 60 });
 
@@ -41,7 +41,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
   diffuse: 0.7,
 });
 
-const lights = createSceneLights({ ambient, directional });
+const lights = createScene3DLights({ ambient, directional });
 
 const image = await loadImageResourceFromUrl('awayjs/assets/dots.png');
 // Flight builds the torus in its native right-handed space while the camera helper mirrors z

@@ -6,7 +6,7 @@ import {
   attachWheelInput,
   connectInputToTextInput,
   connectSignal,
-  createDisplayContainer,
+  createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
   createInputManager,
@@ -18,11 +18,11 @@ import {
   focusTextInput,
   invalidateNodeLocalTransform,
   loadFontFromUrl,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
   RichTextKind,
 } from '@flighthq/sdk';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
@@ -55,7 +55,7 @@ const verifyFrame = createGlFrameVerifier(state);
 
 const font = await loadFontFromUrl('awayjs/assets/georgia.ttf', 'Georgia');
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 root.x = width / 2;
 root.y = height / 2;
 invalidateNodeLocalTransform(root);
@@ -125,9 +125,9 @@ connectSignal(input.onWheel, (data) => {
 });
 
 function frame(): void {
-  prepareDisplayObjectRender(state, root);
+  prepareScene2DRender(state, root);
   renderGlBackground(state);
-  renderGlDisplayObject(state, root);
+  renderGlScene2D(state, root);
   verifyFrame();
   requestAnimationFrame(frame);
 }

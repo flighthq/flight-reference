@@ -3,7 +3,7 @@ import {
   appendShapeBeginFill,
   appendShapeRectangle,
   clearShapeCommands,
-  createDisplayContainer,
+  createDisplayObject,
   createShape,
   invalidateNodeAppearance,
   removeNodeChild,
@@ -48,7 +48,7 @@ function pos(i: number): number {
   return (i * height) / 720;
 }
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 // Background + static rectangles drawn on the container background shape
 const bg = createShape();

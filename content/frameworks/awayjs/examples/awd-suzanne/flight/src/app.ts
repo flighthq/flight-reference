@@ -1,4 +1,4 @@
-import type { BlinnPhongMaterial, Material, Mesh, PerspectiveProjection, SceneHit } from '@flighthq/sdk';
+import type { BlinnPhongMaterial, Material, Mesh, PerspectiveProjection, Scene3DHit } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendMatrix4,
@@ -6,17 +6,17 @@ import {
   createFxaaEffect,
   createMatrix4,
   createMesh,
-  createScene,
-  createSceneHit,
-  createSceneLights,
+  createScene3D,
+  createScene3DHit,
+  createScene3DLights,
   createToneMapEffect,
   createVector3,
   DEG_TO_RAD,
   findNode,
   getNodeLocalMatrix4,
   isMesh,
-  createSceneFromAwd2,
-  pickScene,
+  createScene3DFromAwd2,
+  pickScene3D,
   rotateMatrix4,
   scaleMatrix4,
   setCamera3DViewMatrix4FromLookAt,
@@ -35,7 +35,7 @@ const ctx = createScene3DContext({
   effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
-const scene = createScene();
+const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 60, far: 6000 });
 
@@ -60,7 +60,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
     ambientColor: 0xa06038,
   },
 });
-const lights = createSceneLights({ ambient, directional });
+const lights = createScene3DLights({ ambient, directional });
 
 const hoverMaterial: Material = createBlinnPhongMaterial({
   diffuse: 0xff0000ff,
@@ -68,7 +68,7 @@ const hoverMaterial: Material = createBlinnPhongMaterial({
 });
 
 const buffer = await fetch('awayjs/assets/suzanne.awd').then((r) => r.arrayBuffer());
-const modelScene = createSceneFromAwd2(new Uint8Array(buffer));
+const modelScene = createScene3DFromAwd2(new Uint8Array(buffer));
 
 const templateMesh = findNode(modelScene.root, isMesh) as Mesh | null;
 if (!templateMesh?.geometry) throw new Error('No mesh found in suzanne.awd');
@@ -128,15 +128,15 @@ function updateCamera(): void {
 }
 
 let lastHovered: Mesh | null = null;
-const hit: SceneHit = createSceneHit();
+const hit: Scene3DHit = createScene3DHit();
 
 ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
   const rect = ctx.canvas.getBoundingClientRect();
-  // pickScene expects normalized device coordinates in [-1, 1], not pixels; the Y axis flips (screen
+  // pickScene3D expects normalized device coordinates in [-1, 1], not pixels; the Y axis flips (screen
   // Y grows down, NDC Y grows up). Using rect dimensions keeps this correct under devicePixelRatio.
   const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
   const ndcY = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-  const result = pickScene(scene.root, camera, ndcX, ndcY, hit);
+  const result = pickScene3D(scene.root, camera, ndcX, ndcY, hit);
 
   if (lastHovered && lastHovered !== result?.node) {
     lastHovered.materials[0] = defaultMaterial;

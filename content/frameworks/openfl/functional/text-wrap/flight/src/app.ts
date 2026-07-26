@@ -1,6 +1,6 @@
 import {
   addNodeChild,
-  createDisplayContainer,
+  createDisplayObject,
   createRichText,
   parseTextMarkup,
   RichTextKind,
@@ -16,7 +16,7 @@ const { height, render, width } = await createFunctionalTarget({
   kinds: [RichTextKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const W = width;
 const H = height;

@@ -7,7 +7,7 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   appendShapeRoundRectangle,
-  createDisplayContainer,
+  createDisplayObject,
   createRichText,
   createShape,
   invalidateNodeAppearance,
@@ -33,7 +33,7 @@ function pos(i: number): number {
   return (i * height) / 720;
 }
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const W = width;
 const H = height;
@@ -59,7 +59,7 @@ for (const { color, alpha, x, y } of bgRects) {
 }
 
 // Orbiting group
-const group = createDisplayContainer();
+const group = createDisplayObject();
 addNodeChild(root, group);
 
 const redBase = createShape();

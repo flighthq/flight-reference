@@ -4,7 +4,7 @@ import {
   createGlCanvasElement,
   createGlRenderState,
   defaultGlSpriteRenderer,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultGlMaterial,
   registerRenderer,
   renderGlBackground,
@@ -29,7 +29,7 @@ state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 
 export function render(root: Sprite): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+  if (!prepareScene2DRender(state, root)) return;
   renderGlBackground(state);
   renderGlSprite(state, root);
 }

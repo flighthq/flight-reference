@@ -8,14 +8,14 @@ import {
   BitmapKind,
   createBitmap,
   createClipRegionFromRectangle,
-  createDisplayContainer,
+  createDisplayObject,
   createRichText,
   createShape,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   RichTextKind,
-  setDisplayObjectClip,
+  setNode2DClip,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -35,7 +35,7 @@ function pos(i: number): number {
   return (i * height) / 720;
 }
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const W = width;
 const H = height;
@@ -43,12 +43,12 @@ const H = height;
 const owlImg = await loadImageResourceFromUrl('openfl/assets/OwlAlpha.png');
 
 // Owl clip: container clips to the eyes region; content moves to pan across the image.
-const owlClip = createDisplayContainer();
-setDisplayObjectClip(owlClip, createClipRegionFromRectangle({ x: 0, y: 0, width: 200, height: 250 }));
+const owlClip = createDisplayObject();
+setNode2DClip(owlClip, createClipRegionFromRectangle({ x: 0, y: 0, width: 200, height: 250 }));
 owlClip.x = 100;
 owlClip.y = 630;
 
-const owlContent = createDisplayContainer();
+const owlContent = createDisplayObject();
 owlContent.y = -300;
 const owlBitmap = createBitmap();
 owlBitmap.data.image = owlImg;
@@ -84,12 +84,12 @@ const movies = [
 const CLIP_W = 400;
 const CLIP_H = 300;
 
-const textClip = createDisplayContainer();
-setDisplayObjectClip(textClip, createClipRegionFromRectangle({ x: 0, y: 0, width: CLIP_W, height: CLIP_H }));
+const textClip = createDisplayObject();
+setNode2DClip(textClip, createClipRegionFromRectangle({ x: 0, y: 0, width: CLIP_W, height: CLIP_H }));
 textClip.x = pos(300);
 textClip.y = pos(350);
 
-const textContent = createDisplayContainer();
+const textContent = createDisplayObject();
 addNodeChild(textClip, textContent);
 
 const textField = createRichText();
@@ -103,7 +103,7 @@ addNodeChild(textContent, textField);
 addNodeChild(textContent, owlClip);
 
 // Border around text clip area
-const outerSprite = createDisplayContainer();
+const outerSprite = createDisplayObject();
 const borderColor = 0xe8c343;
 function addBorderRect(x: number, y: number, w: number, h: number): void {
   const s = createShape();
@@ -119,9 +119,9 @@ addBorderRect(textClip.x - 2, textClip.y + CLIP_H, CLIP_W + 4, 2);
 addNodeChild(outerSprite, textClip);
 
 // Outer clip: orbits by moving the content while the clip window stays fixed.
-const outerClip = createDisplayContainer();
-setDisplayObjectClip(outerClip, createClipRegionFromRectangle({ x: 0, y: 0, width: W, height: H }));
-const outerContent = createDisplayContainer();
+const outerClip = createDisplayObject();
+setNode2DClip(outerClip, createClipRegionFromRectangle({ x: 0, y: 0, width: W, height: H }));
+const outerContent = createDisplayObject();
 addNodeChild(outerContent, outerSprite);
 addNodeChild(outerClip, outerContent);
 addNodeChild(root, outerClip);

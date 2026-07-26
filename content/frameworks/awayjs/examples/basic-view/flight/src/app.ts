@@ -6,8 +6,8 @@ import {
   createMesh,
   createPlaneMeshGeometry,
   createQuaternion,
-  createScene,
-  createSceneLights,
+  createScene3D,
+  createScene3DLights,
   createTexture,
   createToneMapEffect,
   createUnlitMaterial,
@@ -27,7 +27,7 @@ const ctx = createScene3DContext({
   effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
-const scene = createScene();
+const scene = createScene3D();
 
 const material = createUnlitMaterial({ baseColor: 0xffffffff });
 const geometry = createPlaneMeshGeometry(700, 700);
@@ -36,7 +36,7 @@ addNodeChild(scene.root, mesh);
 
 const camera = createCameraFromAway({ y: 500, z: -600, fov: 60 });
 
-const lights = createSceneLights();
+const lights = createScene3DLights();
 const yAxis = createVector3(0, 1, 0);
 const scratchQuat = createQuaternion();
 

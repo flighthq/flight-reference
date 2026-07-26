@@ -3,7 +3,7 @@ import {
   createCanvasElement,
   createCanvasRenderState,
   defaultCanvasSpriteRenderer,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasSprite,
@@ -27,7 +27,7 @@ state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 
 export function render(root: Sprite): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+  if (!prepareScene2DRender(state, root)) return;
   renderCanvasBackground(state);
   renderCanvasSprite(state, root);
 }

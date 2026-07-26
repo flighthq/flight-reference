@@ -12,11 +12,11 @@ import {
   enableDomBlendModeSupport,
   enableDomClipSupport,
   enableDomRenderCache,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerCanvasShapeCommands,
   registerRenderer,
   renderDomBackground,
-  renderDomDisplayObject,
+  renderDomScene2D,
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
@@ -73,9 +73,9 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
     height,
     scale: 1,
     render(root: DisplayObject): void {
-      if (!prepareDisplayObjectRender(state, root)) return;
+      if (!prepareScene2DRender(state, root)) return;
       renderDomBackground(state);
-      renderDomDisplayObject(state, root);
+      renderDomScene2D(state, root);
     },
   });
 }

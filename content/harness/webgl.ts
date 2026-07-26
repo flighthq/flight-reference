@@ -19,13 +19,13 @@ import {
   enableGlClipSupport,
   enableGlRenderCache,
   ParticleEmitter2DKind,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   QuadBatchKind,
   registerDefaultGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
-  renderGlDisplayObject,
+  renderGlScene2D,
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
@@ -96,9 +96,9 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
     height,
     scale: pixelRatio,
     render(root: DisplayObject): void {
-      if (!prepareDisplayObjectRender(state, root)) return;
+      if (!prepareScene2DRender(state, root)) return;
       renderGlBackground(state);
-      renderGlDisplayObject(state, root);
+      renderGlScene2D(state, root);
     },
   });
 }

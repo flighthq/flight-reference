@@ -5,14 +5,14 @@ import {
   BitmapKind,
   connectInputToInteraction,
   createBitmap,
-  createDisplayContainer,
+  createDisplayObject,
   createInteractionManager,
   createInputManager,
   createRectangle,
   createRichText,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
-  prepareDisplayObjectRender,
+  prepareScene2DRender,
   registerDefaultHitTests,
   RichTextKind,
   TextLabelKind,
@@ -31,7 +31,7 @@ const target = await createFunctionalTarget({
   kinds: [BitmapKind, RichTextKind, TextLabelKind],
 });
 
-const root = createDisplayContainer();
+const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
 const bgBmp = createBitmap();
@@ -136,7 +136,7 @@ canvas.addEventListener('click', (e) => {
 });
 
 function frame(): void {
-  prepareDisplayObjectRender(target.state, root);
+  prepareScene2DRender(target.state, root);
   target.render(root);
   requestAnimationFrame(frame);
 }

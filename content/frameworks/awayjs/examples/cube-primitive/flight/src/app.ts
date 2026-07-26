@@ -7,8 +7,8 @@ import {
   createFxaaEffect,
   createMesh,
   createQuaternion,
-  createScene,
-  createSceneLights,
+  createScene3D,
+  createScene3DLights,
   createStandardPbrMaterial,
   createTexture,
   createToneMapEffect,
@@ -35,7 +35,7 @@ const ctx = createScene3DContext({
   effects: [createToneMapEffect(), createFxaaEffect()],
 });
 
-const scene = createScene();
+const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 120, near: 0.1 });
 
@@ -46,7 +46,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
   ambient: 0.4,
   ambientColor: 0x85b2cd,
 });
-const lights = createSceneLights({ ambient, directional });
+const lights = createScene3DLights({ ambient, directional });
 
 const image = await loadImageResourceFromUrl('awayjs/assets/spacy_texture.png');
 const texture = createTexture({ image });

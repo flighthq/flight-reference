@@ -1,18 +1,9 @@
-import type {
-  AnimationPlayer,
-  AnimationTrack,
-  BlinnPhongMaterial,
-  GlRenderEffectPipeline,
-  Mesh,
-  PerspectiveProjection,
-} from '@flighthq/sdk';
+import type { GlRenderEffectPipeline, PerspectiveProjection } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceAnimationPlayer,
   beginGlRenderEffectPipeline,
-  cloneMeshGeometry,
   configureDirectionalShadowCamera3D,
-  createAnimationPlayer,
   createBlinnPhongMaterial,
   createCamera3D,
   createFxaaEffect,
@@ -23,7 +14,6 @@ import {
   createOrthographicProjection,
   createPlaneMeshGeometry,
   createScene3D,
-  createScene3DFromMd2,
   createScene3DLights,
   createTexture,
   createTilingSampler,
@@ -31,27 +21,24 @@ import {
   drawGlScene3D,
   drawGlScene3DShadowMap,
   endGlRenderEffectPipeline,
-  getNodeChildren,
-  invalidateNodeLocalTransform,
-  isMesh,
   loadImageResourceFromUrl,
   registerBlinnPhongGlMaterial,
   registerDefaultGlRenderEffects,
   renderGlBackground,
   sampleAnimationTrack,
   setTextureUvScale,
-  setVector3,
   updateMeshMorph,
 } from '@flighthq/sdk';
 
 import {
+  awayDirection,
+  bindOrbitDrag,
   createCameraFromAway,
   createOrbitControllerFromAway,
-  AWAY_MOUSE_SENSITIVITY,
-  awayDirection,
 } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
+import { loadKnights } from './knights';
 
 const pixelRatio = window.devicePixelRatio || 1;
 
@@ -105,96 +92,16 @@ const floorMaterial = createBlinnPhongMaterial({
 });
 floorMaterial.doubleSided = true;
 
-const knightMaterials: BlinnPhongMaterial[] = [];
-for (let i = 0; i < 4; i++) {
-  knightMaterials.push(createBlinnPhongMaterial({ diffuse: 0xffffffff, specular: 0xffffffff, shininess: 30 }));
-}
-
-const [floorImage, ...knightImages] = await Promise.all([
-  loadImageResourceFromUrl('awayjs/assets/floor_diffuse.jpg'),
-  loadImageResourceFromUrl('awayjs/assets/pknight1.png'),
-  loadImageResourceFromUrl('awayjs/assets/pknight2.png'),
-  loadImageResourceFromUrl('awayjs/assets/pknight3.png'),
-  loadImageResourceFromUrl('awayjs/assets/pknight4.png'),
-]);
-
+const floorImage = await loadImageResourceFromUrl('awayjs/assets/floor_diffuse.jpg');
 const floorTex = createTexture({ image: floorImage, sampler: createTilingSampler() });
 setTextureUvScale(floorTex, 5, 5);
 floorMaterial.diffuseMap = floorTex;
-
-for (let i = 0; i < 4; i++) {
-  knightMaterials[i]!.diffuseMap = createTexture({ image: knightImages[i]! });
-}
 
 const floorGeometry = createPlaneMeshGeometry(5000, 5000, 1, 1);
 const floor = createMesh(floorGeometry, [floorMaterial]);
 addNodeChild(scene.root, floor);
 
-const md2Buffer = await fetch('awayjs/assets/pknight.md2').then((r) => r.arrayBuffer());
-const md2Scene = await createScene3DFromMd2(new Uint8Array(md2Buffer));
-const md2Clips = Object.values(md2Scene.animations);
-
-let templateMesh: Mesh | null = null;
-for (const child of getNodeChildren(md2Scene.root)) {
-  if (isMesh(child)) {
-    templateMesh = child as Mesh;
-    break;
-  }
-}
-
-if (!templateMesh?.geometry) {
-  throw new Error('No mesh found in MD2 file');
-}
-
-const templateGeometry = templateMesh.geometry;
-const templateMorph = templateMesh.morph;
-
-interface KnightAnimationBucket {
-  driver: Mesh;
-  player: AnimationPlayer | null;
-  track: AnimationTrack | null;
-}
-
-const animationBuckets: KnightAnimationBucket[] = [];
-const numWide = 20;
-const numDeep = 20;
-// CPU morphing rewrites and uploads a full geometry each frame. Sixteen independently phased shared
-// geometries retain a lively crowd while reducing deformation work and animated GPU buffers from 400
-// to 16. Every visible knight still has its own transform/material and participates in both shadow and
-// forward passes.
-const animationBucketCount = templateMorph != null && md2Clips.length > 0 ? Math.min(16, md2Clips.length) : 1;
-
-for (let i = 0; i < animationBucketCount; i++) {
-  const geometry = cloneMeshGeometry(templateGeometry);
-  const driver = createMesh(geometry, []);
-  const clip = md2Clips[i % md2Clips.length] ?? null;
-  let player: AnimationPlayer | null = null;
-  let track: AnimationTrack | null = null;
-  if (templateMorph != null && clip != null) {
-    driver.morph = { targets: templateMorph.targets, weights: new Float32Array(templateMorph.weights.length) };
-    player = createAnimationPlayer(clip, {
-      loop: true,
-      time: (i / animationBucketCount) * clip.duration,
-    });
-    track = clip.channels[0]?.track ?? null;
-  }
-  animationBuckets.push({ driver, player, track });
-}
-
-for (let i = 0; i < numWide; i++) {
-  for (let j = 0; j < numDeep; j++) {
-    const material = knightMaterials[Math.floor(Math.random() * knightMaterials.length)]!;
-    const bucket = animationBuckets[Math.floor(Math.random() * animationBuckets.length)]!;
-    const knight = createMesh(bucket.driver.geometry, [material]);
-
-    const x = ((i - (numWide - 1) / 2) * 5000) / numWide;
-    const z = ((j - (numDeep - 1) / 2) * 5000) / numDeep;
-    setVector3(knight.position, x, 120, z);
-    setVector3(knight.scale, 5, 5, 5);
-    invalidateNodeLocalTransform(knight);
-    addNodeChild(scene.root, knight);
-  }
-}
+const { animationBuckets } = await loadKnights(scene);
 
 const orbit = createOrbitControllerFromAway(camera, {
   distance: 2000,
@@ -204,40 +111,12 @@ const orbit = createOrbitControllerFromAway(camera, {
   maxTiltAngle: 90,
 });
 
-let dragging = false;
-let lastMouseX = 0;
-let lastMouseY = 0;
-let savedPan = orbit.panAngle;
-let savedTilt = orbit.tiltAngle;
+bindOrbitDrag(canvas, orbit, { minDistance: 100, maxDistance: 2000 });
 
 let keyUp = false;
 let keyDown = false;
 let keyLeft = false;
 let keyRight = false;
-
-canvas.addEventListener('mousedown', (e: MouseEvent) => {
-  dragging = true;
-  lastMouseX = e.clientX;
-  lastMouseY = e.clientY;
-  savedPan = orbit.panAngle;
-  savedTilt = orbit.tiltAngle;
-});
-
-canvas.addEventListener('mousemove', (e: MouseEvent) => {
-  if (!dragging) return;
-  orbit.panAngle = AWAY_MOUSE_SENSITIVITY * (e.clientX - lastMouseX) + savedPan;
-  orbit.tiltAngle = AWAY_MOUSE_SENSITIVITY * (e.clientY - lastMouseY) + savedTilt;
-});
-
-window.addEventListener('mouseup', () => {
-  dragging = false;
-});
-
-canvas.addEventListener('wheel', (e: WheelEvent) => {
-  orbit.distance -= e.deltaY / 2;
-  if (orbit.distance < 100) orbit.distance = 100;
-  else if (orbit.distance > 2000) orbit.distance = 2000;
-});
 
 document.addEventListener('keydown', (e: KeyboardEvent) => {
   switch (e.code) {

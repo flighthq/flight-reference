@@ -99,7 +99,7 @@ function frame(): void {
 
   const t = performance.now();
   const deg = Math.PI / 180;
-  setQuaternionFromEuler(mesh.rotation, -(t / 10) * deg, -(t / 30) * deg, 0, 'YXZ');
+  setQuaternionFromEuler(mesh.rotation, -(t / 10) * deg, -(t / 30) * deg, 0, 'XYZ');
   invalidateNodeLocalTransform(mesh);
 
   render(scene.root, camera, lights);

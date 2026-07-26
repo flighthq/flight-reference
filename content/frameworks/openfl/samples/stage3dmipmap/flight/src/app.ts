@@ -98,7 +98,7 @@ function frame(): void {
   setCamera3DViewMatrix4FromLookAt(camera, cameraEye, cameraTarget, up);
 
   const t = performance.now();
-  setQuaternionFromEuler(mesh.rotation, (t / 10) * (Math.PI / 180), (t / 30) * (Math.PI / 180), 0);
+  setQuaternionFromEuler(mesh.rotation, -(t / 10) * (Math.PI / 180), -(t / 30) * (Math.PI / 180), 0, 'YXZ');
   invalidateNodeLocalTransform(mesh);
 
   render(scene.root, camera, lights);

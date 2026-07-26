@@ -76,13 +76,13 @@ export function launchScene(SceneClass: new () => any): void {
       assets.verbose = Capabilities.isDebugger;
 
       var manifest = new AssetManifest();
-      manifest.addBitmapData('starling/assets/textures/1x/atlas.png');
-      manifest.addText('starling/assets/textures/1x/atlas.xml');
-      manifest.addBitmapData('starling/assets/fonts/1x/desyrel.png');
-      manifest.addText('starling/assets/fonts/1x/desyrel.fnt');
-      manifest.addBitmapData('starling/assets/textures/1x/background.jpg');
-      manifest.addSound(['starling/assets/audio/wing_flap.ogg', 'starling/assets/audio/wing_flap.mp3']);
-      manifest.addBytes('starling/assets/textures/1x/compressed_texture.atf');
+      manifest.addBitmapData('starling/textures/1x/atlas.png');
+      manifest.addText('starling/textures/1x/atlas.xml');
+      manifest.addBitmapData('starling/fonts/1x/desyrel.png');
+      manifest.addText('starling/fonts/1x/desyrel.fnt');
+      manifest.addBitmapData('starling/textures/1x/background.jpg');
+      manifest.addSound(['starling/audio/wing_flap.ogg', 'starling/audio/wing_flap.mp3']);
+      manifest.addBytes('starling/textures/1x/compressed_texture.atf');
       manifest.addFont('DejaVu Sans');
       manifest.addFont('Ubuntu');
 
@@ -91,25 +91,25 @@ export function launchScene(SceneClass: new () => any): void {
           Assets.registerLibrary('default', library);
 
           var atlasTexture: Texture = Texture.fromBitmapData(
-            Assets.getBitmapData('starling/assets/textures/1x/atlas.png'),
+            Assets.getBitmapData('starling/textures/1x/atlas.png'),
             false,
           );
-          var atlasXml: string = Assets.getText('starling/assets/textures/1x/atlas.xml');
+          var atlasXml: string = Assets.getText('starling/textures/1x/atlas.xml');
           var desyrelTexture: Texture = Texture.fromBitmapData(
-            Assets.getBitmapData('starling/assets/fonts/1x/desyrel.png'),
+            Assets.getBitmapData('starling/fonts/1x/desyrel.png'),
             false,
           );
-          var desyrelXml: string = Assets.getText('starling/assets/fonts/1x/desyrel.fnt');
+          var desyrelXml: string = Assets.getText('starling/fonts/1x/desyrel.fnt');
           var bitmapFont = new BitmapFont(desyrelTexture, desyrelXml);
           TextField.registerCompositor(bitmapFont, bitmapFont.name);
           assets.addTexture('atlas', atlasTexture);
           assets.addTextureAtlas('atlas', new TextureAtlas(atlasTexture, atlasXml));
           assets.addTexture(
             'background',
-            Texture.fromBitmapData(Assets.getBitmapData('starling/assets/textures/1x/background.jpg'), false),
+            Texture.fromBitmapData(Assets.getBitmapData('starling/textures/1x/background.jpg'), false),
           );
-          assets.addSound('wing_flap', Assets.getSound('starling/assets/audio/wing_flap.ogg'));
-          var compressedTexture: ByteArray = Assets.getBytes('starling/assets/textures/1x/compressed_texture.atf');
+          assets.addSound('wing_flap', Assets.getSound('starling/audio/wing_flap.ogg'));
+          var compressedTexture: ByteArray = Assets.getBytes('starling/textures/1x/compressed_texture.atf');
           assets.addByteArray('compressed_texture', compressedTexture);
 
           onComplete(assets);
@@ -135,7 +135,7 @@ export function launchScene(SceneClass: new () => any): void {
     };
 
     private initElements(): void {
-      BitmapData.loadFromFile('starling/assets/textures/1x/background.jpg').onComplete((bitmapData) => {
+      BitmapData.loadFromFile('starling/textures/1x/background.jpg').onComplete((bitmapData) => {
         this._background = new Bitmap(bitmapData);
         this._background.smoothing = true;
         this.addChild(this._background);

@@ -63,12 +63,12 @@ enableGlBlendModeSupport(state);
 
 const root = createDisplayObject();
 
-const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
+const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgBmp = createBitmap();
 bgBmp.data.image = bgImage;
 addNodeChild(root, bgBmp);
 
-const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
+const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
 // Starling's "none" blend mode (Copy/source-only) is now a CompositeOperator, not a BlendMode.
 // To match the Starling reference visually, "none" uses Normal blending over a white backdrop.

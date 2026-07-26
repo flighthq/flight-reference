@@ -68,12 +68,12 @@ enableGlClipSupport(state);
 
 const root = createDisplayObject();
 
-const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
+const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgBmp = createBitmap();
 bgBmp.data.image = bgImage;
 addNodeChild(root, bgBmp);
 
-const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
+const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
 const maskedContainer = createDisplayObject();
 addNodeChild(root, maskedContainer);
@@ -82,7 +82,7 @@ const tintedBirdImage = await (async () => {
   const img = await new Promise<HTMLImageElement>((resolve) => {
     const el = new Image();
     el.onload = () => resolve(el);
-    el.src = 'starling/assets/textures/1x/atlas.png';
+    el.src = 'starling/textures/1x/atlas.png';
   });
   const c = document.createElement('canvas');
   c.width = 165;

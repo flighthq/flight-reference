@@ -80,12 +80,12 @@ registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 
 const root = createDisplayObject();
 
-const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
+const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgBmp = createBitmap();
 bgBmp.data.image = bgImage;
 addNodeChild(root, bgBmp);
 
-const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
+const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
 const movie = createDisplayObject();
 movie.x = CenterX - FrameSize / 2;

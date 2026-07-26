@@ -6,6 +6,8 @@ import {
   connectInputToInteraction,
   createBitmap,
   createBitmapText,
+  createColorTransform,
+  createColorTransformAdjustment,
   createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
@@ -20,6 +22,7 @@ import {
   defaultGlQuadBatchRenderer,
   defaultGlRichTextRenderer,
   defaultGlTextLabelRenderer,
+  enableGlColorAdjustment,
   getNodeChildCount,
   invalidateNodeAppearance,
   invalidateNodeLocalContent,
@@ -36,6 +39,7 @@ import {
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
+  setNode2DColorAdjustments,
   TextLabelKind,
   updateBitmapText,
 } from '@flighthq/sdk';
@@ -63,6 +67,8 @@ const state = createGlRenderState(canvas, {
 });
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+enableGlColorAdjustment(state);
 registerDefaultGlMaterial(state);
 registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
 registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
@@ -71,12 +77,12 @@ registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 
 const root = createDisplayObject();
 
-const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
+const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgBmp = createBitmap();
 bgBmp.data.image = bgImage;
 addNodeChild(root, bgBmp);
 
-const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
+const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 const objectRectangle = createRectangle(770, 173, 32, 32);
 
 const container = createDisplayObject();
@@ -84,8 +90,8 @@ container.x = CenterX;
 container.y = CenterY;
 addNodeChild(root, container);
 
-const miniFntText = await (await fetch('starling/assets/fonts/1x/mini.fnt')).text();
-const miniImage = await loadImageResourceFromUrl('starling/assets/fonts/1x/mini.png');
+const miniFntText = await (await fetch('starling/fonts/1x/mini.fnt')).text();
+const miniImage = await loadImageResourceFromUrl('starling/fonts/1x/mini.png');
 const miniAtlas = createTextureAtlasFromImageResource(miniImage);
 const miniFont = parseBitmapFontXml(miniFntText, { resolvePage: () => miniAtlas });
 const miniGlyphSource = miniFont ? createGlyphSourceFromBitmapFont(miniFont) : null;
@@ -100,6 +106,14 @@ statusText.x = 20;
 statusText.y = 10;
 statusText.scaleX = 2;
 statusText.scaleY = 2;
+
+const colorTransform = createColorTransform();
+colorTransform.redMultiplier = 0;
+colorTransform.greenMultiplier = 0;
+colorTransform.blueMultiplier = 0;
+const adjustment = createColorTransformAdjustment(colorTransform);
+setNode2DColorAdjustments(statusText, [adjustment]);
+
 updateBitmapText(statusText);
 invalidateNodeLocalContent(statusText);
 addNodeChild(root, statusText);

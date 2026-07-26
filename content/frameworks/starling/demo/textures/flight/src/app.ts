@@ -53,12 +53,12 @@ registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 
 const root = createDisplayObject();
 
-const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
+const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgBmp = createBitmap();
 bgBmp.data.image = bgImage;
 addNodeChild(root, bgBmp);
 
-const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
+const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
 const flight00 = createBitmap();
 flight00.data.image = atlas;
@@ -140,7 +140,7 @@ function parseAtfLocal(bytes: Uint8Array): AtfBlock[] | null {
 
 const atfImage = await (async () => {
   try {
-    const response = await fetch('starling/assets/textures/1x/compressed_texture.atf');
+    const response = await fetch('starling/textures/1x/compressed_texture.atf');
     const buffer = await response.arrayBuffer();
     const bytes = new Uint8Array(buffer);
     const blocks = parseAtfLocal(bytes);

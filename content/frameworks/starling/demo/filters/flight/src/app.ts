@@ -108,14 +108,14 @@ const filterInfos: FilterEntry[] = [
   {
     name: 'Glow',
     type: 'glow',
-    cssFilter: 'drop-shadow(0 0 1.5px yellow)',
-    glow: createOuterGlowEffect({ color: 0xffff00, blurX: 1.5, blurY: 1.5, quality: 1 }),
+    cssFilter: 'drop-shadow(0 0 3px yellow)',
+    glow: createOuterGlowEffect({ color: 0xffff00, blurX: 3, blurY: 3, quality: 1 }),
   },
   {
     name: 'Displacement Map',
     type: 'displacementMap',
     cssFilter: 'none',
-    displacementMap: createDisplacementEffect({ intensity: 20, frequency: 12 }),
+    displacementMap: createDisplacementEffect({ intensity: 2, frequency: 100 }),
   },
   {
     name: 'Invert',
@@ -185,12 +185,12 @@ enableGlBlendModeSupport(state);
 
 const root = createDisplayObject();
 
-const bgImage = await loadImageResourceFromUrl('starling/assets/textures/1x/background.jpg');
+const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgBmp = createBitmap();
 bgBmp.data.image = bgImage;
 addNodeChild(root, bgBmp);
 
-const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.png');
+const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
 const rocket = createBitmap();
 rocket.data.image = atlas;

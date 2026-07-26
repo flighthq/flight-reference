@@ -1,10 +1,11 @@
-import type { Node3D, RenderProxy2D } from '@flighthq/sdk';
+import type { RenderProxy2D } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderPass,
   BitmapKind,
   copyQuaternion,
   createBitmap,
+  createBoxMeshGeometry,
   createCamera3D,
   createDisplayObject,
   createGlCanvasElement,
@@ -14,9 +15,7 @@ import {
   createMatrix,
   createMesh,
   createNode2D,
-  createNode3D,
   createPerspectiveProjection,
-  createQuadMeshGeometry,
   createQuaternion,
   createScene3D,
   createScene3DLights,
@@ -40,6 +39,7 @@ import {
   renderGlBackground,
   renderGlScene2D,
   setCamera3DViewMatrix4FromLookAt,
+  setMeshGeometrySubsets,
   setQuaternionFromAxisAngle,
   setVector3,
   TextLabelKind,
@@ -53,15 +53,15 @@ const GameHeight = 480;
 const LogoX = 322;
 const LogoY = 144;
 const LogoSize = 192;
-const HalfSize = LogoSize / 2;
 
+// createBoxMeshGeometry emits faces in +X, -X, +Y, -Y, +Z, -Z order.
 const FaceColors: [number, number, number][] = [
-  [0xff, 0x00, 0x00],
-  [0x00, 0xff, 0x00],
+  [0x00, 0xff, 0xff],
+  [0xff, 0x00, 0xff],
   [0x00, 0x00, 0xff],
   [0xff, 0xff, 0x00],
-  [0xff, 0x00, 0xff],
-  [0x00, 0xff, 0xff],
+  [0xff, 0x00, 0x00],
+  [0x00, 0xff, 0x00],
 ];
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -140,54 +140,23 @@ const cubeLayer = createNode2D(Cube3DKind);
 addNodeChild(root, cubeLayer);
 
 const scene3d = createScene3D();
-const cubeParent: Node3D = createNode3D();
-addNodeChild(scene3d.root, cubeParent);
-
-const quadGeometry = createQuadMeshGeometry(LogoSize, LogoSize);
-
-const faceAxis = createVector3(0, 0, 0);
-const faceQuat = createQuaternion();
-
-interface FaceDef {
-  px: number;
-  py: number;
-  pz: number;
-  ax: number;
-  ay: number;
-  az: number;
-  angle: number;
-}
-
-const faceDefs: FaceDef[] = [
-  { px: 0, py: 0, pz: HalfSize, ax: 0, ay: 0, az: 0, angle: 0 },
-  { px: 0, py: 0, pz: -HalfSize, ax: 0, ay: 1, az: 0, angle: Math.PI },
-  { px: 0, py: HalfSize, pz: 0, ax: 1, ay: 0, az: 0, angle: -Math.PI / 2 },
-  { px: 0, py: -HalfSize, pz: 0, ax: 1, ay: 0, az: 0, angle: Math.PI / 2 },
-  { px: -HalfSize, py: 0, pz: 0, ax: 0, ay: 1, az: 0, angle: -Math.PI / 2 },
-  { px: HalfSize, py: 0, pz: 0, ax: 0, ay: 1, az: 0, angle: Math.PI / 2 },
-];
-
-for (let i = 0; i < 6; i++) {
-  const def = faceDefs[i]!;
+const faceMaterials = faceTextures.map((texture) => {
   const material = createUnlitMaterial({ baseColor: 0xffffffff });
-  material.baseColorMap = faceTextures[i]!;
+  material.baseColorMap = texture;
+  return material;
+});
 
-  const mesh = createMesh(quadGeometry, [material]);
-  setVector3(mesh.position, def.px, def.py, def.pz);
-
-  if (def.angle !== 0) {
-    setVector3(faceAxis, def.ax, def.ay, def.az);
-    setQuaternionFromAxisAngle(faceQuat, faceAxis, def.angle);
-    copyQuaternion(mesh.rotation, faceQuat);
-  }
-
-  invalidateNodeLocalTransform(mesh);
-  addNodeChild(cubeParent, mesh);
-}
+const cubeGeometry = createBoxMeshGeometry(LogoSize, LogoSize, LogoSize);
+setMeshGeometrySubsets(
+  cubeGeometry,
+  faceMaterials.map((_, index) => ({ indexOffset: index * 6, indexCount: 6 })),
+);
+const cube = createMesh(cubeGeometry, faceMaterials);
+addNodeChild(scene3d.root, cube);
 
 const cubeDistance = 400;
-setVector3(cubeParent.position, 0, 0, -cubeDistance);
-invalidateNodeLocalTransform(cubeParent);
+setVector3(cube.position, 0, 0, -cubeDistance);
+invalidateNodeLocalTransform(cube);
 
 const fovY = 2 * Math.atan(GameHeight / 2 / cubeDistance);
 const camera = createCamera3D({
@@ -241,8 +210,8 @@ function renderCube(now: number): void {
   setQuaternionFromAxisAngle(quatZ, zAxis, -rz);
   multiplyQuaternion(quatTemp, quatX, quatY);
   multiplyQuaternion(quatTemp, quatTemp, quatZ);
-  copyQuaternion(cubeParent.rotation, quatTemp);
-  invalidateNodeLocalTransform(cubeParent);
+  copyQuaternion(cube.rotation, quatTemp);
+  invalidateNodeLocalTransform(cube);
 
   beginGlRenderPass(state, cubeRT);
   drawGlScene3D(state, scene3d.root, camera, lights);

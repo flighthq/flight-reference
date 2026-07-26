@@ -35,6 +35,7 @@ const scene = createScene3D();
 const material = createUnlitMaterial({ baseColor: 0xffffffff, baseColorMap: texture });
 material.doubleSided = true;
 const mesh = createMesh(createQuadMeshGeometry(0.6, 0.6), [material]);
+mesh.position.z = 1;
 addNodeChild(scene.root, mesh);
 
 const camera = createCamera3D({
@@ -45,7 +46,7 @@ const camera = createCamera3D({
 
 const lights = createScene3DLights();
 const cameraEye = createVector3(0, 0, 2);
-const cameraTarget = createVector3(0, 0, 0);
+const cameraTarget = createVector3(0, 0, 1);
 const up = createVector3(0, 1, 0);
 
 let cameraLinearAcceleration = 0;

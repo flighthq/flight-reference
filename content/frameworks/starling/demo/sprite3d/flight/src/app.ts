@@ -109,7 +109,7 @@ const faceTextures = FaceColors.map(([r, g, b]) => {
   ctx.globalCompositeOperation = 'destination-in';
   ctx.drawImage(atlasImg, LogoX, LogoY, LogoSize, LogoSize, 0, 0, LogoSize, LogoSize);
   const image = createImageResourceFromCanvas(c);
-  return createTexture({ image });
+  return createTexture({ image, flipY: true });
 });
 
 const rtWidth = Math.round(GameWidth * pixelRatio);
@@ -237,8 +237,8 @@ function renderCube(now: number): void {
   const rz = ((elapsed / 8) * Math.PI * 2) % (Math.PI * 2);
 
   setQuaternionFromAxisAngle(quatX, xAxis, rx);
-  setQuaternionFromAxisAngle(quatY, yAxis, ry);
-  setQuaternionFromAxisAngle(quatZ, zAxis, rz);
+  setQuaternionFromAxisAngle(quatY, yAxis, -ry);
+  setQuaternionFromAxisAngle(quatZ, zAxis, -rz);
   multiplyQuaternion(quatTemp, quatX, quatY);
   multiplyQuaternion(quatTemp, quatTemp, quatZ);
   copyQuaternion(cubeParent.rotation, quatTemp);

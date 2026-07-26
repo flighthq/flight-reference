@@ -7,19 +7,17 @@ import {
   createMesh,
   createMeshGeometry,
   createOrthographicProjection,
-  createQuaternion,
   createScene3DLights,
   createVector3,
   createVertexColorMaterial,
-  setCamera3DViewMatrix4FromLookAt,
-  copyQuaternion,
   invalidateNodeLocalTransform,
+  setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
 } from '@flighthq/sdk';
 
 import { render } from './render';
 
-const TRIANGLE_LAYOUT: VertexAttributeLayout = {
+const LAYOUT: VertexAttributeLayout = {
   attributes: [
     { byteOffset: 0, format: 'float32x3', semantic: 'position' },
     { byteOffset: 12, format: 'float32x4', semantic: 'color0' },
@@ -27,10 +25,15 @@ const TRIANGLE_LAYOUT: VertexAttributeLayout = {
   stride: 28,
 };
 
+// prettier-ignore
 const geometry = createMeshGeometry({
   indices: new Uint16Array([0, 1, 2]),
-  layout: TRIANGLE_LAYOUT,
-  vertices: new Float32Array([-0.3, -0.3, 0, 1, 0, 0, 1, -0.3, 0.3, 0, 0, 1, 0, 1, 0.3, 0.3, 0, 0, 0, 1, 1]),
+  layout: LAYOUT,
+  vertices: new Float32Array([
+    -0.3, -0.3, 0,   1, 0, 0, 1,
+    -0.3,  0.3, 0,   0, 1, 0, 1,
+     0.3,  0.3, 0,   0, 0, 1, 1,
+  ]),
 });
 
 const scene = createScene3D();
@@ -48,11 +51,9 @@ setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 1), createVector3(0
 
 const lights = createScene3DLights();
 const zAxis = createVector3(0, 0, 1);
-const scratchQuat = createQuaternion();
 
 function frame(): void {
-  setQuaternionFromAxisAngle(scratchQuat, zAxis, (performance.now() / 40) * (Math.PI / 180));
-  copyQuaternion(mesh.rotation, scratchQuat);
+  setQuaternionFromAxisAngle(mesh.rotation, zAxis, (performance.now() / 40) * (Math.PI / 180));
   invalidateNodeLocalTransform(mesh);
   render(scene.root, camera, lights);
   requestAnimationFrame(frame);

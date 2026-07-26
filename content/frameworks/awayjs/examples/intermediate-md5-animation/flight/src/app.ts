@@ -1,81 +1,44 @@
-import type {
-  AnimationClip,
-  AnimationPlayer,
-  CubeTexture,
-  Mesh,
-  PerspectiveProjection,
-  Scene3DLights,
-  Node3D,
-} from '@flighthq/sdk';
+import type { AnimationPlayer, PerspectiveProjection, Scene3DLights } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceAnimationPlayer,
   applyAnimationClipToScene3D,
-  computeMeshGeometryNormals,
   configureDirectionalShadowCamera3D,
   copyQuaternion,
   createAabb,
   createAnimationPlayer,
   createCamera3D,
-  createCubeTexture,
-  createEnvironment,
   createFxaaEffect,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
-  createMesh,
   createOrthographicProjection,
-  createPlaneMeshGeometry,
   createQuaternion,
   createScene3D,
-  createScene3DFromMd5Mesh,
   createScene3DLights,
-  createScreenSpaceFogEffect,
-  createTexture,
-  createTilingSampler,
   createToneMapEffect,
   createVector3,
   DEG_TO_RAD,
   drawGlScene3DShadowMap,
-  getNodeChildren,
-  getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
-  isMesh,
-  loadImageResourceFromUrl,
-  parseMd5Anim,
   registerDefaultGlRenderEffects,
   registerStandardPbrGlMaterial,
   registerUnlitGlMaterial,
   setCamera3DViewMatrix4FromLookAt,
-  setCubeTextureFace,
   setQuaternionFromAxisAngle,
-  setTextureUvScale,
   setVector3,
   updateMeshSkin,
 } from '@flighthq/sdk';
 
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway, createPointLightFromAway } from '../../../_shared/flight/src/lighting';
-import { createAwayMatteMaterial } from '../../../_shared/flight/src/materials';
 import type { SkyboxRenderState } from '../../../_shared/flight/src/scene3d';
 import { renderSkyboxScene } from '../../../_shared/flight/src/scene3d';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
-const ANIM_NAMES = [
-  'idle2',
-  'walk7',
-  'attack3',
-  'turret_attack',
-  'attack2',
-  'chest',
-  'roar1',
-  'leftslash',
-  'headpain',
-  'pain1',
-  'pain_luparm',
-  'range_attack2',
-];
-const IDLE_NAME = 'idle2';
-const WALK_NAME = 'walk7';
+import { ANIM_NAMES, IDLE_NAME, WALK_NAME, loadCharacter } from './character';
+import { bindCharacterControls } from './controls';
+import { loadEnvironment } from './environment';
+
 const ROTATION_SPEED = 3;
 const WALK_SPEED = 1;
 const RUN_SPEED = 2;
@@ -108,14 +71,6 @@ registerDefaultGlRenderEffects(glState);
 const verifyFrame = createGlFrameVerifier(glState);
 
 const scene = createScene3D();
-
-const skyFaceNames = ['posX', 'negX', 'posY', 'negY', 'posZ', 'negZ'];
-const skyImages = await Promise.all(
-  skyFaceNames.map((face) => loadImageResourceFromUrl(`awayjs/assets/skybox/grimnight_${face}.png`)),
-);
-const skyTexture: CubeTexture = createCubeTexture();
-for (let i = 0; i < skyImages.length; i++) setCubeTextureFace(skyTexture, i, skyImages[i]);
-const environment = createEnvironment({ environment: skyTexture, intensity: 1 });
 
 const camera = createCameraFromAway({ fov: 60, far: 5000 });
 
@@ -154,86 +109,15 @@ const shadowCamera = createCamera3D({
 // the full 50,000-unit decorative ground plane.
 const shadowBounds = createAabb(-500, -20, -500, 500, 500, 500);
 
-const bodyMaterial = createAwayMatteMaterial(0xffffffff);
-const groundMaterial = createAwayMatteMaterial(0xffffffff, 10);
-groundMaterial.doubleSided = false;
-
-const [rockDiffuse, rockNormal, bodyDiffuse, bodyNormal, bodySpecular] = await Promise.all([
-  loadImageResourceFromUrl('awayjs/assets/rockbase_diffuse.jpg'),
-  loadImageResourceFromUrl('awayjs/assets/rockbase_normals.png'),
-  loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_diffuse.jpg'),
-  loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_normals.png'),
-  loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_specular.png'),
-]);
-
-const groundDiffuseTexture = createTexture({ image: rockDiffuse });
-const groundNormalTexture = createTexture({ image: rockNormal, colorSpace: 'linear' });
-const groundSampler = createTilingSampler();
-groundDiffuseTexture.sampler = groundSampler;
-groundNormalTexture.sampler = groundSampler;
-setTextureUvScale(groundDiffuseTexture, 200, 200);
-setTextureUvScale(groundNormalTexture, 200, 200);
-groundMaterial.baseColorMap = groundDiffuseTexture;
-groundMaterial.normalMap = groundNormalTexture;
-groundMaterial.normalScale = 0.75;
-
-bodyMaterial.baseColorMap = createTexture({ image: bodyDiffuse });
-bodyMaterial.normalMap = createTexture({ image: bodyNormal, colorSpace: 'linear' });
-bodyMaterial.metallicRoughnessMap = createTexture({ image: bodySpecular, colorSpace: 'linear' });
-
-const groundMesh = createMesh(createPlaneMeshGeometry(50000, 50000, 1, 1), [groundMaterial]);
+const { environment, groundMesh, fogEffect } = await loadEnvironment();
 addNodeChild(scene.root, groundMesh);
-
-// WebGL stores perspective depth nonlinearly. These window-depth values correspond to the AwayJS
-// fog interval of 2,500–5,000 world units for this camera's near/far planes.
-const fogEffect = createScreenSpaceFogEffect({
-  color: 0x000000ff,
-  near: 0.995984,
-  far: 1,
-  density: 8,
-});
 const effects = [fogEffect, createToneMapEffect(), createFxaaEffect()];
 
-const meshText = await fetch('awayjs/assets/hellknight/hellknight.md5mesh').then((r) => r.text());
-const md5Scene = createScene3DFromMd5Mesh(meshText);
-
-const md5Children = getNodeChildren(md5Scene.root);
-const characterPositionNode = createScene3D();
-const characterNode = createScene3D();
+const { clips, skinnedMeshes, characterPositionNode, characterNode } = await loadCharacter();
 const yAxisVec = createVector3(0, 1, 0);
 const characterQuat = createQuaternion();
 const identityQuat = createQuaternion();
-const skinnedMeshes: Mesh[] = [];
-for (const child of md5Children) {
-  if (isMesh(child)) {
-    child.materials[0] = bodyMaterial;
-    computeMeshGeometryNormals(child.geometry, child.geometry);
-    skinnedMeshes.push(child);
-  }
-  addNodeChild(characterNode.root, child);
-}
-const jointNodes = skinnedMeshes[0]?.skin?.skeleton.joints ?? [];
-addNodeChild(characterPositionNode.root, characterNode.root);
 addNodeChild(scene.root, characterPositionNode.root);
-
-const animTexts = await Promise.all(
-  ANIM_NAMES.map((name) => fetch(`awayjs/assets/hellknight/${name}.md5anim`).then((r) => r.text())),
-);
-
-const clips: Map<string, AnimationClip> = new Map();
-for (let i = 0; i < ANIM_NAMES.length; i++) {
-  const clip = parseMd5Anim(animTexts[i]!, jointNodes);
-  if (!clip) continue;
-  // AwayJS consumes joint zero's translation as owner root motion and omits it from the rendered
-  // skeleton for every clip. Zero it here so the skeleton doesn't shift inside the mesh.
-  for (const channel of clip.channels) {
-    const target = channel.targetRef as { node?: Node3D; path?: string } | null;
-    if (target?.node === jointNodes[0] && target.path === 'Translation') {
-      channel.track.values = new Float32Array(channel.track.values.length);
-    }
-  }
-  clips.set(ANIM_NAMES[i]!, clip);
-}
 
 const idleClip = clips.get(IDLE_NAME);
 if (!idleClip) {
@@ -286,83 +170,28 @@ function playAction(index: number): void {
   play(name);
 }
 
-document.addEventListener('keydown', (e: KeyboardEvent) => {
-  switch (e.code) {
-    case 'ShiftLeft':
-    case 'ShiftRight':
-      isRunning = true;
-      if (isMoving) updateMovement(movementDir);
-      break;
-    case 'ArrowUp':
-    case 'KeyW':
-    case 'KeyZ':
-      updateMovement(1);
-      break;
-    case 'ArrowDown':
-    case 'KeyS':
-      updateMovement(-1);
-      break;
-    case 'ArrowLeft':
-    case 'KeyA':
-    case 'KeyQ':
-      rotationInc = -ROTATION_SPEED * DEG_TO_RAD;
-      break;
-    case 'ArrowRight':
-    case 'KeyD':
-      rotationInc = ROTATION_SPEED * DEG_TO_RAD;
-      break;
-    case 'Digit1':
-      playAction(1);
-      break;
-    case 'Digit2':
-      playAction(2);
-      break;
-    case 'Digit3':
-      playAction(3);
-      break;
-    case 'Digit4':
-      playAction(4);
-      break;
-    case 'Digit5':
-      playAction(5);
-      break;
-    case 'Digit6':
-      playAction(6);
-      break;
-    case 'Digit7':
-      playAction(7);
-      break;
-    case 'Digit8':
-      playAction(8);
-      break;
-    case 'Digit9':
-      playAction(9);
-      break;
-  }
-});
-
-document.addEventListener('keyup', (e: KeyboardEvent) => {
-  switch (e.code) {
-    case 'ShiftLeft':
-    case 'ShiftRight':
-      isRunning = false;
-      if (isMoving) updateMovement(movementDir);
-      break;
-    case 'ArrowUp':
-    case 'KeyW':
-    case 'KeyZ':
-    case 'ArrowDown':
-    case 'KeyS':
-      stop();
-      break;
-    case 'ArrowLeft':
-    case 'KeyA':
-    case 'KeyQ':
-    case 'ArrowRight':
-    case 'KeyD':
-      rotationInc = 0;
-      break;
-  }
+bindCharacterControls({
+  startRunning: () => {
+    isRunning = true;
+    if (isMoving) updateMovement(movementDir);
+  },
+  stopRunning: () => {
+    isRunning = false;
+    if (isMoving) updateMovement(movementDir);
+  },
+  walkForward: () => updateMovement(1),
+  walkBackward: () => updateMovement(-1),
+  stopWalking: () => stop(),
+  turnLeft: () => {
+    rotationInc = -ROTATION_SPEED * DEG_TO_RAD;
+  },
+  turnRight: () => {
+    rotationInc = ROTATION_SPEED * DEG_TO_RAD;
+  },
+  stopTurning: () => {
+    rotationInc = 0;
+  },
+  attack: (index) => playAction(index),
 });
 
 let lastTs = 0;

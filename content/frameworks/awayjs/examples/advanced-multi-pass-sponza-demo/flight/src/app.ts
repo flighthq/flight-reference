@@ -1,4 +1,4 @@
-import type { Material, Mesh, PerspectiveProjection, Node3D, StandardPbrMaterial } from '@flighthq/sdk';
+import type { PerspectiveProjection, StandardPbrMaterial } from '@flighthq/sdk';
 import {
   addNodeChild,
   bakeGlEnvironmentIbl,
@@ -7,10 +7,8 @@ import {
   createScene3D,
   createScene3DFromAwd2,
   createScene3DLights,
-  createTexture,
   createToneMapEffect,
   getNodeChildren,
-  isMesh,
   loadImageResourceFromUrl,
   packOpaqueColor,
 } from '@flighthq/sdk';
@@ -19,15 +17,22 @@ import {
   awayDirection,
   createCameraFromAway,
   createFirstPersonControllerFromAway,
-  AWAY_MOUSE_SENSITIVITY,
 } from '../../../_shared/flight/src/camera';
 import { createCubeTextureFromAwayFaces } from '../../../_shared/flight/src/cubemap';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
-import { createAwayMatteMaterial } from '../../../_shared/flight/src/materials';
-import { createMetallicRoughnessImage } from '../../../_shared/flight/src/pbrConvert';
 import type { SkyboxRenderState } from '../../../_shared/flight/src/scene3d';
 import { createScene3DContext, renderSkyboxScene } from '../../../_shared/flight/src/scene3d';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
+import { bindFirstPersonControls } from './controls';
+import {
+  createTextureMap,
+  getOrCreateMaterial,
+  loadSponzaTextures,
+  materialNameToNormalFile,
+  materialNameToSpecularFile,
+  materialNameToTextureFile,
+  walkAndAssignMaterials,
+} from './materials';
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -54,71 +59,6 @@ const { directional, ambient } = createDirectionalLightFromAway({
 });
 const lights = createScene3DLights({ ambient, directional });
 
-const materialNameToTextureFile: Record<string, string> = {
-  arch: 'arch_diff.jpg',
-  Material__298: 'background.jpg',
-  bricks: 'bricks_a_diff.jpg',
-  ceiling: 'ceiling_a_diff.jpg',
-  chain: 'chain_texture.png',
-  column_a: 'column_a_diff.jpg',
-  column_b: 'column_b_diff.jpg',
-  column_c: 'column_c_diff.jpg',
-  fabric_g: 'curtain_blue_diff.jpg',
-  fabric_c: 'curtain_diff.jpg',
-  fabric_f: 'curtain_green_diff.jpg',
-  details: 'details_diff.jpg',
-  fabric_d: 'fabric_blue_diff.jpg',
-  fabric_a: 'fabric_diff.jpg',
-  fabric_e: 'fabric_green_diff.jpg',
-  flagpole: 'flagpole_diff.jpg',
-  floor: 'floor_a_diff.jpg',
-  '16___Default': 'gi_flag.jpg',
-  Material__25: 'lion.jpg',
-  roof: 'roof_diff.jpg',
-  leaf: 'thorn_diff.png',
-  vase: 'vase_dif.jpg',
-  vase_hanging: 'vase_hanging.jpg',
-  Material__57: 'vase_plant.png',
-  vase_round: 'vase_round.jpg',
-};
-
-const materialNameToNormalFile: Record<string, string> = {
-  arch: 'arch_ddn.jpg',
-  Material__298: 'background_ddn.jpg',
-  bricks: 'bricks_a_ddn.jpg',
-  chain: 'chain_texture_ddn.jpg',
-  column_a: 'column_a_ddn.jpg',
-  column_b: 'column_b_ddn.jpg',
-  column_c: 'column_c_ddn.jpg',
-  Material__25: 'lion2_ddn.jpg',
-  leaf: 'thorn_ddn.jpg',
-  vase: 'vase_ddn.jpg',
-  vase_round: 'vase_round_ddn.jpg',
-};
-
-const materialNameToSpecularFile: Record<string, string> = {
-  arch: 'arch_spec.jpg',
-  bricks: 'bricks_a_spec.jpg',
-  ceiling: 'ceiling_a_spec.jpg',
-  column_a: 'column_a_spec.jpg',
-  column_b: 'column_b_spec.jpg',
-  column_c: 'column_c_spec.jpg',
-  fabric_g: 'curtain_spec.jpg',
-  fabric_c: 'curtain_spec.jpg',
-  fabric_f: 'curtain_spec.jpg',
-  details: 'details_spec.jpg',
-  fabric_d: 'fabric_spec.jpg',
-  fabric_a: 'fabric_spec.jpg',
-  fabric_e: 'fabric_spec.jpg',
-  flagpole: 'flagpole_spec.jpg',
-  floor: 'floor_a_spec.jpg',
-  leaf: 'thorn_spec.jpg',
-  Material__57: 'vase_plant_spec.jpg',
-  vase_round: 'vase_round_spec.jpg',
-};
-
-const alphaCutoutMaterials = new Set(['chain', 'leaf', 'Material__57']);
-
 const sponzaTextureFiles = [
   ...new Set([
     ...Object.values(materialNameToTextureFile),
@@ -138,111 +78,16 @@ const skyboxFaceFiles = [
 
 const [awdBuffer, sponzaTextureImages, skyboxFaceImages] = await Promise.all([
   fetch('awayjs/assets/sponza/sponza.awd').then((r) => r.arrayBuffer()),
-  Promise.all(sponzaTextureFiles.map((file) => loadImageResourceFromUrl(`awayjs/assets/sponza/${file}`))),
+  loadSponzaTextures(sponzaTextureFiles),
   Promise.all(skyboxFaceFiles.map((file) => loadImageResourceFromUrl(`awayjs/assets/skybox/${file}`))),
 ]);
 
-const textureMap = new Map<string, ReturnType<typeof createTexture>>();
-for (const file of new Set(Object.values(materialNameToTextureFile))) {
-  const image = sponzaTextureImages[sponzaTextureFiles.indexOf(file)];
-  if (image) textureMap.set(file, createTexture({ image }));
-}
-for (const file of new Set(Object.values(materialNameToNormalFile))) {
-  const image = sponzaTextureImages[sponzaTextureFiles.indexOf(file)];
-  if (image) textureMap.set(file, createTexture({ image, colorSpace: 'linear' }));
-}
-for (const file of new Set(Object.values(materialNameToSpecularFile))) {
-  const image = sponzaTextureImages[sponzaTextureFiles.indexOf(file)];
-  if (!image) continue;
-
-  const metallicRoughnessImage = createMetallicRoughnessImage(image, (r, g, b) => {
-    const specular = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    return {
-      roughness: Math.max(0.12, 1 - specular * 1.7),
-      metallic: 0,
-    };
-  });
-  textureMap.set(file, createTexture({ image: metallicRoughnessImage, colorSpace: 'linear' }));
-}
-
+const textureMap = createTextureMap(sponzaTextureFiles, sponzaTextureImages);
 const materialCache = new Map<string, StandardPbrMaterial>();
-
-function getOrCreateMaterial(name: string): StandardPbrMaterial {
-  let mat = materialCache.get(name);
-  if (mat) return mat;
-
-  mat = createAwayMatteMaterial(0xffffffff);
-
-  const textureFile = materialNameToTextureFile[name];
-  if (textureFile) {
-    const tex = textureMap.get(textureFile);
-    if (tex) mat.baseColorMap = tex;
-  }
-
-  const normalFile = materialNameToNormalFile[name];
-  if (normalFile) {
-    const tex = textureMap.get(normalFile);
-    if (tex) mat.normalMap = tex;
-  }
-
-  const specularFile = materialNameToSpecularFile[name];
-  if (specularFile) {
-    const tex = textureMap.get(specularFile);
-    if (tex) mat.metallicRoughnessMap = tex;
-  }
-
-  if (alphaCutoutMaterials.has(name)) {
-    mat.alphaMode = 'mask';
-    mat.alphaCutoff = 0.5;
-    mat.doubleSided = true;
-  }
-
-  materialCache.set(name, mat);
-  return mat;
-}
-
-const knownMaterialNames = new Set(Object.keys(materialNameToTextureFile));
-
-const hiddenMeshNames = new Set(['sponza_04', 'sponza_379']);
-const skippedFlagpoleNums = new Set([260, 261, 263, 265, 268, 269, 271, 273]);
-
-function walkAndAssignMaterials(node: Node3D): void {
-  if (isMesh(node)) {
-    const mesh = node as Mesh;
-    const meshName = mesh.name ?? '';
-
-    if (hiddenMeshNames.has(meshName)) {
-      mesh.visible = false;
-      for (const child of getNodeChildren(node)) walkAndAssignMaterials(child as Node3D);
-      return;
-    }
-
-    const awdMat = mesh.materials[0] as Material | undefined;
-    const materialName = awdMat?.name ?? meshName;
-    const matchedName = knownMaterialNames.has(materialName) ? materialName : null;
-
-    if (matchedName) {
-      const num = Number(meshName.substring(7));
-      if (matchedName === 'column_c' && (num < 22 || num > 33)) {
-        mesh.visible = false;
-      } else if (matchedName === 'flagpole' && skippedFlagpoleNums.has(num)) {
-        mesh.visible = false;
-      } else {
-        mesh.materials[0] = getOrCreateMaterial(matchedName);
-      }
-    } else {
-      mesh.visible = false;
-    }
-  }
-
-  for (const child of getNodeChildren(node)) {
-    walkAndAssignMaterials(child as Node3D);
-  }
-}
 
 const awdScene = createScene3DFromAwd2(new Uint8Array(awdBuffer));
 
-walkAndAssignMaterials(awdScene.root);
+walkAndAssignMaterials(awdScene.root, materialCache, textureMap);
 
 for (const child of getNodeChildren(awdScene.root)) {
   addNodeChild(scene.root, child);
@@ -264,74 +109,10 @@ const fps = createFirstPersonControllerFromAway(camera, {
   maxPitch: 80,
 });
 
-const walkIncrement = 10;
-const strafeIncrement = 10;
-const drag = 0.5;
-
-let walkSpeed = 0;
-let strafeSpeed = 0;
-let walkAccel = 0;
-let strafeAccel = 0;
-
-let dragging = false;
-let lastMouseX = 0;
-let lastMouseY = 0;
-let savedYaw = fps.yaw;
-let savedPitch = fps.pitch;
-
-ctx.canvas.addEventListener('mousedown', (e: MouseEvent) => {
-  dragging = true;
-  lastMouseX = e.clientX;
-  lastMouseY = e.clientY;
-  savedYaw = fps.yaw;
-  savedPitch = fps.pitch;
-});
-
-ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
-  if (!dragging) return;
-  fps.yaw = AWAY_MOUSE_SENSITIVITY * (e.clientX - lastMouseX) + savedYaw;
-  fps.pitch = AWAY_MOUSE_SENSITIVITY * (e.clientY - lastMouseY) + savedPitch;
-});
-
-window.addEventListener('mouseup', () => {
-  dragging = false;
-});
-
-const keysDown = new Set<string>();
-
-window.addEventListener('keydown', (e: KeyboardEvent) => {
-  keysDown.add(e.key.toLowerCase());
-});
-
-window.addEventListener('keyup', (e: KeyboardEvent) => {
-  keysDown.delete(e.key.toLowerCase());
-});
-
-const fwd = { x: 0, y: 0, z: 0 };
-const rgt = { x: 0, y: 0, z: 0 };
+const step = bindFirstPersonControls(ctx.canvas, fps);
 
 function frame(): void {
-  walkAccel = 0;
-  strafeAccel = 0;
-
-  if (keysDown.has('w') || keysDown.has('arrowup')) walkAccel = walkIncrement;
-  if (keysDown.has('s') || keysDown.has('arrowdown')) walkAccel = -walkIncrement;
-  if (keysDown.has('a') || keysDown.has('arrowleft')) strafeAccel = -strafeIncrement;
-  if (keysDown.has('d') || keysDown.has('arrowright')) strafeAccel = strafeIncrement;
-
-  walkSpeed = (walkSpeed + walkAccel) * drag;
-  if (Math.abs(walkSpeed) < 0.01) walkSpeed = 0;
-
-  strafeSpeed = (strafeSpeed + strafeAccel) * drag;
-  if (Math.abs(strafeSpeed) < 0.01) strafeSpeed = 0;
-
-  fps.forward(fwd);
-  fps.right(rgt);
-
-  fps.position.x += fwd.x * walkSpeed + rgt.x * strafeSpeed;
-  fps.position.z += fwd.z * walkSpeed + rgt.z * strafeSpeed;
-
-  fps.update();
+  step();
   renderSkyboxScene(ctx.state, ctx.canvas, skyboxRef, environment, scene.root, camera, lights);
   verifyFrame();
   requestAnimationFrame(frame);

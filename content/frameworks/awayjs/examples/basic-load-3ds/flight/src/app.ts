@@ -35,8 +35,8 @@ import {
 } from '@flighthq/sdk';
 
 import {
-  AWAY_MOUSE_SENSITIVITY,
   awayDirection,
+  bindOrbitDrag,
   createCameraFromAway,
   createOrbitControllerFromAway,
 } from '../../../_shared/flight/src/camera';
@@ -159,29 +159,7 @@ const orbit = createOrbitControllerFromAway(camera, {
   maxTiltAngle: 90,
 });
 
-let dragging = false;
-let lastMouseX = 0;
-let lastMouseY = 0;
-let lastPanAngle = orbit.panAngle;
-let lastTiltAngle = orbit.tiltAngle;
-
-canvas.addEventListener('mousedown', (event: MouseEvent) => {
-  dragging = true;
-  lastMouseX = event.clientX;
-  lastMouseY = event.clientY;
-  lastPanAngle = orbit.panAngle;
-  lastTiltAngle = orbit.tiltAngle;
-});
-
-canvas.addEventListener('mousemove', (event: MouseEvent) => {
-  if (!dragging) return;
-  orbit.panAngle = AWAY_MOUSE_SENSITIVITY * (event.clientX - lastMouseX) + lastPanAngle;
-  orbit.tiltAngle = AWAY_MOUSE_SENSITIVITY * (event.clientY - lastMouseY) + lastTiltAngle;
-});
-
-window.addEventListener('mouseup', () => {
-  dragging = false;
-});
+bindOrbitDrag(canvas, orbit);
 
 let startTime = 0;
 

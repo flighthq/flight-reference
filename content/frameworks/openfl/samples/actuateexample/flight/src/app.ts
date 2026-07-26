@@ -18,15 +18,15 @@ import {
 
 import { render, scale } from './render';
 
-const STAGE_WIDTH = 550;
-const STAGE_HEIGHT = 400;
+const STAGE_WIDTH = 800;
+const STAGE_HEIGHT = 600;
 const CIRCLE_COUNT = 80;
 const MIN_RADIUS = 25;
 const MAX_RADIUS = 60;
 const MIN_DURATION = 1500;
 const MAX_DURATION = 6000;
 const MAX_START_DELAY = 10000;
-const FRAME_DELTA = 1000 / 60;
+const FRAME_DELTA = 1000 / 30;
 
 const manager = createTweenManager();
 const root = createDisplayObject();
@@ -72,11 +72,13 @@ const app = createApplication();
 connectSignal(app.onUpdate, (delta) => updateTweens(manager, delta));
 connectSignal(app.onRender, () => render(root));
 
-let frame = 0;
+let prevTime = performance.now();
 
 function enterFrame(): void {
-  stepApplicationLoop(app, frame === 0 ? 0 : FRAME_DELTA);
-  frame++;
+  const currentTime = performance.now();
+  const delta = currentTime - prevTime;
+  stepApplicationLoop(app, delta);
+  prevTime = currentTime;
   requestAnimationFrame(enterFrame);
 }
 

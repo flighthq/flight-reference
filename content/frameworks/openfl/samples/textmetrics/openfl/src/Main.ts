@@ -64,7 +64,7 @@ class Main extends Sprite {
     this.addChild(textField);
 
     this.out = new TextField();
-    this.out.width = 400;
+    this.out.width = 600;
     this.out.height = 1000;
     this.addChild(this.out);
 

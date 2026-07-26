@@ -83,7 +83,7 @@ class App extends Sprite {
   private initialize(): void {
     this.context3D = this.stage.stage3Ds[0].context3D;
 
-    this.context3D.configureBackBuffer(550, 400, 1, true);
+    this.context3D.configureBackBuffer(800, 600, 1, true);
 
     var vertices = Vector.ofArray([-0.3, -0.3, 0, 0, 0, -0.3, 0.3, 0, 0, 1, 0.3, 0.3, 0, 1, 1, 0.3, -0.3, 0, 1, 0]);
 
@@ -240,8 +240,8 @@ class App extends Sprite {
   };
 }
 
-var stage = new Stage(550, 400, 0xffffff, App);
-stage.element.style.width = '550px';
-stage.element.style.height = '400px';
+var stage = new Stage(800, 600, 0xffffff, App);
+stage.element.style.width = '800px';
+stage.element.style.height = '600px';
 document.getElementById('app')?.remove();
 document.body.appendChild(stage.element);

@@ -11,8 +11,8 @@ import {
 
 const element = document.createElement('div');
 element.style.position = 'relative';
-element.style.width = '550px';
-element.style.height = '400px';
+element.style.width = '800px';
+element.style.height = '600px';
 document.body.style.margin = '0';
 document.body.style.background = '#fff';
 document.getElementById('app')?.remove();

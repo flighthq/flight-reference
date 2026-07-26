@@ -12,8 +12,8 @@ import {
   ShapeKind,
 } from '@flighthq/sdk';
 
-const WIDTH = 550;
-const HEIGHT = 400;
+const WIDTH = 800;
+const HEIGHT = 600;
 const element = document.createElement('div');
 element.style.position = 'relative';
 element.style.width = `${WIDTH}px`;

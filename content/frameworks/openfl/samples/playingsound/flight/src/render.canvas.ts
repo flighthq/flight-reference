@@ -14,8 +14,8 @@ import {
   createMatrix,
 } from '@flighthq/sdk';
 
-const WIDTH = 550;
-const HEIGHT = 400;
+const WIDTH = 800;
+const HEIGHT = 600;
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(WIDTH, HEIGHT, pixelRatio);
 document.getElementById('app')?.remove();

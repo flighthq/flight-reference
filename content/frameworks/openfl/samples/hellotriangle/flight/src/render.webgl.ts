@@ -7,8 +7,8 @@ import {
   registerVertexColorGlMaterial,
 } from '@flighthq/sdk';
 
-const width = 550;
-const height = 400;
+const width = 800;
+const height = 600;
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(width, height, pixelRatio);
 

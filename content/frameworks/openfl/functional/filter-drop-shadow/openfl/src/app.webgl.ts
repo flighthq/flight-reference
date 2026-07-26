@@ -7,7 +7,7 @@ import DropShadowFilter from 'openfl/filters/DropShadowFilter';
 import UrlRequest from 'openfl/net/URLRequest';
 
 const WIDTH = 800;
-const HEIGHT = 400;
+const HEIGHT = 600;
 
 const { root } = createReferenceStage(WIDTH, HEIGHT, 0xffffff);
 

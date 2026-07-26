@@ -15,8 +15,8 @@ const FRAME_MARGIN = 2;
 const FRAME_GAP = 4;
 const FRAMES_PER_ROW = [5, 4];
 const FRAME_DURATION_MS = 100;
-const STAGE_WIDTH = 400;
-const STAGE_HEIGHT = 400;
+const STAGE_WIDTH = 600;
+const STAGE_HEIGHT = 600;
 
 class App extends Sprite {
   private frameBitmap: Bitmap;

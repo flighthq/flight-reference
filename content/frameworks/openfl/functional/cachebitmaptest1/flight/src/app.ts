@@ -48,7 +48,7 @@ addNodeChild(root, stageBg);
 const bgRects: { color: number; alpha: number; x: number; y: number }[] = [
   { color: 0x002288, alpha: 1.0, x: pos(500), y: pos(200) },
   { color: 0x002288, alpha: 0.5, x: pos(700), y: pos(200) },
-  { color: 0x002288, alpha: 0.1, x: pos(500), y: pos(400) },
+  { color: 0x002288, alpha: 0.1, x: pos(500), y: pos(600) },
 ];
 for (const { color, alpha, x, y } of bgRects) {
   const s = createShape();
@@ -87,7 +87,7 @@ const rotatingText = createRichText();
 rotatingText.data.defaultTextFormat = { font: 'sans-serif', size: pos(32), color: 0xffffff };
 rotatingText.x = -pos(100);
 rotatingText.y = -pos(75);
-rotatingText.data.width = pos(400);
+rotatingText.data.width = pos(600);
 rotatingText.data.height = pos(50);
 let textIndex = 0;
 rotatingText.data.text = textCycle[textIndex];

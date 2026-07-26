@@ -83,7 +83,7 @@ function loadBitmapData(url: string): Promise<BitmapData> {
 
   textSprite.x = 300;
   textSprite.y = 350;
-  const textRect = new Rectangle(0, 0, 400, 300);
+  const textRect = new Rectangle(0, 0, 600, 300);
   textSprite.scrollRect = textRect;
 
   const outerSprite = new Sprite();
@@ -127,7 +127,7 @@ function loadBitmapData(url: string): Promise<BitmapData> {
   root.addEventListener(Event.ENTER_FRAME, () => {
     textRect.y += inc;
 
-    if (textRect.y >= 550) {
+    if (textRect.y >= 800) {
       inc = -5;
       textSprite.cacheAsBitmap = false;
       status.text = 'CacheAsBitmap: FALSE';

@@ -21,8 +21,8 @@ import { render, scale } from './render';
 
 const FRAME_W = 220;
 const FRAME_H = 220;
-const STAGE_W = 400;
-const STAGE_H = 400;
+const STAGE_W = 600;
+const STAGE_H = 600;
 const MARGIN = 2;
 const GAP = 4;
 const COLS_PER_ROW = [5, 4];

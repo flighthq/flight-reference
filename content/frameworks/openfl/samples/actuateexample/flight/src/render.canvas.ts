@@ -16,7 +16,7 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(550, 400, pixelRatio);
+const canvas = createCanvasElement(800, 600, pixelRatio);
 document.getElementById('app')?.remove();
 document.body.appendChild(canvas);
 

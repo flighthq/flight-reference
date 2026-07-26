@@ -22,7 +22,7 @@ import {
 const container = document.createElement('div');
 container.style.position = 'relative';
 container.style.width = '650px';
-container.style.height = '400px';
+container.style.height = '600px';
 document.getElementById('app')?.remove();
 document.body.appendChild(container);
 

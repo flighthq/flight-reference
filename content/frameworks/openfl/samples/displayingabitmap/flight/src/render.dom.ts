@@ -11,8 +11,8 @@ import {
 
 const container = document.createElement('div');
 container.style.position = 'relative';
-container.style.width = '550px';
-container.style.height = '400px';
+container.style.width = '800px';
+container.style.height = '600px';
 document.getElementById('app')?.remove();
 document.body.appendChild(container);
 

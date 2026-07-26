@@ -33,10 +33,10 @@ root.graphics.beginFill(0x002288, 0.5);
 root.graphics.drawRect(pos(700), pos(200), pos(200), pos(200));
 root.graphics.endFill();
 root.graphics.beginFill(0x002288, 0.1);
-root.graphics.drawRect(pos(500), pos(400), pos(200), pos(200));
+root.graphics.drawRect(pos(500), pos(600), pos(200), pos(200));
 root.graphics.endFill();
 root.graphics.beginFill(0x002288, 0.0);
-root.graphics.drawRect(pos(700), pos(400), pos(200), pos(200));
+root.graphics.drawRect(pos(700), pos(600), pos(200), pos(200));
 root.graphics.endFill();
 
 const rect = new Sprite();

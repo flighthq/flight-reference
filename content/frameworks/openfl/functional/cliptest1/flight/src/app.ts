@@ -104,8 +104,8 @@ for (let i = 0; i < 4; i++) {
 
     const tf = createRichText();
     tf.data.defaultTextFormat = { font: 'sans-serif', size: 32, color: textColors[i], align: 'center' };
-    tf.data.width = 400;
-    tf.data.height = 400;
+    tf.data.width = 600;
+    tf.data.height = 600;
     tf.data.text = textValues[i];
     addNodeChild(container, tf);
 
@@ -123,8 +123,8 @@ for (let i = 0; i < 4; i++) {
     tf.data.defaultTextFormat = { font: 'sans-serif', size: 32, color: textColors[i], align: 'center' };
     tf.x = tfX;
     tf.y = tfY;
-    tf.data.width = 400;
-    tf.data.height = 400;
+    tf.data.width = 600;
+    tf.data.height = 600;
     tf.data.text = textValues[i];
     addNodeChild(root, tf);
 

@@ -50,7 +50,7 @@ import { createFunctionalTarget } from '@ft/render';
 
 const target = await createFunctionalTarget({
   width: 800,
-  height: 400,
+  height: 600,
   background: 0xffffffff,
   kinds: [BitmapKind, ShapeKind],
   cache: true,
@@ -58,7 +58,7 @@ const target = await createFunctionalTarget({
 const root = createDisplayObject();
 
 // The functional target's renderTransform2D already carries devicePixelRatio, so the scene is
-// authored directly in logical units — matching the OpenFL reference (800×400, bitmaps at natural
+// authored directly in logical units — matching the OpenFL reference (800×600, bitmaps at natural
 // size). Scaling the root by `scale` on top of that would render everything pixelRatio× too large.
 const W = target.width;
 const H = target.height;

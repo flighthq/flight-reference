@@ -24,8 +24,8 @@ import {
 
 import { container, render, scale, setSize } from './render';
 
-const WIDTH = 550;
-const HEIGHT = 400;
+const WIDTH = 800;
+const HEIGHT = 600;
 const manager = createTweenManager({ defaultEase: easeOutQuadratic });
 const root = createDisplayObject();
 root.scaleX = scale;

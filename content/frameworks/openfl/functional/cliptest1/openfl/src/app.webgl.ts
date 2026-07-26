@@ -70,8 +70,8 @@ function loadBitmapData(url: string): Promise<BitmapData> {
     textField.defaultTextFormat = textFormat;
     textField.x = (i % 4) * (WIDTH / 4);
     textField.y = HEIGHT / 2 + HEIGHT / 4;
-    textField.width = 400;
-    textField.height = 400;
+    textField.width = 600;
+    textField.height = 600;
     root.addChild(textField);
     textFields.push(textField);
   }

@@ -25,7 +25,7 @@ addNodeChild(root, square);
 let speed = 0.3;
 const app = createApplication();
 connectSignal(app.onUpdate, (delta) => {
-  if (square.x + 100 >= 550 || square.x < 0) speed *= -1;
+  if (square.x + 100 >= 800 || square.x < 0) speed *= -1;
   square.x += speed * delta;
   invalidateNodeLocalTransform(square);
 });

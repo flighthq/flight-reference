@@ -100,9 +100,9 @@ AssetLibrary.loadFromManifest(manifest)
   .onComplete((library) => {
     Assets.registerLibrary('default', library);
 
-    var stage = new Stage(670, 400, 0xffffff, App);
+    var stage = new Stage(670, 600, 0xffffff, App);
     stage.element.style.width = '670px';
-    stage.element.style.height = '400px';
+    stage.element.style.height = '600px';
     document.getElementById('app')?.remove();
     document.body.appendChild(stage.element);
   })

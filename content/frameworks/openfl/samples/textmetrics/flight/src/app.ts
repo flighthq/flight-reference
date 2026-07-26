@@ -111,7 +111,7 @@ outText.data.defaultTextFormat = { font: 'serif' };
 outText.data.height = 1000;
 outText.data.multiline = true;
 outText.data.text = buildMetricsString(TEXT_X, TEXT_Y, FIELD_W, FIELD_H, textWidth, textHeight, tlm, result);
-outText.data.width = 400;
+outText.data.width = 600;
 outText.data.wordWrap = false;
 
 // ---- Lorem ipsum section (white background + word-wrapped text) ----

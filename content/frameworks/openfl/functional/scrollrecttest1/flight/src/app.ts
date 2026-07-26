@@ -81,7 +81,7 @@ const movies = [
   'The Lord of the Rings: The Two Towers (2002)',
 ];
 
-const CLIP_W = 400;
+const CLIP_W = 600;
 const CLIP_H = 300;
 
 const textClip = createDisplayObject();
@@ -131,7 +131,7 @@ const status = createRichText();
 status.data.defaultTextFormat = textFmt;
 status.x = 0;
 status.y = 0;
-status.data.width = pos(400);
+status.data.width = pos(600);
 status.data.height = pos(50);
 status.data.text = 'CacheAsBitmap: TRUE';
 addNodeChild(root, status);
@@ -144,7 +144,7 @@ const outerInc = (2 * Math.PI) / FRAMES_PER_ROTATION;
 
 function enterFrame(): void {
   textScrollY += inc;
-  if (textScrollY >= pos(550)) {
+  if (textScrollY >= pos(800)) {
     inc = -pos(5);
     status.data.text = 'CacheAsBitmap: FALSE';
     invalidateNodeAppearance(status);

@@ -17,8 +17,8 @@ import {
 
 import { render, scale } from './render';
 
-const STAGE_WIDTH = 550;
-const STAGE_HEIGHT = 400;
+const STAGE_WIDTH = 800;
+const STAGE_HEIGHT = 600;
 
 const manager = createTweenManager();
 const main = createDisplayObject();
@@ -48,7 +48,7 @@ const scaleTween = createTween(
   container,
   6000,
   { scaleX: 1, scaleY: 1 },
-  { delay: 400, ease: easeOutElastic },
+  { delay: 600, ease: easeOutElastic },
 );
 connectSignal(alphaTween.onUpdate, () => invalidateNodeRender(container));
 connectSignal(scaleTween.onUpdate, () => invalidateNodeLocalTransform(container));

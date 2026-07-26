@@ -12,7 +12,7 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(400, 400, pixelRatio);
+const canvas = createCanvasElement(600, 600, pixelRatio);
 document.getElementById('app')?.remove();
 document.body.appendChild(canvas);
 

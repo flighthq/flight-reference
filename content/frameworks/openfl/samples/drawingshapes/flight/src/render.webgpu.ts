@@ -24,7 +24,7 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWgpuCanvasElement(650, 400, pixelRatio);
+const canvas = createWgpuCanvasElement(650, 600, pixelRatio);
 document.getElementById('app')?.remove();
 document.body.appendChild(canvas);
 

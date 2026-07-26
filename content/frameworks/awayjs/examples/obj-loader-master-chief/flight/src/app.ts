@@ -107,10 +107,10 @@ invalidateNodeLocalTransform(spartanContainer);
 addNodeChild(scene.root, spartanContainer);
 
 const [spartanObjText, terrainObjText, masterchiefImage, stoneImage] = await Promise.all([
-  fetch('awayjs/assets/Halo_3_SPARTAN4.obj').then((r) => r.text()),
-  fetch('awayjs/assets/terrain.obj').then((r) => r.text()),
-  loadImageResourceFromUrl('awayjs/assets/masterchief_base.png'),
-  loadImageResourceFromUrl('awayjs/assets/stone_tx.jpg'),
+  fetch('awayjs/Halo_3_SPARTAN4.obj').then((r) => r.text()),
+  fetch('awayjs/terrain.obj').then((r) => r.text()),
+  loadImageResourceFromUrl('awayjs/masterchief_base.png'),
+  loadImageResourceFromUrl('awayjs/stone_tx.jpg'),
 ]);
 
 // Scalars stay 1 so the metallicRoughnessMap fully drives both channels per region.

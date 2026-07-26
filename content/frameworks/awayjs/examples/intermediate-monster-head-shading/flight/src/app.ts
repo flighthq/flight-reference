@@ -134,10 +134,10 @@ async function tryLoadImage(url: string): Promise<Awaited<ReturnType<typeof load
 }
 
 const [diffuseImage, specularImage, normalImage, awdBuffer] = await Promise.all([
-  tryLoadImage('awayjs/assets/monsterhead/monsterhead_diffuse.jpg'),
-  tryLoadImage('awayjs/assets/monsterhead/monsterhead_specular.jpg'),
-  tryLoadImage('awayjs/assets/monsterhead/monsterhead_normals.jpg'),
-  fetch('awayjs/assets/monsterhead/MonsterHead.awd').then((r) => r.arrayBuffer()),
+  tryLoadImage('awayjs/monsterhead/monsterhead_diffuse.jpg'),
+  tryLoadImage('awayjs/monsterhead/monsterhead_specular.jpg'),
+  tryLoadImage('awayjs/monsterhead/monsterhead_normals.jpg'),
+  fetch('awayjs/monsterhead/MonsterHead.awd').then((r) => r.arrayBuffer()),
 ]);
 
 if (diffuseImage) headMaterial.diffuseMap = createTexture({ image: diffuseImage });

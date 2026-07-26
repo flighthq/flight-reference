@@ -43,7 +43,7 @@ const directional = createDirectionalLight({
 const ambient = createAmbientLight({ color: 0xffffffff, intensity: 0.35 });
 const lights: Scene3DLights = createScene3DLights({ ambient, directional });
 
-const awdBuffer = await fetch('awayjs/assets/shambler.awd').then((r) => r.arrayBuffer());
+const awdBuffer = await fetch('awayjs/shambler.awd').then((r) => r.arrayBuffer());
 const awdScene = createScene3DFromAwd2(new Uint8Array(awdBuffer));
 addNodeChild(scene.root, awdScene.root);
 

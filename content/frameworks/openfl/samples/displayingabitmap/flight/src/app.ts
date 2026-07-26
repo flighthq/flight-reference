@@ -9,7 +9,7 @@ main.scaleY = scale;
 const bitmap = createBitmap();
 bitmap.data.smoothing = true;
 
-const image = await loadImageResourceFromUrl('openfl/openfl.png');
+const image = await loadImageResourceFromUrl('openfl/images/openfl_icon_large.png');
 bitmap.data.image = image;
 bitmap.x = (800 - image.width) / 2;
 bitmap.y = (600 - image.height) / 2;

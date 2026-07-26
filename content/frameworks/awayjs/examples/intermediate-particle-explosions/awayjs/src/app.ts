@@ -226,10 +226,10 @@ class Intermediate_ParticleExplosions {
 
     AssetLibrary.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onResourceComplete(event));
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/firefox.png'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/chrome.png'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/safari.png'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/ie.png'));
+    AssetLibrary.load(new URLRequest('awayjs/firefox.png'));
+    AssetLibrary.load(new URLRequest('awayjs/chrome.png'));
+    AssetLibrary.load(new URLRequest('awayjs/safari.png'));
+    AssetLibrary.load(new URLRequest('awayjs/ie.png'));
   }
 
   private iniColorParticleFunc(properties: ParticleProperties): void {
@@ -298,16 +298,16 @@ class Intermediate_ParticleExplosions {
 
   private onResourceComplete(event: LoaderEvent) {
     switch (event.url) {
-      case 'awayjs/assets/firefox.png':
+      case 'awayjs/firefox.png':
         this._firefoxBitmapImage2D = event.assets[0] as BitmapImage2D;
         break;
-      case 'awayjs/assets/chrome.png':
+      case 'awayjs/chrome.png':
         this._chromeBitmapImage2D = event.assets[0] as BitmapImage2D;
         break;
-      case 'awayjs/assets/ie.png':
+      case 'awayjs/ie.png':
         this._ieBitmapImage2D = event.assets[0] as BitmapImage2D;
         break;
-      case 'awayjs/assets/safari.png':
+      case 'awayjs/safari.png':
         this._safariBitmapImage2D = event.assets[0] as BitmapImage2D;
         break;
     }

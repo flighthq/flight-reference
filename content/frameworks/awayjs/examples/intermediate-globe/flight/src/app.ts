@@ -135,13 +135,13 @@ const sun = createMesh(createSphereMeshGeometry(700, 32, 16), [sunMaterial]);
 addNodeChild(scene.root, sun);
 
 const [dayImage, specImage] = await Promise.all([
-  loadImageResourceFromUrl('awayjs/assets/globe/land_ocean_ice_2048_match.jpg'),
-  loadImageResourceFromUrl('awayjs/assets/globe/earth_specular_2048.jpg'),
+  loadImageResourceFromUrl('awayjs/globe/land_ocean_ice_2048_match.jpg'),
+  loadImageResourceFromUrl('awayjs/globe/earth_specular_2048.jpg'),
 ]);
 
 // Night-lights texture: the source is a 16384-wide JPG, so downscale it into a 2048x1024 canvas to
 // keep GPU memory sane, then bind day/night/specular to the earth shader's samplers.
-const nightSource = await loadImageResourceFromUrl('awayjs/assets/globe/land_lights_16384.jpg');
+const nightSource = await loadImageResourceFromUrl('awayjs/globe/land_lights_16384.jpg');
 const nightCanvas = document.createElement('canvas');
 nightCanvas.width = 2048;
 nightCanvas.height = 1024;
@@ -160,12 +160,12 @@ earthMaterial.textures = {
 // Space starfield skybox — the AwayJS space_texture.cube manifest's six faces into a cube map.
 // (Face slots: +X, -X, +Y, -Y, +Z, -Z.)
 const skyboxFaceUrls = [
-  'awayjs/assets/skybox/space_posX.jpg',
-  'awayjs/assets/skybox/space_negX.jpg',
-  'awayjs/assets/skybox/space_posY.jpg',
-  'awayjs/assets/skybox/space_negY.jpg',
-  'awayjs/assets/skybox/space_posZ.jpg',
-  'awayjs/assets/skybox/space_negZ.jpg',
+  'awayjs/skybox/space_posX.jpg',
+  'awayjs/skybox/space_negX.jpg',
+  'awayjs/skybox/space_posY.jpg',
+  'awayjs/skybox/space_negY.jpg',
+  'awayjs/skybox/space_posZ.jpg',
+  'awayjs/skybox/space_negZ.jpg',
 ];
 const skyboxFaces = await Promise.all(skyboxFaceUrls.map((url) => loadImageResourceFromUrl(url)));
 const skyboxTexture = createCubeTexture();

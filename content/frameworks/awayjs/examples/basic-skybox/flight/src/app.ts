@@ -120,12 +120,12 @@ const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1.5 });
 const lights: Scene3DLights = createScene3DLights({ ambient, directional });
 
 const faceUrls = [
-  'awayjs/assets/skybox/snow_positive_x.jpg',
-  'awayjs/assets/skybox/snow_negative_x.jpg',
-  'awayjs/assets/skybox/snow_positive_y.jpg',
-  'awayjs/assets/skybox/snow_negative_y.jpg',
-  'awayjs/assets/skybox/snow_positive_z.jpg',
-  'awayjs/assets/skybox/snow_negative_z.jpg',
+  'awayjs/skybox/snow_positive_x.jpg',
+  'awayjs/skybox/snow_negative_x.jpg',
+  'awayjs/skybox/snow_positive_y.jpg',
+  'awayjs/skybox/snow_negative_y.jpg',
+  'awayjs/skybox/snow_positive_z.jpg',
+  'awayjs/skybox/snow_negative_z.jpg',
 ];
 
 const faceImages = await Promise.all(faceUrls.map((url) => loadImageResourceFromUrl(url)));

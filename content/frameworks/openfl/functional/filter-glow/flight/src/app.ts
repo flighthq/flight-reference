@@ -1,4 +1,4 @@
-// Requires: assets/openfl.png
+// Requires: images/openfl_icon.png
 // Port of the OpenFL glow functional test. Shows outer glow and inner glow filter variants.
 // Abstract filter descriptors are created here; each render layer applies them with
 // the strategy that suits its substrate:
@@ -78,7 +78,7 @@ appendShapeRectangle(bg, 0, 0, W, H);
 appendShapeEndFill(bg);
 addNodeChild(root, bg);
 
-const image = await loadImageResourceFromUrl('openfl/assets/openfl.png');
+const image = await loadImageResourceFromUrl('openfl/images/openfl_icon.png');
 
 const colSpacing = image.width + 50;
 

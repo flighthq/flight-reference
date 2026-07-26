@@ -104,7 +104,7 @@ export async function createMetalRoughnessFromSpecular(url: string): Promise<Tex
 export async function loadSceneTextures(materials: SceneMaterials, tilingSampler: Sampler): Promise<void> {
   const { planeMaterial, sphereMaterial, cubeMaterial, torusMaterial } = materials;
 
-  const torusWeaveNormalImage = await loadImageResourceFromUrl('awayjs/assets/weave_normal.jpg');
+  const torusWeaveNormalImage = await loadImageResourceFromUrl('awayjs/weave_normal.jpg');
   const torusNormalTex = createTexture({
     image: torusWeaveNormalImage,
     colorSpace: 'linear',
@@ -131,13 +131,13 @@ export async function loadSceneTextures(materials: SceneMaterials, tilingSampler
     applyTextures(
       planeMaterial,
       {
-        diffuse: 'awayjs/assets/floor_diffuse.jpg',
-        normal: 'awayjs/assets/floor_normal.jpg',
+        diffuse: 'awayjs/floor_diffuse.jpg',
+        normal: 'awayjs/floor_normal.jpg',
       },
       tilingSampler,
       { x: 2, y: 2 },
     ),
-    createMetalRoughnessFromSpecular('awayjs/assets/floor_specular.jpg').then((tex) => {
+    createMetalRoughnessFromSpecular('awayjs/floor_specular.jpg').then((tex) => {
       tex.sampler = tilingSampler;
       setTextureUvScale(tex, 2, 2);
       planeMaterial.metallicRoughnessMap = tex;
@@ -145,25 +145,25 @@ export async function loadSceneTextures(materials: SceneMaterials, tilingSampler
     applyTextures(
       sphereMaterial,
       {
-        diffuse: 'awayjs/assets/beachball_diffuse.jpg',
+        diffuse: 'awayjs/beachball_diffuse.jpg',
       },
       tilingSampler,
     ),
-    createMetalRoughnessFromSpecular('awayjs/assets/beachball_specular.jpg').then((tex) => {
+    createMetalRoughnessFromSpecular('awayjs/beachball_specular.jpg').then((tex) => {
       sphereMaterial.metallicRoughnessMap = tex;
     }),
     applyTextures(
       cubeMaterial,
       {
-        diffuse: 'awayjs/assets/trinket_diffuse.jpg',
-        normal: 'awayjs/assets/trinket_normal.jpg',
+        diffuse: 'awayjs/trinket_diffuse.jpg',
+        normal: 'awayjs/trinket_normal.jpg',
       },
       tilingSampler,
     ),
-    createMetalRoughnessFromSpecular('awayjs/assets/trinket_specular.jpg').then((tex) => {
+    createMetalRoughnessFromSpecular('awayjs/trinket_specular.jpg').then((tex) => {
       cubeMaterial.metallicRoughnessMap = tex;
     }),
-    loadImageResourceFromUrl('awayjs/assets/weave_diffuse.jpg').then((image) => {
+    loadImageResourceFromUrl('awayjs/weave_diffuse.jpg').then((image) => {
       const tex = createTexture({ image, sampler: tilingSampler });
       torusMaterial.baseColorMap = tex;
     }),

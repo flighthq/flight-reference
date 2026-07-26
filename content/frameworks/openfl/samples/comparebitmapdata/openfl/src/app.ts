@@ -27,7 +27,7 @@ for (const size of [32, 64]) {
     'red_ball_half_alpha.png',
     'yellow_ball.png',
   ]) {
-    manifest.addBitmapData(`openfl/assets/${size}/${name}`);
+    manifest.addBitmapData(`openfl/images/${size}/${name}`);
   }
 }
 

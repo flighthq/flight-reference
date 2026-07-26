@@ -40,7 +40,7 @@ class AWDSuzanne {
 
     const session: Loader = AssetLibrary.getLoader();
     session.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onResourceComplete(event));
-    session.load(new URLRequest('awayjs/assets/suzanne.awd'));
+    session.load(new URLRequest('awayjs/suzanne.awd'));
   }
 
   private initLights(): void {

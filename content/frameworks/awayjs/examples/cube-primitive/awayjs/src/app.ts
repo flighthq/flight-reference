@@ -59,7 +59,7 @@ class CubePrimitive {
   }
 
   private loadResources() {
-    var urlRequest: URLRequest = new URLRequest('awayjs/assets/spacy_texture.png');
+    var urlRequest: URLRequest = new URLRequest('awayjs/spacy_texture.png');
     var imgLoader: URLLoader = new URLLoader();
     imgLoader.dataFormat = URLLoaderDataFormat.BLOB;
 

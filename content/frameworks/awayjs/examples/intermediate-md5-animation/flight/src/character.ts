@@ -41,13 +41,13 @@ export interface CharacterData {
 export async function loadCharacter(): Promise<CharacterData> {
   const bodyMaterial = createAwayMatteMaterial(0xffffffff);
   const [bodyDiffuse, bodyNormal] = await Promise.all([
-    loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_diffuse.jpg'),
-    loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_normals.png'),
+    loadImageResourceFromUrl('awayjs/hellknight/hellknight_diffuse.jpg'),
+    loadImageResourceFromUrl('awayjs/hellknight/hellknight_normals.png'),
   ]);
   bodyMaterial.baseColorMap = createTexture({ image: bodyDiffuse });
   bodyMaterial.normalMap = createTexture({ image: bodyNormal, colorSpace: 'linear' });
 
-  const meshText = await fetch('awayjs/assets/hellknight/hellknight.md5mesh').then((r) => r.text());
+  const meshText = await fetch('awayjs/hellknight/hellknight.md5mesh').then((r) => r.text());
   const md5Scene = createScene3DFromMd5Mesh(meshText);
 
   const md5Children = getNodeChildren(md5Scene.root);
@@ -66,7 +66,7 @@ export async function loadCharacter(): Promise<CharacterData> {
   addNodeChild(characterPositionNode.root, characterNode.root);
 
   const animTexts = await Promise.all(
-    ANIM_NAMES.map((name) => fetch(`awayjs/assets/hellknight/${name}.md5anim`).then((r) => r.text())),
+    ANIM_NAMES.map((name) => fetch(`awayjs/hellknight/${name}.md5anim`).then((r) => r.text())),
   );
 
   const clips: Map<string, AnimationClip> = new Map();

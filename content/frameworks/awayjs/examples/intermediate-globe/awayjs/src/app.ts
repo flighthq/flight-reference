@@ -222,25 +222,25 @@ class Intermediate_Globe {
     AssetLibrary.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onResourceComplete(event));
 
     const loaderContext: LoaderContext = new LoaderContext();
-    loaderContext.dependencyBaseUrl = 'awayjs/assets/skybox/';
+    loaderContext.dependencyBaseUrl = 'awayjs/skybox/';
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/skybox/space_texture.cube'), loaderContext);
+    AssetLibrary.load(new URLRequest('awayjs/skybox/space_texture.cube'), loaderContext);
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/globe/cloud_combined_2048.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/globe/earth_specular_2048.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/globe/EarthNormal.png'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/globe/land_lights_16384.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/globe/land_ocean_ice_2048_match.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/globe/cloud_combined_2048.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/globe/earth_specular_2048.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/globe/EarthNormal.png'));
+    AssetLibrary.load(new URLRequest('awayjs/globe/land_lights_16384.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/globe/land_ocean_ice_2048_match.jpg'));
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/lensflare/flare2.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/lensflare/flare3.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/lensflare/flare4.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/lensflare/flare6.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/lensflare/flare7.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/lensflare/flare8.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/lensflare/flare10.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/lensflare/flare11.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/lensflare/flare12.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/lensflare/flare2.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/lensflare/flare3.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/lensflare/flare4.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/lensflare/flare6.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/lensflare/flare7.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/lensflare/flare8.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/lensflare/flare10.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/lensflare/flare11.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/lensflare/flare12.jpg'));
   }
 
   private onEnterFrame(dt: number): void {
@@ -301,13 +301,13 @@ class Intermediate_Globe {
 
   private onResourceComplete(event: LoaderEvent) {
     switch (event.url) {
-      case 'awayjs/assets/skybox/space_texture.cube':
+      case 'awayjs/skybox/space_texture.cube':
         this._skyBox = new Skybox(event.assets[0] as BitmapImageCube);
         this._skyBox.style.sampler = new ImageSampler(false, true);
         this._root.addChild(this._skyBox);
         break;
 
-      case 'awayjs/assets/globe/cloud_combined_2048.jpg': {
+      case 'awayjs/globe/cloud_combined_2048.jpg': {
         const cloudBitmapImage2D: BitmapImage2D = new BitmapImage2D(2048, 1024, true, 0xffffffff);
         cloudBitmapImage2D.copyChannel(
           event.assets[0] as BitmapImage2D,
@@ -320,51 +320,51 @@ class Intermediate_Globe {
         this._cloudMaterial.ambientMethod.texture = new ImageTexture2D(cloudBitmapImage2D);
         break;
       }
-      case 'awayjs/assets/globe/earth_specular_2048.jpg': {
+      case 'awayjs/globe/earth_specular_2048.jpg': {
         const specBitmapImage2D: BitmapImage2D = event.assets[0] as BitmapImage2D;
         specBitmapImage2D.colorTransform(specBitmapImage2D.rect, new ColorTransform(1, 1, 1, 1, 64, 64, 64));
         this._groundMaterial.specularMethod.texture = new ImageTexture2D(specBitmapImage2D);
         break;
       }
-      case 'awayjs/assets/globe/EarthNormal.png':
+      case 'awayjs/globe/EarthNormal.png':
         this._groundMaterial.normalMethod.texture = new ImageTexture2D(event.assets[0] as BitmapImage2D);
         break;
-      case 'awayjs/assets/globe/land_lights_16384.jpg':
+      case 'awayjs/globe/land_lights_16384.jpg':
         this._groundMaterial.ambientMethod.texture = new ImageTexture2D(event.assets[0] as BitmapImage2D);
         break;
-      case 'awayjs/assets/globe/land_ocean_ice_2048_match.jpg':
+      case 'awayjs/globe/land_ocean_ice_2048_match.jpg':
         this._groundMaterial.diffuseMethod.texture = new ImageTexture2D(event.assets[0] as BitmapImage2D);
         break;
 
-      case 'awayjs/assets/lensflare/flare2.jpg':
+      case 'awayjs/lensflare/flare2.jpg':
         this._flares[6] = new FlareObject(event.assets[0] as BitmapImage2D, 1.25, 1.1, 48.45, this._root);
         break;
-      case 'awayjs/assets/lensflare/flare3.jpg':
+      case 'awayjs/lensflare/flare3.jpg':
         this._flares[7] = new FlareObject(event.assets[0] as BitmapImage2D, 1.75, 1.37, 7.65, this._root);
         break;
-      case 'awayjs/assets/lensflare/flare4.jpg':
+      case 'awayjs/lensflare/flare4.jpg':
         this._flares[8] = new FlareObject(event.assets[0] as BitmapImage2D, 2.75, 1.85, 12.75, this._root);
         break;
-      case 'awayjs/assets/lensflare/flare6.jpg':
+      case 'awayjs/lensflare/flare6.jpg':
         this._flares[5] = new FlareObject(event.assets[0] as BitmapImage2D, 1, 0.68, 20.4, this._root);
         this._flares[10] = new FlareObject(event.assets[0] as BitmapImage2D, 4, 2.5, 10.4, this._root);
         break;
-      case 'awayjs/assets/lensflare/flare7.jpg':
+      case 'awayjs/lensflare/flare7.jpg':
         this._flares[2] = new FlareObject(event.assets[0] as BitmapImage2D, 2, 0, 25.5, this._root);
         this._flares[3] = new FlareObject(event.assets[0] as BitmapImage2D, 4, 0, 17.85, this._root);
         this._flares[11] = new FlareObject(event.assets[0] as BitmapImage2D, 10, 2.66, 50, this._root);
         break;
-      case 'awayjs/assets/lensflare/flare8.jpg':
+      case 'awayjs/lensflare/flare8.jpg':
         this._flares[9] = new FlareObject(event.assets[0] as BitmapImage2D, 0.5, 2.21, 33.15, this._root);
         break;
-      case 'awayjs/assets/lensflare/flare10.jpg':
+      case 'awayjs/lensflare/flare10.jpg':
         this._sunMaterial.ambientMethod.texture = new ImageTexture2D(event.assets[0] as BitmapImage2D);
         this._flares[0] = new FlareObject(event.assets[0] as BitmapImage2D, 3.2, -0.01, 100, this._root);
         break;
-      case 'awayjs/assets/lensflare/flare11.jpg':
+      case 'awayjs/lensflare/flare11.jpg':
         this._flares[1] = new FlareObject(event.assets[0] as BitmapImage2D, 6, 0, 30.6, this._root);
         break;
-      case 'awayjs/assets/lensflare/flare12.jpg':
+      case 'awayjs/lensflare/flare12.jpg':
         this._flares[4] = new FlareObject(event.assets[0] as BitmapImage2D, 0.4, 0.32, 22.95, this._root);
         break;
     }

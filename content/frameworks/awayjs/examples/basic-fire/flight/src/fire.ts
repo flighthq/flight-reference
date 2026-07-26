@@ -83,7 +83,7 @@ export function createGlowTexture(): Texture {
 }
 
 export async function createFireEmitters(scene: Readonly<Scene3D>): Promise<FireEmittersResult> {
-  const fireImage = await loadImageResourceFromUrl('awayjs/assets/blue.png');
+  const fireImage = await loadImageResourceFromUrl('awayjs/blue.png');
   const fireAtlas = createSingleSpriteAtlas(fireImage);
 
   const config: ParticleEmitterConfig = createParticleEmitterConfig({

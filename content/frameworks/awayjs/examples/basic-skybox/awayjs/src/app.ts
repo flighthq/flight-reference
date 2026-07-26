@@ -72,9 +72,9 @@ class BasicSkyBox {
     AssetLibrary.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onResourceComplete(event));
 
     var loaderContext = new LoaderContext();
-    loaderContext.dependencyBaseUrl = 'awayjs/assets/skybox/';
+    loaderContext.dependencyBaseUrl = 'awayjs/skybox/';
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/skybox/snow_texture.cube'), loaderContext);
+    AssetLibrary.load(new URLRequest('awayjs/skybox/snow_texture.cube'), loaderContext);
   }
 
   private onEnterFrame(_dt: number): void {
@@ -89,7 +89,7 @@ class BasicSkyBox {
 
   private onResourceComplete(event: LoaderEvent): void {
     switch (event.url) {
-      case 'awayjs/assets/skybox/snow_texture.cube':
+      case 'awayjs/skybox/snow_texture.cube':
         this._cubeTexture = new ImageTextureCube(<BitmapImageCube>event.assets[0]);
 
         this._skyBox = new Skybox(<BitmapImageCube>event.assets[0]);

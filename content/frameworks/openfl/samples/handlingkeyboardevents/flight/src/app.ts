@@ -13,7 +13,7 @@ import {
 
 import { render, scale } from './render';
 
-const image = await loadImageResourceFromUrl('openfl/assets/openfl.png');
+const image = await loadImageResourceFromUrl('openfl/images/openfl_icon.png');
 const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;

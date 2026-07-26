@@ -9,7 +9,7 @@ export class Main extends Sprite {
 
     var loader = new Loader();
     loader.contentLoaderInfo.addEventListener(Event.COMPLETE, this.loader_onComplete);
-    loader.load(new URLRequest('openfl/openfl.png'));
+    loader.load(new URLRequest('openfl/images/openfl_icon_large.png'));
   }
 
   // Event Handlers

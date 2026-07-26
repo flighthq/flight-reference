@@ -65,7 +65,7 @@ class IntermediateAWDViewer {
     const loader = new LoaderContainer();
     loader.addEventListener(AssetEvent.ASSET_COMPLETE, (event: AssetEvent) => this.onAssetComplete(event));
 
-    loader.load(new URLRequest('awayjs/assets/shambler.awd'));
+    loader.load(new URLRequest('awayjs/shambler.awd'));
 
     this._scene.root.addChild(loader);
   }

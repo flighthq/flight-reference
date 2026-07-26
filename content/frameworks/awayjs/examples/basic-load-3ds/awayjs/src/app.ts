@@ -102,13 +102,13 @@ class Basic_Load3DS {
     this._timer.start();
 
     const loaderContext = new LoaderContext();
-    loaderContext.mapUrl('texture.jpg', 'awayjs/assets/soldier_ant.jpg');
+    loaderContext.mapUrl('texture.jpg', 'awayjs/soldier_ant.jpg');
 
     this._loader.addEventListener(AssetEvent.ASSET_COMPLETE, (event: AssetEvent) => this.onAssetComplete(event));
-    this._loader.load(new URLRequest('awayjs/assets/soldier_ant.3ds'), loaderContext, null, new Max3DSParser(false));
+    this._loader.load(new URLRequest('awayjs/soldier_ant.3ds'), loaderContext, null, new Max3DSParser(false));
 
     AssetLibrary.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onResourceComplete(event));
-    AssetLibrary.load(new URLRequest('awayjs/assets/CoarseRedSand.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/CoarseRedSand.jpg'));
   }
 
   private onEnterFrame(dt: number): void {
@@ -154,7 +154,7 @@ class Basic_Load3DS {
       console.log(asset.name, event.url);
 
       switch (event.url) {
-        case 'awayjs/assets/CoarseRedSand.jpg': {
+        case 'awayjs/CoarseRedSand.jpg': {
           this._groundMaterial.style.image = asset as BitmapImage2D;
           break;
         }

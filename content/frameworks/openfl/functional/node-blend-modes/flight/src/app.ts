@@ -66,8 +66,8 @@ appendShapeEndFill(bg);
 addNodeChild(root, bg);
 
 const [squareImg, circleImg] = await Promise.all([
-  loadImageResourceFromUrl('openfl/assets/BlendSquare.png'),
-  loadImageResourceFromUrl('openfl/assets/BlendCircle.png'),
+  loadImageResourceFromUrl('openfl/images/BlendSquare.png'),
+  loadImageResourceFromUrl('openfl/images/BlendCircle.png'),
 ]);
 
 function compositeAdvanced(

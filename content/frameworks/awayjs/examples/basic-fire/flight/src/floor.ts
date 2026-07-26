@@ -43,9 +43,9 @@ function specularToRoughnessTexture(specular: ImageResource): Texture {
 
 export async function loadFloorTextures(material: StandardPbrMaterial): Promise<void> {
   const [diffuseImg, normalImg, specularImg] = await Promise.all([
-    loadImageResourceFromUrl('awayjs/assets/floor_diffuse.jpg'),
-    loadImageResourceFromUrl('awayjs/assets/floor_normal.jpg'),
-    loadImageResourceFromUrl('awayjs/assets/floor_specular.jpg'),
+    loadImageResourceFromUrl('awayjs/floor_diffuse.jpg'),
+    loadImageResourceFromUrl('awayjs/floor_normal.jpg'),
+    loadImageResourceFromUrl('awayjs/floor_specular.jpg'),
   ]);
   const diffuseTex = createTexture({ image: diffuseImg, sampler: createTilingSampler() });
   setTextureUvScale(diffuseTex, 2, 2);

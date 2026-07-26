@@ -7,7 +7,7 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-const image = await loadImageResourceFromUrl('openfl/assets/openfl.png');
+const image = await loadImageResourceFromUrl('openfl/images/openfl_icon.png');
 
 const blurred: {
   node: ReturnType<typeof createBitmap>;

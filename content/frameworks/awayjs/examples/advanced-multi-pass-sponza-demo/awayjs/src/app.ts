@@ -37,7 +37,7 @@ import {
 import { AWDParser } from '@awayjs/parsers';
 
 class Advanced_MultiPassSponzaDemo {
-  private _assetsRoot: string = 'awayjs/assets/';
+  private _assetsRoot: string = 'awayjs/';
 
   private _materialNameStrings: Array<string> = Array<string>(
     'arch',
@@ -577,19 +577,19 @@ class Advanced_MultiPassSponzaDemo {
     );
 
     const loaderContext: LoaderContext = new LoaderContext();
-    loaderContext.dependencyBaseUrl = 'awayjs/assets/skybox/';
+    loaderContext.dependencyBaseUrl = 'awayjs/skybox/';
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/skybox/hourglass_texture.cube'), loaderContext);
+    AssetLibrary.load(new URLRequest('awayjs/skybox/hourglass_texture.cube'), loaderContext);
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/fire.png'));
+    AssetLibrary.load(new URLRequest('awayjs/fire.png'));
   }
 
   private onExtraResourceComplete(event: LoaderEvent) {
     switch (event.url) {
-      case 'awayjs/assets/skybox/hourglass_texture.cube':
+      case 'awayjs/skybox/hourglass_texture.cube':
         this._skyMap = event.assets[0] as BitmapImageCube;
         break;
-      case 'awayjs/assets/fire.png':
+      case 'awayjs/fire.png':
         this._flameMaterial = new MethodMaterial(event.assets[0] as BitmapImage2D);
         this._flameMaterial.blendMode = BlendMode.ADD;
         this._flameMaterial.animateUVs = true;

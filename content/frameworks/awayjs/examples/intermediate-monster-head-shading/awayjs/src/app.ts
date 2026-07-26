@@ -57,7 +57,7 @@ class Intermediate_MonsterHeadShading {
   private _n: number = 0;
   private _loadingText: string;
 
-  private _assetsRoot: string = 'awayjs/assets/monsterhead/';
+  private _assetsRoot: string = 'awayjs/monsterhead/';
 
   private _move: boolean = false;
   private _lastPanAngle: number;
@@ -295,12 +295,12 @@ class Intermediate_MonsterHeadShading {
       this.onExtraResourceComplete(event),
     );
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/diffuseGradient.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/diffuseGradient.jpg'));
   }
 
   private onExtraResourceComplete(event: LoaderEvent): void {
     switch (event.url) {
-      case 'awayjs/assets/diffuseGradient.jpg':
+      case 'awayjs/diffuseGradient.jpg':
         break;
     }
   }

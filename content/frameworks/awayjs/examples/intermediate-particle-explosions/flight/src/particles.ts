@@ -69,22 +69,22 @@ interface LogoDefinition {
 
 const logoDefinitions: readonly LogoDefinition[] = [
   {
-    url: 'awayjs/assets/chrome.png',
+    url: 'awayjs/chrome.png',
     offset: [-100 * PARTICLE_SIZE, 0, 0],
     end: [300 * PARTICLE_SIZE, 0, 0],
   },
   {
-    url: 'awayjs/assets/firefox.png',
+    url: 'awayjs/firefox.png',
     offset: [100 * PARTICLE_SIZE, 0, 0],
     end: [-300 * PARTICLE_SIZE, 0, 0],
   },
   {
-    url: 'awayjs/assets/safari.png',
+    url: 'awayjs/safari.png',
     offset: [0, 0, -100 * PARTICLE_SIZE],
     end: [0, 0, 300 * PARTICLE_SIZE],
   },
   {
-    url: 'awayjs/assets/ie.png',
+    url: 'awayjs/ie.png',
     offset: [0, 0, 100 * PARTICLE_SIZE],
     end: [0, 0, -300 * PARTICLE_SIZE],
   },

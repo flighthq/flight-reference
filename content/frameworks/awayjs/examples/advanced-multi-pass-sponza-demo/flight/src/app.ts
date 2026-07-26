@@ -77,9 +77,9 @@ const skyboxFaceFiles = [
 ];
 
 const [awdBuffer, sponzaTextureImages, skyboxFaceImages] = await Promise.all([
-  fetch('awayjs/assets/sponza/sponza.awd').then((r) => r.arrayBuffer()),
+  fetch('awayjs/sponza/sponza.awd').then((r) => r.arrayBuffer()),
   loadSponzaTextures(sponzaTextureFiles),
-  Promise.all(skyboxFaceFiles.map((file) => loadImageResourceFromUrl(`awayjs/assets/skybox/${file}`))),
+  Promise.all(skyboxFaceFiles.map((file) => loadImageResourceFromUrl(`awayjs/skybox/${file}`))),
 ]);
 
 const textureMap = createTextureMap(sponzaTextureFiles, sponzaTextureImages);

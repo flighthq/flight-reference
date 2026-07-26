@@ -70,7 +70,7 @@ export const materialNameToSpecularFile: Record<string, string> = {
 export const alphaCutoutMaterials = new Set(['chain', 'leaf', 'Material__57']);
 
 export async function loadSponzaTextures(files: readonly string[]): Promise<ImageResource[]> {
-  return Promise.all(files.map((file) => loadImageResourceFromUrl(`awayjs/assets/sponza/${file}`)));
+  return Promise.all(files.map((file) => loadImageResourceFromUrl(`awayjs/sponza/${file}`)));
 }
 
 export function createTextureMap(

@@ -48,7 +48,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
 });
 const lights = createScene3DLights({ ambient, directional });
 
-const image = await loadImageResourceFromUrl('awayjs/assets/spacy_texture.png');
+const image = await loadImageResourceFromUrl('awayjs/spacy_texture.png');
 const texture = createTexture({ image });
 
 const material = createStandardPbrMaterial({

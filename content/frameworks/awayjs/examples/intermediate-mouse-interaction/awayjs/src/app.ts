@@ -140,7 +140,7 @@ class Intermediate_MouseInteraction {
 
     this._session = AssetLibrary.getLoader();
     this._session.addEventListener(AssetEvent.ASSET_COMPLETE, (event: AssetEvent) => this.onAssetComplete(event));
-    this._session.load(new URLRequest('awayjs/assets/head.obj'), null, null, new OBJParser(25));
+    this._session.load(new URLRequest('awayjs/head.obj'), null, null, new OBJParser(25));
 
     this.createABunchOfObjects();
 

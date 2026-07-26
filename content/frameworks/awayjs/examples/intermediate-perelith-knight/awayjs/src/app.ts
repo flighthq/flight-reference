@@ -54,10 +54,10 @@ class Intermediate_PerelithKnight {
   private _sceneInitialised: boolean = false;
 
   private _pKnightTextures: string[] = [
-    'awayjs/assets/pknight1.png',
-    'awayjs/assets/pknight2.png',
-    'awayjs/assets/pknight3.png',
-    'awayjs/assets/pknight4.png',
+    'awayjs/pknight1.png',
+    'awayjs/pknight2.png',
+    'awayjs/pknight3.png',
+    'awayjs/pknight4.png',
   ];
   private _pKnightMaterials: Array<MethodMaterial> = [];
 
@@ -100,14 +100,14 @@ class Intermediate_PerelithKnight {
     AssetLibrary.addEventListener(AssetEvent.ASSET_COMPLETE, (event: AssetEvent) => this.onAssetComplete(event));
     AssetLibrary.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onResourceComplete(event));
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/pknight1.png'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/pknight2.png'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/pknight3.png'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/pknight4.png'));
+    AssetLibrary.load(new URLRequest('awayjs/pknight1.png'));
+    AssetLibrary.load(new URLRequest('awayjs/pknight2.png'));
+    AssetLibrary.load(new URLRequest('awayjs/pknight3.png'));
+    AssetLibrary.load(new URLRequest('awayjs/pknight4.png'));
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/floor_diffuse.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/floor_diffuse.jpg'));
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/pknight.md2'), null, null, new MD2Parser());
+    AssetLibrary.load(new URLRequest('awayjs/pknight.md2'), null, null, new MD2Parser());
 
     this._shadowMapMethod = new ShadowFilteredMethod(this._light);
 
@@ -216,20 +216,20 @@ class Intermediate_PerelithKnight {
       console.log(asset.name, event.url);
 
       switch (event.url) {
-        case 'awayjs/assets/floor_diffuse.jpg':
+        case 'awayjs/floor_diffuse.jpg':
           this._floorMaterial.ambientMethod.texture = new ImageTexture2D(asset as BitmapImage2D);
           break;
 
-        case 'awayjs/assets/pknight1.png':
-        case 'awayjs/assets/pknight2.png':
-        case 'awayjs/assets/pknight3.png':
-        case 'awayjs/assets/pknight4.png':
+        case 'awayjs/pknight1.png':
+        case 'awayjs/pknight2.png':
+        case 'awayjs/pknight3.png':
+        case 'awayjs/pknight4.png':
           this._pKnightMaterials[this._pKnightTextures.indexOf(event.url)].ambientMethod.texture = new ImageTexture2D(
             asset as BitmapImage2D,
           );
           break;
 
-        case 'awayjs/assets/pknight.md2':
+        case 'awayjs/pknight.md2':
           break;
       }
     }

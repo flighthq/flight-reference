@@ -32,7 +32,7 @@ class Basic_View {
 
     AssetLibrary.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onResourceComplete(event));
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/floor_diffuse.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/floor_diffuse.jpg'));
   }
 
   private onEnterFrame(_dt: number): void {
@@ -50,7 +50,7 @@ class Basic_View {
       console.log(asset.name, event.url);
 
       switch (event.url) {
-        case 'awayjs/assets/floor_diffuse.jpg':
+        case 'awayjs/floor_diffuse.jpg':
           this._planeMaterial.texture = new ImageTexture2D(<BitmapImage2D>asset);
           break;
       }

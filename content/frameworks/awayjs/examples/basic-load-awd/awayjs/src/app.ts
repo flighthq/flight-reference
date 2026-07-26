@@ -51,7 +51,7 @@ class Basic_LoadAWD {
     AssetLibrary.enableParser(AWDParser);
 
     AssetLibrary.addEventListener(AssetEvent.ASSET_COMPLETE, (event: AssetEvent) => this.onAssetComplete(event));
-    AssetLibrary.load(new URLRequest('awayjs/assets/suzanne.awd'));
+    AssetLibrary.load(new URLRequest('awayjs/suzanne.awd'));
   }
 
   private onEnterFrame(dt: number): void {

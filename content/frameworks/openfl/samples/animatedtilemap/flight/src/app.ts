@@ -27,7 +27,7 @@ const FRAME_DURATION = 133;
 const STAGE_WIDTH = 800;
 const STAGE_HEIGHT = 600;
 
-const source = await loadImageResourceFromUrl('openfl/assets/tileset.png');
+const source = await loadImageResourceFromUrl('openfl/images/tileset.png');
 const atlas = createTextureAtlas({ image: source });
 const sheet = createSpritesheet({ atlas });
 

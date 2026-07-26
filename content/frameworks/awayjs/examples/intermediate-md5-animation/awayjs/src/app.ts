@@ -231,25 +231,25 @@ class Intermediate_MD5Animation {
     this._timer.start();
 
     const loaderContext: LoaderContext = new LoaderContext();
-    loaderContext.dependencyBaseUrl = 'awayjs/assets/skybox/';
+    loaderContext.dependencyBaseUrl = 'awayjs/skybox/';
 
     AssetLibrary.addEventListener(AssetEvent.ASSET_COMPLETE, (event: AssetEvent) => this.onAssetComplete(event));
     AssetLibrary.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onResourceComplete(event));
-    AssetLibrary.load(new URLRequest('awayjs/assets/hellknight/hellknight.md5mesh'), null, null, new MD5MeshParser());
+    AssetLibrary.load(new URLRequest('awayjs/hellknight/hellknight.md5mesh'), null, null, new MD5MeshParser());
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/skybox/grimnight_texture.cube'), loaderContext);
+    AssetLibrary.load(new URLRequest('awayjs/skybox/grimnight_texture.cube'), loaderContext);
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/redlight.png'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/bluelight.png'));
+    AssetLibrary.load(new URLRequest('awayjs/redlight.png'));
+    AssetLibrary.load(new URLRequest('awayjs/bluelight.png'));
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/rockbase_diffuse.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/rockbase_normals.png'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/rockbase_specular.png'));
+    AssetLibrary.load(new URLRequest('awayjs/rockbase_diffuse.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/rockbase_normals.png'));
+    AssetLibrary.load(new URLRequest('awayjs/rockbase_specular.png'));
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/hellknight/hellknight_diffuse.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/hellknight/hellknight_normals.png'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/hellknight/hellknight_specular.png'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/hellknight/gob.png'));
+    AssetLibrary.load(new URLRequest('awayjs/hellknight/hellknight_diffuse.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/hellknight/hellknight_normals.png'));
+    AssetLibrary.load(new URLRequest('awayjs/hellknight/hellknight_specular.png'));
+    AssetLibrary.load(new URLRequest('awayjs/hellknight/gob.png'));
   }
 
   private onEnterFrame(dt: number): void {
@@ -297,7 +297,7 @@ class Intermediate_MD5Animation {
       this._animator = new SkeletonAnimator(this._animationSet, this._skeleton);
       for (let i: number = 0; i < Intermediate_MD5Animation.ANIM_NAMES.length; ++i)
         AssetLibrary.load(
-          new URLRequest('awayjs/assets/hellknight/' + Intermediate_MD5Animation.ANIM_NAMES[i] + '.md5anim'),
+          new URLRequest('awayjs/hellknight/' + Intermediate_MD5Animation.ANIM_NAMES[i] + '.md5anim'),
           null,
           Intermediate_MD5Animation.ANIM_NAMES[i],
           new MD5AnimParser(),
@@ -329,38 +329,38 @@ class Intermediate_MD5Animation {
 
   private onResourceComplete(event: LoaderEvent) {
     switch (event.url) {
-      case 'awayjs/assets/skybox/grimnight_texture.cube':
+      case 'awayjs/skybox/grimnight_texture.cube':
         this._skyBox = new Skybox(event.assets[0] as BitmapImageCube);
         this._root.addChild(this._skyBox);
         break;
 
-      case 'awayjs/assets/redlight.png':
+      case 'awayjs/redlight.png':
         this._redLightMaterial.ambientMethod.texture = new ImageTexture2D(event.assets[0] as BitmapImage2D);
         break;
-      case 'awayjs/assets/bluelight.png':
+      case 'awayjs/bluelight.png':
         this._blueLightMaterial.ambientMethod.texture = new ImageTexture2D(event.assets[0] as BitmapImage2D);
         break;
 
-      case 'awayjs/assets/rockbase_diffuse.jpg':
+      case 'awayjs/rockbase_diffuse.jpg':
         this._groundMaterial.ambientMethod.texture = new ImageTexture2D(event.assets[0] as BitmapImage2D);
         break;
-      case 'awayjs/assets/rockbase_normals.png':
+      case 'awayjs/rockbase_normals.png':
         this._groundMaterial.normalMethod.texture = new ImageTexture2D(event.assets[0] as BitmapImage2D);
         break;
-      case 'awayjs/assets/rockbase_specular.png':
+      case 'awayjs/rockbase_specular.png':
         this._groundMaterial.specularMethod.texture = new ImageTexture2D(event.assets[0] as BitmapImage2D);
         break;
 
-      case 'awayjs/assets/hellknight/hellknight_diffuse.jpg':
+      case 'awayjs/hellknight/hellknight_diffuse.jpg':
         this._bodyMaterial.ambientMethod.texture = new ImageTexture2D(event.assets[0] as BitmapImage2D);
         break;
-      case 'awayjs/assets/hellknight/hellknight_normals.png':
+      case 'awayjs/hellknight/hellknight_normals.png':
         this._bodyMaterial.normalMethod.texture = new ImageTexture2D(event.assets[0] as BitmapImage2D);
         break;
-      case 'awayjs/assets/hellknight/hellknight_specular.png':
+      case 'awayjs/hellknight/hellknight_specular.png':
         this._bodyMaterial.specularMethod.texture = new ImageTexture2D(event.assets[0] as BitmapImage2D);
         break;
-      case 'awayjs/assets/hellknight/gob.png':
+      case 'awayjs/hellknight/gob.png':
         this._gobMaterial.specularMethod.texture = this._gobMaterial.ambientMethod.texture = new ImageTexture2D(
           event.assets[0] as BitmapImage2D,
         );

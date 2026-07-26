@@ -60,7 +60,7 @@ enableGlTextInput();
 
 const verifyFrame = createGlFrameVerifier(state);
 
-const font = await loadFontFromUrl('awayjs/assets/georgia.ttf', 'Georgia');
+const font = await loadFontFromUrl('awayjs/georgia.ttf', 'Georgia');
 
 setGlyphRasterizerBackend(createWebGlyphRasterizerBackend());
 

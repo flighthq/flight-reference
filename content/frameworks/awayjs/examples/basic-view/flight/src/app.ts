@@ -40,7 +40,7 @@ const lights = createScene3DLights();
 const yAxis = createVector3(0, 1, 0);
 const scratchQuat = createQuaternion();
 
-const image = await loadImageResourceFromUrl('awayjs/assets/floor_diffuse.jpg');
+const image = await loadImageResourceFromUrl('awayjs/floor_diffuse.jpg');
 const texture = createTexture({ image });
 material.baseColorMap = texture;
 

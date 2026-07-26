@@ -27,7 +27,7 @@ export interface Aircraft {
   rightWing: Mesh[];
 }
 
-const f14AssetBase = 'awayjs/assets/f14';
+const f14AssetBase = 'awayjs/f14';
 
 // The OBJ splits each movable wing across seven named groups. Bind the articulation to those groups
 // directly: their geometry bounds can change when parser internals or vertex layouts change, while the

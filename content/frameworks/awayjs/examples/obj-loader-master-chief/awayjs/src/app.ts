@@ -46,19 +46,19 @@ class ObjLoaderMasterChief {
 
     session = AssetLibrary.getLoader();
     session.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onResourceComplete(event));
-    session.load(new URLRequest('awayjs/assets/Halo_3_SPARTAN4.obj'));
+    session.load(new URLRequest('awayjs/Halo_3_SPARTAN4.obj'));
 
     session = AssetLibrary.getLoader();
     session.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onResourceComplete(event));
-    session.load(new URLRequest('awayjs/assets/terrain.obj'));
+    session.load(new URLRequest('awayjs/terrain.obj'));
 
     session = AssetLibrary.getLoader();
     session.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onResourceComplete(event));
-    session.load(new URLRequest('awayjs/assets/masterchief_base.png'));
+    session.load(new URLRequest('awayjs/masterchief_base.png'));
 
     session = AssetLibrary.getLoader();
     session.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onResourceComplete(event));
-    session.load(new URLRequest('awayjs/assets/stone_tx.jpg'));
+    session.load(new URLRequest('awayjs/stone_tx.jpg'));
 
     window.onresize = () => this.onResize();
 
@@ -85,12 +85,12 @@ class ObjLoaderMasterChief {
 
       switch (d.assetType) {
         case Sprite.assetType:
-          if (event.url === 'awayjs/assets/Halo_3_SPARTAN4.obj') {
+          if (event.url === 'awayjs/Halo_3_SPARTAN4.obj') {
             const sprite = d as Sprite;
             this._spartan.addChild(sprite);
             this._spartanFlag = true;
             this._sprites.push(sprite);
-          } else if (event.url === 'awayjs/assets/terrain.obj') {
+          } else if (event.url === 'awayjs/terrain.obj') {
             this._terrain = d as Sprite;
             this._terrain.y = 98;
             this._terrain.graphics.scaleUV(20, 20);
@@ -98,11 +98,11 @@ class ObjLoaderMasterChief {
           }
           break;
         case BitmapImage2D.assetType:
-          if (event.url === 'awayjs/assets/masterchief_base.png') {
+          if (event.url === 'awayjs/masterchief_base.png') {
             this._mat = new MethodMaterial(d as BitmapImage2D);
             this._mat.style.sampler = new ImageSampler(true, true, false);
             this._mat.lightPicker = new StaticLightPicker([this._light]);
-          } else if (event.url === 'awayjs/assets/stone_tx.jpg') {
+          } else if (event.url === 'awayjs/stone_tx.jpg') {
             this._terrainMaterial = new MethodMaterial(d as BitmapImage2D);
             this._terrainMaterial.style.sampler = new ImageSampler(true, true, false);
             this._terrainMaterial.lightPicker = new StaticLightPicker([this._light]);

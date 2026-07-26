@@ -32,32 +32,20 @@ import { applyBackgroundBlur, container, render, scale, setSize } from './render
 const audioContext = new AudioContext();
 
 const [bgImage, footerImage, logoImage, font, theme, sound3, sound4, sound5, ...tileImages] = await Promise.all([
-  loadImageResourceFromUrl('openfl/assets/images/background_tile.png'),
-  loadImageResourceFromUrl('openfl/assets/images/center_bottom.png'),
-  loadImageResourceFromUrl('openfl/assets/images/logo.png'),
-  loadFontFromUrl('openfl/assets/fonts/FreebooterUpdated.ttf', 'FreebooterUpdated'),
-  loadAudioResourceFromUrls(audioContext, [
-    { url: 'openfl/assets/sounds/theme.ogg' },
-    { url: 'openfl/assets/sounds/theme.mp3' },
-  ]),
-  loadAudioResourceFromUrls(audioContext, [
-    { url: 'openfl/assets/sounds/sound3.ogg' },
-    { url: 'openfl/assets/sounds/sound3.mp3' },
-  ]),
-  loadAudioResourceFromUrls(audioContext, [
-    { url: 'openfl/assets/sounds/sound4.ogg' },
-    { url: 'openfl/assets/sounds/sound4.mp3' },
-  ]),
-  loadAudioResourceFromUrls(audioContext, [
-    { url: 'openfl/assets/sounds/sound5.ogg' },
-    { url: 'openfl/assets/sounds/sound5.mp3' },
-  ]),
-  loadImageResourceFromUrl('openfl/assets/images/game_bear.png'),
-  loadImageResourceFromUrl('openfl/assets/images/game_bunny_02.png'),
-  loadImageResourceFromUrl('openfl/assets/images/game_carrot.png'),
-  loadImageResourceFromUrl('openfl/assets/images/game_lemon.png'),
-  loadImageResourceFromUrl('openfl/assets/images/game_panda.png'),
-  loadImageResourceFromUrl('openfl/assets/images/game_piratePig.png'),
+  loadImageResourceFromUrl('openfl/images/background_tile.png'),
+  loadImageResourceFromUrl('openfl/images/center_bottom.png'),
+  loadImageResourceFromUrl('openfl/images/logo.png'),
+  loadFontFromUrl('openfl/fonts/FreebooterUpdated.ttf', 'FreebooterUpdated'),
+  loadAudioResourceFromUrls(audioContext, [{ url: 'openfl/sounds/theme.ogg' }, { url: 'openfl/sounds/theme.mp3' }]),
+  loadAudioResourceFromUrls(audioContext, [{ url: 'openfl/sounds/sound3.ogg' }, { url: 'openfl/sounds/sound3.mp3' }]),
+  loadAudioResourceFromUrls(audioContext, [{ url: 'openfl/sounds/sound4.ogg' }, { url: 'openfl/sounds/sound4.mp3' }]),
+  loadAudioResourceFromUrls(audioContext, [{ url: 'openfl/sounds/sound5.ogg' }, { url: 'openfl/sounds/sound5.mp3' }]),
+  loadImageResourceFromUrl('openfl/images/game_bear.png'),
+  loadImageResourceFromUrl('openfl/images/game_bunny_02.png'),
+  loadImageResourceFromUrl('openfl/images/game_carrot.png'),
+  loadImageResourceFromUrl('openfl/images/game_lemon.png'),
+  loadImageResourceFromUrl('openfl/images/game_panda.png'),
+  loadImageResourceFromUrl('openfl/images/game_piratePig.png'),
 ]);
 
 const sounds = [theme, sound3, sound4, sound5];

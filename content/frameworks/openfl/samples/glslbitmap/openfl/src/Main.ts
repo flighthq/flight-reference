@@ -79,7 +79,7 @@ void main(void) {
     this.programTextureAttribute = this.program.getAttributeIndex('aTexCoord');
     this.programMatrixUniform = this.program.getConstantIndex('uMatrix');
 
-    const bitmapData = Assets.getBitmapData('openfl/assets/openfl.png');
+    const bitmapData = Assets.getBitmapData('openfl/images/openfl_icon_large.png');
     this.bitmapTexture = context.createRectangleTexture(
       bitmapData.width,
       bitmapData.height,

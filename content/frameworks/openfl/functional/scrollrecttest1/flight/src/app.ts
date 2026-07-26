@@ -1,4 +1,4 @@
-// Requires: assets/OwlAlpha.png
+// Requires: images/OwlAlpha.png
 // Demonstrates clip rectangle + child positioning as the compositional scroll pattern.
 import {
   addNodeChild,
@@ -40,7 +40,7 @@ const root = createDisplayObject();
 const W = width;
 const H = height;
 
-const owlImg = await loadImageResourceFromUrl('openfl/assets/OwlAlpha.png');
+const owlImg = await loadImageResourceFromUrl('openfl/images/OwlAlpha.png');
 
 // Owl clip: container clips to the eyes region; content moves to pan across the image.
 const owlClip = createDisplayObject();

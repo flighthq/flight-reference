@@ -71,7 +71,7 @@ class BasicText {
     this._timer.start();
 
     AssetLibrary.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onResourceComplete(event));
-    AssetLibrary.load(new URLRequest('awayjs/assets/georgia.ttf'), null, null, new FontParser(true));
+    AssetLibrary.load(new URLRequest('awayjs/georgia.ttf'), null, null, new FontParser(true));
   }
 
   private onEnterFrame(_dt: number): void {

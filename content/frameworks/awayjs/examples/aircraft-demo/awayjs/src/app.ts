@@ -64,9 +64,9 @@ class AircraftDemo {
   }
 
   private loadAssets() {
-    this.loadAsset('awayjs/assets/sea_normals.jpg');
-    this.loadAsset('awayjs/assets/f14/f14d.obj');
-    this.loadAsset('awayjs/assets/skybox/CubeTextureTest.cube');
+    this.loadAsset('awayjs/sea_normals.jpg');
+    this.loadAsset('awayjs/f14/f14d.obj');
+    this.loadAsset('awayjs/skybox/CubeTextureTest.cube');
   }
 
   private loadAsset(path: string) {
@@ -165,10 +165,10 @@ class AircraftDemo {
     const numAssets: number = loader.baseDependency.assets.length;
 
     switch (event.url) {
-      case 'awayjs/assets/sea_normals.jpg':
+      case 'awayjs/sea_normals.jpg':
         this._seaNormalImage = loader.baseDependency.assets[0] as BitmapImage2D;
         break;
-      case 'awayjs/assets/f14/f14d.obj':
+      case 'awayjs/f14/f14d.obj':
         this._f14Geom = new DisplayObjectContainer();
         for (let i = 0; i < numAssets; ++i) {
           const asset: IAsset = loader.baseDependency.assets[i];
@@ -181,7 +181,7 @@ class AircraftDemo {
           }
         }
         break;
-      case 'awayjs/assets/skybox/CubeTextureTest.cube':
+      case 'awayjs/skybox/CubeTextureTest.cube':
         this._skyboxImageCube = loader.baseDependency.assets[0] as BitmapImageCube;
         break;
     }

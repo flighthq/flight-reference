@@ -83,7 +83,7 @@ ctx.canvas.addEventListener('mouseup', (event: MouseEvent) => {
   }
 });
 
-const image = await loadImageResourceFromUrl('awayjs/assets/floor_diffuse.jpg');
+const image = await loadImageResourceFromUrl('awayjs/floor_diffuse.jpg');
 const texture = createTexture({ image });
 material.baseColorMap = texture;
 

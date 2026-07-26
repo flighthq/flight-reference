@@ -5,7 +5,7 @@ import Assets from 'openfl/utils/Assets';
 import Main from './Main';
 
 const manifest = new AssetManifest();
-manifest.addBitmapData('openfl/assets/openfl.png');
+manifest.addBitmapData('openfl/images/openfl_icon_large.png');
 
 AssetLibrary.loadFromManifest(manifest)
   .onComplete((library) => {

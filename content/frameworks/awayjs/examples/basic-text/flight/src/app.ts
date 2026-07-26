@@ -53,7 +53,7 @@ registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 
 const verifyFrame = createGlFrameVerifier(state);
 
-const font = await loadFontFromUrl('awayjs/assets/georgia.ttf', 'Georgia');
+const font = await loadFontFromUrl('awayjs/georgia.ttf', 'Georgia');
 
 const root = createDisplayObject();
 root.x = width / 2;

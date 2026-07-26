@@ -29,7 +29,7 @@ function updateVelocity(velocity: number, acceleration: number, max: number): nu
   return velocity / DAMPING;
 }
 
-const image = await loadImageResourceFromUrl('openfl/checkers.png');
+const image = await loadImageResourceFromUrl('openfl/images/checkers.png');
 const texture = createTexture({ image });
 const scene = createScene3D();
 const material = createUnlitMaterial({ baseColor: 0xffffffff, baseColorMap: texture });

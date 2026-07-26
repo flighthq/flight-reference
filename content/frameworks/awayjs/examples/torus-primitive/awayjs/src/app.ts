@@ -42,7 +42,7 @@ class TorusPrimitive {
     var imgLoader: URLLoader = new URLLoader();
     imgLoader.dataFormat = URLLoaderDataFormat.BLOB;
     imgLoader.addEventListener(URLLoaderEvent.LOAD_COMPLETE, (event: URLLoaderEvent) => this.urlCompleteHandler(event));
-    imgLoader.load(new URLRequest('awayjs/assets/dots.png'));
+    imgLoader.load(new URLRequest('awayjs/dots.png'));
   }
 
   private urlCompleteHandler(event: URLLoaderEvent) {

@@ -160,19 +160,19 @@ class Basic_Shading {
 
     AssetLibrary.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onLoadComplete(event));
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/floor_diffuse.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/floor_normal.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/floor_specular.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/floor_diffuse.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/floor_normal.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/floor_specular.jpg'));
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/beachball_diffuse.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/beachball_specular.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/beachball_diffuse.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/beachball_specular.jpg'));
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/trinket_diffuse.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/trinket_normal.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/trinket_specular.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/trinket_diffuse.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/trinket_normal.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/trinket_specular.jpg'));
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/weave_diffuse.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/weave_normal.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/weave_diffuse.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/weave_normal.jpg'));
   }
 
   private onEnterFrame(dt: number): void {
@@ -197,37 +197,37 @@ class Basic_Shading {
       console.log(asset.name, event.url);
 
       switch (event.url) {
-        case 'awayjs/assets/floor_diffuse.jpg':
+        case 'awayjs/floor_diffuse.jpg':
           this._planeMaterial.style.image = <BitmapImage2D>asset;
           break;
-        case 'awayjs/assets/floor_normal.jpg':
+        case 'awayjs/floor_normal.jpg':
           this._planeMaterial.normalMethod.texture = new ImageTexture2D(<BitmapImage2D>asset);
           break;
-        case 'awayjs/assets/floor_specular.jpg':
+        case 'awayjs/floor_specular.jpg':
           this._planeMaterial.specularMethod.texture = new ImageTexture2D(<BitmapImage2D>asset);
           break;
 
-        case 'awayjs/assets/beachball_diffuse.jpg':
+        case 'awayjs/beachball_diffuse.jpg':
           this._sphereMaterial.style.image = <BitmapImage2D>asset;
           break;
-        case 'awayjs/assets/beachball_specular.jpg':
+        case 'awayjs/beachball_specular.jpg':
           this._sphereMaterial.specularMethod.texture = new ImageTexture2D(<BitmapImage2D>asset);
           break;
 
-        case 'awayjs/assets/trinket_diffuse.jpg':
+        case 'awayjs/trinket_diffuse.jpg':
           this._cubeMaterial.style.image = <BitmapImage2D>asset;
           break;
-        case 'awayjs/assets/trinket_normal.jpg':
+        case 'awayjs/trinket_normal.jpg':
           this._cubeMaterial.normalMethod.texture = new ImageTexture2D(<BitmapImage2D>asset);
           break;
-        case 'awayjs/assets/trinket_specular.jpg':
+        case 'awayjs/trinket_specular.jpg':
           this._cubeMaterial.specularMethod.texture = new ImageTexture2D(<BitmapImage2D>asset);
           break;
 
-        case 'awayjs/assets/weave_diffuse.jpg':
+        case 'awayjs/weave_diffuse.jpg':
           this._torusMaterial.style.image = <BitmapImage2D>asset;
           break;
-        case 'awayjs/assets/weave_normal.jpg':
+        case 'awayjs/weave_normal.jpg':
           this._torusMaterial.normalMethod.texture = this._torusMaterial.specularMethod.texture = new ImageTexture2D(
             <BitmapImage2D>asset,
           );

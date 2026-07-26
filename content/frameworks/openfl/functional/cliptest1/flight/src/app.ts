@@ -1,4 +1,4 @@
-// Requires: assets/openfl.png
+// Requires: images/openfl_icon.png
 // Port of the OpenFL clip-rect functional test. Tests rectangular clipping on bitmaps and rich text.
 import {
   addNodeChild,
@@ -37,7 +37,7 @@ appendShapeRectangle(bg, 0, 0, W, H);
 appendShapeEndFill(bg);
 addNodeChild(root, bg);
 
-const image = await loadImageResourceFromUrl('openfl/assets/openfl.png');
+const image = await loadImageResourceFromUrl('openfl/images/openfl_icon.png');
 const iw = image.width;
 const ih = image.height;
 

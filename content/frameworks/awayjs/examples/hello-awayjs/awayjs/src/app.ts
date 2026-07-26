@@ -41,7 +41,7 @@ class Hello_AwayJS {
     this._timer.start();
 
     AssetLibrary.addEventListener(AssetEvent.ASSET_COMPLETE, (event: AssetEvent) => this.onAssetComplete(event));
-    AssetLibrary.load(new URLRequest('awayjs/assets/floor_diffuse.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/floor_diffuse.jpg'));
   }
 
   private onEnterFrame(dt: number): void {

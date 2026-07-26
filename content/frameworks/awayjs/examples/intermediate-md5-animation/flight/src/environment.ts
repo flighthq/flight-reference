@@ -23,7 +23,7 @@ export interface EnvironmentData {
 export async function loadEnvironment(): Promise<EnvironmentData> {
   const skyFaceNames = ['posX', 'negX', 'posY', 'negY', 'posZ', 'negZ'];
   const skyImages = await Promise.all(
-    skyFaceNames.map((face) => loadImageResourceFromUrl(`awayjs/assets/skybox/grimnight_${face}.png`)),
+    skyFaceNames.map((face) => loadImageResourceFromUrl(`awayjs/skybox/grimnight_${face}.png`)),
   );
   const skyTexture: CubeTexture = createCubeTexture();
   for (let i = 0; i < skyImages.length; i++) setCubeTextureFace(skyTexture, i, skyImages[i]);
@@ -33,8 +33,8 @@ export async function loadEnvironment(): Promise<EnvironmentData> {
   groundMaterial.doubleSided = false;
 
   const [rockDiffuse, rockNormal] = await Promise.all([
-    loadImageResourceFromUrl('awayjs/assets/rockbase_diffuse.jpg'),
-    loadImageResourceFromUrl('awayjs/assets/rockbase_normals.png'),
+    loadImageResourceFromUrl('awayjs/rockbase_diffuse.jpg'),
+    loadImageResourceFromUrl('awayjs/rockbase_normals.png'),
   ]);
 
   const groundDiffuseTexture = createTexture({ image: rockDiffuse });

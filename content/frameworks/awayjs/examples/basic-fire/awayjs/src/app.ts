@@ -195,10 +195,10 @@ class BasicFire {
 
     AssetLibrary.addEventListener(LoaderEvent.LOAD_COMPLETE, (event: LoaderEvent) => this.onResourceComplete(event));
 
-    AssetLibrary.load(new URLRequest('awayjs/assets/floor_diffuse.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/floor_normal.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/floor_specular.jpg'));
-    AssetLibrary.load(new URLRequest('awayjs/assets/blue.png'));
+    AssetLibrary.load(new URLRequest('awayjs/floor_diffuse.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/floor_normal.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/floor_specular.jpg'));
+    AssetLibrary.load(new URLRequest('awayjs/blue.png'));
   }
 
   private initParticleFunc(prop: ParticleProperties): void {
@@ -271,16 +271,16 @@ class BasicFire {
       console.log(asset.name, event.url);
 
       switch (event.url) {
-        case 'awayjs/assets/floor_diffuse.jpg':
+        case 'awayjs/floor_diffuse.jpg':
           this._planeMaterial.ambientMethod.texture = new ImageTexture2D(asset as BitmapImage2D);
           break;
-        case 'awayjs/assets/floor_normal.jpg':
+        case 'awayjs/floor_normal.jpg':
           this._planeMaterial.normalMethod.texture = new ImageTexture2D(asset as BitmapImage2D);
           break;
-        case 'awayjs/assets/floor_specular.jpg':
+        case 'awayjs/floor_specular.jpg':
           this._planeMaterial.specularMethod.texture = new ImageTexture2D(asset as BitmapImage2D);
           break;
-        case 'awayjs/assets/blue.png':
+        case 'awayjs/blue.png':
           this._particleMaterial.ambientMethod.texture = new ImageTexture2D(asset as BitmapImage2D);
           break;
       }

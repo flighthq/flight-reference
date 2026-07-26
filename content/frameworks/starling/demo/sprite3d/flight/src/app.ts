@@ -3,14 +3,23 @@ import {
   BitmapKind,
   createBitmap,
   createDisplayObject,
+  createGlCanvasElement,
+  createGlRenderState,
   createImageResourceFromCanvas,
+  createMatrix,
+  defaultGlBitmapRenderer,
+  defaultGlTextLabelRenderer,
+  enableGlBlendModeSupport,
   invalidateImageResource,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareScene2DRender,
+  registerDefaultGlMaterial,
+  registerRenderer,
+  renderGlBackground,
+  renderGlScene2D,
   TextLabelKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
 
 import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src/menuButton';
 
@@ -33,13 +42,22 @@ const FaceColors: [number, number, number][] = [
   [0x00, 0xff, 0xff],
 ];
 
-const target = await createFunctionalTarget({
-  width: GameWidth,
-  height: GameHeight,
-  background: 0xffffffff,
-  blend: true,
-  kinds: [BitmapKind, TextLabelKind],
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createGlCanvasElement(GameWidth, GameHeight, pixelRatio);
+document.body.appendChild(canvas);
+
+const state = createGlRenderState(canvas, {
+  pixelRatio,
+  backgroundColor: 0xffffffff,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: false },
+  sceneGraphSyncPolicy: 'refreshDerivedState',
 });
+
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+registerDefaultGlMaterial(state);
+registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
+enableGlBlendModeSupport(state);
 
 const root = createDisplayObject();
 
@@ -300,13 +318,15 @@ function renderCube(now: number): void {
 }
 
 renderCube(performance.now());
-prepareScene2DRender(target.state, root);
-target.render(root);
+prepareScene2DRender(state, root);
+renderGlBackground(state);
+renderGlScene2D(state, root);
 
 function frame(now: number): void {
   renderCube(now);
-  prepareScene2DRender(target.state, root);
-  target.render(root);
+  prepareScene2DRender(state, root);
+  renderGlBackground(state);
+  renderGlScene2D(state, root);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

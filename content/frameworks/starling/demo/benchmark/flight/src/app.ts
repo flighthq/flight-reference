@@ -7,12 +7,19 @@ import {
   createBitmap,
   createBitmapText,
   createDisplayObject,
+  createGlCanvasElement,
+  createGlRenderState,
   createGlyphSourceFromBitmapFont,
-  createInteractionManager,
   createInputManager,
+  createInteractionManager,
+  createMatrix,
   createRectangle,
   createRichText,
   createTextureAtlasFromImageResource,
+  defaultGlBitmapRenderer,
+  defaultGlQuadBatchRenderer,
+  defaultGlRichTextRenderer,
+  defaultGlTextLabelRenderer,
   getNodeChildCount,
   invalidateNodeAppearance,
   invalidateNodeLocalContent,
@@ -21,14 +28,17 @@ import {
   parseBitmapFontXml,
   prepareScene2DRender,
   QuadBatchKind,
+  registerDefaultGlMaterial,
   registerDefaultHitTests,
+  registerRenderer,
   removeNodeChild,
   removeNodeChildAt,
+  renderGlBackground,
+  renderGlScene2D,
   RichTextKind,
   TextLabelKind,
   updateBitmapText,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
 
 import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src/menuButton';
 
@@ -41,12 +51,23 @@ const TargetFps = 30;
 const FrameTimeWindow = 10;
 const MaxFailCount = 100;
 
-const target = await createFunctionalTarget({
-  width: GameWidth,
-  height: GameHeight,
-  background: 0xffffffff,
-  kinds: [BitmapKind, QuadBatchKind, RichTextKind, TextLabelKind],
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createGlCanvasElement(GameWidth, GameHeight, pixelRatio);
+document.body.appendChild(canvas);
+
+const state = createGlRenderState(canvas, {
+  pixelRatio,
+  backgroundColor: 0xffffffff,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: false },
+  sceneGraphSyncPolicy: 'refreshDerivedState',
 });
+
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+registerDefaultGlMaterial(state);
+registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
+registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
+registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 
 const root = createDisplayObject();
 
@@ -87,7 +108,7 @@ let resultText: RichText | null = null;
 
 registerDefaultHitTests();
 const input = createInputManager();
-attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);
+attachPointerInput(input, canvas);
 const interaction = createInteractionManager<DisplayObject>(root);
 connectInputToInteraction(input, interaction, 1);
 
@@ -188,7 +209,9 @@ function startBenchmark(): void {
 
   updateStatusText('');
 
-  target.render(root);
+  prepareScene2DRender(state, root);
+  renderGlBackground(state);
+  renderGlScene2D(state, root);
 }
 
 function benchmarkComplete(measuredFps: number): void {
@@ -278,10 +301,13 @@ function enterFrame(now: number): void {
     }
   }
 
-  prepareScene2DRender(target.state, root);
-  target.render(root);
+  prepareScene2DRender(state, root);
+  renderGlBackground(state);
+  renderGlScene2D(state, root);
   requestAnimationFrame(enterFrame);
 }
 
-target.render(root);
+prepareScene2DRender(state, root);
+renderGlBackground(state);
+renderGlScene2D(state, root);
 requestAnimationFrame(enterFrame);

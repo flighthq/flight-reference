@@ -6,30 +6,49 @@ import {
   connectInputToInteraction,
   createBitmap,
   createDisplayObject,
-  createInteractionManager,
+  createGlCanvasElement,
+  createGlRenderState,
   createInputManager,
+  createInteractionManager,
+  createMatrix,
   createRectangle,
   createRichText,
+  defaultGlBitmapRenderer,
+  defaultGlRichTextRenderer,
+  defaultGlTextLabelRenderer,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   prepareScene2DRender,
+  registerDefaultGlMaterial,
   registerDefaultHitTests,
+  registerRenderer,
+  renderGlBackground,
+  renderGlScene2D,
   RichTextKind,
   TextLabelKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
 
 import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src/menuButton';
 
 const GameWidth = 320;
 const GameHeight = 480;
 
-const target = await createFunctionalTarget({
-  width: GameWidth,
-  height: GameHeight,
-  background: 0xffffffff,
-  kinds: [BitmapKind, RichTextKind, TextLabelKind],
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createGlCanvasElement(GameWidth, GameHeight, pixelRatio);
+document.body.appendChild(canvas);
+
+const state = createGlRenderState(canvas, {
+  pixelRatio,
+  backgroundColor: 0xffffffff,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: false },
+  sceneGraphSyncPolicy: 'refreshDerivedState',
 });
+
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+registerDefaultGlMaterial(state);
+registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
+registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 
 const root = createDisplayObject();
 
@@ -67,7 +86,7 @@ addNodeChild(root, button);
 registerDefaultHitTests();
 
 const input = createInputManager();
-attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);
+attachPointerInput(input, canvas);
 
 const interaction = createInteractionManager<DisplayObject>(root);
 connectInputToInteraction(input, interaction, 1);
@@ -121,8 +140,6 @@ function flashButton(): void {
   }, 200);
 }
 
-const canvas = document.querySelector('canvas')!;
-
 canvas.addEventListener('click', (e) => {
   const rect = canvas.getBoundingClientRect();
   const x = ((e.clientX - rect.left) / rect.width) * GameWidth;
@@ -136,8 +153,9 @@ canvas.addEventListener('click', (e) => {
 });
 
 function frame(): void {
-  prepareScene2DRender(target.state, root);
-  target.render(root);
+  prepareScene2DRender(state, root);
+  renderGlBackground(state);
+  renderGlScene2D(state, root);
   requestAnimationFrame(frame);
 }
 frame();

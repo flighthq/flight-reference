@@ -6,20 +6,29 @@ import {
   connectInputToInteraction,
   createBitmap,
   createDisplayObject,
+  createGlCanvasElement,
+  createGlRenderState,
   createImageResourceFromCanvas,
-  createInteractionManager,
   createInputManager,
+  createInteractionManager,
+  createMatrix,
   createRectangle,
   createRichText,
+  defaultGlBitmapRenderer,
+  defaultGlRichTextRenderer,
+  defaultGlTextLabelRenderer,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   prepareScene2DRender,
+  registerDefaultGlMaterial,
   registerDefaultHitTests,
+  registerRenderer,
+  renderGlBackground,
+  renderGlScene2D,
   RichTextKind,
   TextLabelKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
 
 import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src/menuButton';
 
@@ -129,12 +138,22 @@ function easeOutElastic(t: number): number {
   return Math.pow(2, -10 * t) * Math.sin(((t - 0.075) * (2 * Math.PI)) / 0.3) + 1;
 }
 
-const target = await createFunctionalTarget({
-  width: GameWidth,
-  height: GameHeight,
-  background: 0xffffffff,
-  kinds: [BitmapKind, RichTextKind, TextLabelKind],
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createGlCanvasElement(GameWidth, GameHeight, pixelRatio);
+document.body.appendChild(canvas);
+
+const state = createGlRenderState(canvas, {
+  pixelRatio,
+  backgroundColor: 0xffffffff,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: false },
+  sceneGraphSyncPolicy: 'refreshDerivedState',
 });
+
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+registerDefaultGlMaterial(state);
+registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
+registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 
 const root = createDisplayObject();
 
@@ -147,7 +166,7 @@ const atlas = await loadImageResourceFromUrl('starling/assets/textures/1x/atlas.
 
 registerDefaultHitTests();
 const input = createInputManager();
-attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);
+attachPointerInput(input, canvas);
 const interaction = createInteractionManager<DisplayObject>(root);
 connectInputToInteraction(input, interaction, 1);
 
@@ -312,13 +331,15 @@ function onDelayButtonClick(): void {
   }, 2000);
 }
 
-prepareScene2DRender(target.state, root);
-target.render(root);
+prepareScene2DRender(state, root);
+renderGlBackground(state);
+renderGlScene2D(state, root);
 
 function enterFrame(now: number): void {
   updateTweens(now);
-  prepareScene2DRender(target.state, root);
-  target.render(root);
+  prepareScene2DRender(state, root);
+  renderGlBackground(state);
+  renderGlScene2D(state, root);
   requestAnimationFrame(enterFrame);
 }
 requestAnimationFrame(enterFrame);

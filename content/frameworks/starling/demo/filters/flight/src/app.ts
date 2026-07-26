@@ -5,7 +5,6 @@ import {
   createDropShadowEffect,
   createOuterGlowEffect,
 } from '@flighthq/effects';
-import { computeDropShadowEffectCss, computeOuterGlowEffectCss } from '@flighthq/effects-canvas';
 import {
   applyColorMatrixPassToGl,
   applyDisplacementEffectToGl,
@@ -23,16 +22,7 @@ import {
   createInvertColorMatrix,
   createSaturationColorMatrix,
 } from '@flighthq/adjustments';
-import type {
-  Bitmap,
-  CanvasRenderState,
-  DisplayObject,
-  DomRenderState,
-  GlRenderState,
-  GlRenderTarget,
-  GlRenderTargetPool,
-  Matrix,
-} from '@flighthq/sdk';
+import type { DisplayObject, GlRenderState, GlRenderTarget, GlRenderTargetPool, Matrix } from '@flighthq/sdk';
 import {
   addNodeChild,
   attachPointerInput,
@@ -46,32 +36,35 @@ import {
   copyMatrix,
   createBitmap,
   createDisplayObject,
+  createGlCanvasElement,
+  createGlRenderState,
+  createGlRenderTarget,
+  createGlRenderTargetPool,
   createInputManager,
   createInteractionManager,
   createMatrix,
   createRectangle,
-  createRenderCache,
   createRichText,
-  createGlRenderTarget,
-  createGlRenderTargetPool,
+  defaultGlBitmapRenderer,
+  defaultGlRichTextRenderer,
+  defaultGlTextLabelRenderer,
   drawGlRenderTargetResult,
-  enableDomCssFilterSupport,
+  enableGlBlendModeSupport,
+  enableGlRenderCache,
   endGlRenderPass,
-  ensureCanvasRenderCacheTarget,
   getRenderProxy2D,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareScene2DRender,
+  registerDefaultGlMaterial,
   registerDefaultHitTests,
+  registerRenderer,
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
   setGlRenderTransform2D,
-  setDomCssFilter,
   TextLabelKind,
-  useRenderCache,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
 
 import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src/menuButton';
 
@@ -171,14 +164,24 @@ const filterInfos: FilterEntry[] = [
 
 let filterIndex = 0;
 
-const target = await createFunctionalTarget({
-  width: GameWidth,
-  height: GameHeight,
-  background: 0xffffffff,
-  blend: true,
-  cache: true,
-  kinds: [BitmapKind, RichTextKind, TextLabelKind],
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createGlCanvasElement(GameWidth, GameHeight, pixelRatio);
+document.body.appendChild(canvas);
+
+const state = createGlRenderState(canvas, {
+  pixelRatio,
+  backgroundColor: 0xffffffff,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: false },
+  sceneGraphSyncPolicy: 'refreshDerivedState',
 });
+
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+registerDefaultGlMaterial(state);
+registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
+registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
+enableGlRenderCache(state);
+enableGlBlendModeSupport(state);
 
 const root = createDisplayObject();
 
@@ -207,7 +210,7 @@ addNodeChild(root, infoText);
 
 registerDefaultHitTests();
 const inputMgr = createInputManager();
-attachPointerInput(inputMgr, (target.state as { canvas: HTMLCanvasElement }).canvas);
+attachPointerInput(inputMgr, canvas);
 const interaction = createInteractionManager<DisplayObject>(root);
 connectInputToInteraction(inputMgr, interaction, 1);
 
@@ -249,15 +252,7 @@ const _bounds = createRectangle();
 const _identity = createMatrix();
 const MAX_PADDING = Math.ceil(8 * 3 + 4);
 
-if (target.kind === 'webgl') {
-  runGl(target.state);
-} else if (target.kind === 'canvas') {
-  runCanvas(target.state);
-} else if (target.kind === 'dom') {
-  runDom(target.state);
-} else {
-  target.render(root);
-}
+runGl(state);
 
 function runGl(state: GlRenderState): void {
   computeNodeBoundsRectangle(_bounds, rocket, rocket);
@@ -317,63 +312,6 @@ function runGl(state: GlRenderState): void {
       renderGlScene2D(state, root);
     }
 
-    requestAnimationFrame(renderFrame);
-  }
-
-  renderFrame();
-}
-
-function runCanvas(state: CanvasRenderState): void {
-  const cache = createRenderCache();
-  useRenderCache(state, rocket, cache);
-
-  function renderFrame(): void {
-    const entry = filterInfos[filterIndex];
-
-    if (entry.type !== 'none') {
-      const img = (rocket as Bitmap).data.image;
-      if (img !== null && img.source !== null) {
-        computeNodeBoundsRectangle(_bounds, rocket, rocket);
-        const { width: w, height: h } = computeRenderTargetSize(_bounds, MAX_PADDING, 1, 1);
-        const renderTarget = ensureCanvasRenderCacheTarget(state, cache, w, h);
-        const ctx = renderTarget.context;
-        ctx.clearRect(0, 0, renderTarget.canvas.width, renderTarget.canvas.height);
-        ctx.imageSmoothingEnabled = true;
-
-        const srcRect = rocket.data.sourceRectangle;
-        if (srcRect !== null) {
-          ctx.filter = entry.cssFilter;
-          ctx.drawImage(
-            img.source,
-            srcRect.x,
-            srcRect.y,
-            srcRect.width,
-            srcRect.height,
-            MAX_PADDING - _bounds.x,
-            MAX_PADDING - _bounds.y,
-            srcRect.width,
-            srcRect.height,
-          );
-        }
-        ctx.filter = 'none';
-        computeRenderCacheTransform(cache.transform, _bounds, MAX_PADDING, MAX_PADDING);
-      }
-    }
-
-    target.render(root);
-    requestAnimationFrame(renderFrame);
-  }
-
-  renderFrame();
-}
-
-function runDom(state: DomRenderState): void {
-  enableDomCssFilterSupport(state);
-
-  function renderFrame(): void {
-    const entry = filterInfos[filterIndex];
-    setDomCssFilter(state, rocket, entry.type === 'none' ? null : entry.cssFilter);
-    target.render(root);
     requestAnimationFrame(renderFrame);
   }
 

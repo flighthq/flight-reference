@@ -9,20 +9,32 @@ import {
   connectInputToInteraction,
   createBitmap,
   createDisplayObject,
-  createInteractionManager,
+  createGlCanvasElement,
+  createGlRenderState,
   createInputManager,
+  createInteractionManager,
+  createMatrix,
   createRectangle,
   createShape,
   createTextLabel,
+  defaultGlBitmapRenderer,
+  defaultGlShapeCommands,
+  defaultGlShapeRenderer,
+  defaultGlTextLabelRenderer,
+  enableGlBlendModeSupport,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareScene2DRender,
+  registerDefaultGlMaterial,
   registerDefaultHitTests,
+  registerGlShapeCommands,
+  registerRenderer,
+  renderGlBackground,
+  renderGlScene2D,
   setTextLabelString,
   ShapeKind,
   TextLabelKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
 
 import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src/menuButton';
 
@@ -30,13 +42,24 @@ const GameWidth = 320;
 const GameHeight = 480;
 const CenterX = 160;
 
-const target = await createFunctionalTarget({
-  width: GameWidth,
-  height: GameHeight,
-  background: 0xffffffff,
-  blend: true,
-  kinds: [BitmapKind, ShapeKind, TextLabelKind],
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createGlCanvasElement(GameWidth, GameHeight, pixelRatio);
+document.body.appendChild(canvas);
+
+const state = createGlRenderState(canvas, {
+  pixelRatio,
+  backgroundColor: 0xffffffff,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: false },
+  sceneGraphSyncPolicy: 'refreshDerivedState',
 });
+
+state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+registerDefaultGlMaterial(state);
+registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerGlShapeCommands(defaultGlShapeCommands);
+registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
+enableGlBlendModeSupport(state);
 
 const root = createDisplayObject();
 
@@ -92,7 +115,7 @@ addNodeChild(root, infoText);
 registerDefaultHitTests();
 
 const input = createInputManager();
-attachPointerInput(input, (target.state as { canvas: HTMLCanvasElement }).canvas);
+attachPointerInput(input, canvas);
 
 const interaction = createInteractionManager<DisplayObject>(root);
 connectInputToInteraction(input, interaction, 1);
@@ -134,8 +157,9 @@ backBtn.connect(interaction);
 addNodeChild(root, backBtn.root);
 
 function frame(): void {
-  prepareScene2DRender(target.state, root);
-  target.render(root);
+  prepareScene2DRender(state, root);
+  renderGlBackground(state);
+  renderGlScene2D(state, root);
   requestAnimationFrame(frame);
 }
 frame();

@@ -8,6 +8,8 @@ import {
   createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
+  createGlRenderTarget,
+  createImageResource,
   createImageResourceFromCanvas,
   createMatrix,
   createMesh,
@@ -24,6 +26,7 @@ import {
   defaultGlTextLabelRenderer,
   drawGlScene3D,
   enableGlBlendModeSupport,
+  getGlRenderStateRuntime,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   multiplyQuaternion,
@@ -76,11 +79,12 @@ registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 enableGlBlendModeSupport(state);
 registerUnlitGlMaterial(state);
 
-const bgRoot = createDisplayObject();
+const root = createDisplayObject();
+
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgBmp = createBitmap();
 bgBmp.data.image = bgImage;
-addNodeChild(bgRoot, bgBmp);
+addNodeChild(root, bgBmp);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
@@ -104,6 +108,31 @@ const faceTextures = FaceColors.map(([r, g, b]) => {
   const image = createImageResourceFromCanvas(c);
   return createTexture({ image });
 });
+
+const rtWidth = Math.round(GameWidth * pixelRatio);
+const rtHeight = Math.round(GameHeight * pixelRatio);
+const cubeRT = createGlRenderTarget(state, {
+  width: rtWidth,
+  height: rtHeight,
+  format: 'rgba8',
+  depth: 'depth-stencil',
+  clearColors: [0],
+  clearDepth: 1,
+});
+
+const cubeImage = createImageResource();
+cubeImage.width = GameWidth;
+cubeImage.height = GameHeight;
+
+const runtime = getGlRenderStateRuntime(state);
+runtime.imageResourceTextureCache.set(cubeImage, {
+  texture: cubeRT.texture,
+  version: -1,
+});
+
+const cubeBmp = createBitmap();
+cubeBmp.data.image = cubeImage;
+addNodeChild(root, cubeBmp);
 
 const scene3d = createScene3D();
 const cubeParent: Node3D = createNode3D();
@@ -172,7 +201,6 @@ setCamera3DViewMatrix4FromLookAt(camera, eye, lookTarget, up);
 
 const lights = createScene3DLights();
 
-const btnRoot = createDisplayObject();
 const backBtn = createMenuButton({
   atlas,
   regions: BUTTON_REGIONS_1X,
@@ -185,7 +213,7 @@ const backBtn = createMenuButton({
 });
 backBtn.root.x = GameWidth / 2 - 88 / 2;
 backBtn.root.y = GameHeight - 50 + 4;
-addNodeChild(btnRoot, backBtn.root);
+addNodeChild(root, backBtn.root);
 
 const xAxis = createVector3(1, 0, 0);
 const yAxis = createVector3(0, 1, 0);
@@ -198,21 +226,7 @@ const quatTemp = createQuaternion();
 const startTime = performance.now();
 const gl = state.gl;
 
-prepareScene2DRender(state, bgRoot);
-renderGlBackground(state);
-renderGlScene2D(state, bgRoot);
-
-gl.depthMask(true);
-gl.enable(gl.DEPTH_TEST);
-gl.clearDepth(1);
-gl.clear(gl.DEPTH_BUFFER_BIT);
-drawGlScene3D(state, scene3d.root, camera, lights);
-gl.disable(gl.DEPTH_TEST);
-
-prepareScene2DRender(state, btnRoot);
-renderGlScene2D(state, btnRoot);
-
-function frame(now: number): void {
+function renderCube(now: number): void {
   const elapsed = (now - startTime) / 1000;
   const rx = ((elapsed / 6) * Math.PI * 2) % (Math.PI * 2);
   const ry = ((elapsed / 7) * Math.PI * 2) % (Math.PI * 2);
@@ -226,20 +240,30 @@ function frame(now: number): void {
   copyQuaternion(cubeParent.rotation, quatTemp);
   invalidateNodeLocalTransform(cubeParent);
 
-  prepareScene2DRender(state, bgRoot);
-  renderGlBackground(state);
-  renderGlScene2D(state, bgRoot);
-
+  gl.bindFramebuffer(gl.FRAMEBUFFER, cubeRT.framebuffer);
+  gl.viewport(0, 0, rtWidth, rtHeight);
+  gl.clearColor(0, 0, 0, 0);
   gl.depthMask(true);
   gl.enable(gl.DEPTH_TEST);
   gl.clearDepth(1);
-  gl.clear(gl.DEPTH_BUFFER_BIT);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   drawGlScene3D(state, scene3d.root, camera, lights);
+  gl.bindVertexArray(null);
   gl.disable(gl.DEPTH_TEST);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, canvas.width, canvas.height);
+}
 
-  prepareScene2DRender(state, btnRoot);
-  renderGlScene2D(state, btnRoot);
+renderCube(performance.now());
+prepareScene2DRender(state, root);
+renderGlBackground(state);
+renderGlScene2D(state, root);
 
+function frame(now: number): void {
+  renderCube(now);
+  prepareScene2DRender(state, root);
+  renderGlBackground(state);
+  renderGlScene2D(state, root);
   requestAnimationFrame(frame);
 }
 

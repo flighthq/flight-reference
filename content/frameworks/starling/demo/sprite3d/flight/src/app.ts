@@ -1,23 +1,41 @@
+import type { Node3D } from '@flighthq/sdk';
 import {
   addNodeChild,
   BitmapKind,
+  copyQuaternion,
   createBitmap,
+  createCamera3D,
   createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
   createImageResourceFromCanvas,
   createMatrix,
+  createMesh,
+  createNode3D,
+  createPerspectiveProjection,
+  createQuadMeshGeometry,
+  createQuaternion,
+  createScene3D,
+  createScene3DLights,
+  createTexture,
+  createUnlitMaterial,
+  createVector3,
   defaultGlBitmapRenderer,
   defaultGlTextLabelRenderer,
+  drawGlScene3D,
   enableGlBlendModeSupport,
-  invalidateImageResource,
-  invalidateNodeAppearance,
+  invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
+  multiplyQuaternion,
   prepareScene2DRender,
   registerDefaultGlMaterial,
   registerRenderer,
+  registerUnlitGlMaterial,
   renderGlBackground,
   renderGlScene2D,
+  setCamera3DViewMatrix4FromLookAt,
+  setQuaternionFromAxisAngle,
+  setVector3,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -25,8 +43,6 @@ import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src
 
 const GameWidth = 320;
 const GameHeight = 480;
-const CenterX = 160;
-const CenterY = 240;
 
 const LogoX = 322;
 const LogoY = 144;
@@ -49,7 +65,7 @@ document.body.appendChild(canvas);
 const state = createGlRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0xffffffff,
-  contextAttributes: { alpha: false, preserveDrawingBuffer: false },
+  contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
   sceneGraphSyncPolicy: 'refreshDerivedState',
 });
 
@@ -58,13 +74,13 @@ registerDefaultGlMaterial(state);
 registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 enableGlBlendModeSupport(state);
+registerUnlitGlMaterial(state);
 
-const root = createDisplayObject();
-
+const bgRoot = createDisplayObject();
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgBmp = createBitmap();
 bgBmp.data.image = bgImage;
-addNodeChild(root, bgBmp);
+addNodeChild(bgRoot, bgBmp);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
@@ -74,7 +90,7 @@ const atlasImg = await new Promise<HTMLImageElement>((resolve) => {
   img.src = 'starling/textures/1x/atlas.png';
 });
 
-const tintedFaces: HTMLCanvasElement[] = FaceColors.map(([r, g, b]) => {
+const faceTextures = FaceColors.map(([r, g, b]) => {
   const c = document.createElement('canvas');
   c.width = LogoSize;
   c.height = LogoSize;
@@ -85,184 +101,78 @@ const tintedFaces: HTMLCanvasElement[] = FaceColors.map(([r, g, b]) => {
   ctx.fillRect(0, 0, LogoSize, LogoSize);
   ctx.globalCompositeOperation = 'destination-in';
   ctx.drawImage(atlasImg, LogoX, LogoY, LogoSize, LogoSize, 0, 0, LogoSize, LogoSize);
-  return c;
+  const image = createImageResourceFromCanvas(c);
+  return createTexture({ image });
 });
 
-const cubeCanvas = document.createElement('canvas');
-cubeCanvas.width = GameWidth;
-cubeCanvas.height = GameHeight;
-const cubeCtx = cubeCanvas.getContext('2d')!;
+const scene3d = createScene3D();
+const cubeParent: Node3D = createNode3D();
+addNodeChild(scene3d.root, cubeParent);
 
-const cubeImage = createImageResourceFromCanvas(cubeCanvas);
-const cubeBmp = createBitmap();
-cubeBmp.data.image = cubeImage;
-addNodeChild(root, cubeBmp);
+const quadGeometry = createQuadMeshGeometry(LogoSize, LogoSize);
 
-type Vec3 = [number, number, number];
+const faceAxis = createVector3(0, 0, 0);
+const faceQuat = createQuaternion();
 
-function rotateX(v: Vec3, a: number): Vec3 {
-  const c = Math.cos(a);
-  const s = Math.sin(a);
-  return [v[0], v[1] * c - v[2] * s, v[1] * s + v[2] * c];
+interface FaceDef {
+  px: number;
+  py: number;
+  pz: number;
+  ax: number;
+  ay: number;
+  az: number;
+  angle: number;
 }
 
-function rotateY(v: Vec3, a: number): Vec3 {
-  const c = Math.cos(a);
-  const s = Math.sin(a);
-  return [v[0] * c + v[2] * s, v[1], -v[0] * s + v[2] * c];
-}
-
-function rotateZ(v: Vec3, a: number): Vec3 {
-  const c = Math.cos(a);
-  const s = Math.sin(a);
-  return [v[0] * c - v[1] * s, v[0] * s + v[1] * c, v[2]];
-}
-
-const FocalLength = GameWidth / (2 * Math.tan(0.5));
-const CubeZ = 100;
-
-function project(v: Vec3): [number, number] {
-  const scale = FocalLength / (FocalLength + v[2] + CubeZ);
-  return [CenterX + v[0] * scale, CenterY + v[1] * scale];
-}
-
-interface Face {
-  verts: Vec3[];
-  textureIndex: number;
-}
-
-const baseFaces: Face[] = [
-  {
-    verts: [
-      [-HalfSize, -HalfSize, -HalfSize],
-      [HalfSize, -HalfSize, -HalfSize],
-      [HalfSize, HalfSize, -HalfSize],
-      [-HalfSize, HalfSize, -HalfSize],
-    ],
-    textureIndex: 0,
-  },
-  {
-    verts: [
-      [HalfSize, -HalfSize, HalfSize],
-      [-HalfSize, -HalfSize, HalfSize],
-      [-HalfSize, HalfSize, HalfSize],
-      [HalfSize, HalfSize, HalfSize],
-    ],
-    textureIndex: 1,
-  },
-  {
-    verts: [
-      [-HalfSize, -HalfSize, HalfSize],
-      [HalfSize, -HalfSize, HalfSize],
-      [HalfSize, -HalfSize, -HalfSize],
-      [-HalfSize, -HalfSize, -HalfSize],
-    ],
-    textureIndex: 2,
-  },
-  {
-    verts: [
-      [-HalfSize, HalfSize, -HalfSize],
-      [HalfSize, HalfSize, -HalfSize],
-      [HalfSize, HalfSize, HalfSize],
-      [-HalfSize, HalfSize, HalfSize],
-    ],
-    textureIndex: 3,
-  },
-  {
-    verts: [
-      [-HalfSize, -HalfSize, HalfSize],
-      [-HalfSize, -HalfSize, -HalfSize],
-      [-HalfSize, HalfSize, -HalfSize],
-      [-HalfSize, HalfSize, HalfSize],
-    ],
-    textureIndex: 4,
-  },
-  {
-    verts: [
-      [HalfSize, -HalfSize, -HalfSize],
-      [HalfSize, -HalfSize, HalfSize],
-      [HalfSize, HalfSize, HalfSize],
-      [HalfSize, HalfSize, -HalfSize],
-    ],
-    textureIndex: 5,
-  },
+const faceDefs: FaceDef[] = [
+  { px: 0, py: 0, pz: HalfSize, ax: 0, ay: 0, az: 0, angle: 0 },
+  { px: 0, py: 0, pz: -HalfSize, ax: 0, ay: 1, az: 0, angle: Math.PI },
+  { px: 0, py: HalfSize, pz: 0, ax: 1, ay: 0, az: 0, angle: -Math.PI / 2 },
+  { px: 0, py: -HalfSize, pz: 0, ax: 1, ay: 0, az: 0, angle: Math.PI / 2 },
+  { px: -HalfSize, py: 0, pz: 0, ax: 0, ay: 1, az: 0, angle: -Math.PI / 2 },
+  { px: HalfSize, py: 0, pz: 0, ax: 0, ay: 1, az: 0, angle: Math.PI / 2 },
 ];
 
-function cross(a: Vec3, b: Vec3): Vec3 {
-  return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-}
+for (let i = 0; i < 6; i++) {
+  const def = faceDefs[i]!;
+  const material = createUnlitMaterial({ baseColor: 0xffffffff });
+  material.baseColorMap = faceTextures[i]!;
 
-function sub(a: Vec3, b: Vec3): Vec3 {
-  return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-}
+  const mesh = createMesh(quadGeometry, [material]);
+  setVector3(mesh.position, def.px, def.py, def.pz);
 
-const SubDiv = 8;
-
-function drawTexturedQuad(ctx: CanvasRenderingContext2D, tex: HTMLCanvasElement, verts3d: Vec3[]): void {
-  const w = tex.width;
-  const h = tex.height;
-  const step = 1 / SubDiv;
-  const pad = 0.5 / SubDiv;
-
-  for (let row = 0; row < SubDiv; row++) {
-    for (let col = 0; col < SubDiv; col++) {
-      const u0 = col * step;
-      const u1 = u0 + step;
-      const v0 = row * step;
-      const v1 = v0 + step;
-
-      const lerp3d = (ua: number, va: number): Vec3 => {
-        const top: Vec3 = [
-          verts3d[0][0] + (verts3d[1][0] - verts3d[0][0]) * ua,
-          verts3d[0][1] + (verts3d[1][1] - verts3d[0][1]) * ua,
-          verts3d[0][2] + (verts3d[1][2] - verts3d[0][2]) * ua,
-        ];
-        const bot: Vec3 = [
-          verts3d[3][0] + (verts3d[2][0] - verts3d[3][0]) * ua,
-          verts3d[3][1] + (verts3d[2][1] - verts3d[3][1]) * ua,
-          verts3d[3][2] + (verts3d[2][2] - verts3d[3][2]) * ua,
-        ];
-        return [top[0] + (bot[0] - top[0]) * va, top[1] + (bot[1] - top[1]) * va, top[2] + (bot[2] - top[2]) * va];
-      };
-
-      const q0 = project(lerp3d(u0, v0));
-      const q1 = project(lerp3d(u1, v0));
-      const q2 = project(lerp3d(u1, v1));
-      const q3 = project(lerp3d(u0, v1));
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(q0[0], q0[1]);
-      ctx.lineTo(q1[0], q1[1]);
-      ctx.lineTo(q2[0], q2[1]);
-      ctx.lineTo(q3[0], q3[1]);
-      ctx.closePath();
-      ctx.clip();
-
-      const eu0 = u0 - pad;
-      const eu1 = u1 + pad;
-      const ev0 = v0 - pad;
-      const ev1 = v1 + pad;
-      const sx = eu0 * w;
-      const sy = ev0 * h;
-      const sw = (eu1 - eu0) * w;
-      const sh = (ev1 - ev0) * h;
-
-      const ep0 = project(lerp3d(eu0, ev0));
-      const ep1 = project(lerp3d(eu1, ev0));
-      const ep3 = project(lerp3d(eu0, ev1));
-      const dx1 = ep1[0] - ep0[0];
-      const dy1 = ep1[1] - ep0[1];
-      const dx2 = ep3[0] - ep0[0];
-      const dy2 = ep3[1] - ep0[1];
-
-      ctx.setTransform(dx1 / sw, dy1 / sw, dx2 / sh, dy2 / sh, ep0[0], ep0[1]);
-      ctx.drawImage(tex, sx, sy, sw, sh, 0, 0, sw, sh);
-      ctx.restore();
-    }
+  if (def.angle !== 0) {
+    setVector3(faceAxis, def.ax, def.ay, def.az);
+    setQuaternionFromAxisAngle(faceQuat, faceAxis, def.angle);
+    copyQuaternion(mesh.rotation, faceQuat);
   }
+
+  invalidateNodeLocalTransform(mesh);
+  addNodeChild(cubeParent, mesh);
 }
 
+const cubeDistance = 400;
+setVector3(cubeParent.position, 0, 0, -cubeDistance);
+invalidateNodeLocalTransform(cubeParent);
+
+const fovY = 2 * Math.atan(GameHeight / 2 / cubeDistance);
+const camera = createCamera3D({
+  near: 1,
+  far: 2000,
+  projection: createPerspectiveProjection({
+    fovY,
+    aspect: GameWidth / GameHeight,
+  }),
+});
+
+const eye = createVector3(0, 0, 0);
+const lookTarget = createVector3(0, 0, -1);
+const up = createVector3(0, 1, 0);
+setCamera3DViewMatrix4FromLookAt(camera, eye, lookTarget, up);
+
+const lights = createScene3DLights();
+
+const btnRoot = createDisplayObject();
 const backBtn = createMenuButton({
   atlas,
   regions: BUTTON_REGIONS_1X,
@@ -275,58 +185,62 @@ const backBtn = createMenuButton({
 });
 backBtn.root.x = GameWidth / 2 - 88 / 2;
 backBtn.root.y = GameHeight - 50 + 4;
-addNodeChild(root, backBtn.root);
+addNodeChild(btnRoot, backBtn.root);
+
+const xAxis = createVector3(1, 0, 0);
+const yAxis = createVector3(0, 1, 0);
+const zAxis = createVector3(0, 0, 1);
+const quatX = createQuaternion();
+const quatY = createQuaternion();
+const quatZ = createQuaternion();
+const quatTemp = createQuaternion();
 
 const startTime = performance.now();
+const gl = state.gl;
 
-function renderCube(now: number): void {
+prepareScene2DRender(state, bgRoot);
+renderGlBackground(state);
+renderGlScene2D(state, bgRoot);
+
+gl.depthMask(true);
+gl.enable(gl.DEPTH_TEST);
+gl.clearDepth(1);
+gl.clear(gl.DEPTH_BUFFER_BIT);
+drawGlScene3D(state, scene3d.root, camera, lights);
+gl.disable(gl.DEPTH_TEST);
+
+prepareScene2DRender(state, btnRoot);
+renderGlScene2D(state, btnRoot);
+
+function frame(now: number): void {
   const elapsed = (now - startTime) / 1000;
   const rx = ((elapsed / 6) * Math.PI * 2) % (Math.PI * 2);
   const ry = ((elapsed / 7) * Math.PI * 2) % (Math.PI * 2);
   const rz = ((elapsed / 8) * Math.PI * 2) % (Math.PI * 2);
 
-  cubeCtx.clearRect(0, 0, GameWidth, GameHeight);
+  setQuaternionFromAxisAngle(quatX, xAxis, rx);
+  setQuaternionFromAxisAngle(quatY, yAxis, ry);
+  setQuaternionFromAxisAngle(quatZ, zAxis, rz);
+  multiplyQuaternion(quatTemp, quatX, quatY);
+  multiplyQuaternion(quatTemp, quatTemp, quatZ);
+  copyQuaternion(cubeParent.rotation, quatTemp);
+  invalidateNodeLocalTransform(cubeParent);
 
-  const transformed: { verts: Vec3[]; depth: number; textureIndex: number }[] = [];
-
-  for (const face of baseFaces) {
-    const verts = face.verts.map((v) => {
-      let r: Vec3 = [...v];
-      r = rotateX(r, rx);
-      r = rotateY(r, ry);
-      r = rotateZ(r, rz);
-      return r;
-    });
-
-    const edge1 = sub(verts[1]!, verts[0]!);
-    const edge2 = sub(verts[3]!, verts[0]!);
-    const normal = cross(edge1, edge2);
-    if (normal[2]! <= 0) continue;
-
-    const depth = (verts[0]![2]! + verts[1]![2]! + verts[2]![2]! + verts[3]![2]!) / 4;
-    transformed.push({ verts, depth, textureIndex: face.textureIndex });
-  }
-
-  transformed.sort((a, b) => b.depth - a.depth);
-
-  for (const face of transformed) {
-    drawTexturedQuad(cubeCtx, tintedFaces[face.textureIndex]!, face.verts);
-  }
-
-  invalidateImageResource(cubeImage);
-  invalidateNodeAppearance(cubeBmp);
-}
-
-renderCube(performance.now());
-prepareScene2DRender(state, root);
-renderGlBackground(state);
-renderGlScene2D(state, root);
-
-function frame(now: number): void {
-  renderCube(now);
-  prepareScene2DRender(state, root);
+  prepareScene2DRender(state, bgRoot);
   renderGlBackground(state);
-  renderGlScene2D(state, root);
+  renderGlScene2D(state, bgRoot);
+
+  gl.depthMask(true);
+  gl.enable(gl.DEPTH_TEST);
+  gl.clearDepth(1);
+  gl.clear(gl.DEPTH_BUFFER_BIT);
+  drawGlScene3D(state, scene3d.root, camera, lights);
+  gl.disable(gl.DEPTH_TEST);
+
+  prepareScene2DRender(state, btnRoot);
+  renderGlScene2D(state, btnRoot);
+
   requestAnimationFrame(frame);
 }
+
 requestAnimationFrame(frame);

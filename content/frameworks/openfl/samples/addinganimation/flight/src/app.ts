@@ -36,7 +36,7 @@ container.y = STAGE_HEIGHT / 2;
 addNodeChild(container, bitmap);
 addNodeChild(main, container);
 
-const image = await loadImageResourceFromUrl('openfl/images/openfl_large.png');
+const image = await loadImageResourceFromUrl('openfl/images/openfl_logo.png');
 bitmap.data.image = image;
 bitmap.data.smoothing = true;
 bitmap.x = -image.width / 2;

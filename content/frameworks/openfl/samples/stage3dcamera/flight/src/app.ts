@@ -4,6 +4,7 @@ import {
   addNodeChild,
   createCamera3D,
   createMesh,
+  createNode3D,
   createPerspectiveProjection,
   createQuadMeshGeometry,
   createScene3DLights,
@@ -34,9 +35,11 @@ const texture = createTexture({ image });
 const scene = createScene3D();
 const material = createUnlitMaterial({ baseColor: 0xffffffff, baseColorMap: texture });
 material.doubleSided = true;
+const pivot = createNode3D();
+addNodeChild(scene.root, pivot);
 const mesh = createMesh(createQuadMeshGeometry(0.6, 0.6), [material]);
 mesh.position.z = 1;
-addNodeChild(scene.root, mesh);
+addNodeChild(pivot, mesh);
 
 const camera = createCamera3D({
   far: 1000,
@@ -98,8 +101,9 @@ function frame(): void {
   setCamera3DViewMatrix4FromLookAt(camera, cameraEye, cameraTarget, up);
 
   const t = performance.now();
-  setQuaternionFromEuler(mesh.rotation, -(t / 10) * (Math.PI / 180), -(t / 30) * (Math.PI / 180), 0, 'YXZ');
-  invalidateNodeLocalTransform(mesh);
+  const deg = Math.PI / 180;
+  setQuaternionFromEuler(pivot.rotation, -(t / 10) * deg, -(t / 30) * deg, 0);
+  invalidateNodeLocalTransform(pivot);
 
   render(scene.root, camera, lights);
   requestAnimationFrame(frame);

@@ -8,6 +8,8 @@ import {
   createTextLabel,
   enableInteractionSignals,
   invalidateNodeAppearance,
+  setNodeHitArea,
+  setNodeHitTestEnabled,
   setTextLabelString,
 } from '@flighthq/sdk';
 
@@ -121,6 +123,8 @@ export function createMenuButton(config: MenuButtonConfig): MenuButton {
       setTextLabelString(label, text);
     },
     connect(interaction: InteractionManager<DisplayObject>) {
+      setNodeHitTestEnabled(container, true);
+      setNodeHitArea(container, createRectangle(0, 0, config.width, config.height));
       enableInteractionSignals(container);
       connectInteractionSignal(interaction, container, 'onPointerRollOver', () => {
         if (enabled) setState('over');

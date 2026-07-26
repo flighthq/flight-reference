@@ -10,7 +10,6 @@ import {
   createGlCanvasElement,
   createGlRenderState,
   createGlRenderTarget,
-  createImageResource,
   createImageResourceFromCanvas,
   createMatrix,
   createMesh,
@@ -18,6 +17,8 @@ import {
   createPerspectiveProjection,
   createQuadMeshGeometry,
   createQuaternion,
+  createRenderCache,
+  createRenderCacheAdapter,
   createScene3D,
   createScene3DLights,
   createTexture,
@@ -27,8 +28,8 @@ import {
   defaultGlTextLabelRenderer,
   drawGlScene3D,
   enableGlBlendModeSupport,
+  enableGlRenderCache,
   endGlRenderPass,
-  getGlRenderStateRuntime,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   multiplyQuaternion,
@@ -40,8 +41,10 @@ import {
   renderGlScene2D,
   setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
+  setRenderProxyAdapter,
   setVector3,
   TextLabelKind,
+  useRenderCache,
 } from '@flighthq/sdk';
 
 import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src/menuButton';
@@ -122,19 +125,14 @@ const cubeRT = createGlRenderTarget(state, {
   clearDepth: 1,
 });
 
-const cubeImage = createImageResource();
-cubeImage.width = GameWidth;
-cubeImage.height = GameHeight;
+const cubeLayer = createDisplayObject();
+const cubeCache = createRenderCache();
+enableGlRenderCache(state);
+useRenderCache(state, cubeLayer, cubeCache);
+addNodeChild(root, cubeLayer);
 
-const runtime = getGlRenderStateRuntime(state);
-runtime.imageResourceTextureCache.set(cubeImage, {
-  texture: cubeRT.texture,
-  version: -1,
-});
-
-const cubeBmp = createBitmap();
-cubeBmp.data.image = cubeImage;
-addNodeChild(root, cubeBmp);
+const cubeLayerAdapter = createRenderCacheAdapter(cubeCache);
+setRenderProxyAdapter(state, cubeLayer, cubeLayerAdapter);
 
 const scene3d = createScene3D();
 const cubeParent: Node3D = createNode3D();
@@ -244,6 +242,12 @@ function renderCube(now: number): void {
   beginGlRenderPass(state, cubeRT);
   drawGlScene3D(state, scene3d.root, camera, lights);
   endGlRenderPass(state);
+
+  const gl = state.gl;
+  gl.bindVertexArray(null);
+  gl.disable(gl.DEPTH_TEST);
+  gl.disable(gl.CULL_FACE);
+  gl.enable(gl.BLEND);
 }
 
 renderCube(performance.now());

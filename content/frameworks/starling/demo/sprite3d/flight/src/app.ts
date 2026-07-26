@@ -29,6 +29,7 @@ import {
   drawGlScene3D,
   enableGlBlendModeSupport,
   endGlRenderPass,
+  flushGlSpriteBatch,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   multiplyQuaternion,
@@ -130,6 +131,7 @@ registerRenderer(state, Cube3DKind, {
     return null;
   },
   submit(_rs, proxy) {
+    flushGlSpriteBatch(state);
     drawGlRenderTargetResult(state, proxy as RenderProxy2D, cubeRT, cubeTransform);
   },
 });
@@ -197,7 +199,7 @@ const camera = createCamera3D({
   }),
 });
 
-const eye = createVector3(0, 0, 0);
+const eye = createVector3(0, 0, 100);
 const lookTarget = createVector3(0, 0, -1);
 const up = createVector3(0, 1, 0);
 setCamera3DViewMatrix4FromLookAt(camera, eye, lookTarget, up);

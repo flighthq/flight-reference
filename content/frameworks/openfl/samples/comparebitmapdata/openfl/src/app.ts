@@ -35,7 +35,7 @@ AssetLibrary.loadFromManifest(manifest)
   .onComplete((library) => {
     Assets.registerLibrary('default', library);
 
-    const stage = new Stage(800, 600, 0x808080, Main);
+    const stage = new Stage(800, 600, 0x808080, Main, { allowHighDPI: true });
     stage.element.style.width = '800px';
     stage.element.style.height = '600px';
     document.getElementById('app')?.remove();

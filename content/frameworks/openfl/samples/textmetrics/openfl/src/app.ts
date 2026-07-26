@@ -20,7 +20,7 @@ AssetLibrary.loadFromManifest(manifest)
           await Promise.allSettled([document.fonts.load('120px "Liberation Serif Regular"'), document.fonts.ready]);
         }
 
-        var stage = new Stage(800, 600, 0xa0a0a0, Main);
+        var stage = new Stage(800, 600, 0xa0a0a0, Main, { allowHighDPI: true });
         stage.element.style.width = '800px';
         stage.element.style.height = '600px';
         document.getElementById('app')?.remove();

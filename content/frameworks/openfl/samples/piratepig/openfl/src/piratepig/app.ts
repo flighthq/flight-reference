@@ -62,6 +62,6 @@ class Main extends Sprite {
   }
 }
 
-var stage = new Stage();
+var stage = new Stage(0, 0, 0xffffff, null, { allowHighDPI: true });
 document.body.appendChild(stage.element);
 stage.addChild(new Main());

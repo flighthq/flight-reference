@@ -240,7 +240,7 @@ class App extends Sprite {
   };
 }
 
-var stage = new Stage(800, 600, 0xffffff, App);
+var stage = new Stage(800, 600, 0xffffff, App, { allowHighDPI: true });
 stage.element.style.width = '800px';
 stage.element.style.height = '600px';
 document.getElementById('app')?.remove();

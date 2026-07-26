@@ -40,5 +40,5 @@ class App extends Sprite {
   };
 }
 
-var stage = new Stage(0, 0, 0xffffff, App);
+var stage = new Stage(0, 0, 0xffffff, App, { allowHighDPI: true });
 document.body.appendChild(stage.element);

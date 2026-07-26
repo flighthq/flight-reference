@@ -170,7 +170,7 @@ export function launchScene(SceneClass: new () => any): void {
     };
   }
 
-  var stage = new OpenFLStage(320, 480, 0xffffff, SceneLauncher);
+  var stage = new OpenFLStage(320, 480, 0xffffff, SceneLauncher, { allowHighDPI: true });
   var content = document.getElementById('openfl-content');
   if (!content) {
     content = document.createElement('div');

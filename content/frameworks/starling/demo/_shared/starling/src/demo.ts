@@ -171,6 +171,6 @@ class Demo extends Sprite {
   };
 }
 
-var stage = new OpenFLStage(320, 480, 0xffffff, Demo);
+var stage = new OpenFLStage(320, 480, 0xffffff, Demo, { allowHighDPI: true });
 var content = document.getElementById('openfl-content');
 content.appendChild(stage.element);

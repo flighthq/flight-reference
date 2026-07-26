@@ -50,7 +50,7 @@ AssetLibrary.loadFromManifest(manifest)
           await Promise.allSettled([document.fonts.load(`30px "${loadedFontName}"`), document.fonts.ready]);
         }
 
-        var stage = new Stage(800, 600, 0xffffff, App);
+        var stage = new Stage(800, 600, 0xffffff, App, { allowHighDPI: true });
         stage.element.style.width = '800px';
         stage.element.style.height = '600px';
         document.getElementById('app')?.remove();

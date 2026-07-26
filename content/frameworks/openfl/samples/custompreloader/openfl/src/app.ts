@@ -7,7 +7,7 @@ import URLRequest from 'openfl/net/URLRequest';
 import Main from './Main';
 import Preloader from './Preloader';
 
-var stage = new Stage(800, 600, 0xffffff);
+var stage = new Stage(800, 600, 0xffffff, null, { allowHighDPI: true });
 stage.element.style.width = '800px';
 stage.element.style.height = '600px';
 document.getElementById('app')?.remove();

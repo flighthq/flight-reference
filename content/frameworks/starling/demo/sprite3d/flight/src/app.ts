@@ -1,6 +1,7 @@
 import type { Node3D } from '@flighthq/sdk';
 import {
   addNodeChild,
+  beginGlRenderPass,
   BitmapKind,
   copyQuaternion,
   createBitmap,
@@ -26,6 +27,7 @@ import {
   defaultGlTextLabelRenderer,
   drawGlScene3D,
   enableGlBlendModeSupport,
+  endGlRenderPass,
   getGlRenderStateRuntime,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
@@ -224,7 +226,6 @@ const quatZ = createQuaternion();
 const quatTemp = createQuaternion();
 
 const startTime = performance.now();
-const gl = state.gl;
 
 function renderCube(now: number): void {
   const elapsed = (now - startTime) / 1000;
@@ -240,18 +241,9 @@ function renderCube(now: number): void {
   copyQuaternion(cubeParent.rotation, quatTemp);
   invalidateNodeLocalTransform(cubeParent);
 
-  gl.bindFramebuffer(gl.FRAMEBUFFER, cubeRT.framebuffer);
-  gl.viewport(0, 0, rtWidth, rtHeight);
-  gl.clearColor(0, 0, 0, 0);
-  gl.depthMask(true);
-  gl.enable(gl.DEPTH_TEST);
-  gl.clearDepth(1);
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  beginGlRenderPass(state, cubeRT);
   drawGlScene3D(state, scene3d.root, camera, lights);
-  gl.bindVertexArray(null);
-  gl.disable(gl.DEPTH_TEST);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  gl.viewport(0, 0, canvas.width, canvas.height);
+  endGlRenderPass(state);
 }
 
 renderCube(performance.now());

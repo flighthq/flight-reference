@@ -42,8 +42,6 @@ import { loadEnvironment } from './environment';
 const ROTATION_SPEED = 3;
 const WALK_SPEED = 1;
 const RUN_SPEED = 2;
-// The MD5 asset's forward axis is perpendicular to Flight's camera-facing axis. Keep movement and
-// chase-camera maths unchanged, and rotate only the rendered model so its front is visible.
 const CHARACTER_YAW_OFFSET = 90 * DEG_TO_RAD;
 
 const width = window.innerWidth;
@@ -76,7 +74,7 @@ const camera = createCameraFromAway({ fov: 60, far: 5000 });
 
 const cameraTarget = createVector3(0, 50, 0);
 const up = createVector3(0, 1, 0);
-const eye = createVector3(0, 160, -200);
+const eye = createVector3(0, 160, 200);
 
 function updateCamera(): void {
   // AwayJS uses a fixed camera at (0, 160, -200), looking at a y=50 placeholder parented to the
@@ -232,7 +230,7 @@ function frame(ts: number): void {
     const rootSpeed = 130.2688 / (37 / 24);
     const distance = rootSpeed * movementDir * (isRunning ? RUN_SPEED : WALK_SPEED) * dt;
     characterX += Math.sin(spriteRotY) * distance;
-    characterZ += Math.cos(spriteRotY) * distance;
+    characterZ -= Math.cos(spriteRotY) * distance;
   }
 
   // Keep root-motion translation and visual yaw on separate nodes. This makes the yaw pivot the

@@ -40,14 +40,12 @@ export interface CharacterData {
 
 export async function loadCharacter(): Promise<CharacterData> {
   const bodyMaterial = createAwayMatteMaterial(0xffffffff);
-  const [bodyDiffuse, bodyNormal, bodySpecular] = await Promise.all([
+  const [bodyDiffuse, bodyNormal] = await Promise.all([
     loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_diffuse.jpg'),
     loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_normals.png'),
-    loadImageResourceFromUrl('awayjs/assets/hellknight/hellknight_specular.png'),
   ]);
   bodyMaterial.baseColorMap = createTexture({ image: bodyDiffuse });
   bodyMaterial.normalMap = createTexture({ image: bodyNormal, colorSpace: 'linear' });
-  bodyMaterial.metallicRoughnessMap = createTexture({ image: bodySpecular, colorSpace: 'linear' });
 
   const meshText = await fetch('awayjs/assets/hellknight/hellknight.md5mesh').then((r) => r.text());
   const md5Scene = createScene3DFromMd5Mesh(meshText);

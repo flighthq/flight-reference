@@ -13,3 +13,5 @@ For example, `content/frameworks/openfl/functional/node-alpha/openfl` and `conte
 External framework implementations are behavioral and visual references, not API templates. Flight ports should use idiomatic Flight public APIs and project conventions while preserving the sample's observable behavior, dimensions, assets, timing, and visual intent.
 
 Do not add reference-local compatibility layers to imitate another framework's API. If Flight lacks a public API needed to express a reference case idiomatically, surface that as a Flight package gap.
+
+Since these are reference examples, source code between each example is _intentionally duplicated_. Unless authorized explicitly by the user, no code should be refactored into a shared helper.

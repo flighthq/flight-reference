@@ -1,4 +1,4 @@
-import type { Node3D } from '@flighthq/sdk';
+import type { Node3D, RenderProxy2D } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderPass,
@@ -13,12 +13,11 @@ import {
   createImageResourceFromCanvas,
   createMatrix,
   createMesh,
+  createNode2D,
   createNode3D,
   createPerspectiveProjection,
   createQuadMeshGeometry,
   createQuaternion,
-  createRenderCache,
-  createRenderCacheAdapter,
   createScene3D,
   createScene3DLights,
   createTexture,
@@ -26,9 +25,9 @@ import {
   createVector3,
   defaultGlBitmapRenderer,
   defaultGlTextLabelRenderer,
+  drawGlRenderTargetResult,
   drawGlScene3D,
   enableGlBlendModeSupport,
-  enableGlRenderCache,
   endGlRenderPass,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
@@ -41,10 +40,8 @@ import {
   renderGlScene2D,
   setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
-  setRenderProxyAdapter,
   setVector3,
   TextLabelKind,
-  useRenderCache,
 } from '@flighthq/sdk';
 
 import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src/menuButton';
@@ -125,14 +122,20 @@ const cubeRT = createGlRenderTarget(state, {
   clearDepth: 1,
 });
 
-const cubeLayer = createDisplayObject();
-const cubeCache = createRenderCache();
-enableGlRenderCache(state);
-useRenderCache(state, cubeLayer, cubeCache);
-addNodeChild(root, cubeLayer);
+const Cube3DKind = 'Cube3D';
+const cubeTransform = createMatrix(1 / pixelRatio, 0, 0, 1 / pixelRatio, 0, 0);
 
-const cubeLayerAdapter = createRenderCacheAdapter(cubeCache);
-setRenderProxyAdapter(state, cubeLayer, cubeLayerAdapter);
+registerRenderer(state, Cube3DKind, {
+  createData() {
+    return null;
+  },
+  submit(_rs, proxy) {
+    drawGlRenderTargetResult(state, proxy as RenderProxy2D, cubeRT, cubeTransform);
+  },
+});
+
+const cubeLayer = createNode2D(Cube3DKind);
+addNodeChild(root, cubeLayer);
 
 const scene3d = createScene3D();
 const cubeParent: Node3D = createNode3D();

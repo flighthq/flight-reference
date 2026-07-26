@@ -217,3 +217,48 @@ export function setAwayPosition(out: Vector3Like, x: number, y: number, z: numbe
   out.y = y;
   out.z = -z;
 }
+
+export interface BindOrbitDragOptions {
+  minDistance?: number;
+  maxDistance?: number;
+}
+
+export function bindOrbitDrag(
+  canvas: HTMLCanvasElement,
+  orbit: OrbitController,
+  opts?: Readonly<BindOrbitDragOptions>,
+): void {
+  let dragging = false;
+  let lastMouseX = 0;
+  let lastMouseY = 0;
+  let savedPan = orbit.panAngle;
+  let savedTilt = orbit.tiltAngle;
+
+  canvas.addEventListener('mousedown', (e: MouseEvent) => {
+    dragging = true;
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+    savedPan = orbit.panAngle;
+    savedTilt = orbit.tiltAngle;
+  });
+
+  canvas.addEventListener('mousemove', (e: MouseEvent) => {
+    if (!dragging) return;
+    orbit.panAngle = AWAY_MOUSE_SENSITIVITY * (e.clientX - lastMouseX) + savedPan;
+    orbit.tiltAngle = AWAY_MOUSE_SENSITIVITY * (e.clientY - lastMouseY) + savedTilt;
+  });
+
+  window.addEventListener('mouseup', () => {
+    dragging = false;
+  });
+
+  if (opts) {
+    const minDist = opts.minDistance ?? 100;
+    const maxDist = opts.maxDistance ?? 2000;
+    canvas.addEventListener('wheel', (e: WheelEvent) => {
+      orbit.distance -= e.deltaY / 2;
+      if (orbit.distance < minDist) orbit.distance = minDist;
+      else if (orbit.distance > maxDist) orbit.distance = maxDist;
+    });
+  }
+}

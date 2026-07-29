@@ -44,8 +44,8 @@ export async function loadCharacter(): Promise<CharacterData> {
     loadImageResourceFromUrl('awayjs/hellknight/hellknight_diffuse.jpg'),
     loadImageResourceFromUrl('awayjs/hellknight/hellknight_normals.png'),
   ]);
-  bodyMaterial.baseColorMap = createTexture({ image: bodyDiffuse });
-  bodyMaterial.normalMap = createTexture({ image: bodyNormal, colorSpace: 'linear' });
+  bodyMaterial.baseColorMap = createTexture({ storage: { dimension: '2d', image: bodyDiffuse } });
+  bodyMaterial.normalMap = createTexture({ storage: { dimension: '2d', image: bodyNormal }, colorSpace: 'linear' });
 
   const meshText = await fetch('awayjs/hellknight/hellknight.md5mesh').then((r) => r.text());
   const md5Scene = createScene3DFromMd5Mesh(meshText);

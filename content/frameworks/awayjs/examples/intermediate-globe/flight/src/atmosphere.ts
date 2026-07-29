@@ -31,7 +31,9 @@ export function createAtmosphere(): AtmosphereBillboard {
     haloCtx.fillRect(0, 0, 256, 256);
   }
   const material = createUnlitMaterial({ baseColor: 0xffffffff });
-  material.baseColorMap = createTexture({ image: createImageResourceFromCanvas(haloCanvas) });
+  material.baseColorMap = createTexture({
+    storage: { dimension: '2d', image: createImageResourceFromCanvas(haloCanvas) },
+  });
   material.alphaMode = 'blend';
 
   const mesh = createBillboard(createPlaneMeshGeometry(900, 900, 1, 1), [material], 'screenAligned');
@@ -69,7 +71,9 @@ export async function loadCloudTexture(): Promise<ShadedMaterial> {
       px[i + 3] = luminance;
     }
     cloudCtx.putImageData(cloudData, 0, 0);
-    cloudMaterial.diffuseMap = createTexture({ image: createImageResourceFromCanvas(cloudCanvas) });
+    cloudMaterial.diffuseMap = createTexture({
+      storage: { dimension: '2d', image: createImageResourceFromCanvas(cloudCanvas) },
+    });
   }
 
   return cloudMaterial;

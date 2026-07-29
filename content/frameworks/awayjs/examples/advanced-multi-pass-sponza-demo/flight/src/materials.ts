@@ -80,11 +80,11 @@ export function createTextureMap(
   const textureMap = new Map<string, ReturnType<typeof createTexture>>();
   for (const file of new Set(Object.values(materialNameToTextureFile))) {
     const image = sponzaTextureImages[sponzaTextureFiles.indexOf(file)];
-    if (image) textureMap.set(file, createTexture({ image }));
+    if (image) textureMap.set(file, createTexture({ storage: { dimension: '2d', image } }));
   }
   for (const file of new Set(Object.values(materialNameToNormalFile))) {
     const image = sponzaTextureImages[sponzaTextureFiles.indexOf(file)];
-    if (image) textureMap.set(file, createTexture({ image, colorSpace: 'linear' }));
+    if (image) textureMap.set(file, createTexture({ storage: { dimension: '2d', image }, colorSpace: 'linear' }));
   }
   for (const file of new Set(Object.values(materialNameToSpecularFile))) {
     const image = sponzaTextureImages[sponzaTextureFiles.indexOf(file)];
@@ -97,7 +97,10 @@ export function createTextureMap(
         metallic: 0,
       };
     });
-    textureMap.set(file, createTexture({ image: metallicRoughnessImage, colorSpace: 'linear' }));
+    textureMap.set(
+      file,
+      createTexture({ storage: { dimension: '2d', image: metallicRoughnessImage }, colorSpace: 'linear' }),
+    );
   }
   return textureMap;
 }

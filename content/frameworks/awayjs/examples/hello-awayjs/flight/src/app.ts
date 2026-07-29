@@ -84,7 +84,7 @@ ctx.canvas.addEventListener('mouseup', (event: MouseEvent) => {
 });
 
 const image = await loadImageResourceFromUrl('awayjs/floor_diffuse.jpg');
-const texture = createTexture({ image });
+const texture = createTexture({ storage: { dimension: '2d', image } });
 material.baseColorMap = texture;
 
 window.addEventListener('resize', () => {

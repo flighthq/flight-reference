@@ -140,9 +140,14 @@ const [diffuseImage, specularImage, normalImage, awdBuffer] = await Promise.all(
   fetch('awayjs/monsterhead/MonsterHead.awd').then((r) => r.arrayBuffer()),
 ]);
 
-if (diffuseImage) headMaterial.diffuseMap = createTexture({ image: diffuseImage });
-if (specularImage) headMaterial.specularMap = createTexture({ image: specularImage, colorSpace: 'linear' });
-if (normalImage) headMaterial.normalMap = createTexture({ image: normalImage, colorSpace: 'linear' });
+if (diffuseImage) headMaterial.diffuseMap = createTexture({ storage: { dimension: '2d', image: diffuseImage } });
+if (specularImage)
+  headMaterial.specularMap = createTexture({
+    storage: { dimension: '2d', image: specularImage },
+    colorSpace: 'linear',
+  });
+if (normalImage)
+  headMaterial.normalMap = createTexture({ storage: { dimension: '2d', image: normalImage }, colorSpace: 'linear' });
 
 const awdScene = createScene3DFromAwd2(new Uint8Array(awdBuffer));
 

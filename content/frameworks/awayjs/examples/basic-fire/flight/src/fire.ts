@@ -79,7 +79,7 @@ export function createGlowTexture(): Texture {
     }
   }
   canvasCtx.putImageData(image, 0, 0);
-  return createTexture({ image: createImageResource(canvas) });
+  return createTexture({ storage: { dimension: '2d', image: createImageResource(canvas) } });
 }
 
 export async function createFireEmitters(scene: Readonly<Scene3D>): Promise<FireEmittersResult> {

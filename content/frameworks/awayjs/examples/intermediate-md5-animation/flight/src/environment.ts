@@ -37,8 +37,8 @@ export async function loadEnvironment(): Promise<EnvironmentData> {
     loadImageResourceFromUrl('awayjs/rockbase_normals.png'),
   ]);
 
-  const groundDiffuseTexture = createTexture({ image: rockDiffuse });
-  const groundNormalTexture = createTexture({ image: rockNormal, colorSpace: 'linear' });
+  const groundDiffuseTexture = createTexture({ storage: { dimension: '2d', image: rockDiffuse } });
+  const groundNormalTexture = createTexture({ storage: { dimension: '2d', image: rockNormal }, colorSpace: 'linear' });
   const groundSampler = createTilingSampler();
   groundDiffuseTexture.sampler = groundSampler;
   groundNormalTexture.sampler = groundSampler;

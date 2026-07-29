@@ -30,7 +30,7 @@ function updateVelocity(velocity: number, acceleration: number, max: number): nu
 }
 
 const image = await loadImageResourceFromUrl('openfl/images/openfl_icon_large.png');
-const texture = createTexture({ image });
+const texture = createTexture({ storage: { dimension: '2d', image } });
 const scene = createScene3D();
 const material = createUnlitMaterial({ baseColor: 0xffffffff, baseColorMap: texture });
 material.doubleSided = true;

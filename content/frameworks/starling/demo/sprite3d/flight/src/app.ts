@@ -109,7 +109,7 @@ const faceTextures = FaceColors.map(([r, g, b]) => {
   ctx.globalCompositeOperation = 'destination-in';
   ctx.drawImage(atlasImg, LogoX, LogoY, LogoSize, LogoSize, 0, 0, LogoSize, LogoSize);
   const image = createImageResourceFromCanvas(c);
-  return createTexture({ image, flipY: true });
+  return createTexture({ storage: { dimension: '2d', image }, flipY: true });
 });
 
 const rtWidth = Math.round(GameWidth * pixelRatio);

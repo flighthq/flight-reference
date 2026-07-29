@@ -47,7 +47,7 @@ const image = await loadImageResourceFromUrl('awayjs/dots.png');
 // Flight builds the torus in its native right-handed space while the camera helper mirrors z
 // (left-handed AwayJS -> right-handed Flight). The unmirrored mesh renders as the z-reflection of the
 // original, flipping the texture along the tube (v) axis; mirror v back to match the AwayJS look.
-const texture = createTexture({ image });
+const texture = createTexture({ storage: { dimension: '2d', image } });
 texture.uvScale.y = -1;
 texture.uvOffset.y = 1;
 

@@ -65,7 +65,7 @@ const skySurface = createSurface(1, 256);
 fillSurfaceLinearGradient(createSurfaceRegion(skySurface), skyRamp, 0, 0, 0, 256);
 const skyMaterial = createEmissiveMaterial({
   emissive: 0xffffffff,
-  emissiveMap: createTexture({ image: createImageResourceFromSurface(skySurface) }),
+  emissiveMap: createTexture({ storage: { dimension: '2d', image: createImageResourceFromSurface(skySurface) } }),
   emissiveStrength: 1.35,
 });
 skyMaterial.doubleSided = true;
@@ -120,9 +120,11 @@ const masterchiefMaterial = createStandardPbrMaterial({
   roughness: 1,
 });
 masterchiefMaterial.baseColorMap = createTexture({
-  image: colorizeByLuminance(masterchiefImage, ARMOR_RAMP, VISOR_RAMP),
+  storage: { dimension: '2d', image: colorizeByLuminance(masterchiefImage, ARMOR_RAMP, VISOR_RAMP) },
 });
-masterchiefMaterial.metallicRoughnessMap = createTexture({ image: buildMetallicRoughnessMap(masterchiefImage) });
+masterchiefMaterial.metallicRoughnessMap = createTexture({
+  storage: { dimension: '2d', image: buildMetallicRoughnessMap(masterchiefImage) },
+});
 
 const stoneMaterial = createStandardPbrMaterial({
   baseColor: 0xffffffff,
@@ -130,7 +132,7 @@ const stoneMaterial = createStandardPbrMaterial({
   roughness: 0.85,
 });
 const stoneTexture = createTexture({
-  image: colorizeByLuminance(stoneImage, STONE_RAMP),
+  storage: { dimension: '2d', image: colorizeByLuminance(stoneImage, STONE_RAMP) },
   sampler: createTilingSampler(),
 });
 setTextureUvScale(stoneTexture, 20, 20);

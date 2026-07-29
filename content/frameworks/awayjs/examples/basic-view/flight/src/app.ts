@@ -41,7 +41,7 @@ const yAxis = createVector3(0, 1, 0);
 const scratchQuat = createQuaternion();
 
 const image = await loadImageResourceFromUrl('awayjs/floor_diffuse.jpg');
-const texture = createTexture({ image });
+const texture = createTexture({ storage: { dimension: '2d', image } });
 material.baseColorMap = texture;
 
 let angle = 0;

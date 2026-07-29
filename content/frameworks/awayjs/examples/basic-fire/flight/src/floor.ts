@@ -33,7 +33,7 @@ function specularToRoughnessTexture(specular: ImageResource): Texture {
     metallic: 0,
   }));
   const tex = createTexture({
-    image: mrImage,
+    storage: { dimension: '2d', image: mrImage },
     sampler: createTilingSampler(),
     colorSpace: 'linear',
   });
@@ -47,11 +47,11 @@ export async function loadFloorTextures(material: StandardPbrMaterial): Promise<
     loadImageResourceFromUrl('awayjs/floor_normal.jpg'),
     loadImageResourceFromUrl('awayjs/floor_specular.jpg'),
   ]);
-  const diffuseTex = createTexture({ image: diffuseImg, sampler: createTilingSampler() });
+  const diffuseTex = createTexture({ storage: { dimension: '2d', image: diffuseImg }, sampler: createTilingSampler() });
   setTextureUvScale(diffuseTex, 2, 2);
   material.baseColorMap = diffuseTex;
 
-  const normalTex = createTexture({ image: normalImg, sampler: createTilingSampler() });
+  const normalTex = createTexture({ storage: { dimension: '2d', image: normalImg }, sampler: createTilingSampler() });
   setTextureUvScale(normalTex, 2, 2);
   material.normalMap = normalTex;
 

@@ -18,10 +18,13 @@ import {
   createScene3DLights,
   createToneMapEffect,
   createVector3,
+  defaultGlFxaaEffectRunner,
+  defaultGlScreenSpaceFogEffectRunner,
+  defaultGlToneMapEffectRunner,
   DEG_TO_RAD,
   drawGlScene3DShadowMap,
   invalidateNodeLocalTransform,
-  registerDefaultGlRenderEffects,
+  registerGlRenderEffect,
   registerStandardPbrGlMaterial,
   registerUnlitGlMaterial,
   setCamera3DViewMatrix4FromLookAt,
@@ -64,7 +67,9 @@ const glState = createGlRenderState(canvas, {
 });
 registerStandardPbrGlMaterial(glState);
 registerUnlitGlMaterial(glState);
-registerDefaultGlRenderEffects(glState);
+registerGlRenderEffect(glState, 'FxaaEffect', defaultGlFxaaEffectRunner);
+registerGlRenderEffect(glState, 'ScreenSpaceFogEffect', defaultGlScreenSpaceFogEffectRunner);
+registerGlRenderEffect(glState, 'ToneMapEffect', defaultGlToneMapEffectRunner);
 
 const verifyFrame = createGlFrameVerifier(glState);
 

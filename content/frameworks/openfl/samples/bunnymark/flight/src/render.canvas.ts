@@ -7,7 +7,7 @@ import {
   QuadBatchKind,
   registerRenderer,
   renderCanvasBackground,
-  renderCanvasSprite,
+  renderCanvasScene2D,
   createMatrix,
 } from '@flighthq/sdk';
 
@@ -28,5 +28,5 @@ export const scale = 1;
 export function render(root: QuadBatch): void {
   if (!prepareScene2DRender(state, root)) return;
   renderCanvasBackground(state);
-  renderCanvasSprite(state, root);
+  renderCanvasScene2D(state, root);
 }

@@ -19,12 +19,14 @@ import {
   createTorusMeshGeometry,
   createToneMapEffect,
   createVector3,
+  defaultGlFxaaEffectRunner,
+  defaultGlToneMapEffectRunner,
   DEG_TO_RAD,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   multiplyQuaternion,
-  registerDefaultGlRenderEffects,
   registerEmissiveGlMaterial,
+  registerGlRenderEffect,
   registerStandardPbrGlMaterial,
   setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
@@ -59,7 +61,8 @@ const state = createGlRenderState(canvas, {
 
 registerStandardPbrGlMaterial(state);
 registerEmissiveGlMaterial(state);
-registerDefaultGlRenderEffects(state);
+registerGlRenderEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);
+registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
 
 const verifyFrame = createGlFrameVerifier(state);
 

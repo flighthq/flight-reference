@@ -1,10 +1,13 @@
-import type { Camera3D, Scene3DLights, Node3D } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D } from '@flighthq/sdk';
 import {
+  beginGlRenderEffectPipeline,
   createGlCanvasElement,
+  createGlRenderEffectPipeline,
   createGlRenderState,
-  createGlRenderTarget,
-  presentGlScene3D,
+  drawGlScene3D,
+  endGlRenderEffectPipeline,
   registerVertexColorGlMaterial,
+  renderGlBackground,
 } from '@flighthq/sdk';
 
 const width = 800;
@@ -29,13 +32,17 @@ const state = createGlRenderState(canvas, {
 
 registerVertexColorGlMaterial(state);
 
-const target = createGlRenderTarget(state, {
-  width: canvas.width,
-  height: canvas.height,
+const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   depth: 'depth-stencil',
-  colorSpace: 'linear',
+  format: 'rgba8',
 });
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  presentGlScene3D(state, target, scene, camera, lights);
+  beginGlRenderEffectPipeline(state, pipeline);
+  renderGlBackground(state);
+  state.gl.depthMask(true);
+  state.gl.clearDepth(1);
+  state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
+  drawGlScene3D(state, scene, camera, lights);
+  endGlRenderEffectPipeline(state, pipeline, []);
 }

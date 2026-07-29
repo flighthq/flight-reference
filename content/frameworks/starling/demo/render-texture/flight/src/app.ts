@@ -14,7 +14,6 @@ import {
   createMatrix,
   defaultGlBitmapRenderer,
   defaultGlTextLabelRenderer,
-  invalidateImageResource,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareScene2DRender,
@@ -23,6 +22,7 @@ import {
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
+  setImageResourceSource,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -167,7 +167,7 @@ function drawBrush(x: number, y: number): void {
 
   drawCtx.restore();
 
-  invalidateImageResource(drawImage);
+  setImageResourceSource(drawImage, drawCanvas);
   invalidateNodeAppearance(canvasBmp);
 }
 

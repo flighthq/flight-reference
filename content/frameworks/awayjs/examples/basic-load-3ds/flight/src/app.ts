@@ -20,12 +20,14 @@ import {
   createSpecularPbrMaterial,
   createTexture,
   createToneMapEffect,
+  defaultGlFxaaEffectRunner,
+  defaultGlToneMapEffectRunner,
   drawGlScene3D,
   drawGlScene3DShadowMap,
   endGlRenderEffectPipeline,
   getNodeChildren,
   loadImageResourceFromUrl,
-  registerDefaultGlRenderEffects,
+  registerGlRenderEffect,
   registerSpecularPbrGlMaterial,
   registerStandardPbrGlMaterial,
   renderGlBackground,
@@ -63,7 +65,8 @@ const state = createGlRenderState(canvas, {
 
 registerStandardPbrGlMaterial(state);
 registerSpecularPbrGlMaterial(state);
-registerDefaultGlRenderEffects(state);
+registerGlRenderEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);
+registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
 
 const verifyFrame = createGlFrameVerifier(state);
 

@@ -14,12 +14,14 @@ import {
   createGlRenderEffectPipeline,
   createGlRenderState,
   createToneMapEffect,
+  defaultGlFxaaEffectRunner,
+  defaultGlToneMapEffectRunner,
   drawGlEnvironmentSkybox,
   drawGlScene3D,
   endGlRenderEffectPipeline,
   registerBlinnPhongGlMaterial,
   registerBuiltInGlModifierSnippets,
-  registerDefaultGlRenderEffects,
+  registerGlRenderEffect,
   registerShadedGlMaterial,
   registerSpecularPbrGlMaterial,
   registerStandardPbrGlMaterial,
@@ -74,7 +76,8 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
   const verifyFrame = createGlFrameVerifier(state);
 
   const effects = options.effects ?? [createToneMapEffect()];
-  registerDefaultGlRenderEffects(state);
+  registerGlRenderEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);
+  registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
 
   let pipeline: GlRenderEffectPipeline | null = null;
 

@@ -16,6 +16,8 @@ import {
   createShadedMaterial,
   createTexture,
   createToneMapEffect,
+  defaultGlFxaaEffectRunner,
+  defaultGlToneMapEffectRunner,
   drawGlScene3D,
   drawGlScene3DShadowMap,
   endGlRenderEffectPipeline,
@@ -23,7 +25,7 @@ import {
   invalidateNodeLocalTransform,
   isMesh,
   loadImageResourceFromUrl,
-  registerDefaultGlRenderEffects,
+  registerGlRenderEffect,
   registerShadedGlMaterial,
   renderGlBackground,
   setVector3,
@@ -51,7 +53,8 @@ const state = createGlRenderState(canvas, {
 });
 
 registerShadedGlMaterial(state);
-registerDefaultGlRenderEffects(state);
+registerGlRenderEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);
+registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
 const verifyFrame = createGlFrameVerifier(state);
 
 let pipeline: GlRenderEffectPipeline | null = null;

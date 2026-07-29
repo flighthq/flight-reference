@@ -1,7 +1,10 @@
 import {
   createGlCanvasElement,
   createGlRenderState,
-  registerDefaultGlRenderEffects,
+  defaultGlBloomEffectRunner,
+  defaultGlFxaaEffectRunner,
+  defaultGlToneMapEffectRunner,
+  registerGlRenderEffect,
   registerStandardPbrGlMaterial,
 } from '@flighthq/sdk';
 
@@ -30,6 +33,8 @@ export const glState = createGlRenderState(canvas, {
   pixelRatio,
 });
 registerStandardPbrGlMaterial(glState);
-registerDefaultGlRenderEffects(glState);
+registerGlRenderEffect(glState, 'BloomEffect', defaultGlBloomEffectRunner);
+registerGlRenderEffect(glState, 'FxaaEffect', defaultGlFxaaEffectRunner);
+registerGlRenderEffect(glState, 'ToneMapEffect', defaultGlToneMapEffectRunner);
 
 export const verifyFrame = createGlFrameVerifier(glState);

@@ -18,12 +18,14 @@ import {
   createTexture,
   createTilingSampler,
   createToneMapEffect,
+  defaultGlFxaaEffectRunner,
+  defaultGlToneMapEffectRunner,
   drawGlScene3D,
   drawGlScene3DShadowMap,
   endGlRenderEffectPipeline,
   loadImageResourceFromUrl,
   registerBlinnPhongGlMaterial,
-  registerDefaultGlRenderEffects,
+  registerGlRenderEffect,
   renderGlBackground,
   sampleAnimationTrack,
   setTextureUvScale,
@@ -58,7 +60,8 @@ const state = createGlRenderState(canvas, {
 });
 
 registerBlinnPhongGlMaterial(state);
-registerDefaultGlRenderEffects(state);
+registerGlRenderEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);
+registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
 const verifyFrame = createGlFrameVerifier(state);
 
 let pipeline: GlRenderEffectPipeline | null = null;

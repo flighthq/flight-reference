@@ -8,7 +8,7 @@ import {
   registerStandardWgpuMaterial,
   registerRenderer,
   renderWgpuBackground,
-  renderWgpuSprite,
+  renderWgpuScene2D,
   submitWgpuRenderPass,
   createMatrix,
 } from '@flighthq/sdk';
@@ -31,6 +31,6 @@ export const scale = 1;
 export function render(root: QuadBatch): void {
   if (!prepareScene2DRender(state, root)) return;
   renderWgpuBackground(state);
-  renderWgpuSprite(state, root);
+  renderWgpuScene2D(state, root);
   submitWgpuRenderPass(state);
 }

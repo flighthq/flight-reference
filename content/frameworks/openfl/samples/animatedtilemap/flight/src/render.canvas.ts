@@ -6,7 +6,7 @@ import {
   prepareScene2DRender,
   registerRenderer,
   renderCanvasBackground,
-  renderCanvasSprite,
+  renderCanvasScene2D,
   SpriteKind,
   createMatrix,
 } from '@flighthq/sdk';
@@ -29,5 +29,5 @@ export const scale = 1;
 export function render(root: Sprite): void {
   if (!prepareScene2DRender(state, root)) return;
   renderCanvasBackground(state);
-  renderCanvasSprite(state, root);
+  renderCanvasScene2D(state, root);
 }

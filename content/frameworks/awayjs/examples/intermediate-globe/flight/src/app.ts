@@ -23,13 +23,15 @@ import {
   createTexture,
   createToneMapEffect,
   createVector3,
+  defaultGlFxaaEffectRunner,
+  defaultGlToneMapEffectRunner,
   DEG_TO_RAD,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   orientScene3DBillboardsToCamera,
   packOpaqueColor,
   registerBuiltInGlModifierSnippets,
-  registerDefaultGlRenderEffects,
+  registerGlRenderEffect,
   registerShadedGlMaterial,
   registerUnlitGlMaterial,
   setCubeTextureFace,
@@ -70,7 +72,8 @@ const state = createGlRenderState(canvas, {
 registerShadedGlMaterial(state);
 registerBuiltInGlModifierSnippets(state);
 registerUnlitGlMaterial(state);
-registerDefaultGlRenderEffects(state);
+registerGlRenderEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);
+registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
 registerEarthShader(state);
 
 const verifyFrame = createGlFrameVerifier(state);

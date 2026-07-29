@@ -8,7 +8,7 @@ import {
   registerStandardGlMaterial,
   registerRenderer,
   renderGlBackground,
-  renderGlSprite,
+  renderGlScene2D,
   createMatrix,
 } from '@flighthq/sdk';
 
@@ -30,5 +30,5 @@ export const scale = 1;
 export function render(root: QuadBatch): void {
   if (!prepareScene2DRender(state, root)) return;
   renderGlBackground(state);
-  renderGlSprite(state, root);
+  renderGlScene2D(state, root);
 }

@@ -1,6 +1,6 @@
 import {
   addNodeChild,
-  applySurfaceColorTransform,
+  applySurfaceColorScaleBias,
   applySurfaceThreshold,
   copySurfaceChannel,
   copySurfacePixels,
@@ -57,15 +57,15 @@ addImage(image, 20, 20);
 addImage(image, 130, 120, { rotation: -90 });
 
 const colorTransformed = createSurfaceFromImageResource(image);
-applySurfaceColorTransform(createSurfaceRegion(colorTransformed), imageRegion, {
-  alphaMultiplier: 0.5,
-  alphaOffset: 0,
-  blueMultiplier: 1,
-  blueOffset: 0,
-  greenMultiplier: 0,
-  greenOffset: 0,
-  redMultiplier: 0.5,
-  redOffset: 20,
+applySurfaceColorScaleBias(createSurfaceRegion(colorTransformed), imageRegion, {
+  alphaScale: 0.5,
+  alphaBias: 0,
+  blueScale: 1,
+  blueBias: 0,
+  greenScale: 0,
+  greenBias: 0,
+  redScale: 0.5,
+  redBias: 20 / 255,
 });
 addSurface(colorTransformed, 240, 20);
 

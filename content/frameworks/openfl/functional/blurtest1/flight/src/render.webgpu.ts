@@ -21,7 +21,7 @@ import {
   endWgpuRenderPass,
   getRenderProxy2D,
   prepareScene2DRender,
-  registerDefaultWgpuMaterial,
+  registerStandardWgpuMaterial,
   registerRenderer,
   registerWgpuShapeCommands,
   renderWgpuBackground,
@@ -45,7 +45,7 @@ registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);
-registerDefaultWgpuMaterial(state);
+registerStandardWgpuMaterial(state);
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;

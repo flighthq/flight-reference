@@ -9,7 +9,7 @@ import {
   endGlRenderEffectPipeline,
   prepareScene2DRender,
   registerCustomShaderGlRenderEffect,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -28,7 +28,7 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
-registerDefaultGlMaterial(state);
+registerStandardGlMaterial(state);
 registerCustomShaderGlRenderEffect(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state);

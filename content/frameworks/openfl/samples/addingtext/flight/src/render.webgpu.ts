@@ -4,7 +4,7 @@ import {
   createWgpuRenderState,
   defaultWgpuTextLabelRenderer,
   prepareScene2DRender,
-  registerDefaultWgpuMaterial,
+  registerStandardWgpuMaterial,
   registerRenderer,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -24,7 +24,7 @@ export const state = await createWgpuRenderState(canvas, {
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
-registerDefaultWgpuMaterial(state);
+registerStandardWgpuMaterial(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 

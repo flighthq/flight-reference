@@ -2,18 +2,10 @@
 import {
   createGlCanvasElement,
   createGlRenderState,
-  defaultGlBeginFill,
-  defaultGlCurveTo,
-  defaultGlDrawCircle,
-  defaultGlDrawEllipse,
-  defaultGlDrawRectangle,
-  defaultGlDrawRoundRectangle,
-  defaultGlLineStyle,
-  defaultGlLineTo,
-  defaultGlMoveTo,
+  defaultGlShapeCommands,
   defaultGlShapeRenderer,
   prepareScene2DRender,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -33,18 +25,8 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-registerGlShapeCommands([
-  defaultGlBeginFill,
-  defaultGlCurveTo,
-  defaultGlDrawCircle,
-  defaultGlDrawEllipse,
-  defaultGlDrawRectangle,
-  defaultGlDrawRoundRectangle,
-  defaultGlLineStyle,
-  defaultGlLineTo,
-  defaultGlMoveTo,
-]);
-registerDefaultGlMaterial(state);
+registerGlShapeCommands(defaultGlShapeCommands);
+registerStandardGlMaterial(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 

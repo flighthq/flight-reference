@@ -12,9 +12,7 @@ import {
   createWgpuRenderState,
   createWgpuRenderTarget,
   defaultWgpuBitmapRenderer,
-  defaultWgpuBeginFill,
-  defaultWgpuDrawRectangle,
-  defaultWgpuEndFill,
+  defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   defaultWgpuTextLabelRenderer,
   enableWgpuRenderCache,
@@ -24,7 +22,7 @@ import {
   invalidateNodeLocalTransform,
   prepareScene2DRender,
   refreshWgpuRenderCache,
-  registerDefaultWgpuMaterial,
+  registerStandardWgpuMaterial,
   registerRenderer,
   registerWgpuShapeCommands,
   renderWgpuBackground,
@@ -59,8 +57,8 @@ export const state = await createWgpuRenderState(canvas, {
 registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
-registerWgpuShapeCommands([defaultWgpuBeginFill, defaultWgpuDrawRectangle, defaultWgpuEndFill]);
-registerDefaultWgpuMaterial(state);
+registerWgpuShapeCommands(defaultWgpuShapeCommands);
+registerStandardWgpuMaterial(state);
 enableWgpuRenderCache(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;

@@ -3,7 +3,7 @@ import {
   createWgpuRenderState,
   defaultWgpuVideoRenderer,
   prepareScene2DRender,
-  registerDefaultWgpuMaterial,
+  registerStandardWgpuMaterial,
   registerRenderer,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -31,7 +31,7 @@ export const state = await createWgpuRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 registerRenderer(state, VideoKind, defaultWgpuVideoRenderer);
-registerDefaultWgpuMaterial(state);
+registerStandardWgpuMaterial(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 

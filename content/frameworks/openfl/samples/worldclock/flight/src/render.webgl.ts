@@ -1,18 +1,14 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
+  defaultGlShapeCommands,
   ShapeKind,
   TextLabelKind,
   createGlCanvasElement,
   createGlRenderState,
-  defaultGlBeginFill,
-  defaultGlDrawCircle,
-  defaultGlLineStyle,
-  defaultGlLineTo,
-  defaultGlMoveTo,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
   prepareScene2DRender,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -33,14 +29,8 @@ export const state = createGlRenderState(canvas, {
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
-registerGlShapeCommands([
-  defaultGlBeginFill,
-  defaultGlDrawCircle,
-  defaultGlLineStyle,
-  defaultGlLineTo,
-  defaultGlMoveTo,
-]);
-registerDefaultGlMaterial(state);
+registerGlShapeCommands(defaultGlShapeCommands);
+registerStandardGlMaterial(state);
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;

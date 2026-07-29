@@ -18,7 +18,7 @@ import {
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareScene2DRender,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerDefaultHitTests,
   registerRenderer,
   renderGlBackground,
@@ -44,7 +44,7 @@ const state = createGlRenderState(canvas, {
 });
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
-registerDefaultGlMaterial(state);
+registerStandardGlMaterial(state);
 registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 

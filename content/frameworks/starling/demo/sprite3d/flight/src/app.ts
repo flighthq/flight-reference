@@ -33,7 +33,7 @@ import {
   loadImageResourceFromUrl,
   multiplyQuaternion,
   prepareScene2DRender,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerRenderer,
   registerUnlitGlMaterial,
   renderGlBackground,
@@ -76,7 +76,7 @@ const state = createGlRenderState(canvas, {
 });
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
-registerDefaultGlMaterial(state);
+registerStandardGlMaterial(state);
 registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 enableGlBlendModeSupport(state);

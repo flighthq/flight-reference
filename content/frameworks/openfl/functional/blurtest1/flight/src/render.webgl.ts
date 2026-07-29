@@ -20,7 +20,7 @@ import {
   endGlRenderPass,
   getRenderProxy2D,
   prepareScene2DRender,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -39,7 +39,7 @@ export const state = createGlRenderState(canvas, {
 });
 registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
-registerDefaultGlMaterial(state);
+registerStandardGlMaterial(state);
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;

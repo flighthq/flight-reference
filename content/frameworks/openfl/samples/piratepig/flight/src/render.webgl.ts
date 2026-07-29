@@ -10,9 +10,7 @@ import {
   createGlRenderTarget,
   createRenderCache,
   defaultGlBitmapRenderer,
-  defaultGlBeginFill,
-  defaultGlDrawRectangle,
-  defaultGlEndFill,
+  defaultGlShapeCommands,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
   destroyGlRenderTarget,
@@ -23,7 +21,7 @@ import {
   invalidateNodeLocalTransform,
   prepareScene2DRender,
   refreshGlRenderCache,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -52,8 +50,8 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
-registerGlShapeCommands([defaultGlBeginFill, defaultGlDrawRectangle, defaultGlEndFill]);
-registerDefaultGlMaterial(state);
+registerGlShapeCommands(defaultGlShapeCommands);
+registerStandardGlMaterial(state);
 enableGlRenderCache(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;

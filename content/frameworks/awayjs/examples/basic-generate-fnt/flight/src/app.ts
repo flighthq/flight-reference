@@ -24,7 +24,7 @@ import {
   invalidateNodeLocalTransform,
   loadFontFromUrl,
   prepareScene2DRender,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -54,7 +54,7 @@ const state = createGlRenderState(canvas, {
 });
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
-registerDefaultGlMaterial(state);
+registerStandardGlMaterial(state);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 enableGlTextInput();
 

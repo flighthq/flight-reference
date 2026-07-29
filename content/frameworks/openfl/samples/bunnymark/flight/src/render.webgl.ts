@@ -5,7 +5,7 @@ import {
   defaultGlQuadBatchRenderer,
   prepareScene2DRender,
   QuadBatchKind,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerRenderer,
   renderGlBackground,
   renderGlSprite,
@@ -23,7 +23,7 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
-registerDefaultGlMaterial(state);
+registerStandardGlMaterial(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 

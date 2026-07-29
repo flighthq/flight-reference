@@ -31,7 +31,7 @@ import {
   parseBitmapFontXml,
   prepareScene2DRender,
   QuadBatchKind,
-  registerDefaultGlMaterial,
+  registerStandardGlMaterial,
   registerDefaultHitTests,
   registerRenderer,
   removeNodeChild,
@@ -69,7 +69,7 @@ const state = createGlRenderState(canvas, {
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
 enableGlColorAdjustment(state);
-registerDefaultGlMaterial(state);
+registerStandardGlMaterial(state);
 registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
 registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);

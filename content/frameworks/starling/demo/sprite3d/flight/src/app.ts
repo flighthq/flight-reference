@@ -1,7 +1,5 @@
-import type { RenderProxy2D } from '@flighthq/sdk';
 import {
   addNodeChild,
-  beginGlRenderPass,
   BitmapKind,
   copyQuaternion,
   createBitmap,
@@ -10,13 +8,12 @@ import {
   createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
-  createGlRenderTarget,
   createImageResourceFromCanvas,
   createMatrix,
   createMesh,
-  createNode2D,
   createPerspectiveProjection,
   createQuaternion,
+  createRenderTargetNode2D,
   createScene3D,
   createScene3DLights,
   createTexture,
@@ -24,20 +21,19 @@ import {
   createVector3,
   defaultGlBitmapRenderer,
   defaultGlTextLabelRenderer,
-  drawGlRenderTargetResult,
   drawGlScene3D,
   enableGlBlendModeSupport,
-  endGlRenderPass,
-  flushGlSpriteBatch,
+  enableGlRenderTargetNode2D,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   multiplyQuaternion,
   prepareScene2DRender,
-  registerStandardGlMaterial,
   registerRenderer,
+  registerStandardGlMaterial,
   registerUnlitGlMaterial,
   renderGlBackground,
   renderGlScene2D,
+  renderIntoGlRenderTargetNode2D,
   setCamera3DViewMatrix4FromLookAt,
   setMeshGeometrySubsets,
   setQuaternionFromAxisAngle,
@@ -80,6 +76,7 @@ registerStandardGlMaterial(state);
 registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 enableGlBlendModeSupport(state);
+enableGlRenderTargetNode2D(state);
 registerUnlitGlMaterial(state);
 
 const root = createDisplayObject();
@@ -112,31 +109,16 @@ const faceTextures = FaceColors.map(([r, g, b]) => {
   return createTexture({ storage: { dimension: '2d', image }, flipY: true });
 });
 
-const rtWidth = Math.round(GameWidth * pixelRatio);
-const rtHeight = Math.round(GameHeight * pixelRatio);
-const cubeRT = createGlRenderTarget(state, {
-  width: rtWidth,
-  height: rtHeight,
-  format: 'rgba8',
-  depth: 'depth-stencil',
-  clearColors: [0],
-  clearDepth: 1,
+// The 3D cube renders into an offscreen target sized in device pixels; the node is scaled back down
+// so the 2D walk's pixelRatio transform does not apply the ratio a second time.
+const cubeLayer = createRenderTargetNode2D({
+  width: Math.round(GameWidth * pixelRatio),
+  height: Math.round(GameHeight * pixelRatio),
+  depth: true,
 });
-
-const Cube3DKind = 'Cube3D';
-const cubeTransform = createMatrix(1 / pixelRatio, 0, 0, 1 / pixelRatio, 0, 0);
-
-registerRenderer(state, Cube3DKind, {
-  createData() {
-    return null;
-  },
-  submit(_rs, proxy) {
-    flushGlSpriteBatch(state);
-    drawGlRenderTargetResult(state, proxy as RenderProxy2D, cubeRT, cubeTransform);
-  },
-});
-
-const cubeLayer = createNode2D(Cube3DKind);
+cubeLayer.scaleX = 1 / pixelRatio;
+cubeLayer.scaleY = 1 / pixelRatio;
+invalidateNodeLocalTransform(cubeLayer);
 addNodeChild(root, cubeLayer);
 
 const scene3d = createScene3D();
@@ -213,15 +195,9 @@ function renderCube(now: number): void {
   copyQuaternion(cube.rotation, quatTemp);
   invalidateNodeLocalTransform(cube);
 
-  beginGlRenderPass(state, cubeRT);
-  drawGlScene3D(state, scene3d.root, camera, lights);
-  endGlRenderPass(state);
-
-  const gl = state.gl;
-  gl.bindVertexArray(null);
-  gl.disable(gl.DEPTH_TEST);
-  gl.disable(gl.CULL_FACE);
-  gl.enable(gl.BLEND);
+  renderIntoGlRenderTargetNode2D(state, cubeLayer, (target) => {
+    drawGlScene3D(target, scene3d.root, camera, lights);
+  });
 }
 
 renderCube(performance.now());

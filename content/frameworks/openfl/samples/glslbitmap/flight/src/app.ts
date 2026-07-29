@@ -1,13 +1,6 @@
-import {
-  addNodeChild,
-  createBitmap,
-  createCustomShaderEffect,
-  createDisplayObject,
-  loadImageResourceFromUrl,
-  registerGlCustomShaderSource,
-} from '@flighthq/sdk';
+import { addNodeChild, createBitmap, createDisplayObject, loadImageResourceFromUrl } from '@flighthq/sdk';
 
-import { render, scale, state } from './render';
+import { render, scale } from './render';
 
 const image = await loadImageResourceFromUrl('openfl/images/openfl_icon_large.png');
 
@@ -22,17 +15,6 @@ logo.x = 100;
 logo.y = 100;
 addNodeChild(root, logo);
 
-const FRAGMENT_SOURCE = `#version 300 es
-precision highp float;
-in vec2 v_texCoord;
-uniform sampler2D u_texture0;
-out vec4 o_color;
-void main() {
-  o_color = texture(u_texture0, v_texCoord);
-}`;
-
-registerGlCustomShaderSource(state, 'passthrough', FRAGMENT_SOURCE);
-
-const effect = createCustomShaderEffect({ shaderKey: 'passthrough' });
-
-render(root, [effect]);
+// The next SDK no longer publishes the custom 2D post-process source/runner registry. This sample's
+// shader was an identity texture lookup, so rendering the bitmap directly preserves its exact output.
+render(root);

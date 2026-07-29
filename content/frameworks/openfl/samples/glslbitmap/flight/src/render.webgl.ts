@@ -1,14 +1,10 @@
-import type { DisplayObject, GlRenderEffectPipeline, RenderEffect } from '@flighthq/sdk';
+import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
-  beginGlRenderEffectPipeline,
   createGlCanvasElement,
-  createGlRenderEffectPipeline,
   createGlRenderState,
   defaultGlBitmapRenderer,
-  endGlRenderEffectPipeline,
   prepareScene2DRender,
-  registerCustomShaderGlRenderEffect,
   registerStandardGlMaterial,
   registerRenderer,
   renderGlBackground,
@@ -29,17 +25,12 @@ export const state = createGlRenderState(canvas, {
 });
 registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
 registerStandardGlMaterial(state);
-registerCustomShaderGlRenderEffect(state);
-
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state);
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 
-export function render(root: DisplayObject, effects: ReadonlyArray<RenderEffect>): void {
+export function render(root: DisplayObject): void {
   if (!prepareScene2DRender(state, root)) return;
-  beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   renderGlScene2D(state, root);
-  endGlRenderEffectPipeline(state, pipeline, effects);
 }

@@ -19,7 +19,7 @@ import {
   defaultGlQuadBatchRenderer,
   defaultGlRichTextRenderer,
   defaultGlTextLabelRenderer,
-  invalidateNodeLocalContent,
+  invalidateNodeAppearance,
   loadImageResourceFromUrl,
   parseBitmapFontXml,
   parseTextMarkup,
@@ -137,14 +137,13 @@ const desyrelFont = parseBitmapFontXml(desyrelFntText, { resolvePage: () => desy
 const bmpFontTF = createBitmapText(desyrelFont ? createGlyphSourceFromBitmapFont(desyrelFont) : null, {
   text: 'It is very easy to use Bitmap fonts,\nas well!',
   align: 'center',
-  color: 0xffffffff,
   wrapWidth: 300,
 });
 bmpFontTF.x = offset;
 bmpFontTF.y = offset + 80 + offset + 80 + offset + 80 + offset;
 addNodeChild(root, bmpFontTF);
 updateBitmapText(bmpFontTF);
-invalidateNodeLocalContent(bmpFontTF);
+invalidateNodeAppearance(bmpFontTF);
 
 registerDefaultHitTests();
 

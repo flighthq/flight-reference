@@ -6,8 +6,6 @@ import {
   connectInputToInteraction,
   createBitmap,
   createBitmapText,
-  createColorTransform,
-  createColorTransformAdjustment,
   createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
@@ -22,10 +20,9 @@ import {
   defaultGlQuadBatchRenderer,
   defaultGlRichTextRenderer,
   defaultGlTextLabelRenderer,
-  enableGlColorAdjustment,
+  registerGlColorAdjustmentMaterialFeature,
   getNodeChildCount,
   invalidateNodeAppearance,
-  invalidateNodeLocalContent,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   parseBitmapFontXml,
@@ -39,7 +36,7 @@ import {
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
-  setNode2DColorAdjustments,
+  setNodeColorAdjustmentsTint,
   TextLabelKind,
   updateBitmapText,
 } from '@flighthq/sdk';
@@ -68,7 +65,7 @@ const state = createGlRenderState(canvas, {
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
-enableGlColorAdjustment(state);
+registerGlColorAdjustmentMaterialFeature(state);
 registerStandardGlMaterial(state);
 registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
 registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
@@ -99,7 +96,6 @@ const miniGlyphSource = miniFont ? createGlyphSourceFromBitmapFont(miniFont) : n
 const statusText = createBitmapText(miniGlyphSource, {
   text: '',
   align: 'center',
-  color: 0x000000ff,
   wrapWidth: 140,
 });
 statusText.x = 20;
@@ -107,15 +103,10 @@ statusText.y = 10;
 statusText.scaleX = 2;
 statusText.scaleY = 2;
 
-const colorTransform = createColorTransform();
-colorTransform.redMultiplier = 0;
-colorTransform.greenMultiplier = 0;
-colorTransform.blueMultiplier = 0;
-const adjustment = createColorTransformAdjustment(colorTransform);
-setNode2DColorAdjustments(statusText, [adjustment]);
+setNodeColorAdjustmentsTint(statusText, 0x000000ff);
 
 updateBitmapText(statusText);
-invalidateNodeLocalContent(statusText);
+invalidateNodeAppearance(statusText);
 addNodeChild(root, statusText);
 
 let resultText: RichText | null = null;
@@ -203,7 +194,7 @@ let frameTimes: number[] = [];
 function updateStatusText(text: string): void {
   statusText.data.text = text;
   updateBitmapText(statusText);
-  invalidateNodeLocalContent(statusText);
+  invalidateNodeAppearance(statusText);
 }
 
 function startBenchmark(): void {

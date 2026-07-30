@@ -19,7 +19,7 @@ import {
   enableGlTextInput,
   enableTextInput,
   focusTextInput,
-  getGlyphAtlasSurface,
+  getGlyphAtlasBitmap,
   getGlyphAtlasEntry,
   invalidateNodeLocalTransform,
   loadFontFromUrl,
@@ -173,7 +173,7 @@ window.addEventListener('resize', () => {
 frame();
 
 function showAtlasSurface(glyphAtlas: GlyphAtlas): void {
-  const surface = getGlyphAtlasSurface(glyphAtlas);
+  const surface = getGlyphAtlasBitmap(glyphAtlas);
   if (!surface) return;
 
   const wrapper = document.createElement('div');

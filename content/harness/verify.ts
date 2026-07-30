@@ -1,13 +1,13 @@
-import type { GlRenderState, Surface, WgpuRenderState } from '@flighthq/sdk';
+import type { GlRenderState, Bitmap, WgpuRenderState } from '@flighthq/sdk';
 import {
-  createSurface,
-  createSurfaceFingerprint,
-  createSurfaceFromImageSource,
-  createSurfaceFromWgpuRenderState,
+  createBitmap,
+  createBitmapFingerprint,
+  createBitmapFromImageSource,
+  createBitmapFromWgpuRenderState,
   enableWgpuFrameCapture,
-  formatSurfaceFingerprint,
-  getSurfaceCoverage,
-  getSurfacePixel,
+  formatBitmapFingerprint,
+  getBitmapCoverage,
+  getBitmapPixel,
 } from '@flighthq/sdk';
 
 import type { FunctionalTarget } from './target';
@@ -27,8 +27,8 @@ const DEFAULT_MIN_COVERAGE = 0.0008;
 const BACKGROUND_CHANNEL_TOLERANCE = 6;
 const FINGERPRINT_GRID = 16;
 
-/** A per-test oracle (Tier 4): throw to fail. Receives the rendered frame as a Surface. */
-export type FunctionalRenderOracle = (surface: Readonly<Surface>) => void | Promise<void>;
+/** A per-test oracle (Tier 4): throw to fail. Receives the rendered frame as a Bitmap. */
+export type FunctionalRenderOracle = (surface: Readonly<Bitmap>) => void | Promise<void>;
 
 export interface FunctionalTestModule {
   /** Optional per-test pixel oracle, run after the not-blank check. */
@@ -55,8 +55,8 @@ type VerificationWindow = typeof window & {
   __ftRealRequestAnimationFrame?: (cb: FrameRequestCallback) => number;
 };
 
-// Encodes a Surface to a PNG data URL via a 2D canvas (RGBA bytes → ImageData → toDataURL).
-function encodeSurfaceToDataUrl(surface: Readonly<Surface>): string {
+// Encodes a Bitmap to a PNG data URL via a 2D canvas (RGBA bytes → ImageData → toDataURL).
+function encodeSurfaceToDataUrl(surface: Readonly<Bitmap>): string {
   const canvas = document.createElement('canvas');
   canvas.width = surface.width;
   canvas.height = surface.height;
@@ -96,15 +96,15 @@ export function registerWgpuFunctionalTarget(state: WgpuRenderState, scale = 1):
 }
 
 /**
- * Reads the rendered frame as a Surface, or null for a DOM target / when no canvas is present. Wgpu
+ * Reads the rendered frame as a Bitmap, or null for a DOM target / when no canvas is present. Wgpu
  * is read back from the GPU (copyTextureToBuffer) rather than the canvas element: headless/software
  * adapters render correctly but never present the swapchain to the compositor, so a canvas drawImage
  * reads transparent. This requires a registered Wgpu target (the harness factory registers one).
  */
-export async function snapshotFunctionalRender(): Promise<Surface | null> {
+export async function snapshotFunctionalRender(): Promise<Bitmap | null> {
   const target = (window as VerificationWindow).__ftTarget;
   if (target?.kind === 'dom') return null;
-  if (target?.kind === 'webgpu') return createSurfaceFromWgpuRenderState(target.state);
+  if (target?.kind === 'webgpu') return createBitmapFromWgpuRenderState(target.state);
   const canvas = target ? target.state.canvas : findRenderCanvas();
   if (canvas === null || canvas.width === 0 || canvas.height === 0) return null;
   // Force the GPU to complete every queued command before reading the drawing buffer back. Scenes draw
@@ -113,7 +113,7 @@ export async function snapshotFunctionalRender(): Promise<Surface | null> {
   // blocks the caller until they have. (Canvas/Wgpu don't need this: Canvas is CPU, Wgpu reads back
   // through an awaited buffer copy.)
   if (target?.kind === 'webgl') target.state.gl.finish();
-  return createSurfaceFromImageSource(canvas, canvas.width, canvas.height);
+  return createBitmapFromImageSource(canvas, canvas.width, canvas.height);
 }
 
 /**
@@ -153,10 +153,10 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
   // Not-blank: how much of the frame differs from the background. The background is the top-left pixel
   // (effectively always the clear colour), which sidesteps opaque-vs-transparent ambiguity in the
   // declared background under an alpha:false context.
-  const background = getSurfacePixel(surface, 0, 0);
-  const coverage = getSurfaceCoverage(surface, background, BACKGROUND_CHANNEL_TOLERANCE);
+  const background = getBitmapPixel(surface, 0, 0);
+  const coverage = getBitmapCoverage(surface, background, BACKGROUND_CHANNEL_TOLERANCE);
   result.coverage = coverage;
-  result.fingerprint = formatSurfaceFingerprint(createSurfaceFingerprint(surface, FINGERPRINT_GRID));
+  result.fingerprint = formatBitmapFingerprint(createBitmapFingerprint(surface, FINGERPRINT_GRID));
 
   const minCoverage = testModule.minCoverage ?? DEFAULT_MIN_COVERAGE;
   if (coverage < minCoverage) {
@@ -174,13 +174,13 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
   (window as VerificationWindow).__ftRenderImage = encodeSurfaceToDataUrl(getFunctionalRenderImageSurface() ?? surface);
 }
 
-function getFunctionalRenderImageSurface(): Surface | null {
+function getFunctionalRenderImageSurface(): Bitmap | null {
   const target = (window as VerificationWindow).__ftTarget;
   if (target?.kind !== 'webgl') return null;
   return createSurfaceFromGlRenderState(target.state);
 }
 
-function createSurfaceFromGlRenderState(state: GlRenderState): Surface | null {
+function createSurfaceFromGlRenderState(state: GlRenderState): Bitmap | null {
   const canvas = state.canvas;
   const width = canvas.width;
   const height = canvas.height;
@@ -193,8 +193,8 @@ function createSurfaceFromGlRenderState(state: GlRenderState): Surface | null {
   const bottomUp = new Uint8Array(width * height * 4);
   gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, bottomUp);
 
-  // gl.readPixels is bottom-up; flip rows into a top-down Surface.
-  const surface = createSurface(width, height);
+  // gl.readPixels is bottom-up; flip rows into a top-down Bitmap.
+  const surface = createBitmap(width, height);
   const out = surface.data;
   const rowBytes = width * 4;
   for (let y = 0; y < height; y++) {
@@ -256,13 +256,13 @@ export function publishFunctionalRenderSync(render: string): boolean {
   if (target?.kind !== 'webgl') return false;
   const surface = createSurfaceFromGlRenderState(target.state);
   if (surface === null) return false;
-  const background = getSurfacePixel(surface, 0, 0);
-  const coverage = getSurfaceCoverage(surface, background, BACKGROUND_CHANNEL_TOLERANCE);
+  const background = getBitmapPixel(surface, 0, 0);
+  const coverage = getBitmapCoverage(surface, background, BACKGROUND_CHANNEL_TOLERANCE);
   if (coverage < DEFAULT_MIN_COVERAGE) return false;
   (window as VerificationWindow).__ftVerification = {
     render,
     coverage,
-    fingerprint: formatSurfaceFingerprint(createSurfaceFingerprint(surface, FINGERPRINT_GRID)),
+    fingerprint: formatBitmapFingerprint(createBitmapFingerprint(surface, FINGERPRINT_GRID)),
   };
   (window as VerificationWindow).__ftRenderImage = encodeSurfaceToDataUrl(surface);
   return true;

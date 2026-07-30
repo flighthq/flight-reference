@@ -1,10 +1,10 @@
 import type { CubeTexture, ImageResource } from '@flighthq/sdk';
 import {
   createCubeTexture,
-  createSurfaceFromImageResource,
-  createSurfaceRegion,
-  flipSurfaceHorizontal,
-  flipSurfaceVertical,
+  captureBitmapFromImageResource,
+  createBitmapRegion,
+  flipBitmapHorizontal,
+  flipBitmapVertical,
   setCubeTextureFace,
 } from '@flighthq/sdk';
 
@@ -25,13 +25,13 @@ export function createCubeTextureFromAwayFaces(faces: readonly ImageResource[]):
 
   for (let i = 0; i < 6; i++) {
     const isY = i === 2 || i === 3;
-    const surface = createSurfaceFromImageResource(faces[i]!);
-    const region = createSurfaceRegion(surface);
+    const surface = captureBitmapFromImageResource(faces[i]!);
+    const region = createBitmapRegion(surface);
 
     if (isY) {
-      flipSurfaceVertical(region, region);
+      flipBitmapVertical(region, region);
     } else {
-      flipSurfaceHorizontal(region, region);
+      flipBitmapHorizontal(region, region);
     }
 
     const faceIndex = i === 4 ? 5 : i === 5 ? 4 : i;

@@ -1,17 +1,16 @@
 import {
   addNodeChild,
-  applySurfaceColorScaleBias,
-  applySurfaceThreshold,
-  copySurfaceChannel,
-  copySurfacePixels,
-  createBitmap,
+  applyBitmapColorScaleBias,
+  applyBitmapThreshold,
+  copyBitmapChannel,
+  copyBitmapPixels,
   createDisplayObject,
-  createImageResourceFromSurface,
-  createSurface,
-  createSurfaceFromCanvas,
-  createSurfaceFromImageResource,
-  createSurfaceRegion,
-  floodFillSurface,
+  createImageResourceFromBitmap,
+  createBitmap,
+  createBitmapFromCanvas,
+  captureBitmapFromImageResource,
+  createBitmapRegion,
+  floodFillBitmap,
   ImageChannel,
   loadImageResourceFromUrl,
 } from '@flighthq/sdk';
@@ -23,8 +22,8 @@ root.scaleX = scale;
 root.scaleY = scale;
 
 const image = await loadImageResourceFromUrl('openfl/images/openfl_icon.png');
-const imageSurface = createSurfaceFromImageResource(image);
-const imageRegion = createSurfaceRegion(imageSurface);
+const imageSurface = captureBitmapFromImageResource(image);
+const imageRegion = createBitmapRegion(imageSurface);
 
 function addImage(
   source: Readonly<typeof image>,
@@ -45,19 +44,19 @@ function addImage(
 }
 
 function addSurface(
-  surface: ReturnType<typeof createSurface>,
+  surface: ReturnType<typeof createBitmap>,
   x: number,
   y: number,
   opts: { alpha?: number; rotation?: number; scaleX?: number; scaleY?: number } = {},
 ): void {
-  addImage(createImageResourceFromSurface(surface), x, y, opts);
+  addImage(createImageResourceFromBitmap(surface), x, y, opts);
 }
 
 addImage(image, 20, 20);
 addImage(image, 130, 120, { rotation: -90 });
 
-const colorTransformed = createSurfaceFromImageResource(image);
-applySurfaceColorScaleBias(createSurfaceRegion(colorTransformed), imageRegion, {
+const colorTransformed = captureBitmapFromImageResource(image);
+applyBitmapColorScaleBias(createBitmapRegion(colorTransformed), imageRegion, {
   alphaScale: 0.5,
   alphaBias: 0,
   blueScale: 1,
@@ -69,40 +68,31 @@ applySurfaceColorScaleBias(createSurfaceRegion(colorTransformed), imageRegion, {
 });
 addSurface(colorTransformed, 240, 20);
 
-const tiled = createSurface(image.width, image.height);
-copySurfacePixels(
-  createSurfaceRegion(tiled, -image.width / 2, -image.height / 2, image.width, image.height),
+const tiled = createBitmap(image.width, image.height);
+copyBitmapPixels(
+  createBitmapRegion(tiled, -image.width / 2, -image.height / 2, image.width, image.height),
   imageRegion,
 );
-copySurfacePixels(
-  createSurfaceRegion(tiled, -image.width / 2, image.height / 2, image.width, image.height),
-  imageRegion,
-);
-copySurfacePixels(
-  createSurfaceRegion(tiled, image.width / 2, -image.height / 2, image.width, image.height),
-  imageRegion,
-);
-copySurfacePixels(
-  createSurfaceRegion(tiled, image.width / 2, image.height / 2, image.width, image.height),
-  imageRegion,
-);
+copyBitmapPixels(createBitmapRegion(tiled, -image.width / 2, image.height / 2, image.width, image.height), imageRegion);
+copyBitmapPixels(createBitmapRegion(tiled, image.width / 2, -image.height / 2, image.width, image.height), imageRegion);
+copyBitmapPixels(createBitmapRegion(tiled, image.width / 2, image.height / 2, image.width, image.height), imageRegion);
 addSurface(tiled, 350, 20);
 
-const composited = createSurface(image.width, image.height, 0xeeeeeeff);
-copySurfacePixels(createSurfaceRegion(composited), imageRegion, true);
+const composited = createBitmap(image.width, image.height, 0xeeeeeeff);
+copyBitmapPixels(createBitmapRegion(composited), imageRegion, true);
 addSurface(composited, 460, 20);
 
-const copiedChannel = createSurfaceFromImageResource(image);
-copySurfaceChannel(
-  createSurfaceRegion(copiedChannel, 20, 0, image.width, image.height),
+const copiedChannel = captureBitmapFromImageResource(image);
+copyBitmapChannel(
+  createBitmapRegion(copiedChannel, 20, 0, image.width, image.height),
   ImageChannel.Green,
   imageRegion,
   ImageChannel.Blue,
 );
 addSurface(copiedChannel, 570, 20);
 
-const floodFilled = createSurfaceFromImageResource(image);
-floodFillSurface(floodFilled, 0, 0, 0xeeeeeeff);
+const floodFilled = captureBitmapFromImageResource(image);
+floodFillBitmap(floodFilled, 0, 0, 0xeeeeeeff);
 addSurface(floodFilled, 20, 140);
 
 const drawCanvas = document.createElement('canvas');
@@ -117,22 +107,19 @@ drawContext.globalAlpha = 0.4;
 drawContext.scale(2, 1);
 drawContext.drawImage(image.source, 0, 0);
 drawContext.restore();
-const drawn = createSurfaceFromCanvas(drawCanvas);
+const drawn = createBitmapFromCanvas(drawCanvas);
 addSurface(drawn, 130, 140);
 
 // OpenFL scroll(w/2, 0): shift right by half, exposed area retains original pixels.
-// scrollSurface clears the exposed region instead, so replicate OpenFL behavior manually:
+// scrollBitmap clears the exposed region instead, so replicate OpenFL behavior manually:
 // clone the image, then overwrite the right half with the original left half.
-const scrolled = createSurfaceFromImageResource(image);
-copySurfacePixels(
-  createSurfaceRegion(scrolled, Math.floor(image.width / 2), 0, image.width, image.height),
-  imageRegion,
-);
+const scrolled = captureBitmapFromImageResource(image);
+copyBitmapPixels(createBitmapRegion(scrolled, Math.floor(image.width / 2), 0, image.width, image.height), imageRegion);
 addSurface(scrolled, 240, 140);
 
-const thresholded = createSurfaceFromImageResource(image);
-applySurfaceThreshold(
-  createSurfaceRegion(thresholded, 40, 0, image.width, image.height),
+const thresholded = captureBitmapFromImageResource(image);
+applyBitmapThreshold(
+  createBitmapRegion(thresholded, 40, 0, image.width, image.height),
   imageRegion,
   '>',
   0x00000033,

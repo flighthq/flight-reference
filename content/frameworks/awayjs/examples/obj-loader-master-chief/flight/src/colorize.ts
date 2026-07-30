@@ -1,5 +1,5 @@
 import type { ImageResource } from '@flighthq/sdk';
-import { createImageResourceFromSurface, createSurfaceFromImageResource } from '@flighthq/sdk';
+import { createImageResourceFromBitmap, captureBitmapFromImageResource } from '@flighthq/sdk';
 
 import { createMetallicRoughnessImage } from '../../../_shared/flight/src/pbrConvert';
 
@@ -35,8 +35,8 @@ export function buildRampChannel(stops: ReadonlyArray<ColorStop>, channel: 'r' |
 // with a luminance gradient map: build a 256-entry ramp from color stops and, per pixel, replace it with
 // the ramp color at that pixel's luminance. The one exception is the visor: it's the only region with any
 // chroma in the source (a gold shield in the atlas), so use that chroma as a free mask and send those
-// pixels through a separate orange ramp. createSurfaceFromImageResource gives the editable pixels;
-// createImageResourceFromSurface rasterizes back to a source-backed image the material can upload.
+// pixels through a separate orange ramp. captureBitmapFromImageResource gives the editable pixels;
+// createImageResourceFromBitmap rasterizes back to a source-backed image the material can upload.
 
 // Colorize a grayscale texture through `baseStops` by luminance. Pixels whose source chroma exceeds
 // CHROMA_MASK (only the visor, in this atlas) go through `chromaStops` instead.
@@ -46,7 +46,7 @@ export function colorizeByLuminance(
   baseStops: ReadonlyArray<ColorStop>,
   chromaStops?: ReadonlyArray<ColorStop>,
 ): ImageResource {
-  const surface = createSurfaceFromImageResource(image);
+  const surface = captureBitmapFromImageResource(image);
   const data = surface.data;
   if (data === null) return image;
   const br = buildRampChannel(baseStops, 'r');
@@ -70,7 +70,7 @@ export function colorizeByLuminance(
       data[i + 2] = bb[luma];
     }
   }
-  return createImageResourceFromSurface(surface);
+  return createImageResourceFromBitmap(surface);
 }
 
 export const ARMOR_RAMP: ColorStop[] = [

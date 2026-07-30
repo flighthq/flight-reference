@@ -1,13 +1,13 @@
-import type { ImageResource, Surface } from '@flighthq/sdk';
+import type { ImageResource, Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   createBitmap,
   createDisplayObject,
-  createImageResourceFromSurface,
-  createSurfaceFromImageResource,
+  createImageResourceFromBitmap,
+  captureBitmapFromImageResource,
   loadImageResourceFromUrl,
 } from '@flighthq/sdk';
-import { compareSurface } from '@flighthq/sdk';
+import { compareBitmap } from '@flighthq/sdk';
 
 import { render, scale } from './render';
 
@@ -55,7 +55,7 @@ const [
   loadImageResourceFromUrl(`openfl/images/${SIZE}/error.png`),
 ]);
 
-const sourceSurfaces: Surface[] = sourceImages.map((img) => createSurfaceFromImageResource(img));
+const sourceSurfaces: Bitmap[] = sourceImages.map((img) => captureBitmapFromImageResource(img));
 
 const entries: ImageResource[] = [...sourceImages, indicatorNull, indicatorDisposed];
 const count = entries.length;
@@ -68,7 +68,7 @@ function addImage(image: ImageResource, x: number, y: number): void {
   addNodeChild(root, bmp);
 }
 
-function getSurface(index: number): Surface | null {
+function getSurface(index: number): Bitmap | null {
   return index < sourceSurfaces.length ? sourceSurfaces[index] : null;
 }
 
@@ -122,11 +122,11 @@ for (let row = 0; row < count; row++) {
       continue;
     }
 
-    const diff = compareSurface(rowSurface, colSurface);
+    const diff = compareBitmap(rowSurface, colSurface);
     if (diff === null) {
       addImage(indicator0, x, y);
     } else {
-      addImage(createImageResourceFromSurface(diff), x, y);
+      addImage(createImageResourceFromBitmap(diff), x, y);
     }
   }
 }

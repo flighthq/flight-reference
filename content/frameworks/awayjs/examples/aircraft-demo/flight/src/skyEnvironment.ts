@@ -3,10 +3,10 @@ import {
   bakeGlEnvironmentIbl,
   createCubeTexture,
   createEnvironment,
-  createSurfaceFromImageResource,
-  createSurfaceRegion,
-  flipSurfaceHorizontal,
-  flipSurfaceVertical,
+  captureBitmapFromImageResource,
+  createBitmapRegion,
+  flipBitmapHorizontal,
+  flipBitmapVertical,
   loadImageResourceFromUrl,
   setCubeTextureFace,
 } from '@flighthq/sdk';
@@ -29,12 +29,12 @@ export async function createSkyEnvironment(glState: GlRenderState): Promise<Envi
   const cubeTexture: CubeTexture = createCubeTexture();
   for (let i = 0; i < 6; i++) {
     const image = cubeImages[i];
-    const surface = createSurfaceFromImageResource(image);
-    const region = createSurfaceRegion(surface);
+    const surface = captureBitmapFromImageResource(image);
+    const region = createBitmapRegion(surface);
     if (i === 2 || i === 3) {
-      flipSurfaceVertical(region, region);
+      flipBitmapVertical(region, region);
     } else {
-      flipSurfaceHorizontal(region, region);
+      flipBitmapHorizontal(region, region);
     }
     setCubeTextureFace(cubeTexture, i, surface);
   }

@@ -2,13 +2,13 @@ import type { Mesh, PerspectiveProjection, Node3D, StandardPbrMaterial } from '@
 import {
   addNodeChild,
   bakeGlEnvironmentIbl,
-  buildSurfaceGradientRamp,
+  buildBitmapGradientRamp,
   computeMeshGeometryNormals,
   createCubeTexture,
   createEmissiveMaterial,
   createEnvironment,
   createFxaaEffect,
-  createImageResourceFromSurface,
+  createImageResourceFromBitmap,
   createMesh,
   createScene3D,
   createScene3DFromObj,
@@ -16,14 +16,14 @@ import {
   createNode3D,
   createSphereMeshGeometry,
   createStandardPbrMaterial,
-  createSurface,
-  createSurfaceRegion,
+  createBitmap,
+  createBitmapRegion,
   createTexture,
   createTilingSampler,
   createToneMapEffect,
   createVector3,
   DEG_TO_RAD,
-  fillSurfaceLinearGradient,
+  fillBitmapLinearGradient,
   createQuaternion,
   getNodeChildren,
   loadImageResourceFromUrl,
@@ -55,17 +55,17 @@ const camera = createCameraFromAway({ y: 20, z: -50, targetY: 20, fov: 60, near:
 
 // Sky: AwayJS just clears to flat 0xcec8c6. Instead, build a vertical-gradient dome — a large emissive
 // (self-lit, unaffected by scene lights) sphere seen from the inside (doubleSided). A tall 1-px-wide
-// Surface is filled with a linear gradient ramp (warm hazy horizon -> cooler zenith) and mapped up the
+// Bitmap is filled with a linear gradient ramp (warm hazy horizon -> cooler zenith) and mapped up the
 // sphere's latitude, so the horizon sits at the equator and the zenith at the top pole. Emissive values
 // stay < 1 so the ACES pass keeps them in range.
 const SKY_STOPS = { colors: [0x3f74c4, 0xa9c6e6, 0xead9b8], alphas: [255, 255, 255], ratios: [0, 132, 255] };
 const skyRamp = new Uint8ClampedArray(256 * 4);
-buildSurfaceGradientRamp(skyRamp, SKY_STOPS.colors, SKY_STOPS.alphas, SKY_STOPS.ratios);
-const skySurface = createSurface(1, 256);
-fillSurfaceLinearGradient(createSurfaceRegion(skySurface), skyRamp, 0, 0, 0, 256);
+buildBitmapGradientRamp(skyRamp, SKY_STOPS.colors, SKY_STOPS.alphas, SKY_STOPS.ratios);
+const skySurface = createBitmap(1, 256);
+fillBitmapLinearGradient(createBitmapRegion(skySurface), skyRamp, 0, 0, 0, 256);
 const skyMaterial = createEmissiveMaterial({
   emissive: 0xffffffff,
-  emissiveMap: createTexture({ storage: { dimension: '2d', image: createImageResourceFromSurface(skySurface) } }),
+  emissiveMap: createTexture({ storage: { dimension: '2d', image: createImageResourceFromBitmap(skySurface) } }),
   emissiveStrength: 1.35,
 });
 skyMaterial.doubleSided = true;
@@ -82,7 +82,7 @@ const GROUND_REFLECT = 0x9a6a42ff;
 const envFaces = [HORIZON_REFLECT, HORIZON_REFLECT, SKY_REFLECT, GROUND_REFLECT, HORIZON_REFLECT, HORIZON_REFLECT];
 const envCube = createCubeTexture();
 for (let i = 0; i < 6; i++) {
-  setCubeTextureFace(envCube, i, createImageResourceFromSurface(createSurface(8, 8, envFaces[i])));
+  setCubeTextureFace(envCube, i, createImageResourceFromBitmap(createBitmap(8, 8, envFaces[i])));
 }
 const environment = createEnvironment({ environment: envCube, intensity: 0.55 });
 bakeGlEnvironmentIbl(ctx.state, environment);

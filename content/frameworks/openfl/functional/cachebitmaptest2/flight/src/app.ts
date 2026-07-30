@@ -5,18 +5,16 @@ import {
   appendShapeRectangle,
   BitmapKind,
   createBitmap,
-  createColorTransform,
-  createColorTransformAdjustment,
   createDisplayObject,
   createRichText,
   createShape,
-  enableGlColorAdjustment,
+  registerGlColorAdjustmentMaterialFeature,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   RichTextKind,
   ShapeKind,
-  setNode2DColorAdjustments,
+  setNodeColorAdjustmentsTint,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -69,8 +67,8 @@ bmp3.x = pos(250);
 bmp3.scaleX = pos(1.0);
 bmp3.scaleY = pos(1.0);
 if (target.kind === 'webgl') {
-  enableGlColorAdjustment(target.state);
-  setNode2DColorAdjustments(bmp3, [createColorTransformAdjustment(createColorTransform({ greenMultiplier: 0 }))]);
+  registerGlColorAdjustmentMaterialFeature(target.state);
+  setNodeColorAdjustmentsTint(bmp3, 0xff00ffff);
 }
 addNodeChild(posters, bmp3);
 

@@ -1,8 +1,6 @@
 import {
   addNodeChild,
-  BitmapKind,
   copyQuaternion,
-  createBitmap,
   createBoxMeshGeometry,
   createCamera3D,
   createDisplayObject,
@@ -13,17 +11,17 @@ import {
   createMesh,
   createPerspectiveProjection,
   createQuaternion,
-  createRenderTargetNode2D,
+  createRenderTexture,
   createScene3D,
   createScene3DLights,
+  createSprite,
   createTexture,
   createUnlitMaterial,
   createVector3,
-  defaultGlBitmapRenderer,
+  defaultGlSpriteRenderer,
   defaultGlTextLabelRenderer,
   drawGlScene3D,
   enableGlBlendModeSupport,
-  enableGlRenderTargetNode2D,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   multiplyQuaternion,
@@ -33,11 +31,13 @@ import {
   registerUnlitGlMaterial,
   renderGlBackground,
   renderGlScene2D,
-  renderIntoGlRenderTargetNode2D,
+  renderIntoGlRenderTexture,
   setCamera3DViewMatrix4FromLookAt,
   setMeshGeometrySubsets,
   setQuaternionFromAxisAngle,
+  setSpriteTexture,
   setVector3,
+  SpriteKind,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -73,18 +73,17 @@ const state = createGlRenderState(canvas, {
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 registerStandardGlMaterial(state);
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 enableGlBlendModeSupport(state);
-enableGlRenderTargetNode2D(state);
 registerUnlitGlMaterial(state);
 
 const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
-const bgBmp = createBitmap();
-bgBmp.data.image = bgImage;
-addNodeChild(root, bgBmp);
+const bgSprite = createSprite();
+setSpriteTexture(bgSprite, createTexture({ storage: { dimension: '2d', image: bgImage } }));
+addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
@@ -109,13 +108,15 @@ const faceTextures = FaceColors.map(([r, g, b]) => {
   return createTexture({ storage: { dimension: '2d', image }, flipY: true });
 });
 
-// The 3D cube renders into an offscreen target sized in device pixels; the node is scaled back down
-// so the 2D walk's pixelRatio transform does not apply the ratio a second time.
-const cubeLayer = createRenderTargetNode2D({
+// The 3D cube renders into an offscreen texture sized in device pixels; the sprite carrying it is
+// scaled back down so the 2D walk's pixelRatio transform does not apply the ratio a second time.
+const cubeTexture = createRenderTexture({
   width: Math.round(GameWidth * pixelRatio),
   height: Math.round(GameHeight * pixelRatio),
-  depth: true,
+  depth: 'depth-stencil',
 });
+const cubeLayer = createSprite();
+setSpriteTexture(cubeLayer, cubeTexture);
 cubeLayer.scaleX = 1 / pixelRatio;
 cubeLayer.scaleY = 1 / pixelRatio;
 invalidateNodeLocalTransform(cubeLayer);
@@ -195,7 +196,7 @@ function renderCube(now: number): void {
   copyQuaternion(cube.rotation, quatTemp);
   invalidateNodeLocalTransform(cube);
 
-  renderIntoGlRenderTargetNode2D(state, cubeLayer, (target) => {
+  renderIntoGlRenderTexture(state, cubeTexture, (target) => {
     drawGlScene3D(target, scene3d.root, camera, lights);
   });
 }

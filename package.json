@@ -40,7 +40,7 @@
     "@awayjs/scene": "~0.12.80",
     "@awayjs/stage": "~0.10.28",
     "@awayjs/view": "~0.5.19",
-    "@flighthq/sdk": "^0.3.0-next.906.07cea63",
+    "@flighthq/sdk": "^0.3.0-next.1021.f5f1ee0",
     "@types/stats.js": "^0.17.4",
     "actuate": "^1.9.0",
     "openfl": "^9.4.1",

@@ -27,6 +27,8 @@ import {
   multiplyQuaternion,
   prepareScene2DRender,
   registerRenderer,
+  registerGlImageTextureResolver,
+  registerGlRenderTextureResolver,
   registerStandardGlMaterial,
   registerUnlitGlMaterial,
   renderGlBackground,
@@ -75,6 +77,10 @@ state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 registerStandardGlMaterial(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
+// Sprites resolve their texture through the backing-kind registry; without these the background
+// sprite and the cube's render texture both resolve to null and draw nothing.
+registerGlImageTextureResolver(state);
+registerGlRenderTextureResolver(state);
 enableGlBlendModeSupport(state);
 registerUnlitGlMaterial(state);
 

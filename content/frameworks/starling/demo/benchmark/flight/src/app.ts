@@ -44,7 +44,7 @@ import {
   updateBitmapText,
 } from '@flighthq/sdk';
 
-import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src/menuButton';
+import { BUTTON_REGIONS_1X, createMenuButton } from './menuButton';
 
 const GameWidth = 320;
 const GameHeight = 480;

@@ -6,6 +6,7 @@ import {
   createGlRenderState,
   drawGlScene3D,
   endGlRenderEffectPipeline,
+  registerStandardGlTextureResolvers,
   registerUnlitGlMaterial,
   renderGlBackground,
 } from '@flighthq/sdk';
@@ -30,6 +31,7 @@ const state = createGlRenderState(canvas, {
   pixelRatio,
 });
 
+registerStandardGlTextureResolvers(state);
 registerUnlitGlMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {

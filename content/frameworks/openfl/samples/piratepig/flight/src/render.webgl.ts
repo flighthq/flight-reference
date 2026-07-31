@@ -91,7 +91,9 @@ export function applyBackgroundBlur(node: Shape): () => void {
   getShapeBounds(bounds, node);
   const width = Math.ceil(bounds.width) + pad * 2;
   const height = Math.ceil(bounds.height) + pad * 2;
-  const descriptor = { width, height };
+  // Offscreen passes fall back to the screen state's background color when no clear color is
+  // specified. This source must start transparent so the panel's 40% alpha survives the blur.
+  const descriptor = { width, height, clearColors: [0x00000000] };
 
   const source = createRenderTexture(descriptor);
   const result = createRenderTexture(descriptor);

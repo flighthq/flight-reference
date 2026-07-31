@@ -1,5 +1,8 @@
+import type { DisplayObject } from '@flighthq/sdk';
 import {
   addNodeChild,
+  attachPointerInput,
+  connectInputToInteraction,
   copyQuaternion,
   createBoxMeshGeometry,
   createCamera3D,
@@ -7,6 +10,8 @@ import {
   createGlCanvasElement,
   createGlRenderState,
   createImageResourceFromCanvas,
+  createInputManager,
+  createInteractionManager,
   createMatrix,
   createMesh,
   createPerspectiveProjection,
@@ -26,6 +31,7 @@ import {
   loadImageResourceFromUrl,
   multiplyQuaternion,
   prepareScene2DRender,
+  registerDefaultHitTests,
   registerRenderer,
   registerGlImageTextureResolver,
   registerGlRenderTextureResolver,
@@ -120,6 +126,9 @@ const cubeTexture = createRenderTexture({
   width: Math.round(GameWidth * pixelRatio),
   height: Math.round(GameHeight * pixelRatio),
   depth: 'depth-stencil',
+  // Clear to transparent, not opaque black: this texture is composited over the background sprite
+  // by the 2D walk, so an opaque clear would hide the scene behind the cube.
+  clearColors: [0x00000000],
 });
 const cubeLayer = createSprite();
 setSpriteTexture(cubeLayer, cubeTexture);
@@ -177,6 +186,12 @@ const backBtn = createMenuButton({
 backBtn.root.x = GameWidth / 2 - 88 / 2;
 backBtn.root.y = GameHeight - 50 + 4;
 addNodeChild(root, backBtn.root);
+
+registerDefaultHitTests();
+const input = createInputManager();
+attachPointerInput(input, canvas);
+const interaction = createInteractionManager<DisplayObject>(root);
+connectInputToInteraction(input, interaction, 1);
 
 const xAxis = createVector3(1, 0, 0);
 const yAxis = createVector3(0, 1, 0);

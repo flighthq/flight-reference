@@ -125,7 +125,7 @@ for (let i = 0; i < numSpritesV; i++) {
     sprite.pivotY = logoPivotY;
     invalidateNodeLocalTransform(sprite);
 
-    setNode2DClip(sprite, createClipRegionFromCircle(0, 0, maskRadius));
+    setNode2DClip(sprite, createClipRegionFromCircle(logoPivotX, logoPivotY, maskRadius));
 
     animShapes.push(sprite);
     animSpeeds.push(0);

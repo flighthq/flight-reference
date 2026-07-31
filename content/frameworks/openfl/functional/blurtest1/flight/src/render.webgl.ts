@@ -69,7 +69,9 @@ export function applyBlurEffects(list: { node: Sprite; filter: BlurEffect }[]): 
     if (texture === null) continue;
     const w = Math.ceil(getTextureWidth(texture)) + pad * 2;
     const h = Math.ceil(getTextureHeight(texture)) + pad * 2;
-    const descriptor = { width: w, height: h };
+    // Clear to transparent: the blur derives its falloff from the source alpha, and an opaque clear
+    // would smear the clear colour across the whole padded rect instead of the icon.
+    const descriptor = { width: w, height: h, clearColors: [0x00000000] };
 
     const source = createRenderTexture(descriptor);
     bakeSource(source, node, pad);

@@ -3,8 +3,10 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  BitmapKind,
-  createBitmap,
+  createSprite,
+  createTexture,
+  setSpriteTexture,
+  SpriteKind,
   createClipRegionFromRectangle,
   createDisplayObject,
   createShape,
@@ -19,7 +21,7 @@ const { height, render, width } = await createFunctionalTarget({
   height: 600,
   background: 0xffffffff,
   clip: true,
-  kinds: [BitmapKind, ShapeKind],
+  kinds: [SpriteKind, ShapeKind],
 });
 
 const root = createDisplayObject();
@@ -48,25 +50,22 @@ for (let i = 0; i < 4; i++) {
   const by = i < 2 ? ih / 2 : H / 2 + ih / 2;
   const { dx, dy } = maskOffsets[i];
 
-  const bgBitmap = createBitmap();
-  bgBitmap.data.image = image;
-  bgBitmap.data.smoothing = true;
+  const bgBitmap = createSprite();
+  setSpriteTexture(bgBitmap, createTexture({ source: image }));
   bgBitmap.alpha = 0.3;
   bgBitmap.x = bx;
   bgBitmap.y = by;
   addNodeChild(root, bgBitmap);
 
-  const bgMask = createBitmap();
-  bgMask.data.image = image;
-  bgMask.data.smoothing = true;
+  const bgMask = createSprite();
+  setSpriteTexture(bgMask, createTexture({ source: image }));
   bgMask.alpha = 0.3;
   bgMask.x = bx + dx;
   bgMask.y = by + dy;
   addNodeChild(root, bgMask);
 
-  const bmp = createBitmap();
-  bmp.data.image = image;
-  bmp.data.smoothing = true;
+  const bmp = createSprite();
+  setSpriteTexture(bmp, createTexture({ source: image }));
   bmp.x = bx;
   bmp.y = by;
   addNodeChild(root, bmp);
@@ -76,16 +75,14 @@ for (let i = 0; i < 4; i++) {
 
 const alphaX = 2 * (W / 3) + W / 6 - iw / 2;
 
-const alphaTop = createBitmap();
-alphaTop.data.image = image;
-alphaTop.data.smoothing = true;
+const alphaTop = createSprite();
+setSpriteTexture(alphaTop, createTexture({ source: image }));
 alphaTop.x = alphaX;
 alphaTop.y = ih / 2;
 addNodeChild(root, alphaTop);
 
-const alphaBottom = createBitmap();
-alphaBottom.data.image = image;
-alphaBottom.data.smoothing = true;
+const alphaBottom = createSprite();
+setSpriteTexture(alphaBottom, createTexture({ source: image }));
 alphaBottom.x = alphaX;
 alphaBottom.y = H / 2 + ih / 2;
 addNodeChild(root, alphaBottom);

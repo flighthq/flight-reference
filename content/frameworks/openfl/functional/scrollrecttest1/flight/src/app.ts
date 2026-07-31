@@ -5,8 +5,10 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  BitmapKind,
-  createBitmap,
+  createSprite,
+  createTexture,
+  setSpriteTexture,
+  SpriteKind,
   createClipRegionFromRectangle,
   createDisplayObject,
   createRichText,
@@ -25,7 +27,7 @@ const { height, render, width } = await createFunctionalTarget({
   height: 720,
   background: 0xff000000,
   clip: true,
-  kinds: [BitmapKind, RichTextKind, ShapeKind],
+  kinds: [SpriteKind, RichTextKind, ShapeKind],
 });
 
 const FRAMES_PER_ROTATION = 200;
@@ -50,9 +52,8 @@ owlClip.y = 630;
 
 const owlContent = createDisplayObject();
 owlContent.y = -300;
-const owlBitmap = createBitmap();
-owlBitmap.data.image = owlImg;
-owlBitmap.data.smoothing = true;
+const owlBitmap = createSprite();
+setSpriteTexture(owlBitmap, createTexture({ source: owlImg }));
 addNodeChild(owlContent, owlBitmap);
 addNodeChild(owlClip, owlContent);
 

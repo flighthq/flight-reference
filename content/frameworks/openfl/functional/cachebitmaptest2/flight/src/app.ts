@@ -3,8 +3,10 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  BitmapKind,
-  createBitmap,
+  createSprite,
+  createTexture,
+  setSpriteTexture,
+  SpriteKind,
   createDisplayObject,
   createRichText,
   createShape,
@@ -22,7 +24,7 @@ const target = await createFunctionalTarget({
   width: 800,
   height: 600,
   background: 0xff000000,
-  kinds: [BitmapKind, RichTextKind, ShapeKind],
+  kinds: [SpriteKind, RichTextKind, ShapeKind],
 });
 const { height, render, width } = target;
 
@@ -44,25 +46,22 @@ const image = await loadImageResourceFromUrl('openfl/images/openfl_icon.png');
 
 const posters = createDisplayObject();
 
-const bmp1 = createBitmap();
-bmp1.data.image = image;
-bmp1.data.smoothing = true;
+const bmp1 = createSprite();
+setSpriteTexture(bmp1, createTexture({ source: image }));
 bmp1.scaleX = pos(1.0);
 bmp1.scaleY = pos(1.0);
 addNodeChild(posters, bmp1);
 
-const bmp2 = createBitmap();
-bmp2.data.image = image;
-bmp2.data.smoothing = true;
+const bmp2 = createSprite();
+setSpriteTexture(bmp2, createTexture({ source: image }));
 bmp2.alpha = 0.5;
 bmp2.x = pos(125);
 bmp2.scaleX = pos(1.0);
 bmp2.scaleY = pos(1.0);
 addNodeChild(posters, bmp2);
 
-const bmp3 = createBitmap();
-bmp3.data.image = image;
-bmp3.data.smoothing = true;
+const bmp3 = createSprite();
+setSpriteTexture(bmp3, createTexture({ source: image }));
 bmp3.x = pos(250);
 bmp3.scaleX = pos(1.0);
 bmp3.scaleY = pos(1.0);

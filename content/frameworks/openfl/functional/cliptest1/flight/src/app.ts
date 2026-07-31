@@ -5,8 +5,10 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  BitmapKind,
-  createBitmap,
+  createSprite,
+  createTexture,
+  setSpriteTexture,
+  SpriteKind,
   createClipRegionFromRectangle,
   createDisplayObject,
   createRichText,
@@ -23,7 +25,7 @@ const { height, render, width } = await createFunctionalTarget({
   height: 600,
   background: 0xff000000,
   clip: true,
-  kinds: [BitmapKind, RichTextKind, ShapeKind],
+  kinds: [SpriteKind, RichTextKind, ShapeKind],
 });
 
 const root = createDisplayObject();
@@ -43,9 +45,8 @@ const ih = image.height;
 
 // Background ghost bitmaps - two rows of 4
 for (let i = 0; i < 8; i++) {
-  const ghost = createBitmap();
-  ghost.data.image = image;
-  ghost.data.smoothing = true;
+  const ghost = createSprite();
+  setSpriteTexture(ghost, createTexture({ source: image }));
   ghost.x = (i % 4) * (W / 4) + W / 8 - iw / 2;
   ghost.y = i < 4 ? ih / 2 : H / 2 + ih / 2;
   ghost.alpha = 0.3;
@@ -63,9 +64,8 @@ for (let i = 0; i < 4; i++) {
     container.y = bmpY;
     addNodeChild(root, container);
 
-    const bmp = createBitmap();
-    bmp.data.image = image;
-    bmp.data.smoothing = true;
+    const bmp = createSprite();
+    setSpriteTexture(bmp, createTexture({ source: image }));
     addNodeChild(container, bmp);
 
     if (i === 2) {
@@ -78,9 +78,8 @@ for (let i = 0; i < 4; i++) {
       bmp.y = -H * 2;
     }
   } else {
-    const bmp = createBitmap();
-    bmp.data.image = image;
-    bmp.data.smoothing = true;
+    const bmp = createSprite();
+    setSpriteTexture(bmp, createTexture({ source: image }));
     bmp.x = bmpX;
     bmp.y = bmpY;
     addNodeChild(root, bmp);

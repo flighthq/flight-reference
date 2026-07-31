@@ -4,9 +4,11 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  BitmapKind,
+  createSprite,
+  createTexture,
+  setSpriteTexture,
+  SpriteKind,
   BlendMode,
-  createBitmap,
   createDisplayObject,
   createImageResourceFromCanvas,
   createRichText,
@@ -15,11 +17,7 @@ import {
   RichTextKind,
   ShapeKind,
 } from '@flighthq/sdk';
-import type {
-  AdvancedBlendMode as AdvancedBlendModeType,
-  BlendMode as BlendModeType,
-  ImageResource,
-} from '@flighthq/sdk';
+import type { AdvancedBlendMode as AdvancedBlendModeType, BlendMode as BlendModeType, Image } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
 type FixedEntry = { kind: 'fixed'; mode: BlendModeType; name: string };
@@ -51,7 +49,7 @@ const { height, render, width } = await createFunctionalTarget({
   height: 600,
   background: 0xffffffff,
   blend: true,
-  kinds: [BitmapKind, RichTextKind, ShapeKind],
+  kinds: [SpriteKind, RichTextKind, ShapeKind],
 });
 
 const root = createDisplayObject();
@@ -70,11 +68,7 @@ const [squareImg, circleImg] = await Promise.all([
   loadImageResourceFromUrl('openfl/images/BlendCircle.png'),
 ]);
 
-function compositeAdvanced(
-  square: Readonly<ImageResource>,
-  circle: Readonly<ImageResource>,
-  cssOp: GlobalCompositeOperation,
-): ImageResource {
+function compositeAdvanced(square: Readonly<Image>, circle: Readonly<Image>, cssOp: GlobalCompositeOperation): Image {
   const cdx = square.width / 2 - 10;
   const cdy = square.height / 2 - 10;
   const cw = Math.max(square.width, cdx + circle.width);
@@ -121,22 +115,19 @@ for (let i = 0; i < BLEND_ENTRIES.length; i++) {
   group.y = cy - (naturalH * imgScale) / 2;
 
   if (entry.kind === 'fixed') {
-    const square = createBitmap();
-    square.data.image = squareImg;
-    square.data.smoothing = true;
+    const square = createSprite();
+    setSpriteTexture(square, createTexture({ source: squareImg }));
     addNodeChild(group, square);
 
-    const circle = createBitmap();
-    circle.data.image = circleImg;
-    circle.data.smoothing = true;
+    const circle = createSprite();
+    setSpriteTexture(circle, createTexture({ source: circleImg }));
     circle.x = dx;
     circle.y = dy;
     circle.blendMode = entry.mode;
     addNodeChild(group, circle);
   } else {
-    const composited = createBitmap();
-    composited.data.image = compositeAdvanced(squareImg, circleImg, entry.cssOp);
-    composited.data.smoothing = true;
+    const composited = createSprite();
+    setSpriteTexture(composited, createTexture({ source: compositeAdvanced(squareImg, circleImg, entry.cssOp) }));
     addNodeChild(group, composited);
   }
 

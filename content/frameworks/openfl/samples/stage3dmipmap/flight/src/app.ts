@@ -30,7 +30,7 @@ function updateVelocity(velocity: number, acceleration: number, max: number): nu
 }
 
 const image = await loadImageResourceFromUrl('openfl/images/checkers.png');
-const texture = createTexture({ storage: { dimension: '2d', image } });
+const texture = createTexture({ source: image });
 const scene = createScene3D();
 const material = createUnlitMaterial({ baseColor: 0xffffffff, baseColorMap: texture });
 material.doubleSided = true;

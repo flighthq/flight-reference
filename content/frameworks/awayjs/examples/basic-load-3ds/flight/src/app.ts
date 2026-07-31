@@ -120,10 +120,10 @@ const [modelBuffer, antImage, sandImage] = await Promise.all([
   loadImageResourceFromUrl('awayjs/CoarseRedSand.jpg'),
 ]);
 
-groundMaterial.standard.baseColorMap = createTexture({ storage: { dimension: '2d', image: sandImage } });
+groundMaterial.standard.baseColorMap = createTexture({ source: sandImage });
 
 const modelScene = createScene3DFrom3ds(new Uint8Array(modelBuffer));
-const antTexture = createTexture({ storage: { dimension: '2d', image: antImage } });
+const antTexture = createTexture({ source: antImage });
 
 const antMaterial = createAwayMatteMaterial(0xffffffff);
 antMaterial.baseColorMap = antTexture;

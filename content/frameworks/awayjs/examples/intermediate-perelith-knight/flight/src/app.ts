@@ -96,7 +96,7 @@ const floorMaterial = createBlinnPhongMaterial({
 floorMaterial.doubleSided = true;
 
 const floorImage = await loadImageResourceFromUrl('awayjs/floor_diffuse.jpg');
-const floorTex = createTexture({ storage: { dimension: '2d', image: floorImage }, sampler: createTilingSampler() });
+const floorTex = createTexture({ source: floorImage, sampler: createTilingSampler() });
 setTextureUvScale(floorTex, 5, 5);
 floorMaterial.diffuseMap = floorTex;
 

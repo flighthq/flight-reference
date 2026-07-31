@@ -49,7 +49,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
 const lights = createScene3DLights({ ambient, directional });
 
 const image = await loadImageResourceFromUrl('awayjs/spacy_texture.png');
-const texture = createTexture({ storage: { dimension: '2d', image } });
+const texture = createTexture({ source: image });
 
 const material = createStandardPbrMaterial({
   baseColor: 0xffffffff,

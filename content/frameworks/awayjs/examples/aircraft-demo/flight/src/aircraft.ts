@@ -105,7 +105,7 @@ export async function createAircraft(): Promise<Aircraft> {
         uri,
         createStandardPbrMaterial({
           baseColor: 0xffffffff,
-          baseColorMap: createTexture({ storage: { dimension: '2d', image } }),
+          baseColorMap: createTexture({ source: image }),
           metallic: 0.7,
           roughness: 0.2,
         }),

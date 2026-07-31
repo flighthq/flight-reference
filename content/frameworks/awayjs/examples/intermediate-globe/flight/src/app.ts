@@ -155,9 +155,9 @@ if (nightCtx && nightSource.source) {
   nightImage = createImageResourceFromCanvas(nightCanvas);
 }
 earthMaterial.textures = {
-  u_dayTex: createTexture({ storage: { dimension: '2d', image: dayImage } }),
-  u_nightTex: createTexture({ storage: { dimension: '2d', image: nightImage } }),
-  u_specTex: createTexture({ storage: { dimension: '2d', image: specImage } }),
+  u_dayTex: createTexture({ source: dayImage }),
+  u_nightTex: createTexture({ source: nightImage }),
+  u_specTex: createTexture({ source: specImage }),
 };
 
 // Space starfield skybox — the AwayJS space_texture.cube manifest's six faces into a cube map.

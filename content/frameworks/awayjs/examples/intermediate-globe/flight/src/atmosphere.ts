@@ -32,7 +32,7 @@ export function createAtmosphere(): AtmosphereBillboard {
   }
   const material = createUnlitMaterial({ baseColor: 0xffffffff });
   material.baseColorMap = createTexture({
-    storage: { dimension: '2d', image: createImageResourceFromCanvas(haloCanvas) },
+    source: createImageResourceFromCanvas(haloCanvas),
   });
   material.alphaMode = 'blend';
 
@@ -72,7 +72,7 @@ export async function loadCloudTexture(): Promise<ShadedMaterial> {
     }
     cloudCtx.putImageData(cloudData, 0, 0);
     cloudMaterial.diffuseMap = createTexture({
-      storage: { dimension: '2d', image: createImageResourceFromCanvas(cloudCanvas) },
+      source: createImageResourceFromCanvas(cloudCanvas),
     });
   }
 

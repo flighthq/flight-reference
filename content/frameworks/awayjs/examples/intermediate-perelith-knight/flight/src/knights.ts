@@ -39,7 +39,7 @@ export async function loadKnights(scene: Readonly<Scene3D>): Promise<KnightsResu
   ]);
 
   for (let i = 0; i < 4; i++) {
-    knightMaterials[i]!.diffuseMap = createTexture({ storage: { dimension: '2d', image: knightImages[i]! } });
+    knightMaterials[i]!.diffuseMap = createTexture({ source: knightImages[i]! });
   }
 
   const md2Buffer = await fetch('awayjs/pknight.md2').then((r) => r.arrayBuffer());

@@ -88,7 +88,7 @@ const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgSprite = createSprite();
-setSpriteTexture(bgSprite, createTexture({ storage: { dimension: '2d', image: bgImage } }));
+setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
 addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
@@ -111,7 +111,7 @@ const faceTextures = FaceColors.map(([r, g, b]) => {
   ctx.globalCompositeOperation = 'destination-in';
   ctx.drawImage(atlasImg, LogoX, LogoY, LogoSize, LogoSize, 0, 0, LogoSize, LogoSize);
   const image = createImageResourceFromCanvas(c);
-  return createTexture({ storage: { dimension: '2d', image }, flipY: true });
+  return createTexture({ source: image, flipY: true });
 });
 
 // The 3D cube renders into an offscreen texture sized in device pixels; the sprite carrying it is

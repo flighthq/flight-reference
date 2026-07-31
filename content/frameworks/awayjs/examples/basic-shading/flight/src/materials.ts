@@ -68,7 +68,7 @@ export function applyTextures(
     jobs.push(
       loadImageResourceFromUrl(url).then((image) => {
         const tex = createTexture({
-          storage: { dimension: '2d', image },
+          source: image,
           sampler: uvScale ? tilingSampler : createSampler(),
         });
         if (uvScale) setTextureUvScale(tex, uvScale.x, uvScale.y);
@@ -83,7 +83,7 @@ export function applyTextures(
         // Normal maps are data, not color — they must stay linear (an sRGB decode would bend the
         // packed normals and flatten/skew the surface relief).
         const tex = createTexture({
-          storage: { dimension: '2d', image },
+          source: image,
           colorSpace: 'linear',
           sampler: uvScale ? tilingSampler : createSampler(),
         });
@@ -101,7 +101,7 @@ export async function createMetalRoughnessFromSpecular(url: string): Promise<Tex
     roughness: Math.max(0.12, 1 - r * 1.7),
     metallic: r,
   }));
-  return createTexture({ storage: { dimension: '2d', image: mrImage }, colorSpace: 'linear' });
+  return createTexture({ source: mrImage, colorSpace: 'linear' });
 }
 
 export async function loadSceneTextures(materials: SceneMaterials, tilingSampler: Sampler): Promise<void> {
@@ -109,7 +109,7 @@ export async function loadSceneTextures(materials: SceneMaterials, tilingSampler
 
   const torusWeaveNormalImage = await loadImageResourceFromUrl('awayjs/weave_normal.jpg');
   const torusNormalTex = createTexture({
-    storage: { dimension: '2d', image: torusWeaveNormalImage },
+    source: torusWeaveNormalImage,
     colorSpace: 'linear',
     sampler: tilingSampler,
   });
@@ -125,7 +125,7 @@ export async function loadSceneTextures(materials: SceneMaterials, tilingSampler
     metallic: 0,
   }));
   torusMaterial.metallicRoughnessMap = createTexture({
-    storage: { dimension: '2d', image: torusMrImage },
+    source: torusMrImage,
     colorSpace: 'linear',
     sampler: tilingSampler,
   });
@@ -167,7 +167,7 @@ export async function loadSceneTextures(materials: SceneMaterials, tilingSampler
       cubeMaterial.metallicRoughnessMap = tex;
     }),
     loadImageResourceFromUrl('awayjs/weave_diffuse.jpg').then((image) => {
-      const tex = createTexture({ storage: { dimension: '2d', image }, sampler: tilingSampler });
+      const tex = createTexture({ source: image, sampler: tilingSampler });
       torusMaterial.baseColorMap = tex;
     }),
   ]);

@@ -1,10 +1,8 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  BitmapKind,
   createGlCanvasElement,
   createGlRenderState,
   createMatrix,
-  defaultGlBitmapRenderer,
   defaultGlParticleEmitter2DRenderer,
   defaultGlQuadBatchRenderer,
   defaultGlRichTextRenderer,
@@ -14,7 +12,6 @@ import {
   defaultGlSpriteRenderer,
   defaultGlTextLabelRenderer,
   defaultGlTilemapRenderer,
-  defaultGlVideoRenderer,
   enableGlBlendModeSupport,
   enableGlClipSupport,
   enableGlRenderCache,
@@ -24,6 +21,7 @@ import {
   registerStandardGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
+  registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
@@ -32,7 +30,6 @@ import {
   SpriteKind,
   TextLabelKind,
   TilemapKind,
-  VideoKind,
 } from '@flighthq/sdk';
 
 import type { FunctionalGlTarget, FunctionalTargetOptions } from './target';
@@ -59,12 +56,13 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
   registerStandardGlMaterial(state);
+  // Sprites and other textured nodes resolve their texture through the backing-kind registry;
+  // without a resolver the lookup returns null and the node renders nothing.
+  registerStandardGlTextureResolvers(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
       registerGlShapeCommands(defaultGlShapeCommands);
-    } else if (kind === BitmapKind) {
-      registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
     } else if (kind === TextLabelKind) {
@@ -80,8 +78,6 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultGlScale9ShapeRenderer);
       registerGlShapeCommands(defaultGlShapeCommands);
-    } else if (kind === VideoKind) {
-      registerRenderer(state, VideoKind, defaultGlVideoRenderer);
     }
   }
 

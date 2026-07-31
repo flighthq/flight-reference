@@ -1,10 +1,8 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  BitmapKind,
   createMatrix,
   createWgpuCanvasElement,
   createWgpuRenderState,
-  defaultWgpuBitmapRenderer,
   defaultWgpuParticleEmitter2DRenderer,
   defaultWgpuQuadBatchRenderer,
   defaultWgpuRichTextRenderer,
@@ -14,7 +12,6 @@ import {
   defaultWgpuSpriteRenderer,
   defaultWgpuTextLabelRenderer,
   defaultWgpuTilemapRenderer,
-  defaultWgpuVideoRenderer,
   enableWgpuBlendModeSupport,
   enableWgpuClipSupport,
   enableWgpuFrameCapture,
@@ -24,6 +21,9 @@ import {
   QuadBatchKind,
   registerStandardWgpuMaterial,
   registerRenderer,
+  registerWgpuBitmapTextureResolver,
+  registerWgpuImageTextureResolver,
+  registerWgpuRenderTextureResolver,
   registerWgpuShapeCommands,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -34,7 +34,6 @@ import {
   submitWgpuRenderPass,
   TextLabelKind,
   TilemapKind,
-  VideoKind,
 } from '@flighthq/sdk';
 
 import type { FunctionalTargetOptions, FunctionalWgpuTarget } from './target';
@@ -59,12 +58,15 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   // Frame capture lets the verifier read the rendered frame back from the GPU; canvas presentation is
   // unavailable on the headless/software adapter, so this is the only path to the pixels.
   enableWgpuFrameCapture(state);
+  // Sprites and other textured nodes resolve their texture through the backing-kind registry;
+  // without a resolver the lookup returns null and the node renders nothing.
+  registerWgpuBitmapTextureResolver(state);
+  registerWgpuImageTextureResolver(state);
+  registerWgpuRenderTextureResolver(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
       registerWgpuShapeCommands(defaultWgpuShapeCommands);
-    } else if (kind === BitmapKind) {
-      registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);
     } else if (kind === TextLabelKind) {
@@ -80,8 +82,6 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultWgpuScale9ShapeRenderer);
       registerWgpuShapeCommands(defaultWgpuShapeCommands);
-    } else if (kind === VideoKind) {
-      registerRenderer(state, VideoKind, defaultWgpuVideoRenderer);
     }
   }
 

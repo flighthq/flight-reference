@@ -1,27 +1,27 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  BitmapKind,
   createDomRenderState,
   defaultCanvasShapeCommands,
-  defaultDomBitmapRenderer,
   defaultDomRichTextRenderer,
   defaultDomScale9ShapeRenderer,
   defaultDomShapeRenderer,
+  defaultDomSpriteRenderer,
   defaultDomTextLabelRenderer,
-  defaultDomVideoRenderer,
   enableDomBlendModeSupport,
   enableDomClipSupport,
   enableDomRenderCache,
   prepareScene2DRender,
   registerCanvasShapeCommands,
+  registerDomBitmapTextureResolver,
+  registerDomImageTextureResolver,
   registerRenderer,
   renderDomBackground,
   renderDomScene2D,
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
+  SpriteKind,
   TextLabelKind,
-  VideoKind,
 } from '@flighthq/sdk';
 
 import type { FunctionalDomTarget, FunctionalTargetOptions } from './target';
@@ -43,13 +43,15 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
     sceneGraphSyncPolicy: options.syncPolicy || 'refreshDerivedState',
   });
 
+  // Sprites and other textured nodes resolve their texture through the backing-kind registry;
+  // without a resolver the lookup returns null and the node renders nothing.
+  registerDomBitmapTextureResolver(state);
+  registerDomImageTextureResolver(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
       // The DOM shape renderer rasterizes paths through the canvas shape commands.
       registerCanvasShapeCommands(defaultCanvasShapeCommands);
-    } else if (kind === BitmapKind) {
-      registerRenderer(state, BitmapKind, defaultDomBitmapRenderer);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultDomRichTextRenderer);
     } else if (kind === TextLabelKind) {
@@ -57,8 +59,8 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultDomScale9ShapeRenderer);
       registerCanvasShapeCommands(defaultCanvasShapeCommands);
-    } else if (kind === VideoKind) {
-      registerRenderer(state, VideoKind, defaultDomVideoRenderer);
+    } else if (kind === SpriteKind) {
+      registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
     }
   }
 

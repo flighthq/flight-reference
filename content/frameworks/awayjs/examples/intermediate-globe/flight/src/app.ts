@@ -1,6 +1,18 @@
-import type { PerspectiveProjection, ShadedMaterial } from '@flighthq/sdk';
+import type {
+  Adjustment,
+  Camera3D,
+  Environment,
+  GlRenderEffectPipeline,
+  GlRenderState,
+  Node3D,
+  PerspectiveProjection,
+  RenderEffect,
+  Scene3DLights,
+  ShadedMaterial,
+} from '@flighthq/sdk';
 import {
   addNodeChild,
+  beginGlRenderEffectPipeline,
   BlendMode,
   copyQuaternion,
   createAmbientLight,
@@ -11,6 +23,7 @@ import {
   createEnvironment,
   createFxaaEffect,
   createGlCanvasElement,
+  createGlRenderEffectPipeline,
   createGlRenderState,
   createImageResourceFromCanvas,
   createMesh,
@@ -26,6 +39,9 @@ import {
   defaultGlFxaaEffectRunner,
   defaultGlToneMapEffectRunner,
   DEG_TO_RAD,
+  drawGlEnvironmentSkybox,
+  drawGlScene3D,
+  endGlRenderEffectPipeline,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   orientScene3DBillboardsToCamera,
@@ -34,6 +50,7 @@ import {
   registerGlRenderEffect,
   registerShadedGlMaterial,
   registerUnlitGlMaterial,
+  renderGlBackground,
   setCubeTextureFace,
   setQuaternionFromAxisAngle,
   setVector3,
@@ -41,8 +58,6 @@ import {
 
 import { bindOrbitDrag, createCameraFromAway, createOrbitControllerFromAway } from '../../../_shared/flight/src/camera';
 import { awayIntensity } from '../../../_shared/flight/src/lighting';
-import type { SkyboxRenderState } from '../../../_shared/flight/src/scene3d';
-import { renderSkyboxScene } from '../../../_shared/flight/src/scene3d';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 import { createAtmosphere, loadCloudTexture } from './atmosphere';
 import { registerEarthShader } from './earthShader';
@@ -241,3 +256,33 @@ window.addEventListener('resize', () => {
 });
 
 requestAnimationFrame(frame);
+
+// Standalone skybox pass for this example: draws the environment cube behind the scene inside the
+// same HDR effect pipeline. Kept local so the example reads end to end.
+interface SkyboxRenderState {
+  pipeline: GlRenderEffectPipeline | null;
+}
+
+function renderSkyboxScene(
+  state: GlRenderState,
+  canvas: HTMLCanvasElement,
+  ref: SkyboxRenderState,
+  environment: Readonly<Environment>,
+  scene: Readonly<Node3D>,
+  camera: Readonly<Camera3D>,
+  lights: Readonly<Scene3DLights>,
+  effects: ReadonlyArray<RenderEffect | Adjustment> = [createToneMapEffect()],
+): void {
+  if (ref.pipeline === null) {
+    ref.pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
+  }
+  beginGlRenderEffectPipeline(state, ref.pipeline);
+  renderGlBackground(state);
+  const gl = state.gl;
+  gl.depthMask(true);
+  gl.clearDepth(1);
+  gl.clear(gl.DEPTH_BUFFER_BIT);
+  drawGlEnvironmentSkybox(state, environment, camera, canvas.width / canvas.height);
+  drawGlScene3D(state, scene, camera, lights);
+  endGlRenderEffectPipeline(state, ref.pipeline, effects);
+}

@@ -1,20 +1,38 @@
-import type { Mesh, PerspectiveProjection, Scene3DLights, Vector3 } from '@flighthq/sdk';
+import type {
+  Adjustment,
+  Camera3D,
+  Environment,
+  GlRenderEffectPipeline,
+  GlRenderState,
+  Mesh,
+  Node3D,
+  PerspectiveProjection,
+  RenderEffect,
+  Scene3DLights,
+  Vector3,
+} from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceClock,
+  beginGlRenderEffectPipeline,
   copyVector3,
   createBloomEffect,
   createClock,
   createFxaaEffect,
+  createGlRenderEffectPipeline,
   createMatrix4,
+  createNode3D,
   createScene3D,
   createScene3DLights,
-  createNode3D,
   createToneMapEffect,
   createVector3,
   DEG_TO_RAD,
+  drawGlEnvironmentSkybox,
+  drawGlScene3D,
+  endGlRenderEffectPipeline,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  renderGlBackground,
   rotateMatrix4,
   setCamera3DViewMatrix4FromLookAt,
   setMatrix4Identity,
@@ -26,8 +44,6 @@ import {
 
 import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
 import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
-import type { SkyboxRenderState } from '../../../_shared/flight/src/scene3d';
-import { renderSkyboxScene } from '../../../_shared/flight/src/scene3d';
 import { createAircraft } from './aircraft';
 import { canvas, glState, verifyFrame } from './bootstrap';
 import { createSea } from './sea';
@@ -282,3 +298,33 @@ window.addEventListener('resize', () => {
 });
 
 requestAnimationFrame(frame);
+
+// Standalone skybox pass for this example: draws the environment cube behind the scene inside the
+// same HDR effect pipeline. Kept local so the example reads end to end.
+interface SkyboxRenderState {
+  pipeline: GlRenderEffectPipeline | null;
+}
+
+function renderSkyboxScene(
+  state: GlRenderState,
+  canvas: HTMLCanvasElement,
+  ref: SkyboxRenderState,
+  environment: Readonly<Environment>,
+  scene: Readonly<Node3D>,
+  camera: Readonly<Camera3D>,
+  lights: Readonly<Scene3DLights>,
+  effects: ReadonlyArray<RenderEffect | Adjustment> = [createToneMapEffect()],
+): void {
+  if (ref.pipeline === null) {
+    ref.pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
+  }
+  beginGlRenderEffectPipeline(state, ref.pipeline);
+  renderGlBackground(state);
+  const gl = state.gl;
+  gl.depthMask(true);
+  gl.clearDepth(1);
+  gl.clear(gl.DEPTH_BUFFER_BIT);
+  drawGlEnvironmentSkybox(state, environment, camera, canvas.width / canvas.height);
+  drawGlScene3D(state, scene, camera, lights);
+  endGlRenderEffectPipeline(state, ref.pipeline, effects);
+}

@@ -3,11 +3,13 @@ import {
   attachKeyboardInput,
   connectSignal,
   createApplication,
-  createBitmap,
   createDisplayObject,
   createInputManager,
+  createSprite,
+  createTexture,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
+  setSpriteTexture,
   startApplicationLoop,
 } from '@flighthq/sdk';
 
@@ -18,9 +20,8 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-const logo = createBitmap();
-logo.data.image = image;
-logo.data.smoothing = true;
+const logo = createSprite();
+setSpriteTexture(logo, createTexture({ source: image }));
 logo.x = 100;
 logo.y = 100;
 addNodeChild(root, logo);

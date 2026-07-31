@@ -1,6 +1,7 @@
 import {
   addTextureAtlasRegion,
   createQuadBatch,
+  createTexture,
   createTextureAtlas,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
@@ -29,7 +30,7 @@ document.body.appendChild(counter);
 
 const bunny = await loadImageResourceFromUrl('openfl/images/wabbit_alpha.png');
 
-const atlas = createTextureAtlas({ image: bunny });
+const atlas = createTextureAtlas({ texture: createTexture({ source: bunny }) });
 addTextureAtlasRegion(atlas, 0, 0, bunny.width, bunny.height);
 
 const bunnyWidth = bunny.width;

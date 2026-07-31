@@ -5,11 +5,13 @@ import {
   createApplication,
   createDisplayObject,
   createMovieClip,
+  createPixelArtSampler,
   createSpritesheet,
   createSpritesheetAnimation,
   createSpritesheetFrame,
   createSpritesheetTimelineSource,
   createTextureAtlas,
+  createTexture,
   loadImageResourceFromUrl,
   playMovieClip,
   setMovieClipSource,
@@ -29,7 +31,7 @@ const COLS_PER_ROW = [5, 4];
 const FPS = 10;
 
 const source = await loadImageResourceFromUrl('openfl/images/nyancat.png');
-const atlas = createTextureAtlas({ image: source });
+const atlas = createTextureAtlas({ texture: createTexture({ source, sampler: createPixelArtSampler() }) });
 
 const frames = [];
 for (let row = 0; row < COLS_PER_ROW.length; row++) {

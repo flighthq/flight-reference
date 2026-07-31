@@ -1,10 +1,8 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  BitmapKind,
   createCanvasElement,
   createCanvasRenderState,
   defaultCanvasBeginFill,
-  defaultCanvasBitmapRenderer,
   defaultCanvasDrawCircle,
   defaultCanvasDrawEllipse,
   defaultCanvasDrawRectangle,
@@ -35,7 +33,6 @@ export const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
 registerCanvasShapeCommands([

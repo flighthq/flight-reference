@@ -1,12 +1,13 @@
 ﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   createDomRenderState,
-  defaultDomVideoRenderer,
+  defaultDomSpriteRenderer,
   prepareScene2DRender,
+  registerDomImageTextureResolver,
   registerRenderer,
   renderDomBackground,
   renderDomScene2D,
-  VideoKind,
+  SpriteKind,
 } from '@flighthq/sdk';
 
 const element = document.createElement('div');
@@ -23,7 +24,8 @@ export const state = createDomRenderState(element, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerRenderer(state, VideoKind, defaultDomVideoRenderer);
+registerDomImageTextureResolver(state);
+registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
 export const scale = 1;
 
 export function render(root: DisplayObject): void {

@@ -6,14 +6,16 @@ import {
   attachPointerInput,
   connectSignal,
   createApplication,
-  createBitmap,
   createDisplayObject,
   createInputManager,
   createShape,
+  createSprite,
+  createTexture,
   createTween,
   createTweenManager,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
+  setSpriteTexture,
   startApplicationLoop,
   updateTweens,
 } from '@flighthq/sdk';
@@ -34,9 +36,8 @@ destination.x = 300;
 destination.y = 95;
 addNodeChild(root, destination);
 
-const logo = createBitmap();
-logo.data.image = image;
-logo.data.smoothing = true;
+const logo = createSprite();
+setSpriteTexture(logo, createTexture({ source: image }));
 logo.x = 100;
 logo.y = 100;
 addNodeChild(root, logo);

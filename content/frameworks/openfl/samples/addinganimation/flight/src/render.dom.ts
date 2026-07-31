@@ -1,9 +1,10 @@
 ﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
-  BitmapKind,
+  SpriteKind,
   createDomRenderState,
-  defaultDomBitmapRenderer,
+  defaultDomSpriteRenderer,
   prepareScene2DRender,
+  registerDomImageTextureResolver,
   registerRenderer,
   renderDomBackground,
   renderDomScene2D,
@@ -20,7 +21,8 @@ export const state = createDomRenderState(container, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerRenderer(state, BitmapKind, defaultDomBitmapRenderer);
+registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
+registerDomImageTextureResolver(state);
 export const scale = 1;
 
 export function render(root: DisplayObject): void {

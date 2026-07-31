@@ -5,6 +5,7 @@ import {
   defaultCanvasQuadBatchRenderer,
   prepareScene2DRender,
   QuadBatchKind,
+  registerCanvasImageTextureResolver,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
@@ -22,6 +23,7 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
+registerCanvasImageTextureResolver(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 

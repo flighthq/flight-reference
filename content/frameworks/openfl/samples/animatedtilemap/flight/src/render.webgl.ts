@@ -6,6 +6,7 @@ import {
   defaultGlSpriteRenderer,
   prepareScene2DRender,
   registerStandardGlMaterial,
+  registerStandardGlTextureResolvers,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -25,6 +26,7 @@ export const state = createGlRenderState(canvas, {
 });
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerStandardGlMaterial(state);
+registerStandardGlTextureResolvers(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 

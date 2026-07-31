@@ -1,11 +1,12 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  BitmapKind,
+  SpriteKind,
   createWgpuCanvasElement,
   createWgpuRenderState,
-  defaultWgpuBitmapRenderer,
+  defaultWgpuSpriteRenderer,
   prepareScene2DRender,
   registerStandardWgpuMaterial,
+  registerWgpuImageTextureResolver,
   registerRenderer,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -24,8 +25,9 @@ export const state = await createWgpuRenderState(canvas, {
   backgroundColor: 0xffffffff,
   imageSmoothingEnabled: false,
 });
-registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
+registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 registerStandardWgpuMaterial(state);
+registerWgpuImageTextureResolver(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 

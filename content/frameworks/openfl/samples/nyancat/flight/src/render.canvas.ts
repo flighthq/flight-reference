@@ -1,10 +1,11 @@
 ﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
-  BitmapKind,
+  SpriteKind,
   createCanvasElement,
   createCanvasRenderState,
-  defaultCanvasBitmapRenderer,
+  defaultCanvasSpriteRenderer,
   prepareScene2DRender,
+  registerCanvasImageTextureResolver,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
@@ -22,7 +23,8 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xffffffff,
   imageSmoothingEnabled: false,
 });
-registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
+registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
+registerCanvasImageTextureResolver(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 

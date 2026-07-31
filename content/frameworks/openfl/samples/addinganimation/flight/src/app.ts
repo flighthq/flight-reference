@@ -2,8 +2,9 @@ import {
   addNodeChild,
   connectSignal,
   createApplication,
-  createBitmap,
   createDisplayObject,
+  createSprite,
+  createTexture,
   createTween,
   createTweenManager,
   easeOutElastic,
@@ -11,6 +12,7 @@ import {
   invalidateNodeLocalTransform,
   invalidateNodeRender,
   loadImageResourceFromUrl,
+  setSpriteTexture,
   startApplicationLoop,
   updateTweens,
 } from '@flighthq/sdk';
@@ -25,7 +27,7 @@ const main = createDisplayObject();
 main.scaleX = scale;
 main.scaleY = scale;
 const container = createDisplayObject();
-const bitmap = createBitmap();
+const bitmap = createSprite();
 
 container.alpha = 0;
 container.scaleX = 0;
@@ -37,8 +39,7 @@ addNodeChild(container, bitmap);
 addNodeChild(main, container);
 
 const image = await loadImageResourceFromUrl('openfl/images/openfl_logo.png');
-bitmap.data.image = image;
-bitmap.data.smoothing = true;
+setSpriteTexture(bitmap, createTexture({ source: image }));
 bitmap.x = -image.width / 2;
 bitmap.y = -image.height / 2;
 

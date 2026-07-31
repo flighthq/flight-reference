@@ -1,11 +1,12 @@
 ﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
-  BitmapKind,
+  SpriteKind,
   createGlCanvasElement,
   createGlRenderState,
-  defaultGlBitmapRenderer,
+  defaultGlSpriteRenderer,
   prepareScene2DRender,
   registerStandardGlMaterial,
+  registerStandardGlTextureResolvers,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -23,8 +24,9 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0xffffffff,
   imageSmoothingEnabled: false,
 });
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerStandardGlMaterial(state);
+registerStandardGlTextureResolvers(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 

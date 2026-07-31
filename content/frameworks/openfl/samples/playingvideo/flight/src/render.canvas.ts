@@ -1,19 +1,18 @@
 ﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
-  BitmapKind,
   createCanvasRenderState,
-  defaultCanvasBitmapRenderer,
   defaultCanvasBeginFill,
   defaultCanvasDrawRectangle,
   defaultCanvasShapeRenderer,
-  defaultCanvasVideoRenderer,
+  defaultCanvasSpriteRenderer,
   prepareScene2DRender,
   registerCanvasShapeCommands,
+  registerCanvasImageTextureResolver,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
   ShapeKind,
-  VideoKind,
+  SpriteKind,
   createMatrix,
 } from '@flighthq/sdk';
 
@@ -35,9 +34,9 @@ export const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
+registerCanvasImageTextureResolver(state);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerRenderer(state, VideoKind, defaultCanvasVideoRenderer);
+registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
 registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle]);
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);

@@ -1,10 +1,10 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  BitmapKind,
+  SpriteKind,
   createCanvasElement,
   createCanvasRenderState,
   defaultCanvasBeginFill,
-  defaultCanvasBitmapRenderer,
+  defaultCanvasSpriteRenderer,
   defaultCanvasDrawCircle,
   defaultCanvasDrawEllipse,
   defaultCanvasDrawRectangle,
@@ -15,6 +15,7 @@ import {
   defaultCanvasShapeRenderer,
   defaultCanvasTextLabelRenderer,
   prepareScene2DRender,
+  registerCanvasImageTextureResolver,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
@@ -35,7 +36,8 @@ export const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
+registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
+registerCanvasImageTextureResolver(state);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
 registerCanvasShapeCommands([

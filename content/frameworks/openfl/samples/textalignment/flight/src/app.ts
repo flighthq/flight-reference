@@ -3,13 +3,15 @@ import {
   attachKeyboardInput,
   connectSignal,
   createApplication,
-  createBitmap,
   createDisplayObject,
   createInputManager,
   createRichText,
+  createSprite,
+  createTexture,
   invalidateNodeRender,
   loadFontFromUrl,
   loadImageResourceFromUrl,
+  setSpriteTexture,
   startApplicationLoop,
 } from '@flighthq/sdk';
 
@@ -36,7 +38,7 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-const comparison = createBitmap();
+const comparison = createSprite();
 comparison.alpha = 0;
 addNodeChild(root, comparison);
 
@@ -112,7 +114,8 @@ function updateComparison(): void {
   }
 
   const key = `${comparisonRenderer}${demo}`;
-  comparison.data.image = comparisonImages.get(key) ?? null;
+  const image = comparisonImages.get(key);
+  setSpriteTexture(comparison, image === undefined ? null : createTexture({ source: image }));
   comparison.alpha = comparisonAlpha;
   invalidateNodeRender(comparison);
 }

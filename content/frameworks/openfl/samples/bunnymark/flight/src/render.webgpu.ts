@@ -6,6 +6,7 @@ import {
   prepareScene2DRender,
   QuadBatchKind,
   registerStandardWgpuMaterial,
+  registerWgpuImageTextureResolver,
   registerRenderer,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -25,6 +26,7 @@ export const state = await createWgpuRenderState(canvas, {
 });
 registerRenderer(state, QuadBatchKind, defaultWgpuQuadBatchRenderer);
 registerStandardWgpuMaterial(state);
+registerWgpuImageTextureResolver(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 

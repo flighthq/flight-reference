@@ -3,18 +3,21 @@ import {
   addTextureAtlasRegion,
   connectSignal,
   createApplication,
+  createPixelArtSampler,
   createSprite,
   createSpritesheet,
   createSpritesheetAnimation,
   createSpritesheetFrame,
   createSpritesheetPlayer,
   createTextureAtlas,
+  createTexture,
+  getTextureAtlasRegionTexture,
   getSpritesheetAnimation,
   getSpritesheetPlayerFrame,
-  invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   playSpritesheetAnimation,
+  setSpriteTexture,
   startApplicationLoop,
   updateSpritesheetPlayer,
 } from '@flighthq/sdk';
@@ -28,7 +31,7 @@ const STAGE_WIDTH = 800;
 const STAGE_HEIGHT = 600;
 
 const source = await loadImageResourceFromUrl('openfl/images/tileset.png');
-const atlas = createTextureAtlas({ image: source });
+const atlas = createTextureAtlas({ texture: createTexture({ source, sampler: createPixelArtSampler() }) });
 const sheet = createSpritesheet({ atlas });
 
 const animationDefs = [
@@ -66,7 +69,7 @@ const baseY = (STAGE_HEIGHT - spriteScreenSize) / 2 / SCALE;
 
 const sprites = animationDefs.map((def, i) => {
   const sprite = createSprite();
-  sprite.data.atlas = atlas;
+  setSpriteTexture(sprite, getTextureAtlasRegionTexture(atlas, i * 4));
   sprite.x = baseX + i * 48;
   sprite.y = baseY;
   invalidateNodeLocalTransform(sprite);
@@ -86,8 +89,7 @@ connectSignal(app.onUpdate, (delta) => {
     if (updateSpritesheetPlayer(players[i], delta)) {
       const frame = getSpritesheetPlayerFrame(players[i], sheet);
       if (frame !== null) {
-        sprites[i].data.id = frame.id;
-        invalidateNodeAppearance(sprites[i]);
+        setSpriteTexture(sprites[i], getTextureAtlasRegionTexture(atlas, frame.id));
       }
     }
   }

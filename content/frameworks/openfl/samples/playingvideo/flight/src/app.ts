@@ -1,6 +1,7 @@
 import type { VideoChannel } from '@flighthq/sdk';
 import {
   addNodeChild,
+  advanceVideoTexture,
   appendShapeBeginFill,
   appendShapeRectangle,
   attachPointerInput,
@@ -10,13 +11,15 @@ import {
   createDisplayObject,
   createInputManager,
   createShape,
+  createSprite,
   createTween,
   createTweenManager,
-  createVideo,
+  createVideoTexture,
   easeOutQuadratic,
   invalidateNodeRender,
   loadVideoResourceFromUrl,
   playVideoResource,
+  setSpriteTexture,
   startApplicationLoop,
   stopVideoChannel,
   updateTweens,
@@ -33,8 +36,9 @@ root.scaleY = scale;
 
 const videoSource = await loadVideoResourceFromUrl('openfl/videos/example.mp4');
 
-const videoNode = createVideo();
-videoNode.data.source = videoSource;
+const videoTexture = createVideoTexture(videoSource);
+const videoNode = createSprite();
+setSpriteTexture(videoNode, videoTexture);
 addNodeChild(root, videoNode);
 
 const overlay = createShape();
@@ -84,7 +88,10 @@ connectSignal(input.onPointerDown, () => play());
 
 const app = createApplication();
 connectSignal(app.onUpdate, (delta) => {
-  if (channel !== null && channel.state === 'playing') invalidateNodeRender(videoNode);
+  if (channel !== null && channel.state === 'playing') {
+    advanceVideoTexture(videoTexture);
+    invalidateNodeRender(videoNode);
+  }
   updateTweens(tweenManager, delta);
 });
 connectSignal(app.onRender, () => {

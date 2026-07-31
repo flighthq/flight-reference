@@ -2,6 +2,7 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   addNodeChild,
   attachPointerInput,
+  BitmapTextKind,
   connectInputToInteraction,
   createBitmapText,
   createDisplayObject,
@@ -15,6 +16,7 @@ import {
   createSprite,
   createTexture,
   createTextureAtlasFromImageResource,
+  defaultGlBitmapTextRenderer,
   defaultGlSpriteRenderer,
   defaultGlQuadBatchRenderer,
   defaultGlRichTextRenderer,
@@ -61,6 +63,7 @@ registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
+registerRenderer(state, BitmapTextKind, defaultGlBitmapTextRenderer);
 
 const root = createDisplayObject();
 

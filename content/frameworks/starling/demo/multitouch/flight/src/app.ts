@@ -2,29 +2,32 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   addNodeChild,
   attachPointerInput,
-  BitmapKind,
   connectInputToInteraction,
-  createBitmap,
   createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
   createInputManager,
   createInteractionManager,
   createMatrix,
-  createRectangle,
   createRichText,
-  defaultGlBitmapRenderer,
+  createSprite,
+  createTexture,
+  defaultGlSpriteRenderer,
   defaultGlRichTextRenderer,
   defaultGlTextLabelRenderer,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   prepareScene2DRender,
   registerStandardGlMaterial,
+  registerStandardGlTextureResolvers,
   registerDefaultHitTests,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
+  setSpriteTexture,
+  setTextureUvFromPixelRect,
+  SpriteKind,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -48,16 +51,17 @@ const state = createGlRenderState(canvas, {
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 registerStandardGlMaterial(state);
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerStandardGlTextureResolvers(state);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 
 const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
-const bgBmp = createBitmap();
-bgBmp.data.image = bgImage;
-addNodeChild(root, bgBmp);
+const bgSprite = createSprite();
+setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+addNodeChild(root, bgSprite);
 
 const infoText = createRichText();
 infoText.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 12 };
@@ -70,9 +74,10 @@ addNodeChild(root, infoText);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
-const sheet = createBitmap();
-sheet.data.image = atlas;
-sheet.data.sourceRectangle = createRectangle(579, 1, 228, 171);
+const sheetTexture = createTexture({ source: atlas });
+setTextureUvFromPixelRect(sheetTexture, 579, 1, 228, 171);
+const sheet = createSprite();
+setSpriteTexture(sheet, sheetTexture);
 sheet.pivotX = 114;
 sheet.pivotY = 85.5;
 sheet.x = CenterX;

@@ -2,29 +2,32 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   addNodeChild,
   attachPointerInput,
-  BitmapKind,
   connectInputToInteraction,
-  createBitmap,
   createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
   createInputManager,
   createInteractionManager,
   createMatrix,
-  createRectangle,
   createRichText,
-  defaultGlBitmapRenderer,
+  createSprite,
+  createTexture,
+  defaultGlSpriteRenderer,
   defaultGlRichTextRenderer,
   defaultGlTextLabelRenderer,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   prepareScene2DRender,
   registerStandardGlMaterial,
+  registerStandardGlTextureResolvers,
   registerDefaultHitTests,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
+  setSpriteTexture,
+  setTextureUvFromPixelRect,
+  SpriteKind,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -46,16 +49,17 @@ const state = createGlRenderState(canvas, {
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 registerStandardGlMaterial(state);
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerStandardGlTextureResolvers(state);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 
 const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
-const bgBmp = createBitmap();
-bgBmp.data.image = bgImage;
-addNodeChild(root, bgBmp);
+const bgSprite = createSprite();
+setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
@@ -76,9 +80,10 @@ const buttonHeight = 166;
 const buttonX = 160 - 84;
 const buttonY = 150;
 
-const button = createBitmap();
-button.data.image = atlas;
-button.data.sourceRectangle = createRectangle(515, 316, buttonWidth, buttonHeight);
+const buttonTexture = createTexture({ source: atlas });
+setTextureUvFromPixelRect(buttonTexture, 515, 316, buttonWidth, buttonHeight);
+const button = createSprite();
+setSpriteTexture(button, buttonTexture);
 button.x = buttonX;
 button.y = buttonY;
 addNodeChild(root, button);

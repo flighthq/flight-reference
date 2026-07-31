@@ -2,27 +2,29 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   addNodeChild,
   attachPointerInput,
-  BitmapKind,
   connectInputToInteraction,
-  createBitmap,
   createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
   createInputManager,
   createInteractionManager,
   createMatrix,
-  createRectangle,
-  defaultGlBitmapRenderer,
+  createSprite,
+  createTexture,
+  defaultGlSpriteRenderer,
   defaultGlTextLabelRenderer,
-  invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   prepareScene2DRender,
   registerStandardGlMaterial,
+  registerStandardGlTextureResolvers,
   registerDefaultHitTests,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
+  setSpriteTexture,
+  setTextureUvFromPixelRect,
+  SpriteKind,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -75,34 +77,38 @@ const state = createGlRenderState(canvas, {
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 registerStandardGlMaterial(state);
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerStandardGlTextureResolvers(state);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 
 const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
-const bgBmp = createBitmap();
-bgBmp.data.image = bgImage;
-addNodeChild(root, bgBmp);
+const bgSprite = createSprite();
+setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
+const frameTextures = frames.map((frame) => {
+  const texture = createTexture({ source: atlas });
+  setTextureUvFromPixelRect(texture, frame.sx, frame.sy, frame.sw, frame.sh);
+  return texture;
+});
 
 const movie = createDisplayObject();
 movie.x = CenterX - FrameSize / 2;
 movie.y = CenterY - FrameSize / 2;
 addNodeChild(root, movie);
 
-const bmp = createBitmap();
-bmp.data.image = atlas;
-addNodeChild(movie, bmp);
+const sprite = createSprite();
+addNodeChild(movie, sprite);
 
 function showFrame(index: number): void {
   const frame = frames[index];
-  bmp.data.sourceRectangle = createRectangle(frame.sx, frame.sy, frame.sw, frame.sh);
-  bmp.x = -frame.fx;
-  bmp.y = -frame.fy;
-  invalidateNodeAppearance(bmp);
-  invalidateNodeLocalTransform(bmp);
+  setSpriteTexture(sprite, frameTextures[index]);
+  sprite.x = -frame.fx;
+  sprite.y = -frame.fy;
+  invalidateNodeLocalTransform(sprite);
 }
 
 let currentFrame = 0;

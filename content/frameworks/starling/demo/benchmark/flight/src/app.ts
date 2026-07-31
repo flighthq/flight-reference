@@ -1,10 +1,8 @@
-import type { Bitmap, BitmapText, DisplayObject, RichText } from '@flighthq/sdk';
+import type { BitmapText, DisplayObject, RichText, Sprite } from '@flighthq/sdk';
 import {
   addNodeChild,
   attachPointerInput,
-  BitmapKind,
   connectInputToInteraction,
-  createBitmap,
   createBitmapText,
   createDisplayObject,
   createGlCanvasElement,
@@ -13,10 +11,11 @@ import {
   createInputManager,
   createInteractionManager,
   createMatrix,
-  createRectangle,
   createRichText,
+  createSprite,
+  createTexture,
   createTextureAtlasFromImageResource,
-  defaultGlBitmapRenderer,
+  defaultGlSpriteRenderer,
   defaultGlQuadBatchRenderer,
   defaultGlRichTextRenderer,
   defaultGlTextLabelRenderer,
@@ -29,6 +28,7 @@ import {
   prepareScene2DRender,
   QuadBatchKind,
   registerStandardGlMaterial,
+  registerStandardGlTextureResolvers,
   registerDefaultHitTests,
   registerRenderer,
   removeNodeChild,
@@ -37,6 +37,9 @@ import {
   renderGlScene2D,
   RichTextKind,
   setNodeColorAdjustmentsTint,
+  setSpriteTexture,
+  setTextureUvFromPixelRect,
+  SpriteKind,
   TextLabelKind,
   updateBitmapText,
 } from '@flighthq/sdk';
@@ -67,7 +70,8 @@ state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
 registerGlColorAdjustmentMaterialFeature(state);
 registerStandardGlMaterial(state);
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerStandardGlTextureResolvers(state);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
@@ -75,12 +79,13 @@ registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
-const bgBmp = createBitmap();
-bgBmp.data.image = bgImage;
-addNodeChild(root, bgBmp);
+const bgSprite = createSprite();
+setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
-const objectRectangle = createRectangle(770, 173, 32, 32);
+const objectTexture = createTexture({ source: atlas });
+setTextureUvFromPixelRect(objectTexture, 770, 173, 32, 32);
 
 const container = createDisplayObject();
 container.x = CenterX;
@@ -137,21 +142,20 @@ function setButtonVisible(value: boolean): void {
   invalidateNodeAppearance(startBtn.root);
 }
 
-const objectPool: Bitmap[] = [];
+const objectPool: Sprite[] = [];
 
-function getObjectFromPool(): Bitmap {
+function getObjectFromPool(): Sprite {
   const pooled = objectPool.pop();
   if (pooled) return pooled;
 
-  const object = createBitmap();
-  object.data.image = atlas;
-  object.data.sourceRectangle = objectRectangle;
+  const object = createSprite();
+  setSpriteTexture(object, objectTexture);
   object.pivotX = 16;
   object.pivotY = 16;
   return object;
 }
 
-function putObjectToPool(object: Bitmap): void {
+function putObjectToPool(object: Sprite): void {
   objectPool.push(object);
 }
 
@@ -180,7 +184,7 @@ function removeTestObjects(count: number): void {
 
   for (let i = 0; i < removeCount; i++) {
     numChildren--;
-    const object = removeNodeChildAt(container, numChildren) as Bitmap | null;
+    const object = removeNodeChildAt(container, numChildren) as Sprite | null;
     if (object !== null) putObjectToPool(object);
   }
 }

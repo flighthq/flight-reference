@@ -1,10 +1,8 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import type { DisplayObject, Image, Texture2D } from '@flighthq/sdk';
 import {
   addNodeChild,
   attachPointerInput,
-  BitmapKind,
   connectInputToInteraction,
-  createBitmap,
   createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
@@ -12,19 +10,24 @@ import {
   createInputManager,
   createInteractionManager,
   createMatrix,
-  createRectangle,
   createRichText,
-  defaultGlBitmapRenderer,
+  createSprite,
+  createTexture,
+  defaultGlSpriteRenderer,
   defaultGlRichTextRenderer,
   defaultGlTextLabelRenderer,
   loadImageResourceFromUrl,
   prepareScene2DRender,
   registerStandardGlMaterial,
+  registerStandardGlTextureResolvers,
   registerDefaultHitTests,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
+  setSpriteTexture,
+  setTextureUvFromPixelRect,
+  SpriteKind,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -47,36 +50,34 @@ const state = createGlRenderState(canvas, {
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 registerStandardGlMaterial(state);
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerStandardGlTextureResolvers(state);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 
 const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
-const bgBmp = createBitmap();
-bgBmp.data.image = bgImage;
-addNodeChild(root, bgBmp);
+const bgSprite = createSprite();
+setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
-const flight00 = createBitmap();
-flight00.data.image = atlas;
-flight00.data.sourceRectangle = createRectangle(1, 145, 165, 163);
+const flight00 = createSprite();
+setSpriteTexture(flight00, createRegionTexture(atlas, 1, 145, 165, 163));
 flight00.x = -20 + 42;
 flight00.y = 0 + 21;
 addNodeChild(root, flight00);
 
-const flight04 = createBitmap();
-flight04.data.image = atlas;
-flight04.data.sourceRectangle = createRectangle(808, 1, 200, 108);
+const flight04 = createSprite();
+setSpriteTexture(flight04, createRegionTexture(atlas, 808, 1, 200, 108));
 flight04.x = 90 + 8;
 flight04.y = 85 + 68;
 addNodeChild(root, flight04);
 
-const flight08 = createBitmap();
-flight08.data.image = atlas;
-flight08.data.sourceRectangle = createRectangle(851, 492, 165, 129);
+const flight08 = createSprite();
+setSpriteTexture(flight08, createRegionTexture(atlas, 851, 492, 165, 129));
 flight08.x = 100 + 42;
 flight08.y = -60 + 67;
 addNodeChild(root, flight08);
@@ -240,11 +241,11 @@ const atfImage = await (async () => {
 })();
 
 if (atfImage) {
-  const compressedBmp = createBitmap();
-  compressedBmp.data.image = atfImage;
-  compressedBmp.x = CenterX - 64;
-  compressedBmp.y = 280;
-  addNodeChild(root, compressedBmp);
+  const compressedSprite = createSprite();
+  setSpriteTexture(compressedSprite, createTexture({ source: atfImage }));
+  compressedSprite.x = CenterX - 64;
+  compressedSprite.y = 280;
+  addNodeChild(root, compressedSprite);
 } else {
   const fallback = createRichText();
   fallback.data.defaultTextFormat = { font: 'DejaVu Sans, sans-serif', size: 14, color: 0x000000, align: 'center' };
@@ -286,3 +287,9 @@ function frame(): void {
   requestAnimationFrame(frame);
 }
 frame();
+
+function createRegionTexture(image: Image, x: number, y: number, width: number, height: number): Texture2D {
+  const texture = createTexture({ source: image });
+  setTextureUvFromPixelRect(texture, x, y, width, height);
+  return texture;
+}

@@ -2,9 +2,7 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   addNodeChild,
   attachPointerInput,
-  BitmapKind,
   connectInputToInteraction,
-  createBitmap,
   createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
@@ -12,9 +10,10 @@ import {
   createInputManager,
   createInteractionManager,
   createMatrix,
-  createRectangle,
   createRichText,
-  defaultGlBitmapRenderer,
+  createSprite,
+  createTexture,
+  defaultGlSpriteRenderer,
   defaultGlRichTextRenderer,
   defaultGlTextLabelRenderer,
   invalidateNodeAppearance,
@@ -22,11 +21,15 @@ import {
   loadImageResourceFromUrl,
   prepareScene2DRender,
   registerStandardGlMaterial,
+  registerStandardGlTextureResolvers,
   registerDefaultHitTests,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
+  setSpriteTexture,
+  setTextureUvFromPixelRect,
+  SpriteKind,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -151,16 +154,17 @@ const state = createGlRenderState(canvas, {
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 registerStandardGlMaterial(state);
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerStandardGlTextureResolvers(state);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 
 const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
-const bgBmp = createBitmap();
-bgBmp.data.image = bgImage;
-addNodeChild(root, bgBmp);
+const bgSprite = createSprite();
+setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
@@ -211,10 +215,10 @@ backBtn.root.y = GameHeight - 50 + 4;
 backBtn.connect(interaction);
 addNodeChild(root, backBtn.root);
 
-const egg = createBitmap();
-egg.data.image = atlas;
-const eggSourceRect = createRectangle(167, 359, 124, 170);
-egg.data.sourceRectangle = eggSourceRect;
+const eggTexture = createTexture({ source: atlas });
+setTextureUvFromPixelRect(eggTexture, 167, 359, 124, 170);
+const egg = createSprite();
+setSpriteTexture(egg, eggTexture);
 addNodeChild(root, egg);
 
 const tintedEggImage = await (async () => {
@@ -235,6 +239,7 @@ const tintedEggImage = await (async () => {
   ctx.drawImage(atlasImg, 167, 359, 124, 170, 0, 0, 124, 170);
   return createImageResourceFromCanvas(c);
 })();
+const tintedEggTexture = createTexture({ source: tintedEggImage });
 
 function resetEgg(): void {
   egg.x = EggStartX;
@@ -243,8 +248,7 @@ function resetEgg(): void {
   egg.scaleY = 1;
   egg.rotation = 0;
   egg.alpha = 1;
-  egg.data.image = atlas;
-  egg.data.sourceRectangle = eggSourceRect;
+  setSpriteTexture(egg, eggTexture);
   invalidateNodeLocalTransform(egg);
   invalidateNodeAppearance(egg);
 }
@@ -317,15 +321,11 @@ function onDelayButtonClick(): void {
   delayBtn.enabled = false;
 
   setTimeout(() => {
-    egg.data.image = tintedEggImage;
-    egg.data.sourceRectangle = null;
-    invalidateNodeAppearance(egg);
+    setSpriteTexture(egg, tintedEggTexture);
   }, 1000);
 
   setTimeout(() => {
-    egg.data.image = atlas;
-    egg.data.sourceRectangle = eggSourceRect;
-    invalidateNodeAppearance(egg);
+    setSpriteTexture(egg, eggTexture);
     delayBusy = false;
     delayBtn.enabled = true;
   }, 2000);

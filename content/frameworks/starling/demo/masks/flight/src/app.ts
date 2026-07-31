@@ -5,9 +5,7 @@ import {
   appendShapeCircle,
   appendShapeEndFill,
   attachPointerInput,
-  BitmapKind,
   connectInputToInteraction,
-  createBitmap,
   createClipRegionFromCircle,
   createDisplayObject,
   createGlCanvasElement,
@@ -16,10 +14,11 @@ import {
   createInputManager,
   createInteractionManager,
   createMatrix,
-  createRectangle,
   createRichText,
   createShape,
-  defaultGlBitmapRenderer,
+  createSprite,
+  createTexture,
+  defaultGlSpriteRenderer,
   defaultGlRichTextRenderer,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
@@ -30,6 +29,7 @@ import {
   loadImageResourceFromUrl,
   prepareScene2DRender,
   registerStandardGlMaterial,
+  registerStandardGlTextureResolvers,
   registerDefaultHitTests,
   registerGlShapeCommands,
   registerRenderer,
@@ -37,7 +37,9 @@ import {
   renderGlScene2D,
   RichTextKind,
   setNode2DClip,
+  setSpriteTexture,
   ShapeKind,
+  SpriteKind,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -59,7 +61,8 @@ const state = createGlRenderState(canvas, {
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 registerStandardGlMaterial(state);
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerStandardGlTextureResolvers(state);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
@@ -69,9 +72,9 @@ enableGlClipSupport(state);
 const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
-const bgBmp = createBitmap();
-bgBmp.data.image = bgImage;
-addNodeChild(root, bgBmp);
+const bgSprite = createSprite();
+setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
@@ -93,11 +96,11 @@ const tintedBirdImage = await (async () => {
   return createImageResourceFromCanvas(c);
 })();
 
-const birdImage = createBitmap();
-birdImage.data.image = tintedBirdImage;
-birdImage.x = (GameWidth - 220) / 2 + 42;
-birdImage.y = 80 + 21;
-addNodeChild(maskedContainer, birdImage);
+const birdSprite = createSprite();
+setSpriteTexture(birdSprite, createTexture({ source: tintedBirdImage }));
+birdSprite.x = (GameWidth - 220) / 2 + 42;
+birdSprite.y = 80 + 21;
+addNodeChild(maskedContainer, birdSprite);
 
 const maskText = createRichText();
 maskText.data.defaultTextFormat = {

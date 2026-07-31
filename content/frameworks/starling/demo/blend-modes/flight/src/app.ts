@@ -4,20 +4,19 @@ import {
   appendShapeBeginFill,
   appendShapeRectangle,
   attachPointerInput,
-  BitmapKind,
   BlendMode,
   connectInputToInteraction,
-  createBitmap,
   createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
   createInputManager,
   createInteractionManager,
   createMatrix,
-  createRectangle,
   createShape,
+  createSprite,
   createTextLabel,
-  defaultGlBitmapRenderer,
+  createTexture,
+  defaultGlSpriteRenderer,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
@@ -26,6 +25,7 @@ import {
   loadImageResourceFromUrl,
   prepareScene2DRender,
   registerStandardGlMaterial,
+  registerStandardGlTextureResolvers,
   registerDefaultHitTests,
   registerGlShapeCommands,
   registerRenderer,
@@ -33,6 +33,9 @@ import {
   renderGlScene2D,
   setTextLabelString,
   ShapeKind,
+  setSpriteTexture,
+  setTextureUvFromPixelRect,
+  SpriteKind,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -55,7 +58,8 @@ const state = createGlRenderState(canvas, {
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 registerStandardGlMaterial(state);
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerStandardGlTextureResolvers(state);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
@@ -64,9 +68,9 @@ enableGlBlendModeSupport(state);
 const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
-const bgBmp = createBitmap();
-bgBmp.data.image = bgImage;
-addNodeChild(root, bgBmp);
+const bgSprite = createSprite();
+setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
@@ -94,9 +98,10 @@ appendShapeRectangle(noneBackdrop, rocketX, rocketY, rocketWidth, rocketHeight);
 noneBackdrop.visible = false;
 addNodeChild(root, noneBackdrop);
 
-const rocket = createBitmap();
-rocket.data.image = atlas;
-rocket.data.sourceRectangle = createRectangle(322, 1, 256, 142);
+const rocketTexture = createTexture({ source: atlas });
+setTextureUvFromPixelRect(rocketTexture, 322, 1, 256, 142);
+const rocket = createSprite();
+setSpriteTexture(rocket, rocketTexture);
 rocket.x = rocketX;
 rocket.y = rocketY;
 rocket.blendMode = blendModes[0][0];

@@ -22,6 +22,10 @@ import {
   createTexture,
   loadImageResourceFromUrl,
   prepareScene2DRender,
+  registerGlInnerGlowEffect,
+  registerGlOuterGlowEffect,
+  registerInnerGlowEffectPaddingResolver,
+  registerOuterGlowEffectPaddingResolver,
   registerStandardGlTextureResolvers,
   renderGlScene2D,
   renderIntoGlRenderTexture,
@@ -104,6 +108,12 @@ function bakeSource(state: GlRenderState, destination: RenderTexture, texture: T
 
 function initGlGlow(state: GlRenderState): () => void {
   registerStandardGlTextureResolvers(state);
+  // next.1315 exports per-kind effect registration and padding resolvers; both are needed — the
+  // runner draws the glow, the padding resolver sizes the target so the glow is not clipped.
+  registerGlOuterGlowEffect(state);
+  registerGlInnerGlowEffect(state);
+  registerOuterGlowEffectPaddingResolver(state);
+  registerInnerGlowEffectPaddingResolver(state);
 
   // Allocate every texture at the widest padding the animation reaches, so the pool hands back the
   // same descriptor each frame instead of reallocating as the blur radius breathes.
@@ -113,11 +123,23 @@ function initGlGlow(state: GlRenderState): () => void {
   const height = image.height + pad * 2;
   const descriptor = { width, height };
 
-  const source = createRenderTexture({ width, height });
+  const source = createRenderTexture({
+    width,
+    height,
+    // Clear to transparent: the effect runners derive the glow/shadow silhouette from the source's
+    // alpha, so an opaque clear makes the whole texture rectangle the silhouette.
+    clearColors: [0x00000000],
+  });
   bakeSource(state, source, iconTexture, pad);
 
   for (const column of columns) {
-    const result = createRenderTexture({ width, height });
+    const result = createRenderTexture({
+      width,
+      height,
+      // Clear to transparent: the effect runners derive the glow/shadow silhouette from the source's
+      // alpha, so an opaque clear makes the whole texture rectangle the silhouette.
+      clearColors: [0x00000000],
+    });
     column.result = result;
     column.sprite.data.texture = result;
     column.sprite.x -= pad;

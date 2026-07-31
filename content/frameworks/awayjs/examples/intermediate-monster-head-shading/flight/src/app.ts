@@ -27,6 +27,7 @@ import {
   loadImageResourceFromUrl,
   registerGlRenderEffect,
   registerShadedGlMaterial,
+  registerStandardGlTextureResolvers,
   renderGlBackground,
   setVector3,
 } from '@flighthq/sdk';
@@ -52,6 +53,9 @@ const state = createGlRenderState(canvas, {
   pixelRatio,
 });
 
+// Textured materials resolve their maps through the backing-kind registry; without this every
+// texture resolves to null and the scene renders untextured.
+registerStandardGlTextureResolvers(state);
 registerShadedGlMaterial(state);
 registerGlRenderEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);
 registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);

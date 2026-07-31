@@ -26,6 +26,7 @@ import {
   prepareScene2DRender,
   registerStandardGlMaterial,
   registerRenderer,
+  registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
@@ -54,6 +55,9 @@ const state = createGlRenderState(canvas, {
 });
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
+// Textured materials resolve their maps through the backing-kind registry; without this every
+// texture resolves to null and the scene renders untextured.
+registerStandardGlTextureResolvers(state);
 registerStandardGlMaterial(state);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 enableGlTextInput();

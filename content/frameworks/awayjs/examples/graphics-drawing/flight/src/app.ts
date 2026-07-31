@@ -21,6 +21,7 @@ import {
   registerStandardGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
+  registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
   setNode2DClip,
@@ -50,6 +51,9 @@ const state = createGlRenderState(canvas, {
 // backing-store resolution so it stays crisp on HiDPI displays.
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
+// Textured materials resolve their maps through the backing-kind registry; without this every
+// texture resolves to null and the scene renders untextured.
+registerStandardGlTextureResolvers(state);
 registerStandardGlMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);

@@ -42,6 +42,7 @@ import {
   multiplyQuaternion,
   registerEmissiveGlMaterial,
   registerGlRenderEffect,
+  registerStandardGlTextureResolvers,
   registerStandardPbrGlMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -75,6 +76,9 @@ const state = createGlRenderState(canvas, {
   pixelRatio,
 });
 
+// Textured materials resolve their maps through the backing-kind registry; without this every
+// texture resolves to null and the scene renders untextured.
+registerStandardGlTextureResolvers(state);
 registerStandardPbrGlMaterial(state);
 registerEmissiveGlMaterial(state);
 registerGlRenderEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);

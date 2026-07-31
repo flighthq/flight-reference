@@ -49,6 +49,7 @@ import {
   registerBuiltInGlModifierSnippets,
   registerGlRenderEffect,
   registerShadedGlMaterial,
+  registerStandardGlTextureResolvers,
   registerUnlitGlMaterial,
   renderGlBackground,
   setCubeTextureFace,
@@ -86,6 +87,9 @@ const state = createGlRenderState(canvas, {
 // an unlit halo billboard. The modifier-snippet registration MUST run before the first draw: the
 // shaded program cache keys a plain Emissive identically whether or not its snippet is registered, so
 // a program compiled before registration would cache modifier-less and never recompile.
+// Textured materials resolve their maps through the backing-kind registry; without this every
+// texture resolves to null and the scene renders untextured.
+registerStandardGlTextureResolvers(state);
 registerShadedGlMaterial(state);
 registerBuiltInGlModifierSnippets(state);
 registerUnlitGlMaterial(state);

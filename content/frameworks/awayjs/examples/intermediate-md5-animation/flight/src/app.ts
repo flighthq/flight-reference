@@ -40,6 +40,7 @@ import {
   endGlRenderEffectPipeline,
   invalidateNodeLocalTransform,
   registerGlRenderEffect,
+  registerStandardGlTextureResolvers,
   registerStandardPbrGlMaterial,
   registerUnlitGlMaterial,
   renderGlBackground,
@@ -81,6 +82,9 @@ const glState = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, depth: true, preserveDrawingBuffer: false },
   pixelRatio,
 });
+// Textured materials resolve their maps through the backing-kind registry; without this every
+// texture resolves to null and the scene renders untextured.
+registerStandardGlTextureResolvers(glState);
 registerStandardPbrGlMaterial(glState);
 registerUnlitGlMaterial(glState);
 registerGlRenderEffect(glState, 'FxaaEffect', defaultGlFxaaEffectRunner);

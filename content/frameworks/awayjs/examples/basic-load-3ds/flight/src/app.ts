@@ -31,6 +31,7 @@ import {
   registerExtendedPbrGlMaterial,
   registerGlRenderEffect,
   registerSpecularPbrGlExtension,
+  registerStandardGlTextureResolvers,
   registerStandardPbrGlMaterial,
   renderGlBackground,
   setDirectionalLightDirection,
@@ -65,6 +66,9 @@ const state = createGlRenderState(canvas, {
   pixelRatio,
 });
 
+// Textured materials resolve their maps through the backing-kind registry; without this every
+// texture resolves to null and the scene renders untextured.
+registerStandardGlTextureResolvers(state);
 registerStandardPbrGlMaterial(state);
 registerExtendedPbrGlMaterial(state);
 registerSpecularPbrGlExtension(state);

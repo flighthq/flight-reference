@@ -26,6 +26,7 @@ import {
   loadImageResourceFromUrl,
   registerBlinnPhongGlMaterial,
   registerGlRenderEffect,
+  registerStandardGlTextureResolvers,
   renderGlBackground,
   sampleAnimationTrack,
   setTextureUvScale,
@@ -59,6 +60,9 @@ const state = createGlRenderState(canvas, {
   pixelRatio,
 });
 
+// Textured materials resolve their maps through the backing-kind registry; without this every
+// texture resolves to null and the scene renders untextured.
+registerStandardGlTextureResolvers(state);
 registerBlinnPhongGlMaterial(state);
 registerGlRenderEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);
 registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);

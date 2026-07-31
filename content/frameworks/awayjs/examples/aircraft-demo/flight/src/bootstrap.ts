@@ -5,6 +5,7 @@ import {
   defaultGlFxaaEffectRunner,
   defaultGlToneMapEffectRunner,
   registerGlRenderEffect,
+  registerStandardGlTextureResolvers,
   registerStandardPbrGlMaterial,
 } from '@flighthq/sdk';
 
@@ -32,6 +33,9 @@ export const glState = createGlRenderState(canvas, {
   },
   pixelRatio,
 });
+// Textured materials resolve their maps through the backing-kind registry; without this every
+// texture resolves to null and the scene renders untextured.
+registerStandardGlTextureResolvers(glState);
 registerStandardPbrGlMaterial(glState);
 registerGlRenderEffect(glState, 'BloomEffect', defaultGlBloomEffectRunner);
 registerGlRenderEffect(glState, 'FxaaEffect', defaultGlFxaaEffectRunner);

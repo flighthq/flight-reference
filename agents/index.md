@@ -14,6 +14,7 @@ A standalone reference harness for side-by-side comparison of external framework
 - Avoid structural divider comments such as `// ---- setup ----`. Use names, file boundaries, and package boundaries instead.
 - No `TODO`, `FIXME`, or `HACK` comments in source — surface work items in status or conversation, not inline.
 - Add comments only when the WHY is non-obvious.
+- Each Flight example is standalone: never share Flight rendering code (render state, registration, pipelines, frame loops) between examples. Only source-framework conversion helpers may be shared — see [standalone examples](conventions/standalone-examples.md).
 
 ## Repository Layout
 
@@ -92,6 +93,7 @@ When `FLIGHT_REPO` is unset (the default), the harness falls back to the `@fligh
 
 ## Conventions
 
+- [standalone examples](conventions/standalone-examples.md) — before factoring anything out of an example into `_shared/`.
 - [commit messages](conventions/commits.md) — before writing a commit.
 - [camera conversion](conventions/camera.md) — before porting AwayJS camera, position, or direction values to Flight.
 - [lighting conversion](conventions/lighting.md) — before porting AwayJS lighting values to Flight.

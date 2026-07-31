@@ -1,15 +1,18 @@
-import type { Bitmap, DisplayObject, ImageResource, InteractionManager, RectangleLike, TextLabel } from '@flighthq/sdk';
+import type { DisplayObject, Image, InteractionManager, RectangleLike, TextLabel, Texture2D } from '@flighthq/sdk';
 import {
   addNodeChild,
   connectInteractionSignal,
-  createBitmap,
   createDisplayObject,
   createRectangle,
+  createSprite,
   createTextLabel,
+  createTexture,
   enableInteractionSignals,
   invalidateNodeAppearance,
   setNodeHitArea,
   setNodeHitTestEnabled,
+  setSpriteTexture,
+  setTextureUvFromPixelRect,
   setTextLabelString,
 } from '@flighthq/sdk';
 
@@ -18,7 +21,7 @@ type ButtonState = 'up' | 'over' | 'down' | 'disabled';
 const TRANSITION_MS = 120;
 
 export interface MenuButtonConfig {
-  atlas: ImageResource;
+  atlas: Image;
   regions: Readonly<Record<ButtonState, RectangleLike>>;
   text: string;
   width: number;
@@ -36,23 +39,25 @@ export interface MenuButton {
 
 export function createMenuButton(config: MenuButtonConfig): MenuButton {
   const container = createDisplayObject();
+  const textures = {
+    up: createRegionTexture(config.atlas, config.regions.up),
+    over: createRegionTexture(config.atlas, config.regions.over),
+    down: createRegionTexture(config.atlas, config.regions.down),
+    disabled: createRegionTexture(config.atlas, config.regions.disabled),
+  };
 
-  const baseBmp = createBitmap();
-  baseBmp.data.image = config.atlas;
-  baseBmp.data.sourceRectangle = rectFrom(config.regions.up);
-  baseBmp.data.smoothing = true;
-  baseBmp.scaleX = config.width / config.regions.up.width;
-  baseBmp.scaleY = config.height / config.regions.up.height;
-  addNodeChild(container, baseBmp);
+  const baseSprite = createSprite();
+  setSpriteTexture(baseSprite, textures.up);
+  baseSprite.scaleX = config.width / config.regions.up.width;
+  baseSprite.scaleY = config.height / config.regions.up.height;
+  addNodeChild(container, baseSprite);
 
-  const overlayBmp = createBitmap();
-  overlayBmp.data.image = config.atlas;
-  overlayBmp.data.sourceRectangle = rectFrom(config.regions.up);
-  overlayBmp.data.smoothing = true;
-  overlayBmp.scaleX = baseBmp.scaleX;
-  overlayBmp.scaleY = baseBmp.scaleY;
-  overlayBmp.alpha = 0;
-  addNodeChild(container, overlayBmp);
+  const overlaySprite = createSprite();
+  setSpriteTexture(overlaySprite, textures.up);
+  overlaySprite.scaleX = baseSprite.scaleX;
+  overlaySprite.scaleY = baseSprite.scaleY;
+  overlaySprite.alpha = 0;
+  addNodeChild(container, overlaySprite);
 
   const fontSize = 12;
   const label = createTextLabel();
@@ -78,13 +83,12 @@ export function createMenuButton(config: MenuButtonConfig): MenuButton {
     const prev = state;
     state = next;
 
-    baseBmp.data.sourceRectangle = rectFrom(config.regions[prev]);
-    invalidateNodeAppearance(baseBmp);
+    setSpriteTexture(baseSprite, textures[prev]);
 
-    overlayBmp.data.sourceRectangle = rectFrom(config.regions[next]);
-    transitionFromAlpha = overlayBmp.alpha;
+    setSpriteTexture(overlaySprite, textures[next]);
+    transitionFromAlpha = overlaySprite.alpha;
     transitionStart = performance.now();
-    invalidateNodeAppearance(overlayBmp);
+    invalidateNodeAppearance(overlaySprite);
   }
 
   function tick(): void {
@@ -92,13 +96,12 @@ export function createMenuButton(config: MenuButtonConfig): MenuButton {
     const elapsed = performance.now() - transitionStart;
     const t = Math.min(1, elapsed / TRANSITION_MS);
     const alpha = transitionFromAlpha + (1 - transitionFromAlpha) * t;
-    overlayBmp.alpha = alpha;
-    invalidateNodeAppearance(overlayBmp);
+    overlaySprite.alpha = alpha;
+    invalidateNodeAppearance(overlaySprite);
     if (t >= 1) {
-      baseBmp.data.sourceRectangle = rectFrom(config.regions[state]);
-      invalidateNodeAppearance(baseBmp);
-      overlayBmp.alpha = 0;
-      invalidateNodeAppearance(overlayBmp);
+      setSpriteTexture(baseSprite, textures[state]);
+      overlaySprite.alpha = 0;
+      invalidateNodeAppearance(overlaySprite);
       transitionStart = -1;
     }
   }
@@ -147,8 +150,10 @@ export function createMenuButton(config: MenuButtonConfig): MenuButton {
   return button;
 }
 
-function rectFrom(r: Readonly<RectangleLike>): ReturnType<typeof createRectangle> {
-  return createRectangle(r.x, r.y, r.width, r.height);
+function createRegionTexture(image: Image, region: Readonly<RectangleLike>): Texture2D {
+  const texture = createTexture({ source: image });
+  setTextureUvFromPixelRect(texture, region.x, region.y, region.width, region.height);
+  return texture;
 }
 
 export const BUTTON_REGIONS_1X: Record<ButtonState, RectangleLike> = {

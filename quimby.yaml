@@ -23,6 +23,7 @@ defaults:
 # overrides it: review's directed work wakes builder, and builder's replies wake review back.
 # Read once when `quimby serve` starts, so restart the server after changing it.
 nudge: all
+whenFocused: nudge
 
 roles:
   review:

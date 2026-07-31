@@ -1,4 +1,4 @@
-import type { BlurEffect, DisplacementEffect, DropShadowEffect, OuterGlowEffect } from '@flighthq/sdk';
+import type { Adjustment, DisplayObject, RenderEffect } from '@flighthq/sdk';
 import {
   createBlurEffect,
   createDisplacementEffect,
@@ -6,64 +6,56 @@ import {
   createOuterGlowEffect,
 } from '@flighthq/effects';
 import {
-  applyColorMatrixPassToGl,
-  applyDisplacementEffectToGl,
-  applyDropShadowEffectToGl,
-  applyGlEffectBoxBlur,
-  applyOuterGlowEffectToGl,
-} from '@flighthq/effects-gl';
-import type { ColorMatrixAdjustment } from '@flighthq/sdk';
-import {
   createBrightnessColorMatrix,
+  createColorMatrixAdjustment,
   createContrastColorMatrix,
-  createGrayscaleColorMatrix,
+  createGrayscaleAdjustment,
   createHueRotateColorMatrix,
-  createIdentityColorMatrix,
-  createInvertColorMatrix,
+  createInvertAdjustment,
   createSaturationColorMatrix,
 } from '@flighthq/adjustments';
-import type { DisplayObject, GlRenderState, GlRenderTarget, GlRenderTargetPool, Matrix } from '@flighthq/sdk';
 import {
   addNodeChild,
+  applyGlRenderEffectsToRenderTexture,
   attachPointerInput,
-  beginGlRenderPass,
-  BitmapKind,
-  clearGlRenderTarget,
-  computeNodeBoundsRectangle,
-  computeRenderCacheTransform,
-  computeRenderTargetSize,
   connectInputToInteraction,
-  copyMatrix,
-  createBitmap,
   createDisplayObject,
   createGlCanvasElement,
+  createGlOffscreenRenderState,
   createGlRenderState,
-  createGlRenderTarget,
-  createGlRenderTargetPool,
+  createGlRenderTexturePool,
   createInputManager,
   createInteractionManager,
   createMatrix,
-  createRectangle,
+  createRenderTexture,
   createRichText,
-  defaultGlBitmapRenderer,
+  createSprite,
+  createTexture,
+  defaultGlDisplacementEffectRunner,
   defaultGlRichTextRenderer,
+  defaultGlSpriteRenderer,
   defaultGlTextLabelRenderer,
-  drawGlRenderTargetResult,
   enableGlBlendModeSupport,
-  enableGlRenderCache,
-  endGlRenderPass,
-  getRenderProxy2D,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareScene2DRender,
-  registerStandardGlMaterial,
   registerDefaultHitTests,
+  registerGlBlurEffect,
+  registerGlColorAdjustmentMaterialFeature,
+  registerGlRenderEffect,
   registerRenderer,
+  registerStandardGlMaterial,
+  registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
+  renderIntoGlRenderTexture,
   RichTextKind,
-  setGlRenderTransform2D,
+  setNodeColorAdjustments,
+  setSpriteTexture,
+  setTextureUvFromPixelRect,
+  SpriteKind,
   TextLabelKind,
+  withGlRenderTextures,
 } from '@flighthq/sdk';
 
 import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src/menuButton';
@@ -71,94 +63,56 @@ import { BUTTON_REGIONS_1X, createMenuButton } from '../../../_shared/flight/src
 const GameWidth = 320;
 const GameHeight = 480;
 const CenterX = 160;
-
-type FilterType = 'none' | 'blur' | 'dropShadow' | 'glow' | 'colorMatrix' | 'displacementMap';
+const RocketWidth = 256;
+const RocketHeight = 142;
+const EffectPadding = 28;
+const RocketX = CenterX - RocketWidth / 2;
+const RocketY = 170;
+const HueDegrees = 180;
 
 interface FilterEntry {
   name: string;
-  type: FilterType;
-  cssFilter: string;
-  blur?: BlurEffect;
-  dropShadow?: DropShadowEffect;
-  glow?: OuterGlowEffect;
-  colorMatrix?: ColorMatrixAdjustment;
-  displacementMap?: DisplacementEffect;
-}
-
-const HueDegrees = 180;
-
-function createColorMatrixAdjustment(matrix: readonly number[]): ColorMatrixAdjustment {
-  return { kind: 'ColorMatrixAdjustment', colorMatrix: matrix };
+  adjustment?: Adjustment;
+  effect?: RenderEffect;
 }
 
 const filterInfos: FilterEntry[] = [
-  { name: 'Identity', type: 'none', cssFilter: 'none' },
-  {
-    name: 'Blur',
-    type: 'blur',
-    cssFilter: 'blur(1.5px)',
-    blur: createBlurEffect({ blurX: 1.5, blurY: 1.5 }),
-  },
+  { name: 'Identity' },
+  { name: 'Blur', effect: createBlurEffect({ blurX: 1.5, blurY: 1.5 }) },
   {
     name: 'Drop Shadow',
-    type: 'dropShadow',
-    cssFilter: 'drop-shadow(2.8px 2.8px 1px rgba(0,0,0,0.5))',
-    dropShadow: createDropShadowEffect({ distance: 4, blurX: 1, blurY: 1, alpha: 0.5, quality: 1 }),
+    effect: createDropShadowEffect({ distance: 4, blurX: 1, blurY: 1, alpha: 0.5, quality: 1 }),
   },
   {
     name: 'Glow',
-    type: 'glow',
-    cssFilter: 'drop-shadow(0 0 3px yellow)',
-    glow: createOuterGlowEffect({ color: 0xffff00, blurX: 3, blurY: 3, quality: 1 }),
+    effect: createOuterGlowEffect({ color: 0xffff00, blurX: 3, blurY: 3, quality: 1 }),
   },
   {
     name: 'Displacement Map',
-    type: 'displacementMap',
-    cssFilter: 'none',
-    displacementMap: createDisplacementEffect({ intensity: 2, frequency: 100 }),
+    effect: createDisplacementEffect({ intensity: 2, frequency: 100 }),
   },
-  {
-    name: 'Invert',
-    type: 'colorMatrix',
-    cssFilter: 'invert(1)',
-    colorMatrix: createColorMatrixAdjustment(createInvertColorMatrix()),
-  },
-  {
-    name: 'Grayscale',
-    type: 'colorMatrix',
-    cssFilter: 'grayscale(1)',
-    colorMatrix: createColorMatrixAdjustment(createGrayscaleColorMatrix()),
-  },
+  { name: 'Invert', adjustment: createInvertAdjustment() },
+  { name: 'Grayscale', adjustment: createGrayscaleAdjustment() },
   {
     name: 'Saturation',
-    type: 'colorMatrix',
-    cssFilter: 'saturate(2)',
-    colorMatrix: createColorMatrixAdjustment(createSaturationColorMatrix(2)),
+    adjustment: createColorMatrixAdjustment(createSaturationColorMatrix(2)),
   },
   {
     name: 'Contrast',
-    type: 'colorMatrix',
-    cssFilter: 'contrast(1.75)',
-    colorMatrix: createColorMatrixAdjustment(createContrastColorMatrix(1.75)),
+    adjustment: createColorMatrixAdjustment(createContrastColorMatrix(1.75)),
   },
   {
     name: 'Brightness',
-    type: 'colorMatrix',
-    cssFilter: 'brightness(0.75)',
-    colorMatrix: createColorMatrixAdjustment(createBrightnessColorMatrix(-63.75)),
+    adjustment: createColorMatrixAdjustment(createBrightnessColorMatrix(-63.75)),
   },
   {
     name: 'Hue',
-    type: 'colorMatrix',
-    cssFilter: `hue-rotate(${HueDegrees.toFixed(1)}deg)`,
-    colorMatrix: createColorMatrixAdjustment(createHueRotateColorMatrix(HueDegrees)),
+    adjustment: createColorMatrixAdjustment(createHueRotateColorMatrix(HueDegrees)),
   },
   {
     name: 'Hue + Shadow',
-    type: 'colorMatrix',
-    cssFilter: `hue-rotate(${HueDegrees.toFixed(1)}deg) drop-shadow(2.8px 2.8px 4px rgba(0,0,0,0.5))`,
-    colorMatrix: createColorMatrixAdjustment(createHueRotateColorMatrix(HueDegrees)),
-    dropShadow: createDropShadowEffect({ distance: 4, blurX: 1, blurY: 1, alpha: 0.5, quality: 1 }),
+    adjustment: createColorMatrixAdjustment(createHueRotateColorMatrix(HueDegrees)),
+    effect: createDropShadowEffect({ distance: 4, blurX: 1, blurY: 1, alpha: 0.5, quality: 1 }),
   },
 ];
 
@@ -177,26 +131,30 @@ const state = createGlRenderState(canvas, {
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 registerStandardGlMaterial(state);
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerStandardGlTextureResolvers(state);
+registerGlColorAdjustmentMaterialFeature(state);
+registerGlBlurEffect(state);
+registerGlRenderEffect(state, 'DisplacementEffect', defaultGlDisplacementEffectRunner);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
-enableGlRenderCache(state);
 enableGlBlendModeSupport(state);
 
 const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
-const bgBmp = createBitmap();
-bgBmp.data.image = bgImage;
-addNodeChild(root, bgBmp);
+const bgSprite = createSprite();
+setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
+const rocketTexture = createTexture({ source: atlas });
+setTextureUvFromPixelRect(rocketTexture, 322, 1, RocketWidth, RocketHeight);
 
-const rocket = createBitmap();
-rocket.data.image = atlas;
-rocket.data.sourceRectangle = createRectangle(322, 1, 256, 142);
-rocket.x = CenterX - 128;
-rocket.y = 170;
+const rocket = createSprite();
+setSpriteTexture(rocket, rocketTexture);
+rocket.x = RocketX;
+rocket.y = RocketY;
 addNodeChild(root, rocket);
 
 const infoText = createRichText();
@@ -214,10 +172,55 @@ attachPointerInput(inputMgr, canvas);
 const interaction = createInteractionManager<DisplayObject>(root);
 connectInputToInteraction(inputMgr, interaction, 1);
 
+const descriptor = {
+  width: RocketWidth + EffectPadding * 2,
+  height: RocketHeight + EffectPadding * 2,
+};
+const sourceTexture = createRenderTexture(descriptor);
+const filteredTexture = createRenderTexture(descriptor);
+const renderTexturePool = createGlRenderTexturePool();
+
+const bakeRoot = createDisplayObject();
+const bakeRocket = createSprite();
+setSpriteTexture(bakeRocket, rocketTexture);
+bakeRocket.x = EffectPadding;
+bakeRocket.y = EffectPadding;
+addNodeChild(bakeRoot, bakeRocket);
+
+const offscreenState = createGlOffscreenRenderState(state);
+renderIntoGlRenderTexture(state, sourceTexture, () => {
+  prepareScene2DRender(offscreenState, bakeRoot);
+  renderGlScene2D(offscreenState, bakeRoot);
+});
+
+function applySelectedFilter(): void {
+  const entry = filterInfos[filterIndex];
+  setNodeColorAdjustments(rocket, entry.adjustment === undefined ? null : [entry.adjustment]);
+
+  let displayTexture = rocketTexture;
+  let usesPaddedTexture = false;
+  const effect = entry.effect;
+  if (effect !== undefined) {
+    const applied = withGlRenderTextures(state, renderTexturePool, [descriptor], ([scratch]) =>
+      applyGlRenderEffectsToRenderTexture(state, renderTexturePool, sourceTexture, filteredTexture, scratch, [effect]),
+    );
+    // SDK 1220 has public runners for blur and displacement, but not for glow or shadow. The generic
+    // pipeline reports that gap instead of populating the destination, so keep the baked source as a
+    // deterministic fallback rather than sampling an uninitialized render texture.
+    displayTexture = applied ? filteredTexture : sourceTexture;
+    usesPaddedTexture = true;
+  }
+
+  setSpriteTexture(rocket, displayTexture);
+  rocket.x = RocketX - (usesPaddedTexture ? EffectPadding : 0);
+  rocket.y = RocketY - (usesPaddedTexture ? EffectPadding : 0);
+}
+
 function switchFilter(): void {
   filterIndex = (filterIndex + 1) % filterInfos.length;
   infoText.data.text = filterInfos[filterIndex].name;
   invalidateNodeAppearance(infoText);
+  applySelectedFilter();
 }
 
 const switchBtn = createMenuButton({
@@ -248,81 +251,12 @@ backBtn.root.y = GameHeight - 50 + 4;
 backBtn.connect(interaction);
 addNodeChild(root, backBtn.root);
 
-const _bounds = createRectangle();
-const _identity = createMatrix();
-const MAX_PADDING = Math.ceil(8 * 3 + 4);
+applySelectedFilter();
 
-runGl(state);
-
-function runGl(state: GlRenderState): void {
-  computeNodeBoundsRectangle(_bounds, rocket, rocket);
-  const { width: w, height: h } = computeRenderTargetSize(_bounds, MAX_PADDING, 1, 1);
-  const source = createGlRenderTarget(state, { width: w, height: h });
-  const dest = createGlRenderTarget(state, { width: w, height: h });
-  const pool: GlRenderTargetPool = createGlRenderTargetPool();
-  const scratch = createGlRenderTarget(state, { width: w, height: h });
-  const cacheTransform = createMatrix();
-  const sceneTransform = createMatrix();
-
-  function renderFrame(): void {
-    const entry = filterInfos[filterIndex];
-
-    prepareScene2DRender(state, root);
-    const proxy = getRenderProxy2D(state, rocket);
-    if (proxy !== undefined) copyMatrix(sceneTransform, proxy.transform2D);
-
-    if (entry.type !== 'none' && proxy !== undefined) {
-      computeNodeBoundsRectangle(_bounds, rocket, rocket);
-      computeRenderCacheTransform(cacheTransform, _bounds, MAX_PADDING, MAX_PADDING);
-      setTranslation(proxy.transform2D, MAX_PADDING - _bounds.x, MAX_PADDING - _bounds.y);
-
-      beginGlRenderPass(state, source, { preserveColor: true, preserveDepth: true });
-      setGlRenderTransform2D(state, _identity);
-      clearGlRenderTarget(state, source);
-      renderGlScene2D(state, rocket);
-      clearGlRenderTarget(state, dest);
-
-      if (entry.type === 'blur' && entry.blur !== undefined) {
-        applyGlEffectBoxBlur(state, source, dest, scratch, entry.blur);
-      } else if (entry.type === 'dropShadow' && entry.dropShadow !== undefined) {
-        applyDropShadowEffectToGl(state, source, dest, pool, entry.dropShadow);
-      } else if (entry.type === 'glow' && entry.glow !== undefined) {
-        applyOuterGlowEffectToGl(state, source, dest, pool, entry.glow);
-      } else if (entry.type === 'displacementMap' && entry.displacementMap !== undefined) {
-        applyDisplacementEffectToGl(state, source, dest, entry.displacementMap);
-      } else if (entry.type === 'colorMatrix' && entry.colorMatrix !== undefined) {
-        if (entry.dropShadow !== undefined) {
-          applyColorMatrixPassToGl(state, source, scratch, entry.colorMatrix.colorMatrix);
-          applyDropShadowEffectToGl(state, scratch, dest, pool, entry.dropShadow);
-        } else {
-          applyColorMatrixPassToGl(state, source, dest, entry.colorMatrix.colorMatrix);
-        }
-      }
-
-      endGlRenderPass(state);
-
-      copyMatrix(proxy.transform2D, sceneTransform);
-      proxy.visible = false;
-      renderGlBackground(state);
-      renderGlScene2D(state, root);
-      proxy.visible = true;
-      drawGlRenderTargetResult(state, proxy, dest, cacheTransform);
-    } else {
-      renderGlBackground(state);
-      renderGlScene2D(state, root);
-    }
-
-    requestAnimationFrame(renderFrame);
-  }
-
-  renderFrame();
+function frame(): void {
+  prepareScene2DRender(state, root);
+  renderGlBackground(state);
+  renderGlScene2D(state, root);
+  requestAnimationFrame(frame);
 }
-
-function setTranslation(out: Matrix, tx: number, ty: number): void {
-  out.a = 1;
-  out.b = 0;
-  out.c = 0;
-  out.d = 1;
-  out.tx = tx;
-  out.ty = ty;
-}
+frame();

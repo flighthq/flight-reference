@@ -2,9 +2,7 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   addNodeChild,
   attachPointerInput,
-  BitmapKind,
   connectInputToInteraction,
-  createBitmap,
   createDisplayObject,
   createGlCanvasElement,
   createGlRenderState,
@@ -12,17 +10,22 @@ import {
   createInputManager,
   createInteractionManager,
   createMatrix,
-  defaultGlBitmapRenderer,
+  createSprite,
+  createTexture,
+  defaultGlSpriteRenderer,
   defaultGlTextLabelRenderer,
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareScene2DRender,
-  registerStandardGlMaterial,
   registerDefaultHitTests,
   registerRenderer,
+  registerStandardGlMaterial,
+  registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
-  setImageResourceSource,
+  setSpriteTexture,
+  setTextureSource,
+  SpriteKind,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -45,15 +48,16 @@ const state = createGlRenderState(canvas, {
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 registerStandardGlMaterial(state);
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerStandardGlTextureResolvers(state);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 
 const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
-const bgBmp = createBitmap();
-bgBmp.data.image = bgImage;
-addNodeChild(root, bgBmp);
+const bgSprite = createSprite();
+setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
@@ -78,10 +82,10 @@ drawCtx.textBaseline = 'top';
 drawCtx.fillText('Touch the screen', CenterX, 196);
 drawCtx.fillText('to draw!', CenterX, 224);
 
-const drawImage = createImageResourceFromCanvas(drawCanvas);
-const canvasBmp = createBitmap();
-canvasBmp.data.image = drawImage;
-addNodeChild(root, canvasBmp);
+const drawTexture = createTexture({ source: createImageResourceFromCanvas(drawCanvas) });
+const canvasSprite = createSprite();
+setSpriteTexture(canvasSprite, drawTexture);
+addNodeChild(root, canvasSprite);
 
 const brushSrcX = 515;
 const brushSrcY = 144;
@@ -167,8 +171,8 @@ function drawBrush(x: number, y: number): void {
 
   drawCtx.restore();
 
-  setImageResourceSource(drawImage, drawCanvas);
-  invalidateNodeAppearance(canvasBmp);
+  setTextureSource(drawTexture, createImageResourceFromCanvas(drawCanvas));
+  invalidateNodeAppearance(canvasSprite);
 }
 
 let isDrawing = false;

@@ -110,6 +110,13 @@ addNodeChild(root, backBtn.root);
 let dragging = false;
 let lastX = 0;
 let lastY = 0;
+let simulatingMultitouch = false;
+let gestureCenterX = CenterX;
+let gestureCenterY = CenterY;
+
+function isMultitouchModifier(event: PointerEvent): boolean {
+  return event.ctrlKey || event.metaKey;
+}
 
 canvas.addEventListener('pointerdown', (e) => {
   const rect = canvas.getBoundingClientRect();
@@ -125,6 +132,9 @@ canvas.addEventListener('pointerdown', (e) => {
     dragging = true;
     lastX = mx;
     lastY = my;
+    simulatingMultitouch = isMultitouchModifier(e);
+    gestureCenterX = CenterX;
+    gestureCenterY = CenterY;
     canvas.setPointerCapture(e.pointerId);
   }
 });
@@ -134,9 +144,62 @@ canvas.addEventListener('pointermove', (e) => {
   const rect = canvas.getBoundingClientRect();
   const mx = ((e.clientX - rect.left) / rect.width) * GameWidth;
   const my = ((e.clientY - rect.top) / rect.height) * GameHeight;
+  const dx = mx - lastX;
+  const dy = my - lastY;
+  const wantsMultitouch = isMultitouchModifier(e);
 
-  sheet.x += mx - lastX;
-  sheet.y += my - lastY;
+  if (wantsMultitouch && !simulatingMultitouch) {
+    // Ctrl/Cmd was pressed during an existing drag. Starling begins the mirrored touch at the
+    // current pointer position; keep this first movement as the original single-touch translation.
+    sheet.x += dx;
+    sheet.y += dy;
+    gestureCenterX = CenterX;
+    gestureCenterY = CenterY;
+    simulatingMultitouch = true;
+  } else if (wantsMultitouch) {
+    const previousCenterX = gestureCenterX;
+    const previousCenterY = gestureCenterY;
+    if (e.shiftKey) {
+      // Starling's Shift modifier moves the simulation center with the real pointer, translating both
+      // the real and mirrored touches instead of changing their angle or separation.
+      gestureCenterX += dx;
+      gestureCenterY += dy;
+    }
+
+    const previousMockX = 2 * previousCenterX - lastX;
+    const previousMockY = 2 * previousCenterY - lastY;
+    const currentMockX = 2 * gestureCenterX - mx;
+    const currentMockY = 2 * gestureCenterY - my;
+    const previousVectorX = lastX - previousMockX;
+    const previousVectorY = lastY - previousMockY;
+    const currentVectorX = mx - currentMockX;
+    const currentVectorY = my - currentMockY;
+    const previousLength = Math.hypot(previousVectorX, previousVectorY);
+    const currentLength = Math.hypot(currentVectorX, currentVectorY);
+
+    if (previousLength > 0.0001 && currentLength > 0.0001) {
+      const scale = currentLength / previousLength;
+      const previousAngle = Math.atan2(previousVectorY, previousVectorX);
+      const currentAngle = Math.atan2(currentVectorY, currentVectorX);
+      const rawAngle = currentAngle - previousAngle;
+      const angle = Math.atan2(Math.sin(rawAngle), Math.cos(rawAngle));
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      const sheetOffsetX = sheet.x - previousCenterX;
+      const sheetOffsetY = sheet.y - previousCenterY;
+
+      sheet.x = gestureCenterX + (sheetOffsetX * cos - sheetOffsetY * sin) * scale;
+      sheet.y = gestureCenterY + (sheetOffsetX * sin + sheetOffsetY * cos) * scale;
+      sheet.rotation += (angle * 180) / Math.PI;
+      sheet.scaleX *= scale;
+      sheet.scaleY *= scale;
+    }
+  } else {
+    sheet.x += dx;
+    sheet.y += dy;
+    simulatingMultitouch = false;
+  }
+
   lastX = mx;
   lastY = my;
   invalidateNodeLocalTransform(sheet);
@@ -144,6 +207,12 @@ canvas.addEventListener('pointermove', (e) => {
 
 canvas.addEventListener('pointerup', () => {
   dragging = false;
+  simulatingMultitouch = false;
+});
+
+canvas.addEventListener('pointercancel', () => {
+  dragging = false;
+  simulatingMultitouch = false;
 });
 
 function frame(): void {

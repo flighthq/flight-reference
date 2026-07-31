@@ -18,6 +18,7 @@ import {
   addNodeChild,
   applyGlRenderEffectsToRenderTexture,
   attachPointerInput,
+  computeRenderEffectPadding,
   connectInputToInteraction,
   createDisplayObject,
   createGlCanvasElement,
@@ -31,7 +32,6 @@ import {
   createRichText,
   createSprite,
   createTexture,
-  defaultGlDisplacementEffectRunner,
   defaultGlRichTextRenderer,
   defaultGlSpriteRenderer,
   defaultGlTextLabelRenderer,
@@ -40,9 +40,15 @@ import {
   loadImageResourceFromUrl,
   prepareScene2DRender,
   registerDefaultHitTests,
+  registerBlurEffectPaddingResolver,
+  registerDisplacementEffectPaddingResolver,
+  registerDropShadowEffectPaddingResolver,
   registerGlBlurEffect,
   registerGlColorAdjustmentMaterialFeature,
-  registerGlRenderEffect,
+  registerGlDisplacementEffect,
+  registerGlDropShadowEffect,
+  registerGlOuterGlowEffect,
+  registerOuterGlowEffectPaddingResolver,
   registerRenderer,
   registerStandardGlMaterial,
   registerStandardGlTextureResolvers,
@@ -64,7 +70,6 @@ const GameHeight = 480;
 const CenterX = 160;
 const RocketWidth = 256;
 const RocketHeight = 142;
-const EffectPadding = 28;
 const RocketX = CenterX - RocketWidth / 2;
 const RocketY = 170;
 const HueDegrees = 180;
@@ -133,7 +138,13 @@ registerStandardGlMaterial(state);
 registerStandardGlTextureResolvers(state);
 registerGlColorAdjustmentMaterialFeature(state);
 registerGlBlurEffect(state);
-registerGlRenderEffect(state, 'DisplacementEffect', defaultGlDisplacementEffectRunner);
+registerBlurEffectPaddingResolver(state);
+registerGlDisplacementEffect(state);
+registerDisplacementEffectPaddingResolver(state);
+registerGlDropShadowEffect(state);
+registerDropShadowEffectPaddingResolver(state);
+registerGlOuterGlowEffect(state);
+registerOuterGlowEffectPaddingResolver(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
@@ -171,9 +182,14 @@ attachPointerInput(inputMgr, canvas);
 const interaction = createInteractionManager<DisplayObject>(root);
 connectInputToInteraction(inputMgr, interaction, 1);
 
+const registeredEffects = filterInfos.flatMap((entry) => (entry.effect === undefined ? [] : [entry.effect]));
+const padding = computeRenderEffectPadding(state, registeredEffects);
+const effectPadding = Math.ceil(Math.max(padding.left, padding.right, padding.top, padding.bottom));
 const descriptor = {
-  width: RocketWidth + EffectPadding * 2,
-  height: RocketHeight + EffectPadding * 2,
+  width: RocketWidth + effectPadding * 2,
+  height: RocketHeight + effectPadding * 2,
+  // Filters must begin from transparent pixels so glow and shadow alpha can expand cleanly.
+  clearColors: [0x00000000],
 };
 const sourceTexture = createRenderTexture(descriptor);
 const filteredTexture = createRenderTexture(descriptor);
@@ -182,8 +198,8 @@ const renderTexturePool = createGlRenderTexturePool();
 const bakeRoot = createDisplayObject();
 const bakeRocket = createSprite();
 bakeRocket.data.texture = rocketTexture;
-bakeRocket.x = EffectPadding;
-bakeRocket.y = EffectPadding;
+bakeRocket.x = effectPadding;
+bakeRocket.y = effectPadding;
 addNodeChild(bakeRoot, bakeRocket);
 
 const offscreenState = createGlOffscreenRenderState(state);
@@ -203,16 +219,15 @@ function applySelectedFilter(): void {
     const applied = withGlRenderTextures(state, renderTexturePool, [descriptor], ([scratch]) =>
       applyGlRenderEffectsToRenderTexture(state, renderTexturePool, sourceTexture, filteredTexture, scratch, [effect]),
     );
-    // SDK 1220 has public runners for blur and displacement, but not for glow or shadow. The generic
-    // pipeline reports that gap instead of populating the destination, so keep the baked source as a
-    // deterministic fallback rather than sampling an uninitialized render texture.
+    // Keep the checked fallback even with every runner registered: a missing future registration must
+    // never leave the sprite sampling an unwritten render texture.
     displayTexture = applied ? filteredTexture : sourceTexture;
     usesPaddedTexture = true;
   }
 
   rocket.data.texture = displayTexture;
-  rocket.x = RocketX - (usesPaddedTexture ? EffectPadding : 0);
-  rocket.y = RocketY - (usesPaddedTexture ? EffectPadding : 0);
+  rocket.x = RocketX - (usesPaddedTexture ? effectPadding : 0);
+  rocket.y = RocketY - (usesPaddedTexture ? effectPadding : 0);
 }
 
 function switchFilter(): void {

@@ -1,17 +1,24 @@
 import type { DisplayObject } from '@flighthq/sdk';
+import { createCompositeEffect } from '@flighthq/effects';
 import {
   addNodeChild,
+  applyGlRenderEffectsToRenderTexture,
   appendShapeBeginFill,
   appendShapeRectangle,
   attachPointerInput,
+  bindGlRenderTexture,
   BlendMode,
+  CompositeOperator,
   connectInputToInteraction,
   createDisplayObject,
   createGlCanvasElement,
+  createGlOffscreenRenderState,
   createGlRenderState,
+  createGlRenderTexturePool,
   createInputManager,
   createInteractionManager,
   createMatrix,
+  createRenderTexture,
   createShape,
   createSprite,
   createTextLabel,
@@ -27,15 +34,19 @@ import {
   registerStandardGlMaterial,
   registerStandardGlTextureResolvers,
   registerDefaultHitTests,
+  registerGlBlendEffectBackdrop,
+  registerGlCompositeEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
+  renderIntoGlRenderTexture,
   setTextLabelString,
   ShapeKind,
   setTextureUvFromPixelRect,
   SpriteKind,
   TextLabelKind,
+  withGlRenderTextures,
 } from '@flighthq/sdk';
 
 import { BUTTON_REGIONS_1X, createMenuButton } from './menuButton';
@@ -63,25 +74,26 @@ registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 enableGlBlendModeSupport(state);
+registerGlCompositeEffect(state);
 
 const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
+const bgTexture = createTexture({ source: bgImage });
 const bgSprite = createSprite();
-bgSprite.data.texture = createTexture({ source: bgImage });
+bgSprite.data.texture = bgTexture;
 addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
-// Starling's "none" blend mode (Copy/source-only) is now a CompositeOperator, not a BlendMode.
-// To match the Starling reference visually, "none" uses Normal blending over a white backdrop.
-const blendModes: [string, string][] = [
-  [BlendMode.Normal, 'normal'],
-  [BlendMode.Multiply, 'multiply'],
-  [BlendMode.Screen, 'screen'],
-  [BlendMode.Add, 'add'],
-  [BlendMode.Darken, 'darken'],
-  [BlendMode.Normal, 'none'],
+const blendModes: ReadonlyArray<{ blendMode: string; name: string }> = [
+  { blendMode: BlendMode.Normal, name: 'normal' },
+  { blendMode: BlendMode.Multiply, name: 'multiply' },
+  { blendMode: BlendMode.Screen, name: 'screen' },
+  { blendMode: BlendMode.Add, name: 'add' },
+  { blendMode: BlendMode.Normal, name: 'erase' },
+  // Starling's "none" mode is source-only Copy, which this scene represents over a white backdrop.
+  { blendMode: BlendMode.Normal, name: 'none' },
 ];
 
 let modeIndex = 0;
@@ -103,8 +115,54 @@ const rocket = createSprite();
 rocket.data.texture = rocketTexture;
 rocket.x = rocketX;
 rocket.y = rocketY;
-rocket.blendMode = blendModes[0][0];
+rocket.blendMode = blendModes[0].blendMode;
 addNodeChild(root, rocket);
+
+// Erase is a Porter-Duff operation, not a fixed-function BlendMode. Bake the source layer and its
+// backdrop separately, then composite DestinationOut once into the texture shown for that mode.
+const eraseDescriptor = { width: GameWidth, height: GameHeight, clearColors: [0x00000000] };
+const eraseSource = createRenderTexture(eraseDescriptor);
+const eraseBackdrop = createRenderTexture(eraseDescriptor);
+const eraseResult = createRenderTexture(eraseDescriptor);
+const erasePool = createGlRenderTexturePool();
+const offscreenState = createGlOffscreenRenderState(state);
+
+const eraseSourceRoot = createDisplayObject();
+const eraseSourceRocket = createSprite();
+eraseSourceRocket.data.texture = rocketTexture;
+eraseSourceRocket.x = rocketX;
+eraseSourceRocket.y = rocketY;
+addNodeChild(eraseSourceRoot, eraseSourceRocket);
+renderIntoGlRenderTexture(state, eraseSource, () => {
+  prepareScene2DRender(offscreenState, eraseSourceRoot);
+  renderGlScene2D(offscreenState, eraseSourceRoot);
+});
+
+const eraseBackdropRoot = createDisplayObject();
+const eraseBackdropSprite = createSprite();
+eraseBackdropSprite.data.texture = bgTexture;
+addNodeChild(eraseBackdropRoot, eraseBackdropSprite);
+renderIntoGlRenderTexture(state, eraseBackdrop, () => {
+  prepareScene2DRender(offscreenState, eraseBackdropRoot);
+  renderGlScene2D(offscreenState, eraseBackdropRoot);
+});
+
+const eraseBackdropHandle = bindGlRenderTexture(state, eraseBackdrop);
+let eraseApplied = false;
+if (eraseBackdropHandle !== null) {
+  const backdropKey = 'starling.blendModes.erase';
+  registerGlBlendEffectBackdrop(state, backdropKey, eraseBackdropHandle);
+  eraseApplied = withGlRenderTextures(state, erasePool, [eraseDescriptor], ([scratch]) =>
+    applyGlRenderEffectsToRenderTexture(state, erasePool, eraseSource, eraseResult, scratch, [
+      createCompositeEffect(CompositeOperator.DestinationOut, { backdropKey }),
+    ]),
+  );
+}
+
+const eraseLayer = createSprite();
+eraseLayer.data.texture = eraseApplied ? eraseResult : eraseBackdrop;
+eraseLayer.visible = false;
+addNodeChild(root, eraseLayer);
 
 const infoText = createTextLabel();
 infoText.data.textFormat = { font: 'DejaVu Sans, sans-serif', size: 19, align: 'center' };
@@ -112,7 +170,7 @@ infoText.x = 10;
 infoText.y = 330;
 infoText.data.width = 300;
 infoText.data.height = 32;
-infoText.data.text = blendModes[0][1];
+infoText.data.text = blendModes[0].name;
 infoText.blendMode = BlendMode.Normal;
 addNodeChild(root, infoText);
 
@@ -132,10 +190,16 @@ const switchBtn = createMenuButton({
   height: 32,
   onTriggered: () => {
     modeIndex = (modeIndex + 1) % blendModes.length;
-    const [mode, name] = blendModes[modeIndex];
-    rocket.blendMode = mode;
+    const { blendMode, name } = blendModes[modeIndex];
+    const erase = name === 'erase';
+    rocket.blendMode = blendMode;
+    bgSprite.visible = !erase;
+    rocket.visible = !erase;
+    eraseLayer.visible = erase;
     noneBackdrop.visible = name === 'none';
+    invalidateNodeAppearance(bgSprite);
     invalidateNodeAppearance(noneBackdrop);
+    invalidateNodeAppearance(eraseLayer);
     setTextLabelString(infoText, name);
     invalidateNodeAppearance(rocket);
   },

@@ -10,9 +10,12 @@ import {
   createBitmapFromCanvas,
   captureBitmapFromImageResource,
   createBitmapRegion,
+  createSprite,
+  createTexture,
   floodFillBitmap,
   ImageChannel,
   loadImageResourceFromUrl,
+  setSpriteTexture,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -31,16 +34,15 @@ function addImage(
   y: number,
   opts: { alpha?: number; rotation?: number; scaleX?: number; scaleY?: number } = {},
 ): void {
-  const bitmap = createBitmap();
-  bitmap.data.image = source;
-  bitmap.data.smoothing = true;
-  bitmap.x = x;
-  bitmap.y = y;
-  bitmap.alpha = opts.alpha ?? 1;
-  bitmap.rotation = opts.rotation ?? 0;
-  bitmap.scaleX = opts.scaleX ?? 1;
-  bitmap.scaleY = opts.scaleY ?? 1;
-  addNodeChild(root, bitmap);
+  const sprite = createSprite();
+  setSpriteTexture(sprite, createTexture({ source }));
+  sprite.x = x;
+  sprite.y = y;
+  sprite.alpha = opts.alpha ?? 1;
+  sprite.rotation = opts.rotation ?? 0;
+  sprite.scaleX = opts.scaleX ?? 1;
+  sprite.scaleY = opts.scaleY ?? 1;
+  addNodeChild(root, sprite);
 }
 
 function addSurface(

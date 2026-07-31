@@ -1,19 +1,20 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  BitmapKind,
   createGlCanvasElement,
   createGlRenderState,
-  defaultGlBitmapRenderer,
+  defaultGlSpriteRenderer,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
   prepareScene2DRender,
   registerStandardGlMaterial,
+  registerStandardGlTextureResolvers,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
   ShapeKind,
+  SpriteKind,
   TextLabelKind,
   createMatrix,
 } from '@flighthq/sdk';
@@ -29,7 +30,8 @@ export const state = createGlRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerStandardGlTextureResolvers(state);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);

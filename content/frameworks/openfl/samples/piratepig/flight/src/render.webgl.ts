@@ -1,34 +1,41 @@
-﻿import { applyGaussianBlurToGl } from '@flighthq/effects-gl/contract';
-import { clearGlRenderTarget, destroyGlRenderTarget } from '@flighthq/render-gl/contract';
-import { ensureGlRenderCacheTarget, getGlRenderCacheTarget } from '@flighthq/scene2d-gl/contract';
-import type { DisplayObject } from '@flighthq/sdk';
+﻿import type { DisplayObject, Shape } from '@flighthq/sdk';
 import {
-  beginGlRenderPass,
-  copyMatrix,
-  createGlCacheState,
+  addNodeChild,
+  applyGlRenderEffectsToRenderTexture,
+  computeRenderEffectPadding,
+  copyShapeCommands,
+  createBlurEffect,
+  createDisplayObject,
+  createGlOffscreenRenderState,
+  createGlRenderTexturePool,
   createGlRenderState,
-  createGlRenderTarget,
-  createRenderCache,
+  createRenderTexture,
+  createShape,
+  createSprite,
   defaultGlSpriteRenderer,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
-  enableGlRenderCache,
-  endGlRenderPass,
-  invalidateNodeLocalTransform,
+  getNodeParent,
+  getShapeBounds,
   prepareScene2DRender,
-  refreshGlRenderCache,
+  registerBlurEffectPaddingResolver,
+  registerGlBlurEffect,
   registerStandardGlMaterial,
   registerStandardGlTextureResolvers,
   registerGlShapeCommands,
   registerRenderer,
+  renderIntoGlRenderTexture,
   renderGlBackground,
   renderGlScene2D,
   ShapeKind,
   SpriteKind,
+  setSpriteTexture,
   TextLabelKind,
-  useRenderCache,
+  withGlRenderTextures,
   createMatrix,
+  createRectangle,
+  replaceNodeChild,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -52,7 +59,8 @@ registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerStandardGlMaterial(state);
-enableGlRenderCache(state);
+registerBlurEffectPaddingResolver(state);
+registerGlBlurEffect(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 
@@ -64,46 +72,55 @@ export function setSize(w: number, h: number): void {
 }
 
 export function render(root: DisplayObject): void {
+  _applyBackgroundBlur?.();
   if (!prepareScene2DRender(state, root)) return;
   renderGlBackground(state);
   renderGlScene2D(state, root);
 }
 
-// Gl has no CSS filter. Bake the panel into a "sharp" render cache, then blur that into a
-// separate "blurred" cache — the one composited in place of the node. Two caches are required
-// because the blur composites over its destination (premultiplied OVER): blurring in place would
-// leave the sharp bake showing through underneath. Returns a callback that re-bakes on resize.
-export function applyBackgroundBlur(node: DisplayObject): () => void {
-  const blurred = createRenderCache();
-  useRenderCache(state, node, blurred);
-  const sharp = createRenderCache();
-  const cacheState = createGlCacheState(state);
-  // Force a full re-bake on every refresh — the panel's own revisions do not change on resize.
-  cacheState.sceneGraphSyncPolicy = 'refreshDerivedState';
+// Per-node effects are a GL-only SDK capability. The other backends render this panel unfiltered.
+// Bake the panel once, then run the blur from that source into the visible Sprite's texture.
+export function applyBackgroundBlur(node: Shape): () => void {
+  const parent = getNodeParent(node);
+  if (parent === null) return () => {};
 
-  const refresh = (): void => {
-    refreshGlRenderCache(cacheState, sharp, node, { padding: 30 });
-    const src = getGlRenderCacheTarget(state, sharp);
-    if (src === null) return;
-    const out = ensureGlRenderCacheTarget(state, blurred, src.width, src.height);
-    const temp = createGlRenderTarget(state, { width: src.width, height: src.height });
-    // Run inside a render-pass bracket so endGlRenderPass rebinds the screen framebuffer the
-    // next render() draws into; preserve on begin and clear explicitly to transparent (the pass's
-    // default clear uses the background color, but the blur must composite over transparent).
-    beginGlRenderPass(state, out, { preserveColor: true, preserveDepth: true });
-    clearGlRenderTarget(state, out);
-    clearGlRenderTarget(state, temp);
-    applyGaussianBlurToGl(state, src, out, temp, { blurX: 10, blurY: 10 });
-    endGlRenderPass(state);
-    destroyGlRenderTarget(state, temp);
-    copyMatrix(blurred.transform, sharp.transform);
-    // The panel never invalidates on its own (its revisions do not change on resize), so the
-    // prepare/adapt pass would otherwise skip it and keep folding the previous layout's placement
-    // transform into the composite — leaving the blurred panel stale/offset from the re-laid-out
-    // scene. Force the adapt fold to re-run with the new transform on the next prepare. Mirrors the
-    // prepareBlurTransform()/invalidateNodeLocalTransform() step the Wgpu backend documents.
-    invalidateNodeLocalTransform(node);
+  const effect = createBlurEffect({ blurX: 10, blurY: 10 });
+  const padding = computeRenderEffectPadding(state, effect);
+  const pad = Math.ceil(Math.max(padding.left, padding.right, padding.top, padding.bottom));
+  const bounds = createRectangle();
+  getShapeBounds(bounds, node);
+  const width = Math.ceil(bounds.width) + pad * 2;
+  const height = Math.ceil(bounds.height) + pad * 2;
+  const descriptor = { width, height };
+
+  const source = createRenderTexture(descriptor);
+  const result = createRenderTexture(descriptor);
+  const bakeRoot = createDisplayObject();
+  const bakePanel = createShape();
+  copyShapeCommands(bakePanel, node);
+  bakePanel.x = pad - bounds.x;
+  bakePanel.y = pad - bounds.y;
+  addNodeChild(bakeRoot, bakePanel);
+
+  const offscreen = createGlOffscreenRenderState(state);
+  renderIntoGlRenderTexture(state, source, () => {
+    prepareScene2DRender(offscreen, bakeRoot);
+    renderGlScene2D(offscreen, bakeRoot);
+  });
+
+  const panel = createSprite();
+  setSpriteTexture(panel, result);
+  panel.x = node.x + bounds.x - pad;
+  panel.y = node.y + bounds.y - pad;
+  replaceNodeChild(parent, node, panel);
+
+  const pool = createGlRenderTexturePool();
+  _applyBackgroundBlur = () => {
+    withGlRenderTextures(state, pool, [descriptor], ([scratch]) => {
+      applyGlRenderEffectsToRenderTexture(state, pool, source, result, scratch, [effect]);
+    });
   };
-  refresh();
-  return refresh;
+  return () => {};
 }
+
+let _applyBackgroundBlur: (() => void) | null = null;

@@ -1,13 +1,15 @@
-import type { ImageResource, Bitmap } from '@flighthq/sdk';
+import type { Bitmap, Image } from '@flighthq/sdk';
 import {
   addNodeChild,
-  createBitmap,
+  captureBitmapFromImageResource,
+  compareBitmap,
   createDisplayObject,
   createImageResourceFromBitmap,
-  captureBitmapFromImageResource,
+  createSprite,
+  createTexture,
   loadImageResourceFromUrl,
+  setSpriteTexture,
 } from '@flighthq/sdk';
-import { compareBitmap } from '@flighthq/sdk';
 
 import { render, scale } from './render';
 
@@ -55,21 +57,21 @@ const [
   loadImageResourceFromUrl(`openfl/images/${SIZE}/error.png`),
 ]);
 
-const sourceSurfaces: Bitmap[] = sourceImages.map((img) => captureBitmapFromImageResource(img));
+const sourceBitmaps: Bitmap[] = sourceImages.map((image) => captureBitmapFromImageResource(image));
 
-const entries: ImageResource[] = [...sourceImages, indicatorNull, indicatorDisposed];
+const entries: Image[] = [...sourceImages, indicatorNull, indicatorDisposed];
 const count = entries.length;
 
-function addImage(image: ImageResource, x: number, y: number): void {
-  const bmp = createBitmap();
-  bmp.data.image = image;
-  bmp.x = x;
-  bmp.y = y;
-  addNodeChild(root, bmp);
+function addImage(image: Image, x: number, y: number): void {
+  const sprite = createSprite();
+  setSpriteTexture(sprite, createTexture({ source: image }));
+  sprite.x = x;
+  sprite.y = y;
+  addNodeChild(root, sprite);
 }
 
-function getSurface(index: number): Bitmap | null {
-  return index < sourceSurfaces.length ? sourceSurfaces[index] : null;
+function getBitmap(index: number): Bitmap | null {
+  return index < sourceBitmaps.length ? sourceBitmaps[index] : null;
 }
 
 function getSourceImage(index: number) {
@@ -92,19 +94,19 @@ for (let row = 0; row < count; row++) {
 //  -3                  when widths differ
 //  -4                  when heights differ
 for (let row = 0; row < count; row++) {
-  const rowSurface = getSurface(row);
+  const rowBitmap = getBitmap(row);
 
   for (let col = 0; col < count; col++) {
     const x = HEADER_OFFSET + col * CELL;
     const y = HEADER_OFFSET + row * CELL;
-    const colSurface = getSurface(col);
+    const colBitmap = getBitmap(col);
 
-    if (rowSurface === null && colSurface === null) {
+    if (rowBitmap === null && colBitmap === null) {
       addImage(indicatorError, x, y);
       continue;
     }
 
-    if (rowSurface === null || colSurface === null) {
+    if (rowBitmap === null || colBitmap === null) {
       addImage(indicatorMinus1, x, y);
       continue;
     }
@@ -122,7 +124,7 @@ for (let row = 0; row < count; row++) {
       continue;
     }
 
-    const diff = compareBitmap(rowSurface, colSurface);
+    const diff = compareBitmap(rowBitmap, colBitmap);
     if (diff === null) {
       addImage(indicator0, x, y);
     } else {

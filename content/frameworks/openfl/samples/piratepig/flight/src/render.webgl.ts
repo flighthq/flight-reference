@@ -1,32 +1,31 @@
-﻿import { applyGaussianBlurToGl } from '@flighthq/effects-gl';
+﻿import { applyGaussianBlurToGl } from '@flighthq/effects-gl/contract';
+import { clearGlRenderTarget, destroyGlRenderTarget } from '@flighthq/render-gl/contract';
+import { ensureGlRenderCacheTarget, getGlRenderCacheTarget } from '@flighthq/scene2d-gl/contract';
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   beginGlRenderPass,
-  BitmapKind,
-  clearGlRenderTarget,
   copyMatrix,
   createGlCacheState,
   createGlRenderState,
   createGlRenderTarget,
   createRenderCache,
-  defaultGlBitmapRenderer,
+  defaultGlSpriteRenderer,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
-  destroyGlRenderTarget,
   enableGlRenderCache,
   endGlRenderPass,
-  ensureGlRenderCacheTarget,
-  getGlRenderCacheTarget,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
   refreshGlRenderCache,
   registerStandardGlMaterial,
+  registerStandardGlTextureResolvers,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
   ShapeKind,
+  SpriteKind,
   TextLabelKind,
   useRenderCache,
   createMatrix,
@@ -47,7 +46,8 @@ export const state = createGlRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerStandardGlTextureResolvers(state);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);

@@ -7,10 +7,11 @@ import {
   connectSignal,
   createApplication,
   createApplicationWindow,
-  createBitmap,
   createDisplayObject,
   createInputManager,
   createInteractionManager,
+  createSprite,
+  createTexture,
   createTweenManager,
   DisplayObjectKind,
   hitTestGraphLocalBounds,
@@ -19,6 +20,7 @@ import {
   loadFontFromUrl,
   loadImageResourceFromUrl,
   registerHitTest,
+  setSpriteTexture,
   startApplicationLoop,
   stopApplicationLoop,
   updateTweens,
@@ -59,14 +61,12 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-const background = createBitmap();
-background.data.image = bgImage;
-background.data.smoothing = true;
+const background = createSprite();
+setSpriteTexture(background, createTexture({ source: bgImage }));
 addNodeChild(root, background);
 
-const footer = createBitmap();
-footer.data.image = footerImage;
-footer.data.smoothing = true;
+const footer = createSprite();
+setSpriteTexture(footer, createTexture({ source: footerImage }));
 addNodeChild(root, footer);
 
 const interactionManager = createInteractionManager(root);
@@ -75,9 +75,8 @@ const game = new PiratePigGame(audioContext, manager, interactionManager, tileIm
   cursorElement: container,
 });
 
-const logo = createBitmap();
-logo.data.image = logoImage;
-logo.data.smoothing = true;
+const logo = createSprite();
+setSpriteTexture(logo, createTexture({ source: logoImage }));
 addNodeChild(game.obj, logo);
 
 addNodeChild(root, game.obj);

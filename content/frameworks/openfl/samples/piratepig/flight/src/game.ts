@@ -1,7 +1,7 @@
 import type {
   AudioResource,
   DisplayObject,
-  ImageResource,
+  Image,
   InteractionManager,
   Shape,
   TextLabel,
@@ -53,7 +53,7 @@ export class PiratePigGame {
   private scoreText: TextLabel;
   private tiles: (Tile | null)[][];
   private usedTiles: Tile[] = [];
-  private tileImages: ImageResource[];
+  private tileImages: Image[];
   private audioContext: AudioContext;
   private sounds: AudioResource[];
   private manager: TweenManager;
@@ -63,8 +63,8 @@ export class PiratePigGame {
     audioContext: AudioContext,
     manager: TweenManager,
     interactionManager: InteractionManager<DisplayObject>,
-    tileImages: ImageResource[],
-    logoImage: ImageResource,
+    tileImages: Image[],
+    logoImage: Image,
     fontName: string,
     sounds: AudioResource[],
     interactionOptions?: TileInteractionOptions,

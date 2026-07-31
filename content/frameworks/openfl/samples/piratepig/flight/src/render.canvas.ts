@@ -1,22 +1,20 @@
-﻿import { createBlurEffect } from '@flighthq/effects';
-import type { DisplayObject } from '@flighthq/sdk';
+﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
-  BitmapKind,
   createCanvasRenderState,
-  defaultCanvasBitmapRenderer,
+  defaultCanvasSpriteRenderer,
   defaultCanvasBeginFill,
   defaultCanvasDrawRectangle,
   defaultCanvasEndFill,
   defaultCanvasShapeRenderer,
   defaultCanvasTextLabelRenderer,
-  enableCanvasCssFilter,
   prepareScene2DRender,
   registerCanvasShapeCommands,
+  registerCanvasImageTextureResolver,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
-  setCanvasCssFilter,
   ShapeKind,
+  SpriteKind,
   TextLabelKind,
   createMatrix,
 } from '@flighthq/sdk';
@@ -36,11 +34,11 @@ export const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
+registerCanvasImageTextureResolver(state);
+registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
 registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle, defaultCanvasEndFill]);
-enableCanvasCssFilter(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 
@@ -57,11 +55,8 @@ export function render(root: DisplayObject): void {
   renderCanvasScene2D(state, root);
 }
 
-// OpenFL: Background.filters = [new BlurFilter(10, 10)] — a CSS filter applied at draw. The
-// returned callback is a no-op: the filter re-applies on every draw, so resizes need no re-bake.
+// Per-node render effects are currently GL-only in the SDK. Canvas renders the panel unfiltered.
 export function applyBackgroundBlur(node: DisplayObject): () => void {
-  const effect = createBlurEffect({ blurX: 10, blurY: 10 });
-  const radius = Math.max(0, ((effect.blurX ?? 4) + (effect.blurY ?? 4)) / 2);
-  setCanvasCssFilter(state, node, `blur(${radius}px)`);
+  void node;
   return () => {};
 }

@@ -1,14 +1,20 @@
-import type { DisplayObject } from '@flighthq/sdk';
+import { applyCustomShaderEffectToGl, registerGlCustomShaderSource } from '@flighthq/effects-gl/contract';
+import type { CustomShaderEffect, DisplayObject, GlRenderEffectPipeline, RenderEffect } from '@flighthq/sdk';
 import {
-  BitmapKind,
+  beginGlRenderEffectPipeline,
   createGlCanvasElement,
+  createGlRenderEffectPipeline,
   createGlRenderState,
-  defaultGlBitmapRenderer,
+  defaultGlSpriteRenderer,
+  endGlRenderEffectPipeline,
   prepareScene2DRender,
+  registerGlRenderEffect,
   registerStandardGlMaterial,
+  registerStandardGlTextureResolvers,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
+  SpriteKind,
   createMatrix,
 } from '@flighthq/sdk';
 
@@ -23,14 +29,26 @@ export const state = createGlRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerStandardGlTextureResolvers(state);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerStandardGlMaterial(state);
+registerGlRenderEffect(state, 'CustomShaderEffect', (context, effect) => {
+  applyCustomShaderEffectToGl(context.state, context.source, context.dest, effect as CustomShaderEffect);
+});
+
+const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state);
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 
-export function render(root: DisplayObject): void {
+export function registerCustomShader(shaderKey: string, fragmentSource: string): void {
+  registerGlCustomShaderSource(state, shaderKey, fragmentSource);
+}
+
+export function render(root: DisplayObject, effects: ReadonlyArray<RenderEffect>): void {
   if (!prepareScene2DRender(state, root)) return;
+  beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   renderGlScene2D(state, root);
+  endGlRenderEffectPipeline(state, pipeline, effects);
 }

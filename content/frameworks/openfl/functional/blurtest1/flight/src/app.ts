@@ -6,7 +6,6 @@ import {
   createSprite,
   createTexture,
   loadImageResourceFromUrl,
-  setSpriteTexture,
 } from '@flighthq/sdk';
 
 import { applyBlurEffects, render, scale } from './render';
@@ -21,7 +20,7 @@ const iconTexture = createTexture({ source: image });
 const blurred: { node: ReturnType<typeof createSprite>; filter: BlurEffect }[] = [];
 for (let i = 0; i < 3; i++) {
   const sprite = createSprite();
-  setSpriteTexture(sprite, iconTexture);
+  sprite.data.texture = iconTexture;
   sprite.x = 50 + i * (image.width + 50);
   sprite.y = 50;
   blurred.push({ node: sprite, filter: createBlurEffect({ blurX: 2, blurY: 2 }) });

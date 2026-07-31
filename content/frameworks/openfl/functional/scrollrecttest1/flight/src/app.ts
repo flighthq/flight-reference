@@ -7,7 +7,6 @@ import {
   appendShapeRectangle,
   createSprite,
   createTexture,
-  setSpriteTexture,
   SpriteKind,
   createClipRegionFromRectangle,
   createDisplayObject,
@@ -53,7 +52,7 @@ owlClip.y = 630;
 const owlContent = createDisplayObject();
 owlContent.y = -300;
 const owlBitmap = createSprite();
-setSpriteTexture(owlBitmap, createTexture({ source: owlImg }));
+owlBitmap.data.texture = createTexture({ source: owlImg });
 addNodeChild(owlContent, owlBitmap);
 addNodeChild(owlClip, owlContent);
 

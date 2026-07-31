@@ -27,7 +27,6 @@ import {
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
-  setSpriteTexture,
   setTextureUvFromPixelRect,
   SpriteKind,
   TextLabelKind,
@@ -163,7 +162,7 @@ const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgSprite = createSprite();
-setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+bgSprite.data.texture = createTexture({ source: bgImage });
 addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
@@ -218,7 +217,7 @@ addNodeChild(root, backBtn.root);
 const eggTexture = createTexture({ source: atlas });
 setTextureUvFromPixelRect(eggTexture, 167, 359, 124, 170);
 const egg = createSprite();
-setSpriteTexture(egg, eggTexture);
+egg.data.texture = eggTexture;
 addNodeChild(root, egg);
 
 const tintedEggImage = await (async () => {
@@ -248,7 +247,7 @@ function resetEgg(): void {
   egg.scaleY = 1;
   egg.rotation = 0;
   egg.alpha = 1;
-  setSpriteTexture(egg, eggTexture);
+  egg.data.texture = eggTexture;
   invalidateNodeLocalTransform(egg);
   invalidateNodeAppearance(egg);
 }
@@ -321,11 +320,11 @@ function onDelayButtonClick(): void {
   delayBtn.enabled = false;
 
   setTimeout(() => {
-    setSpriteTexture(egg, tintedEggTexture);
+    egg.data.texture = tintedEggTexture;
   }, 1000);
 
   setTimeout(() => {
-    setSpriteTexture(egg, eggTexture);
+    egg.data.texture = eggTexture;
     delayBusy = false;
     delayBtn.enabled = true;
   }, 2000);

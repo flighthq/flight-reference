@@ -15,7 +15,6 @@ import {
   createTweenManager,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
-  setSpriteTexture,
   startApplicationLoop,
   updateTweens,
 } from '@flighthq/sdk';
@@ -37,7 +36,7 @@ destination.y = 95;
 addNodeChild(root, destination);
 
 const logo = createSprite();
-setSpriteTexture(logo, createTexture({ source: image }));
+logo.data.texture = createTexture({ source: image });
 logo.x = 100;
 logo.y = 100;
 addNodeChild(root, logo);

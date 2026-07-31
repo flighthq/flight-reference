@@ -5,7 +5,6 @@ import {
   appendShapeRectangle,
   createSprite,
   createTexture,
-  setSpriteTexture,
   SpriteKind,
   createClipRegionFromRectangle,
   createDisplayObject,
@@ -51,21 +50,21 @@ for (let i = 0; i < 4; i++) {
   const { dx, dy } = maskOffsets[i];
 
   const bgBitmap = createSprite();
-  setSpriteTexture(bgBitmap, createTexture({ source: image }));
+  bgBitmap.data.texture = createTexture({ source: image });
   bgBitmap.alpha = 0.3;
   bgBitmap.x = bx;
   bgBitmap.y = by;
   addNodeChild(root, bgBitmap);
 
   const bgMask = createSprite();
-  setSpriteTexture(bgMask, createTexture({ source: image }));
+  bgMask.data.texture = createTexture({ source: image });
   bgMask.alpha = 0.3;
   bgMask.x = bx + dx;
   bgMask.y = by + dy;
   addNodeChild(root, bgMask);
 
   const bmp = createSprite();
-  setSpriteTexture(bmp, createTexture({ source: image }));
+  bmp.data.texture = createTexture({ source: image });
   bmp.x = bx;
   bmp.y = by;
   addNodeChild(root, bmp);
@@ -76,13 +75,13 @@ for (let i = 0; i < 4; i++) {
 const alphaX = 2 * (W / 3) + W / 6 - iw / 2;
 
 const alphaTop = createSprite();
-setSpriteTexture(alphaTop, createTexture({ source: image }));
+alphaTop.data.texture = createTexture({ source: image });
 alphaTop.x = alphaX;
 alphaTop.y = ih / 2;
 addNodeChild(root, alphaTop);
 
 const alphaBottom = createSprite();
-setSpriteTexture(alphaBottom, createTexture({ source: image }));
+alphaBottom.data.texture = createTexture({ source: image });
 alphaBottom.x = alphaX;
 alphaBottom.y = H / 2 + ih / 2;
 addNodeChild(root, alphaBottom);

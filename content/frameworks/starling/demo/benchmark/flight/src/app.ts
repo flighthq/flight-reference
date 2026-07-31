@@ -37,7 +37,6 @@ import {
   renderGlScene2D,
   RichTextKind,
   setNodeColorAdjustmentsTint,
-  setSpriteTexture,
   setTextureUvFromPixelRect,
   SpriteKind,
   TextLabelKind,
@@ -80,7 +79,7 @@ const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgSprite = createSprite();
-setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+bgSprite.data.texture = createTexture({ source: bgImage });
 addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
@@ -149,7 +148,7 @@ function getObjectFromPool(): Sprite {
   if (pooled) return pooled;
 
   const object = createSprite();
-  setSpriteTexture(object, objectTexture);
+  object.data.texture = objectTexture;
   object.pivotX = 16;
   object.pivotY = 16;
   return object;

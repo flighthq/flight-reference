@@ -43,7 +43,6 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setMeshGeometrySubsets,
   setQuaternionFromAxisAngle,
-  setSpriteTexture,
   setVector3,
   SpriteKind,
   TextLabelKind,
@@ -94,7 +93,7 @@ const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgSprite = createSprite();
-setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+bgSprite.data.texture = createTexture({ source: bgImage });
 addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
@@ -131,7 +130,7 @@ const cubeTexture = createRenderTexture({
   clearColors: [0x00000000],
 });
 const cubeLayer = createSprite();
-setSpriteTexture(cubeLayer, cubeTexture);
+cubeLayer.data.texture = cubeTexture;
 cubeLayer.scaleX = 1 / pixelRatio;
 cubeLayer.scaleY = 1 / pixelRatio;
 invalidateNodeLocalTransform(cubeLayer);

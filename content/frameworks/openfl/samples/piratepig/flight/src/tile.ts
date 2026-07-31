@@ -17,7 +17,6 @@ import {
   removeNodeChild,
   setNodeHitTestEnabled,
   setRectangle,
-  setSpriteTexture,
 } from '@flighthq/sdk';
 
 export const TILE_SIZE = 57;
@@ -91,7 +90,7 @@ export function createTile(image: Image, type: number): Tile {
   const obj = createDisplayObject();
   setRectangle(getNodeLocalBoundsRectangle(obj), 0, 0, TILE_SIZE, TILE_SIZE);
   const sprite = createSprite();
-  setSpriteTexture(sprite, createTexture({ source: image }));
+  sprite.data.texture = createTexture({ source: image });
   addNodeChild(obj, sprite);
   return { obj, column: 0, row: 0, type, moving: false, removed: false };
 }

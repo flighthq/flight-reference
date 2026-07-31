@@ -19,7 +19,6 @@ import {
   invalidateNodeRender,
   loadVideoResourceFromUrl,
   playVideoResource,
-  setSpriteTexture,
   startApplicationLoop,
   stopVideoChannel,
   updateTweens,
@@ -38,7 +37,7 @@ const videoSource = await loadVideoResourceFromUrl('openfl/videos/example.mp4');
 
 const videoTexture = createVideoTexture(videoSource);
 const videoNode = createSprite();
-setSpriteTexture(videoNode, videoTexture);
+videoNode.data.texture = videoTexture;
 addNodeChild(root, videoNode);
 
 const overlay = createShape();

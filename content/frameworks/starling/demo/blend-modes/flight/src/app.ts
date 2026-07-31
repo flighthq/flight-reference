@@ -33,7 +33,6 @@ import {
   renderGlScene2D,
   setTextLabelString,
   ShapeKind,
-  setSpriteTexture,
   setTextureUvFromPixelRect,
   SpriteKind,
   TextLabelKind,
@@ -69,7 +68,7 @@ const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgSprite = createSprite();
-setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+bgSprite.data.texture = createTexture({ source: bgImage });
 addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
@@ -101,7 +100,7 @@ addNodeChild(root, noneBackdrop);
 const rocketTexture = createTexture({ source: atlas });
 setTextureUvFromPixelRect(rocketTexture, 322, 1, 256, 142);
 const rocket = createSprite();
-setSpriteTexture(rocket, rocketTexture);
+rocket.data.texture = rocketTexture;
 rocket.x = rocketX;
 rocket.y = rocketY;
 rocket.blendMode = blendModes[0][0];

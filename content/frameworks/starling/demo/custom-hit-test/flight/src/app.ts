@@ -25,7 +25,6 @@ import {
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
-  setSpriteTexture,
   setTextureUvFromPixelRect,
   SpriteKind,
   TextLabelKind,
@@ -58,7 +57,7 @@ const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgSprite = createSprite();
-setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+bgSprite.data.texture = createTexture({ source: bgImage });
 addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
@@ -83,7 +82,7 @@ const buttonY = 150;
 const buttonTexture = createTexture({ source: atlas });
 setTextureUvFromPixelRect(buttonTexture, 515, 316, buttonWidth, buttonHeight);
 const button = createSprite();
-setSpriteTexture(button, buttonTexture);
+button.data.texture = buttonTexture;
 button.x = buttonX;
 button.y = buttonY;
 addNodeChild(root, button);

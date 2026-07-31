@@ -23,7 +23,6 @@ import {
   registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
-  setSpriteTexture,
   setTextureSource,
   SpriteKind,
   TextLabelKind,
@@ -56,7 +55,7 @@ const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgSprite = createSprite();
-setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+bgSprite.data.texture = createTexture({ source: bgImage });
 addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
@@ -84,7 +83,7 @@ drawCtx.fillText('to draw!', CenterX, 224);
 
 const drawTexture = createTexture({ source: createImageResourceFromCanvas(drawCanvas) });
 const canvasSprite = createSprite();
-setSpriteTexture(canvasSprite, drawTexture);
+canvasSprite.data.texture = drawTexture;
 addNodeChild(root, canvasSprite);
 
 const brushSrcX = 515;

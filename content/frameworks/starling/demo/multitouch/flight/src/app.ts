@@ -25,7 +25,6 @@ import {
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
-  setSpriteTexture,
   setTextureUvFromPixelRect,
   SpriteKind,
   TextLabelKind,
@@ -60,7 +59,7 @@ const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgSprite = createSprite();
-setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+bgSprite.data.texture = createTexture({ source: bgImage });
 addNodeChild(root, bgSprite);
 
 const infoText = createRichText();
@@ -77,7 +76,7 @@ const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 const sheetTexture = createTexture({ source: atlas });
 setTextureUvFromPixelRect(sheetTexture, 579, 1, 228, 171);
 const sheet = createSprite();
-setSpriteTexture(sheet, sheetTexture);
+sheet.data.texture = sheetTexture;
 sheet.pivotX = 114;
 sheet.pivotY = 85.5;
 sheet.x = CenterX;

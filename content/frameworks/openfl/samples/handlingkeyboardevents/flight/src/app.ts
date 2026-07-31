@@ -9,7 +9,6 @@ import {
   createTexture,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
-  setSpriteTexture,
   startApplicationLoop,
 } from '@flighthq/sdk';
 
@@ -21,7 +20,7 @@ root.scaleX = scale;
 root.scaleY = scale;
 
 const logo = createSprite();
-setSpriteTexture(logo, createTexture({ source: image }));
+logo.data.texture = createTexture({ source: image });
 logo.x = 100;
 logo.y = 100;
 addNodeChild(root, logo);

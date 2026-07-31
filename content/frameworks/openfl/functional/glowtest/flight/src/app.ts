@@ -25,7 +25,6 @@ import {
   registerStandardGlTextureResolvers,
   renderGlScene2D,
   renderIntoGlRenderTexture,
-  setSpriteTexture,
   ShapeKind,
   SpriteKind,
   withGlRenderTextures,
@@ -77,7 +76,7 @@ type Column = { sprite: Sprite; filter: OuterGlowEffect | InnerGlowEffect; resul
 const columns: Column[] = [];
 for (let i = 0; i < 4; i++) {
   const sprite = createSprite();
-  setSpriteTexture(sprite, iconTexture);
+  sprite.data.texture = iconTexture;
   sprite.x = 50 + i * colSpacing;
   sprite.y = 50;
   addNodeChild(root, sprite);
@@ -89,7 +88,7 @@ const pool = createGlRenderTexturePool();
 function bakeSource(state: GlRenderState, destination: RenderTexture, texture: Texture, pad: number): void {
   const bakeRoot = createDisplayObject();
   const icon = createSprite();
-  setSpriteTexture(icon, texture);
+  icon.data.texture = texture;
   icon.x = pad;
   icon.y = pad;
   addNodeChild(bakeRoot, icon);
@@ -120,7 +119,7 @@ function initGlGlow(state: GlRenderState): () => void {
   for (const column of columns) {
     const result = createRenderTexture({ width, height });
     column.result = result;
-    setSpriteTexture(column.sprite, result);
+    column.sprite.data.texture = result;
     column.sprite.x -= pad;
     column.sprite.y -= pad;
   }
@@ -133,7 +132,7 @@ function initGlGlow(state: GlRenderState): () => void {
     applyGlRenderEffectsToRenderTexture(state, pool, source, columns[0].result!, scratch, [columns[0].filter]),
   );
   if (!filtered) {
-    for (const column of columns) setSpriteTexture(column.sprite, source);
+    for (const column of columns) column.sprite.data.texture = source;
     return () => target.render(root);
   }
 

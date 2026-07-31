@@ -22,7 +22,6 @@ import {
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
-  setSpriteTexture,
   setTextureUvFromPixelRect,
   SpriteKind,
   TextLabelKind,
@@ -85,7 +84,7 @@ const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgSprite = createSprite();
-setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+bgSprite.data.texture = createTexture({ source: bgImage });
 addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
@@ -105,7 +104,7 @@ addNodeChild(movie, sprite);
 
 function showFrame(index: number): void {
   const frame = frames[index];
-  setSpriteTexture(sprite, frameTextures[index]);
+  sprite.data.texture = frameTextures[index];
   sprite.x = -frame.fx;
   sprite.y = -frame.fy;
   invalidateNodeLocalTransform(sprite);

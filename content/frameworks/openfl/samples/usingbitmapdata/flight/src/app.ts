@@ -15,7 +15,6 @@ import {
   floodFillBitmap,
   ImageChannel,
   loadImageResourceFromUrl,
-  setSpriteTexture,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -35,7 +34,7 @@ function addImage(
   opts: { alpha?: number; rotation?: number; scaleX?: number; scaleY?: number } = {},
 ): void {
   const sprite = createSprite();
-  setSpriteTexture(sprite, createTexture({ source }));
+  sprite.data.texture = createTexture({ source });
   sprite.x = x;
   sprite.y = y;
   sprite.alpha = opts.alpha ?? 1;

@@ -11,7 +11,6 @@ import {
   invalidateNodeRender,
   loadFontFromUrl,
   loadImageResourceFromUrl,
-  setSpriteTexture,
   startApplicationLoop,
 } from '@flighthq/sdk';
 
@@ -115,7 +114,7 @@ function updateComparison(): void {
 
   const key = `${comparisonRenderer}${demo}`;
   const image = comparisonImages.get(key);
-  setSpriteTexture(comparison, image === undefined ? null : createTexture({ source: image }));
+  comparison.data.texture = image === undefined ? null : createTexture({ source: image });
   comparison.alpha = comparisonAlpha;
   invalidateNodeRender(comparison);
 }

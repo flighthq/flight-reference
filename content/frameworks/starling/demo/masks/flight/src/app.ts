@@ -37,7 +37,6 @@ import {
   renderGlScene2D,
   RichTextKind,
   setNode2DClip,
-  setSpriteTexture,
   ShapeKind,
   SpriteKind,
   TextLabelKind,
@@ -73,7 +72,7 @@ const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgSprite = createSprite();
-setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+bgSprite.data.texture = createTexture({ source: bgImage });
 addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
@@ -97,7 +96,7 @@ const tintedBirdImage = await (async () => {
 })();
 
 const birdSprite = createSprite();
-setSpriteTexture(birdSprite, createTexture({ source: tintedBirdImage }));
+birdSprite.data.texture = createTexture({ source: tintedBirdImage });
 birdSprite.x = (GameWidth - 220) / 2 + 42;
 birdSprite.y = 80 + 21;
 addNodeChild(maskedContainer, birdSprite);

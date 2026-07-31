@@ -25,7 +25,6 @@ import {
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
-  setSpriteTexture,
   setTextureUvFromPixelRect,
   SpriteKind,
   TextLabelKind,
@@ -59,25 +58,25 @@ const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgSprite = createSprite();
-setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+bgSprite.data.texture = createTexture({ source: bgImage });
 addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
 
 const flight00 = createSprite();
-setSpriteTexture(flight00, createRegionTexture(atlas, 1, 145, 165, 163));
+flight00.data.texture = createRegionTexture(atlas, 1, 145, 165, 163);
 flight00.x = -20 + 42;
 flight00.y = 0 + 21;
 addNodeChild(root, flight00);
 
 const flight04 = createSprite();
-setSpriteTexture(flight04, createRegionTexture(atlas, 808, 1, 200, 108));
+flight04.data.texture = createRegionTexture(atlas, 808, 1, 200, 108);
 flight04.x = 90 + 8;
 flight04.y = 85 + 68;
 addNodeChild(root, flight04);
 
 const flight08 = createSprite();
-setSpriteTexture(flight08, createRegionTexture(atlas, 851, 492, 165, 129));
+flight08.data.texture = createRegionTexture(atlas, 851, 492, 165, 129);
 flight08.x = 100 + 42;
 flight08.y = -60 + 67;
 addNodeChild(root, flight08);
@@ -242,7 +241,7 @@ const atfImage = await (async () => {
 
 if (atfImage) {
   const compressedSprite = createSprite();
-  setSpriteTexture(compressedSprite, createTexture({ source: atfImage }));
+  compressedSprite.data.texture = createTexture({ source: atfImage });
   compressedSprite.x = CenterX - 64;
   compressedSprite.y = 280;
   addNodeChild(root, compressedSprite);

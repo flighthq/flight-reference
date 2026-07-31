@@ -175,8 +175,8 @@ ctx.canvas.addEventListener('mousemove', (e: MouseEvent) => {
     lastHovered = null;
   }
 
-  if (result) {
-    const mesh = result.node;
+  const mesh = result?.node ?? null;
+  if (mesh) {
     mesh.materials[0] = hoverMaterial;
     lastHovered = mesh;
   }

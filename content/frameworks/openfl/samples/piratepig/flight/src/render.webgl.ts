@@ -30,7 +30,6 @@ import {
   renderGlScene2D,
   ShapeKind,
   SpriteKind,
-  setSpriteTexture,
   TextLabelKind,
   withGlRenderTextures,
   createMatrix,
@@ -111,7 +110,7 @@ export function applyBackgroundBlur(node: Shape): () => void {
   });
 
   const panel = createSprite();
-  setSpriteTexture(panel, result);
+  panel.data.texture = result;
   panel.x = node.x + bounds.x - pad;
   panel.y = node.y + bounds.y - pad;
   replaceNodeChild(parent, node, panel);

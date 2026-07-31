@@ -12,7 +12,6 @@ import {
   invalidateNodeLocalTransform,
   invalidateNodeRender,
   loadImageResourceFromUrl,
-  setSpriteTexture,
   startApplicationLoop,
   updateTweens,
 } from '@flighthq/sdk';
@@ -39,7 +38,7 @@ addNodeChild(container, bitmap);
 addNodeChild(main, container);
 
 const image = await loadImageResourceFromUrl('openfl/images/openfl_logo.png');
-setSpriteTexture(bitmap, createTexture({ source: image }));
+bitmap.data.texture = createTexture({ source: image });
 bitmap.x = -image.width / 2;
 bitmap.y = -image.height / 2;
 

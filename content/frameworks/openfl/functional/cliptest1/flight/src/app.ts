@@ -7,7 +7,6 @@ import {
   appendShapeRectangle,
   createSprite,
   createTexture,
-  setSpriteTexture,
   SpriteKind,
   createClipRegionFromRectangle,
   createDisplayObject,
@@ -46,7 +45,7 @@ const ih = image.height;
 // Background ghost bitmaps - two rows of 4
 for (let i = 0; i < 8; i++) {
   const ghost = createSprite();
-  setSpriteTexture(ghost, createTexture({ source: image }));
+  ghost.data.texture = createTexture({ source: image });
   ghost.x = (i % 4) * (W / 4) + W / 8 - iw / 2;
   ghost.y = i < 4 ? ih / 2 : H / 2 + ih / 2;
   ghost.alpha = 0.3;
@@ -65,7 +64,7 @@ for (let i = 0; i < 4; i++) {
     addNodeChild(root, container);
 
     const bmp = createSprite();
-    setSpriteTexture(bmp, createTexture({ source: image }));
+    bmp.data.texture = createTexture({ source: image });
     addNodeChild(container, bmp);
 
     if (i === 2) {
@@ -79,7 +78,7 @@ for (let i = 0; i < 4; i++) {
     }
   } else {
     const bmp = createSprite();
-    setSpriteTexture(bmp, createTexture({ source: image }));
+    bmp.data.texture = createTexture({ source: image });
     bmp.x = bmpX;
     bmp.y = bmpY;
     addNodeChild(root, bmp);

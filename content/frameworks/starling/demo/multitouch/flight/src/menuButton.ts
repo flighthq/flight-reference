@@ -11,7 +11,6 @@ import {
   invalidateNodeAppearance,
   setNodeHitArea,
   setNodeHitTestEnabled,
-  setSpriteTexture,
   setTextureUvFromPixelRect,
   setTextLabelString,
 } from '@flighthq/sdk';
@@ -47,13 +46,13 @@ export function createMenuButton(config: MenuButtonConfig): MenuButton {
   };
 
   const baseSprite = createSprite();
-  setSpriteTexture(baseSprite, textures.up);
+  baseSprite.data.texture = textures.up;
   baseSprite.scaleX = config.width / config.regions.up.width;
   baseSprite.scaleY = config.height / config.regions.up.height;
   addNodeChild(container, baseSprite);
 
   const overlaySprite = createSprite();
-  setSpriteTexture(overlaySprite, textures.up);
+  overlaySprite.data.texture = textures.up;
   overlaySprite.scaleX = baseSprite.scaleX;
   overlaySprite.scaleY = baseSprite.scaleY;
   overlaySprite.alpha = 0;
@@ -83,9 +82,9 @@ export function createMenuButton(config: MenuButtonConfig): MenuButton {
     const prev = state;
     state = next;
 
-    setSpriteTexture(baseSprite, textures[prev]);
+    baseSprite.data.texture = textures[prev];
 
-    setSpriteTexture(overlaySprite, textures[next]);
+    overlaySprite.data.texture = textures[next];
     transitionFromAlpha = overlaySprite.alpha;
     transitionStart = performance.now();
     invalidateNodeAppearance(overlaySprite);
@@ -99,7 +98,7 @@ export function createMenuButton(config: MenuButtonConfig): MenuButton {
     overlaySprite.alpha = alpha;
     invalidateNodeAppearance(overlaySprite);
     if (t >= 1) {
-      setSpriteTexture(baseSprite, textures[state]);
+      baseSprite.data.texture = textures[state];
       overlaySprite.alpha = 0;
       invalidateNodeAppearance(overlaySprite);
       transitionStart = -1;

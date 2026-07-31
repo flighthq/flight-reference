@@ -17,7 +17,6 @@ import {
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   playSpritesheetAnimation,
-  setSpriteTexture,
   startApplicationLoop,
   updateSpritesheetPlayer,
 } from '@flighthq/sdk';
@@ -69,7 +68,7 @@ const baseY = (STAGE_HEIGHT - spriteScreenSize) / 2 / SCALE;
 
 const sprites = animationDefs.map((def, i) => {
   const sprite = createSprite();
-  setSpriteTexture(sprite, getTextureAtlasRegionTexture(atlas, i * 4));
+  sprite.data.texture = getTextureAtlasRegionTexture(atlas, i * 4);
   sprite.x = baseX + i * 48;
   sprite.y = baseY;
   invalidateNodeLocalTransform(sprite);
@@ -89,7 +88,7 @@ connectSignal(app.onUpdate, (delta) => {
     if (updateSpritesheetPlayer(players[i], delta)) {
       const frame = getSpritesheetPlayerFrame(players[i], sheet);
       if (frame !== null) {
-        setSpriteTexture(sprites[i], getTextureAtlasRegionTexture(atlas, frame.id));
+        sprites[i].data.texture = getTextureAtlasRegionTexture(atlas, frame.id);
       }
     }
   }

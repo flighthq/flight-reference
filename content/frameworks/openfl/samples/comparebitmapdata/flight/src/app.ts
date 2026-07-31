@@ -8,7 +8,6 @@ import {
   createSprite,
   createTexture,
   loadImageResourceFromUrl,
-  setSpriteTexture,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -64,7 +63,7 @@ const count = entries.length;
 
 function addImage(image: Image, x: number, y: number): void {
   const sprite = createSprite();
-  setSpriteTexture(sprite, createTexture({ source: image }));
+  sprite.data.texture = createTexture({ source: image });
   sprite.x = x;
   sprite.y = y;
   addNodeChild(root, sprite);

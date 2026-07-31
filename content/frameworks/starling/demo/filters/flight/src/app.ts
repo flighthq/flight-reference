@@ -51,7 +51,6 @@ import {
   renderIntoGlRenderTexture,
   RichTextKind,
   setNodeColorAdjustments,
-  setSpriteTexture,
   setTextureUvFromPixelRect,
   SpriteKind,
   TextLabelKind,
@@ -144,7 +143,7 @@ const root = createDisplayObject();
 
 const bgImage = await loadImageResourceFromUrl('starling/textures/1x/background.jpg');
 const bgSprite = createSprite();
-setSpriteTexture(bgSprite, createTexture({ source: bgImage }));
+bgSprite.data.texture = createTexture({ source: bgImage });
 addNodeChild(root, bgSprite);
 
 const atlas = await loadImageResourceFromUrl('starling/textures/1x/atlas.png');
@@ -152,7 +151,7 @@ const rocketTexture = createTexture({ source: atlas });
 setTextureUvFromPixelRect(rocketTexture, 322, 1, RocketWidth, RocketHeight);
 
 const rocket = createSprite();
-setSpriteTexture(rocket, rocketTexture);
+rocket.data.texture = rocketTexture;
 rocket.x = RocketX;
 rocket.y = RocketY;
 addNodeChild(root, rocket);
@@ -182,7 +181,7 @@ const renderTexturePool = createGlRenderTexturePool();
 
 const bakeRoot = createDisplayObject();
 const bakeRocket = createSprite();
-setSpriteTexture(bakeRocket, rocketTexture);
+bakeRocket.data.texture = rocketTexture;
 bakeRocket.x = EffectPadding;
 bakeRocket.y = EffectPadding;
 addNodeChild(bakeRoot, bakeRocket);
@@ -211,7 +210,7 @@ function applySelectedFilter(): void {
     usesPaddedTexture = true;
   }
 
-  setSpriteTexture(rocket, displayTexture);
+  rocket.data.texture = displayTexture;
   rocket.x = RocketX - (usesPaddedTexture ? EffectPadding : 0);
   rocket.y = RocketY - (usesPaddedTexture ? EffectPadding : 0);
 }

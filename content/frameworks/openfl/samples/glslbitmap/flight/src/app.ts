@@ -5,7 +5,6 @@ import {
   createSprite,
   createTexture,
   loadImageResourceFromUrl,
-  setSpriteTexture,
 } from '@flighthq/sdk';
 
 import { registerCustomShader, render, scale } from './render';
@@ -17,7 +16,7 @@ root.scaleX = scale;
 root.scaleY = scale;
 
 const logo = createSprite();
-setSpriteTexture(logo, createTexture({ source: image }));
+logo.data.texture = createTexture({ source: image });
 logo.x = 100;
 logo.y = 100;
 addNodeChild(root, logo);

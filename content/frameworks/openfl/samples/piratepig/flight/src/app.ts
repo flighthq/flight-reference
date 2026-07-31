@@ -20,7 +20,6 @@ import {
   loadFontFromUrl,
   loadImageResourceFromUrl,
   registerHitTest,
-  setSpriteTexture,
   startApplicationLoop,
   stopApplicationLoop,
   updateTweens,
@@ -62,11 +61,11 @@ root.scaleX = scale;
 root.scaleY = scale;
 
 const background = createSprite();
-setSpriteTexture(background, createTexture({ source: bgImage }));
+background.data.texture = createTexture({ source: bgImage });
 addNodeChild(root, background);
 
 const footer = createSprite();
-setSpriteTexture(footer, createTexture({ source: footerImage }));
+footer.data.texture = createTexture({ source: footerImage });
 addNodeChild(root, footer);
 
 const interactionManager = createInteractionManager(root);
@@ -76,7 +75,7 @@ const game = new PiratePigGame(audioContext, manager, interactionManager, tileIm
 });
 
 const logo = createSprite();
-setSpriteTexture(logo, createTexture({ source: logoImage }));
+logo.data.texture = createTexture({ source: logoImage });
 addNodeChild(game.obj, logo);
 
 addNodeChild(root, game.obj);

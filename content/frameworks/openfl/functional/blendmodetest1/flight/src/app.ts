@@ -6,7 +6,6 @@ import {
   appendShapeRectangle,
   createSprite,
   createTexture,
-  setSpriteTexture,
   SpriteKind,
   BlendMode,
   createDisplayObject,
@@ -116,18 +115,18 @@ for (let i = 0; i < BLEND_ENTRIES.length; i++) {
 
   if (entry.kind === 'fixed') {
     const square = createSprite();
-    setSpriteTexture(square, createTexture({ source: squareImg }));
+    square.data.texture = createTexture({ source: squareImg });
     addNodeChild(group, square);
 
     const circle = createSprite();
-    setSpriteTexture(circle, createTexture({ source: circleImg }));
+    circle.data.texture = createTexture({ source: circleImg });
     circle.x = dx;
     circle.y = dy;
     circle.blendMode = entry.mode;
     addNodeChild(group, circle);
   } else {
     const composited = createSprite();
-    setSpriteTexture(composited, createTexture({ source: compositeAdvanced(squareImg, circleImg, entry.cssOp) }));
+    composited.data.texture = createTexture({ source: compositeAdvanced(squareImg, circleImg, entry.cssOp) });
     addNodeChild(group, composited);
   }
 

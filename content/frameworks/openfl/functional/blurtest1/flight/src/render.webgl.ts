@@ -22,7 +22,6 @@ import {
   renderGlScene2D,
   renderIntoGlRenderTexture,
   RichTextKind,
-  setSpriteTexture,
   SpriteKind,
 } from '@flighthq/sdk';
 
@@ -76,7 +75,7 @@ export function applyBlurEffects(list: { node: Sprite; filter: BlurEffect }[]): 
     bakeSource(source, node, pad);
 
     const result = createRenderTexture(descriptor);
-    setSpriteTexture(node, result);
+    node.data.texture = result;
     node.x -= pad;
     node.y -= pad;
 
@@ -98,7 +97,7 @@ export function render(root: DisplayObject): void {
 function bakeSource(destination: RenderTexture, node: Sprite, pad: number): void {
   const bakeRoot = createDisplayObject();
   const copy = createSprite();
-  setSpriteTexture(copy, node.data.texture);
+  copy.data.texture = node.data.texture;
   copy.x = pad;
   copy.y = pad;
   addNodeChild(bakeRoot, copy);

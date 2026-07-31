@@ -1,31 +1,29 @@
 import type { BlurEffect } from '@flighthq/sdk';
-import { applyGaussianBlurToGl } from '@flighthq/effects-gl';
-import type { DisplayObject, Matrix, GlRenderTarget } from '@flighthq/sdk';
+import { applyBlurEffectToGlRenderTextures } from '@flighthq/effects-gl';
+import type { DisplayObject, RenderTexture, Sprite } from '@flighthq/sdk';
 import {
-  beginGlRenderPass,
-  BitmapKind,
-  clearGlRenderTarget,
-  computeNodeBoundsRectangle,
-  computeRenderCacheTransform,
-  computeRenderTargetSize,
-  copyMatrix,
-  createMatrix,
-  createRectangle,
+  addNodeChild,
+  createDisplayObject,
   createGlCanvasElement,
+  createGlOffscreenRenderState,
   createGlRenderState,
-  createGlRenderTarget,
-  defaultGlBitmapRenderer,
+  createRenderTexture,
+  createSprite,
   defaultGlRichTextRenderer,
-  drawGlRenderTargetResult,
-  endGlRenderPass,
-  getRenderProxy2D,
+  defaultGlSpriteRenderer,
+  getBlurEffectPadding,
+  getTextureHeight,
+  getTextureWidth,
   prepareScene2DRender,
-  registerStandardGlMaterial,
   registerRenderer,
+  registerStandardGlMaterial,
+  registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
-  setGlRenderTransform2D,
+  renderIntoGlRenderTexture,
   RichTextKind,
+  setSpriteTexture,
+  SpriteKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -37,114 +35,79 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0xffffffff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: false },
 });
-registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerStandardGlMaterial(state);
+// Sprites resolve their texture through the backing-kind registry; without this both the baked
+// source and the blurred result resolve to null and the sprites draw nothing.
+registerStandardGlTextureResolvers(state);
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-// Gl has no CSS filter binding, so it realizes the blur with the offscreen filter path:
-// render each node into a GlRenderTarget at its logical size, run the separable box-blur
-// passes (applyBlurEffectToGl, target → target), then composite the blurred target back
-// onto the screen with drawGlRenderTargetResult. Targets are allocated once and reused.
-//
-// The composite applies the node's scene transform (which carries the stage's pixelRatio
-// scale), so a Gaussian σ in target pixels lands on screen as σ CSS pixels — matching the
-// canvas/DOM computeBlurEffectCss paths.
+// Each blurred node keeps three same-sized render textures: `source` holds the unfiltered content,
+// baked once, and the separable blur runs source → result using `temp` as the intermediate. The
+// visible sprite samples `result`, so the blur composites through the normal 2D walk and picks up
+// the node's scene transform (which carries the stage pixelRatio) for free.
 type BlurEntry = {
-  node: DisplayObject;
+  sprite: Sprite;
   filter: Readonly<BlurEffect>;
-  source: GlRenderTarget;
-  blurred: GlRenderTarget;
-  scratch: GlRenderTarget;
-  cacheTransform: Matrix;
-  sceneTransform: Matrix;
+  source: RenderTexture;
+  result: RenderTexture;
+  temp: RenderTexture;
 };
 
-export function applyBlurEffects(list: { node: DisplayObject; filter: BlurEffect }[]): void {
+// The blur animates up to σ=64 and a Gaussian tail runs a few σ past the bounds, so every texture is
+// allocated for the widest case rather than resized as the radius breathes.
+const MAX_BLUR = 64;
+
+export function applyBlurEffects(list: { node: Sprite; filter: BlurEffect }[]): void {
+  const widest = getBlurEffectPadding({ kind: 'BlurEffect', blurX: MAX_BLUR, blurY: MAX_BLUR });
+  const pad = Math.ceil(Math.max(widest.left, widest.right, widest.top, widest.bottom));
+
   for (const { node, filter } of list) {
-    computeNodeBoundsRectangle(_bounds, node, node);
-    const { width: w, height: h } = computeRenderTargetSize(_bounds, blurPadding(filter), 1, 1);
-    _entries.push({
-      node,
-      filter,
-      source: createGlRenderTarget(state, { width: w, height: h }),
-      blurred: createGlRenderTarget(state, { width: w, height: h }),
-      scratch: createGlRenderTarget(state, { width: w, height: h }),
-      cacheTransform: createMatrix(),
-      sceneTransform: createMatrix(),
-    });
+    const texture = node.data.texture;
+    if (texture === null) continue;
+    const w = Math.ceil(getTextureWidth(texture)) + pad * 2;
+    const h = Math.ceil(getTextureHeight(texture)) + pad * 2;
+    const descriptor = { width: w, height: h };
+
+    const source = createRenderTexture(descriptor);
+    bakeSource(source, node, pad);
+
+    const result = createRenderTexture(descriptor);
+    setSpriteTexture(node, result);
+    node.x -= pad;
+    node.y -= pad;
+
+    _entries.push({ sprite: node, filter, source, result, temp: createRenderTexture(descriptor) });
   }
 }
 
 export function render(root: DisplayObject): void {
-  // One prepare pass builds the render nodes and their scene transforms. Capture each blurred
-  // node's scene transform now — the offscreen pass below overwrites transform2D in place.
-  prepareScene2DRender(state, root);
   for (const entry of _entries) {
-    const renderProxy = getRenderProxy2D(state, entry.node);
-    if (renderProxy !== undefined) copyMatrix(entry.sceneTransform, renderProxy.transform2D);
+    applyBlurEffectToGlRenderTextures(state, entry.source, entry.result, entry.temp, entry.filter);
   }
-
-  // Offscreen: render + blur each node into its own target. We set the render node's transform
-  // directly to a content-origin translation rather than re-preparing — prepare only recomputes
-  // transforms for *dirty* nodes, and these are already clean, so a second prepare would leave
-  // them at their scene position and miss the target entirely.
-  for (const entry of _entries) {
-    const { node, filter, source, blurred, scratch } = entry;
-    const padding = blurPadding(filter);
-    computeNodeBoundsRectangle(_bounds, node, node);
-    computeRenderCacheTransform(entry.cacheTransform, _bounds, padding, padding);
-
-    const renderProxy = getRenderProxy2D(state, node);
-    if (renderProxy === undefined) continue;
-    setTranslation(renderProxy.transform2D, padding - _bounds.x, padding - _bounds.y);
-
-    beginGlRenderPass(state, source, { preserveColor: true, preserveDepth: true });
-    setGlRenderTransform2D(state, _identity);
-    clearGlRenderTarget(state, source);
-    renderGlScene2D(state, node);
-    clearGlRenderTarget(state, blurred);
-    clearGlRenderTarget(state, scratch);
-    applyGaussianBlurToGl(state, source, blurred, scratch, filter);
-    endGlRenderPass(state);
-  }
-
-  // Main pass: restore scene transforms, hide the blurred source nodes so the sharp originals are
-  // not drawn into the scene (transparent images would otherwise show both sharp and blurred), draw
-  // the rest of the tree (labels, background), then composite each blurred target and restore.
-  for (const entry of _entries) {
-    const renderProxy = getRenderProxy2D(state, entry.node);
-    if (renderProxy === undefined) continue;
-    copyMatrix(renderProxy.transform2D, entry.sceneTransform);
-    renderProxy.visible = false;
-  }
+  if (!prepareScene2DRender(state, root)) return;
   renderGlBackground(state);
   renderGlScene2D(state, root);
-  for (const entry of _entries) {
-    const renderProxy = getRenderProxy2D(state, entry.node);
-    if (renderProxy === undefined) continue;
-    renderProxy.visible = true;
-    drawGlRenderTargetResult(state, renderProxy, entry.blurred, entry.cacheTransform);
-  }
 }
 
-// Box blur of standard deviation σ spreads a few σ past the bounds; pad generously so the
-// tail is not clipped at the target edge.
-function blurPadding(_filter: Readonly<BlurEffect>): number {
-  return Math.ceil(64 * 3);
-}
+// Bakes the node's current texture into `destination` at `pad` inset, through a second pipeline over
+// the same GL context so the content lands at texture scale rather than scene scale.
+function bakeSource(destination: RenderTexture, node: Sprite, pad: number): void {
+  const bakeRoot = createDisplayObject();
+  const copy = createSprite();
+  setSpriteTexture(copy, node.data.texture);
+  copy.x = pad;
+  copy.y = pad;
+  addNodeChild(bakeRoot, copy);
 
-function setTranslation(out: Matrix, tx: number, ty: number): void {
-  out.a = 1;
-  out.b = 0;
-  out.c = 0;
-  out.d = 1;
-  out.tx = tx;
-  out.ty = ty;
+  const offscreen = createGlOffscreenRenderState(state);
+  renderIntoGlRenderTexture(state, destination, () => {
+    prepareScene2DRender(offscreen, bakeRoot);
+    renderGlScene2D(offscreen, bakeRoot);
+  });
 }
 
 const _entries: BlurEntry[] = [];
-const _bounds = createRectangle();
-const _identity = createMatrix();

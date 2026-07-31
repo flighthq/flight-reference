@@ -1,50 +1,35 @@
+// Requires: images/openfl_icon.png
+// Port of the OpenFL drop-shadow functional test. Shows drop shadow and inner shadow variants
+// across knockout/hide source modes, with blur radius and shadow angle both animating.
+// The source icon is baked once into a render texture; each frame the filter chain runs from that
+// source into the per-column result texture the visible sprite samples.
+// Per-node effects are a Gl-only capability in the SDK, so other backends show the unfiltered icon.
 import type { DropShadowEffect, InnerShadowEffect } from '@flighthq/sdk';
 import { computeGaussianSigmaFromRadius, createDropShadowEffect, createInnerShadowEffect } from '@flighthq/effects';
-import { computeDropShadowEffectCss } from '@flighthq/effects-canvas';
-import { applyDropShadowEffectToGl, applyInnerShadowEffectToGl } from '@flighthq/effects-gl';
-import type {
-  Bitmap,
-  CanvasRenderState,
-  DisplayObject,
-  DomRenderState,
-  Matrix,
-  GlRenderState,
-  GlRenderTarget,
-  GlRenderTargetPool,
-} from '@flighthq/sdk';
+import type { GlRenderState, RenderTexture, Sprite, Texture } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlRenderPass,
-  BitmapKind,
-  clearGlRenderTarget,
-  computeNodeBoundsRectangle,
-  computeRenderCacheTransform,
-  computeRenderTargetSize,
-  copyMatrix,
-  createBitmap,
+  applyGlRenderEffectsToRenderTexture,
+  computeRenderEffectPadding,
   createDisplayObject,
-  createMatrix,
-  createRectangle,
-  createRenderCache,
+  createGlOffscreenRenderState,
+  createGlRenderTexturePool,
+  createRenderTexture,
   createShape,
-  createGlRenderTarget,
-  createGlRenderTargetPool,
-  drawGlRenderTargetResult,
-  enableDomCssFilterSupport,
-  endGlRenderPass,
-  ensureCanvasRenderCacheTarget,
-  getRenderProxy2D,
+  createSprite,
+  createTexture,
   loadImageResourceFromUrl,
   prepareScene2DRender,
-  renderGlBackground,
+  registerStandardGlTextureResolvers,
   renderGlScene2D,
-  setGlRenderTransform2D,
-  setDomCssFilter,
+  renderIntoGlRenderTexture,
+  setSpriteTexture,
   ShapeKind,
-  useRenderCache,
+  SpriteKind,
+  withGlRenderTextures,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -52,7 +37,7 @@ const target = await createFunctionalTarget({
   width: 800,
   height: 600,
   background: 0xffffffff,
-  kinds: [BitmapKind, ShapeKind],
+  kinds: [SpriteKind, ShapeKind],
   cache: true,
 });
 const root = createDisplayObject();
@@ -70,247 +55,124 @@ appendShapeEndFill(bg);
 addNodeChild(root, bg);
 
 const image = await loadImageResourceFromUrl('openfl/images/openfl_icon.png');
+const iconTexture = createTexture({ source: image });
 const imageWidth = image.width;
 
-const nodes: DisplayObject[] = [];
-for (let i = 0; i < 6; i++) {
-  const bmp = createBitmap();
-  bmp.data.image = image;
-  bmp.data.smoothing = true;
-  bmp.x = 50 + i * (imageWidth + 50);
-  bmp.y = 50;
-  addNodeChild(root, bmp);
-  nodes.push(bmp);
+// `angle` is in degrees — the effect runners convert with Math.PI / 180.
+type FilterFactory = (blur: number, angle: number) => DropShadowEffect | InnerShadowEffect;
+
+function shadow(blur: number, angle: number, sourceMode?: 'knockout' | 'hide'): DropShadowEffect {
+  return createDropShadowEffect({
+    distance: 4,
+    angle,
+    color: 0x000000,
+    alpha: 1,
+    blurX: blur,
+    blurY: blur,
+    quality: 3,
+    ...(sourceMode === undefined ? {} : { sourceMode }),
+  });
 }
 
-type FilterFactory = (blur: number, angle: number) => DropShadowEffect | InnerShadowEffect;
+function innerShadow(blur: number, angle: number, sourceMode?: 'hide'): InnerShadowEffect {
+  return createInnerShadowEffect({
+    distance: 4,
+    angle,
+    color: 0x000000,
+    alpha: 1,
+    blurX: blur,
+    blurY: blur,
+    quality: 3,
+    ...(sourceMode === undefined ? {} : { sourceMode }),
+  });
+}
+
 const factories: FilterFactory[] = [
-  (blur, angle) =>
-    createDropShadowEffect({
-      distance: 4,
-      angle,
-      color: 0x000000,
-      alpha: 1,
-      blurX: blur,
-      blurY: blur,
-      quality: 3,
-    }),
-  (blur, angle) =>
-    createInnerShadowEffect({
-      distance: 4,
-      angle,
-      color: 0x000000,
-      alpha: 1,
-      blurX: blur,
-      blurY: blur,
-      quality: 3,
-    }),
-  (blur, angle) =>
-    createDropShadowEffect({
-      distance: 4,
-      angle,
-      color: 0x000000,
-      alpha: 1,
-      blurX: blur,
-      blurY: blur,
-      quality: 3,
-      sourceMode: 'knockout',
-    }),
-  (blur, angle) =>
-    createInnerShadowEffect({
-      distance: 4,
-      angle,
-      color: 0x000000,
-      alpha: 1,
-      blurX: blur,
-      blurY: blur,
-      quality: 3,
-      sourceMode: 'hide',
-    }),
-  (blur, angle) =>
-    createDropShadowEffect({
-      distance: 4,
-      angle,
-      color: 0x000000,
-      alpha: 1,
-      blurX: blur,
-      blurY: blur,
-      quality: 3,
-      sourceMode: 'hide',
-    }),
-  (blur, angle) =>
-    createInnerShadowEffect({
-      distance: 4,
-      angle,
-      color: 0x000000,
-      alpha: 1,
-      blurX: blur,
-      blurY: blur,
-      quality: 3,
-      sourceMode: 'hide',
-    }),
+  (blur, angle) => shadow(blur, angle),
+  (blur, angle) => innerShadow(blur, angle),
+  (blur, angle) => shadow(blur, angle, 'knockout'),
+  (blur, angle) => innerShadow(blur, angle, 'hide'),
+  (blur, angle) => shadow(blur, angle, 'hide'),
+  (blur, angle) => innerShadow(blur, angle, 'hide'),
 ];
 
-function createFilters(blurPixels: number, angle: number): (DropShadowEffect | InnerShadowEffect)[] {
-  const blur = computeGaussianSigmaFromRadius(blurPixels);
-  return factories.map((f) => f(blur, angle));
-}
+type Column = { sprite: Sprite; result: RenderTexture | null };
 
-const _bounds = createRectangle();
-const _identity = createMatrix();
-const MAX_PADDING = Math.ceil(10 * 3 + 4 + 4);
+const columns: Column[] = factories.map((_, i) => {
+  const sprite = createSprite();
+  setSpriteTexture(sprite, iconTexture);
+  sprite.x = 50 + i * (imageWidth + 50);
+  sprite.y = 50;
+  addNodeChild(root, sprite);
+  return { sprite, result: null };
+});
 
-if (target.kind === 'canvas') {
-  animateCanvas(target.state);
-} else if (target.kind === 'webgl') {
-  animateGl(target.state);
-} else if (target.kind === 'dom') {
-  animateDom(target.state);
-} else {
-  target.render(root);
-}
+const pool = createGlRenderTexturePool();
 
-function animateCanvas(state: CanvasRenderState): void {
-  const caches = nodes.map((node) => {
-    const cache = createRenderCache();
-    useRenderCache(state, node, cache);
-    return cache;
+function bakeSource(state: GlRenderState, destination: RenderTexture, texture: Texture, pad: number): void {
+  const bakeRoot = createDisplayObject();
+  const icon = createSprite();
+  setSpriteTexture(icon, texture);
+  icon.x = pad;
+  icon.y = pad;
+  addNodeChild(bakeRoot, icon);
+
+  // A second pipeline over the same context: it inherits the screen state's registrations but keeps
+  // its own identity render transform, so the icon bakes at texture scale rather than scene scale.
+  const offscreen = createGlOffscreenRenderState(state);
+  renderIntoGlRenderTexture(state, destination, () => {
+    prepareScene2DRender(offscreen, bakeRoot);
+    renderGlScene2D(offscreen, bakeRoot);
   });
+}
 
-  function frame(): void {
+function initGlShadows(state: GlRenderState): () => void {
+  registerStandardGlTextureResolvers(state);
+
+  // Size everything at the widest padding the animation reaches, so the pool hands back the same
+  // descriptor each frame. Measured across every factory at full blur, since the shadow's distance
+  // offset extends the result further than the blur radius alone would.
+  const widest = computeRenderEffectPadding(
+    state,
+    factories.map((f) => f(computeGaussianSigmaFromRadius(10), 45)),
+  );
+  const pad = Math.ceil(Math.max(widest.left, widest.right, widest.top, widest.bottom));
+  const width = imageWidth + pad * 2;
+  const height = image.height + pad * 2;
+  const descriptor = { width, height };
+
+  const source = createRenderTexture({ width, height });
+  bakeSource(state, source, iconTexture, pad);
+
+  for (const column of columns) {
+    const result = createRenderTexture({ width, height });
+    column.result = result;
+    setSpriteTexture(column.sprite, result);
+    column.sprite.x -= pad;
+    column.sprite.y -= pad;
+  }
+
+  return () => {
     const sinT = Math.sin(performance.now() / 1000) * 0.5 + 0.5;
-    const filters = createFilters(2 + sinT * 8, sinT * 360);
-
-    for (let i = 0; i < nodes.length; i++) {
-      const filter = filters[i];
-      if (filter.kind === 'InnerShadowEffect') continue;
-      const css = computeDropShadowEffectCss(filter);
-      if (css === null) continue;
-      const img = (nodes[i] as Bitmap).data.image;
-      if (img === null || img.source === null) continue;
-      computeNodeBoundsRectangle(_bounds, nodes[i], nodes[i]);
-      const { width: w, height: h } = computeRenderTargetSize(_bounds, MAX_PADDING, 1, 1);
-      const renderTarget = ensureCanvasRenderCacheTarget(state, caches[i], w, h);
-      const ctx = renderTarget.context;
-      ctx.clearRect(0, 0, renderTarget.canvas.width, renderTarget.canvas.height);
-      ctx.imageSmoothingEnabled = true;
-      ctx.filter = css;
-      ctx.drawImage(img.source, MAX_PADDING - _bounds.x, MAX_PADDING - _bounds.y);
-      ctx.filter = 'none';
-      computeRenderCacheTransform(caches[i].transform, _bounds, MAX_PADDING, MAX_PADDING);
+    const blur = computeGaussianSigmaFromRadius(2 + sinT * 8);
+    const angle = sinT * 360;
+    for (let i = 0; i < columns.length; i++) {
+      const result = columns[i].result;
+      if (result === null) continue;
+      const filter = factories[i](blur, angle);
+      withGlRenderTextures(state, pool, [descriptor], ([scratch]) => {
+        applyGlRenderEffectsToRenderTexture(state, pool, source, result, scratch, [filter]);
+      });
     }
-
     target.render(root);
-    requestAnimationFrame(frame);
-  }
-
-  frame();
+  };
 }
 
-type ShadowEntry = {
-  node: DisplayObject;
-  source: GlRenderTarget;
-  dest: GlRenderTarget;
-  cacheTransform: Matrix;
-  sceneTransform: Matrix;
-};
+const renderFrame: () => void =
+  target.kind === 'webgl' ? initGlShadows(target.state as GlRenderState) : () => target.render(root);
 
-function animateGl(state: GlRenderState): void {
-  const pool: GlRenderTargetPool = createGlRenderTargetPool();
-  const entries: ShadowEntry[] = [];
-  for (const node of nodes) {
-    computeNodeBoundsRectangle(_bounds, node, node);
-    const { width: w, height: h } = computeRenderTargetSize(_bounds, MAX_PADDING, 1, 1);
-    entries.push({
-      node,
-      source: createGlRenderTarget(state, { width: w, height: h }),
-      dest: createGlRenderTarget(state, { width: w, height: h }),
-      cacheTransform: createMatrix(),
-      sceneTransform: createMatrix(),
-    });
-  }
-
-  function frame(): void {
-    const sinT = Math.sin(performance.now() / 1000) * 0.5 + 0.5;
-    const filters = createFilters(2 + sinT * 8, sinT * 360);
-
-    prepareScene2DRender(state, root);
-
-    for (const entry of entries) {
-      const renderProxy = getRenderProxy2D(state, entry.node);
-      if (renderProxy !== undefined) copyMatrix(entry.sceneTransform, renderProxy.transform2D);
-    }
-
-    for (let i = 0; i < entries.length; i++) {
-      const entry = entries[i];
-      const filter = filters[i];
-      const { node, source, dest } = entry;
-      computeNodeBoundsRectangle(_bounds, node, node);
-      computeRenderCacheTransform(entry.cacheTransform, _bounds, MAX_PADDING, MAX_PADDING);
-      const renderProxy = getRenderProxy2D(state, node);
-      if (renderProxy === undefined) continue;
-      setTranslation(renderProxy.transform2D, MAX_PADDING - _bounds.x, MAX_PADDING - _bounds.y);
-      beginGlRenderPass(state, source, { preserveColor: true, preserveDepth: true });
-      setGlRenderTransform2D(state, _identity);
-      clearGlRenderTarget(state, source);
-      renderGlScene2D(state, node);
-      clearGlRenderTarget(state, dest);
-      if (filter.kind === 'InnerShadowEffect') {
-        applyInnerShadowEffectToGl(state, source, dest, pool, filter);
-      } else {
-        applyDropShadowEffectToGl(state, source, dest, pool, filter);
-      }
-      endGlRenderPass(state);
-    }
-
-    for (const entry of entries) {
-      const renderProxy = getRenderProxy2D(state, entry.node);
-      if (renderProxy === undefined) continue;
-      copyMatrix(renderProxy.transform2D, entry.sceneTransform);
-      renderProxy.visible = false;
-    }
-
-    renderGlBackground(state);
-    renderGlScene2D(state, root);
-
-    for (const entry of entries) {
-      const renderProxy = getRenderProxy2D(state, entry.node);
-      if (renderProxy === undefined) continue;
-      renderProxy.visible = true;
-      drawGlRenderTargetResult(state, renderProxy, entry.dest, entry.cacheTransform);
-    }
-
-    requestAnimationFrame(frame);
-  }
-
-  frame();
+function enterFrame(): void {
+  renderFrame();
+  requestAnimationFrame(enterFrame);
 }
-
-function animateDom(state: DomRenderState): void {
-  enableDomCssFilterSupport(state);
-
-  function frame(): void {
-    const sinT = Math.sin(performance.now() / 1000) * 0.5 + 0.5;
-    const filters = createFilters(2 + sinT * 8, sinT * 360);
-
-    for (let i = 0; i < nodes.length; i++) {
-      const filter = filters[i];
-      if (filter.kind === 'InnerShadowEffect') continue;
-      setDomCssFilter(state, nodes[i], computeDropShadowEffectCss(filter));
-    }
-
-    target.render(root);
-    requestAnimationFrame(frame);
-  }
-
-  frame();
-}
-
-function setTranslation(out: Matrix, tx: number, ty: number): void {
-  out.a = 1;
-  out.b = 0;
-  out.c = 0;
-  out.d = 1;
-  out.tx = tx;
-  out.ty = ty;
-}
+enterFrame();

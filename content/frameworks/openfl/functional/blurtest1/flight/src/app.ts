@@ -1,5 +1,13 @@
+import type { BlurEffect } from '@flighthq/sdk';
 import { createBlurEffect } from '@flighthq/effects';
-import { addNodeChild, createBitmap, createDisplayObject, loadImageResourceFromUrl } from '@flighthq/sdk';
+import {
+  addNodeChild,
+  createDisplayObject,
+  createSprite,
+  createTexture,
+  loadImageResourceFromUrl,
+  setSpriteTexture,
+} from '@flighthq/sdk';
 
 import { applyBlurEffects, render, scale } from './render';
 
@@ -8,20 +16,16 @@ root.scaleX = scale;
 root.scaleY = scale;
 
 const image = await loadImageResourceFromUrl('openfl/images/openfl_icon.png');
+const iconTexture = createTexture({ source: image });
 
-const blurred: {
-  node: ReturnType<typeof createBitmap>;
-  filter: { kind: 'BlurEffect'; blurX: number; blurY: number };
-}[] = [];
+const blurred: { node: ReturnType<typeof createSprite>; filter: BlurEffect }[] = [];
 for (let i = 0; i < 3; i++) {
-  const bmp = createBitmap();
-  bmp.data.image = image;
-  bmp.data.smoothing = true;
-  bmp.x = 50 + i * (image.width + 50);
-  bmp.y = 50;
-  const filter = createBlurEffect({ blurX: 2, blurY: 2 }) as { kind: 'BlurEffect'; blurX: number; blurY: number };
-  blurred.push({ node: bmp, filter });
-  addNodeChild(root, bmp);
+  const sprite = createSprite();
+  setSpriteTexture(sprite, iconTexture);
+  sprite.x = 50 + i * (image.width + 50);
+  sprite.y = 50;
+  blurred.push({ node: sprite, filter: createBlurEffect({ blurX: 2, blurY: 2 }) });
+  addNodeChild(root, sprite);
 }
 
 applyBlurEffects(blurred);

@@ -125,6 +125,18 @@ function initGlGlow(state: GlRenderState): () => void {
     column.sprite.y -= pad;
   }
 
+  // applyGlRenderEffectsToRenderTexture skips effect kinds with no registered runner and leaves the
+  // destination untouched — a sprite pointed at it would sample a never-written texture. On 1220 only
+  // blur has a public registrar (registerGlBlurEffect); the glow runners exist but are not exported
+  // from @flighthq/effects-gl, so probe once and fall back to the unfiltered source if they are absent.
+  const filtered = withGlRenderTextures(state, pool, [descriptor], ([scratch]) =>
+    applyGlRenderEffectsToRenderTexture(state, pool, source, columns[0].result!, scratch, [columns[0].filter]),
+  );
+  if (!filtered) {
+    for (const column of columns) setSpriteTexture(column.sprite, source);
+    return () => target.render(root);
+  }
+
   return () => {
     const sinT = Math.sin(performance.now() / 1000) * 0.5 + 0.5;
     const blur = computeGaussianSigmaFromRadius(2 + sinT * 8);

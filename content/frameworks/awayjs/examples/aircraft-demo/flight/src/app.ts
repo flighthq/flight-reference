@@ -49,6 +49,8 @@ import { canvas, glState, verifyFrame } from './bootstrap';
 import { createSea } from './sea';
 import { createSkyEnvironment } from './skyEnvironment';
 import { createVaporTrail } from './vaporTrail';
+import type { SkyboxRenderState } from './skybox';
+import { renderSkyboxScene } from './skybox';
 
 // Motion rates in units per second. The sim advances at a locked fixed timestep (see the frame loop),
 // so these stay wall-clock stable regardless of display refresh.
@@ -298,33 +300,3 @@ window.addEventListener('resize', () => {
 });
 
 requestAnimationFrame(frame);
-
-// Standalone skybox pass for this example: draws the environment cube behind the scene inside the
-// same HDR effect pipeline. Kept local so the example reads end to end.
-interface SkyboxRenderState {
-  pipeline: GlRenderEffectPipeline | null;
-}
-
-function renderSkyboxScene(
-  state: GlRenderState,
-  canvas: HTMLCanvasElement,
-  ref: SkyboxRenderState,
-  environment: Readonly<Environment>,
-  scene: Readonly<Node3D>,
-  camera: Readonly<Camera3D>,
-  lights: Readonly<Scene3DLights>,
-  effects: ReadonlyArray<RenderEffect | Adjustment> = [createToneMapEffect()],
-): void {
-  if (ref.pipeline === null) {
-    ref.pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
-  }
-  beginGlRenderEffectPipeline(state, ref.pipeline);
-  renderGlBackground(state);
-  const gl = state.gl;
-  gl.depthMask(true);
-  gl.clearDepth(1);
-  gl.clear(gl.DEPTH_BUFFER_BIT);
-  drawGlEnvironmentSkybox(state, environment, camera, canvas.width / canvas.height);
-  drawGlScene3D(state, scene, camera, lights);
-  endGlRenderEffectPipeline(state, ref.pipeline, effects);
-}

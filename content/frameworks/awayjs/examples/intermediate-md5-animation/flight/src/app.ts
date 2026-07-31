@@ -55,6 +55,8 @@ import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 import { ANIM_NAMES, IDLE_NAME, WALK_NAME, loadCharacter } from './character';
 import { bindCharacterControls } from './controls';
 import { loadEnvironment } from './environment';
+import type { SkyboxRenderState } from './skybox';
+import { renderSkyboxScene } from './skybox';
 
 const ROTATION_SPEED = 3;
 const WALK_SPEED = 1;
@@ -301,33 +303,3 @@ window.addEventListener('resize', () => {
 
 updateCamera();
 requestAnimationFrame(frame);
-
-// Standalone skybox pass for this example: draws the environment cube behind the scene inside the
-// same HDR effect pipeline. Kept local so the example reads end to end.
-interface SkyboxRenderState {
-  pipeline: GlRenderEffectPipeline | null;
-}
-
-function renderSkyboxScene(
-  state: GlRenderState,
-  canvas: HTMLCanvasElement,
-  ref: SkyboxRenderState,
-  environment: Readonly<Environment>,
-  scene: Readonly<Node3D>,
-  camera: Readonly<Camera3D>,
-  lights: Readonly<Scene3DLights>,
-  effects: ReadonlyArray<RenderEffect | Adjustment> = [createToneMapEffect()],
-): void {
-  if (ref.pipeline === null) {
-    ref.pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
-  }
-  beginGlRenderEffectPipeline(state, ref.pipeline);
-  renderGlBackground(state);
-  const gl = state.gl;
-  gl.depthMask(true);
-  gl.clearDepth(1);
-  gl.clear(gl.DEPTH_BUFFER_BIT);
-  drawGlEnvironmentSkybox(state, environment, camera, canvas.width / canvas.height);
-  drawGlScene3D(state, scene, camera, lights);
-  endGlRenderEffectPipeline(state, ref.pipeline, effects);
-}

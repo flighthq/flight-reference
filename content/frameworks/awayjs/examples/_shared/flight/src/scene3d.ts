@@ -25,6 +25,7 @@ import {
   registerGlRenderEffect,
   registerShadedGlMaterial,
   registerSpecularPbrGlExtension,
+  registerStandardGlTextureResolvers,
   registerStandardPbrGlMaterial,
   registerUnlitGlMaterial,
   renderGlBackground,
@@ -67,6 +68,7 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
     pixelRatio,
   });
 
+  registerStandardGlTextureResolvers(state);
   registerUnlitGlMaterial(state);
   registerBlinnPhongGlMaterial(state);
   registerStandardPbrGlMaterial(state);

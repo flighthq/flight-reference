@@ -1,4 +1,4 @@
-import type { ImageResource, StandardPbrMaterial, Texture } from '@flighthq/sdk';
+import type { Image, StandardPbrMaterial, Texture } from '@flighthq/sdk';
 import {
   createStandardPbrMaterial,
   createTexture,
@@ -26,7 +26,7 @@ export function createFloorMaterial(): StandardPbrMaterial {
   return material;
 }
 
-function specularToRoughnessTexture(specular: ImageResource): Texture {
+function specularToRoughnessTexture(specular: Image): Texture {
   const spread = FLOOR_ROUGHNESS_MATTE - FLOOR_ROUGHNESS_GLOSSY;
   const mrImage = createMetallicRoughnessImage(specular, (r) => ({
     roughness: FLOOR_ROUGHNESS_MATTE - spread * r,

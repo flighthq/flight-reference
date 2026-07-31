@@ -1,4 +1,12 @@
-import type { BlinnPhongMaterial, Mesh, Node3D, StandardPbrMaterial, Vector3 } from '@flighthq/sdk';
+import type {
+  BlinnPhongMaterial,
+  Material,
+  Mesh,
+  Node3D,
+  ObjMaterialLibrary,
+  StandardPbrMaterial,
+  Vector3,
+} from '@flighthq/sdk';
 import {
   computeMeshGeometryNormals,
   createScene3DFromObj,
@@ -9,7 +17,6 @@ import {
   isMesh,
   loadImageResourceFromUrl,
   parseObjMaterialLibrary,
-  ImageResourceReferenceKind,
 } from '@flighthq/sdk';
 
 // The articulated F14. The upstream AwayJS demo lets the OBJ loader assign a material per part from
@@ -35,12 +42,13 @@ const f14AssetBase = 'awayjs/f14';
 const LEFT_WING_PART_NAMES = new Set(['Part174', 'Part176', 'Part177', 'Part178', 'Part179', 'Part180', 'Part181']);
 const RIGHT_WING_PART_NAMES = new Set(['Part165', 'Part166', 'Part168', 'Part169', 'Part170', 'Part171', 'Part172']);
 
-// createScene3DFromObj emits each MTL map_Kd as an Unresolved external texture ref keyed by bare filename
-// (f14fuselage.jpg). Read those filenames back off the parser's BlinnPhong slots, load each image once
-// from the f14 asset directory, and build one PBR material per texture.
-function f14DiffuseUri(material: BlinnPhongMaterial | null): string | null {
-  const ref = material?.diffuseMap?.resource;
-  return ref != null && ref.kind === ImageResourceReferenceKind.External ? ref.uri : null;
+// Each MTL map_Kd is a bare filename (f14fuselage.jpg). A Texture no longer carries its own resource
+// reference — unresolved refs live on the scene's resource working set — so read the filename straight
+// off the parsed material library by material name, load each image once from the f14 asset directory,
+// and build one PBR material per texture.
+function f14DiffuseUri(library: ObjMaterialLibrary, material: Material | null): string | null {
+  const name = material?.name;
+  return name == null ? null : (library.materials.get(name)?.mapDiffuse ?? null);
 }
 
 // A mesh's position-bounds midpoint places landing-gear parts into the gear envelope below.
@@ -92,7 +100,7 @@ export async function createAircraft(): Promise<Aircraft> {
   const f14DiffuseUris = new Set<string>();
   for (const mesh of f14Meshes) {
     for (const material of mesh.materials ?? []) {
-      const uri = f14DiffuseUri(material as BlinnPhongMaterial | null);
+      const uri = f14DiffuseUri(f14Library, material);
       if (uri !== null) f14DiffuseUris.add(uri);
     }
   }
@@ -143,7 +151,7 @@ export async function createAircraft(): Promise<Aircraft> {
         materials[i] = f14CanopyGlass;
         continue;
       }
-      const uri = f14DiffuseUri(source);
+      const uri = f14DiffuseUri(f14Library, source);
       if (uri === 'f14landinggear.jpg') isGear = true;
       materials[i] = (uri !== null ? f14MaterialByUri.get(uri) : undefined) ?? f14PlainMaterial;
     }

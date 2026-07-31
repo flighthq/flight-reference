@@ -1,4 +1,5 @@
-import type { ImageResource, Material, Mesh, Node3D, StandardPbrMaterial } from '@flighthq/sdk';
+import type { Texture2D } from '@flighthq/sdk';
+import type { Image, Material, Mesh, Node3D, StandardPbrMaterial } from '@flighthq/sdk';
 import { createTexture, getNodeChildren, isMesh, loadImageResourceFromUrl } from '@flighthq/sdk';
 
 import { createAwayMatteMaterial } from '../../../_shared/flight/src/materials';
@@ -69,15 +70,15 @@ export const materialNameToSpecularFile: Record<string, string> = {
 
 export const alphaCutoutMaterials = new Set(['chain', 'leaf', 'Material__57']);
 
-export async function loadSponzaTextures(files: readonly string[]): Promise<ImageResource[]> {
+export async function loadSponzaTextures(files: readonly string[]): Promise<Image[]> {
   return Promise.all(files.map((file) => loadImageResourceFromUrl(`awayjs/sponza/${file}`)));
 }
 
 export function createTextureMap(
   sponzaTextureFiles: readonly string[],
-  sponzaTextureImages: readonly ImageResource[],
-): Map<string, ReturnType<typeof createTexture>> {
-  const textureMap = new Map<string, ReturnType<typeof createTexture>>();
+  sponzaTextureImages: readonly Image[],
+): Map<string, Texture2D> {
+  const textureMap = new Map<string, Texture2D>();
   for (const file of new Set(Object.values(materialNameToTextureFile))) {
     const image = sponzaTextureImages[sponzaTextureFiles.indexOf(file)];
     if (image) textureMap.set(file, createTexture({ source: image }));
@@ -106,7 +107,7 @@ const knownMaterialNames = new Set(Object.keys(materialNameToTextureFile));
 
 export function getOrCreateMaterial(
   name: string,
-  textureMap: ReadonlyMap<string, ReturnType<typeof createTexture>>,
+  textureMap: ReadonlyMap<string, Texture2D>,
   materialCache: Map<string, StandardPbrMaterial>,
 ): StandardPbrMaterial {
   let mat = materialCache.get(name);
@@ -148,7 +149,7 @@ const skippedFlagpoleNums = new Set([260, 261, 263, 265, 268, 269, 271, 273]);
 export function walkAndAssignMaterials(
   node: Node3D,
   materialCache: Map<string, StandardPbrMaterial>,
-  textureMap: ReadonlyMap<string, ReturnType<typeof createTexture>>,
+  textureMap: ReadonlyMap<string, Texture2D>,
 ): void {
   if (isMesh(node)) {
     const mesh = node as Mesh;

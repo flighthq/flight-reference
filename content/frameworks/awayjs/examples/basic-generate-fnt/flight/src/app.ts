@@ -185,13 +185,9 @@ function showAtlasSurface(glyphAtlas: GlyphAtlas): void {
 
   const ctx = displayCanvas.getContext('2d');
   if (ctx) {
-    if (surface.source) {
-      ctx.drawImage(surface.source as CanvasImageSource, 0, 0);
-    } else if (surface.data) {
-      const imageData = ctx.createImageData(surface.width, surface.height);
-      imageData.data.set(surface.data);
-      ctx.putImageData(imageData, 0, 0);
-    }
+    const imageData = ctx.createImageData(surface.width, surface.height);
+    imageData.data.set(surface.data);
+    ctx.putImageData(imageData, 0, 0);
   }
 
   wrapper.appendChild(displayCanvas);

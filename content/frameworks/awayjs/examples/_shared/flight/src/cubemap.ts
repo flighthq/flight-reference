@@ -1,4 +1,4 @@
-import type { CubeTexture, ImageResource } from '@flighthq/sdk';
+import type { CubeTexture, Image } from '@flighthq/sdk';
 import {
   createCubeTexture,
   captureBitmapFromImageResource,
@@ -17,10 +17,10 @@ import {
  *  - Y faces (+Y, -Y): stay in slot, vertically flipped
  *  - Z faces (+Z, -Z): swap slots AND horizontally flip
  *
- * @param faces Six ImageResource values in AwayJS convention:
+ * @param faces Six Image values in AwayJS convention:
  *              [posX, negX, posY, negY, posZ, negZ]
  */
-export function createCubeTextureFromAwayFaces(faces: readonly ImageResource[]): CubeTexture {
+export function createCubeTextureFromAwayFaces(faces: readonly Image[]): CubeTexture {
   const cube = createCubeTexture();
 
   for (let i = 0; i < 6; i++) {

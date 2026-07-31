@@ -1,4 +1,4 @@
-import type { ImageResource } from '@flighthq/sdk';
+import type { Bitmap, Image } from '@flighthq/sdk';
 import { createImageResourceFromBitmap, captureBitmapFromImageResource } from '@flighthq/sdk';
 
 import { createMetallicRoughnessImage } from '../../../_shared/flight/src/pbrConvert';
@@ -42,10 +42,10 @@ export function buildRampChannel(stops: ReadonlyArray<ColorStop>, channel: 'r' |
 // CHROMA_MASK (only the visor, in this atlas) go through `chromaStops` instead.
 export const CHROMA_MASK = 24;
 export function colorizeByLuminance(
-  image: ImageResource,
+  image: Image,
   baseStops: ReadonlyArray<ColorStop>,
   chromaStops?: ReadonlyArray<ColorStop>,
-): ImageResource {
+): Image {
   const surface = captureBitmapFromImageResource(image);
   const data = surface.data;
   if (data === null) return image;
@@ -132,7 +132,7 @@ function sampleScalarStops(stops: ReadonlyArray<ScalarStop>, t: number): number 
   return lo.v + (hi.v - lo.v) * Math.min(1, Math.max(0, (t - lo.t) / span));
 }
 
-export function buildMetallicRoughnessMap(image: ImageResource): ImageResource {
+export function buildMetallicRoughnessMap(image: Image): Bitmap {
   return createMetallicRoughnessImage(image, (r, g, b) => {
     const luma = 0.299 * r + 0.587 * g + 0.114 * b;
     const isVisor = Math.max(r, g, b) - Math.min(r, g, b) > CHROMA_MASK / 255;

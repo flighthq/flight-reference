@@ -1,4 +1,4 @@
-import type { ImageResource, Bitmap } from '@flighthq/sdk';
+import type { Image, Bitmap } from '@flighthq/sdk';
 import { captureBitmapFromImageResource } from '@flighthq/sdk';
 
 export interface PbrChannels {
@@ -13,15 +13,15 @@ export interface PbrChannels {
  * and writes the returned roughness/metallic values into the green/blue channels:
  * R=0, G=roughness, B=metallic, A=255 — the standard glTF ORM packing.
  *
- * Returns a Bitmap (which extends ImageResource) so the caller can wrap it in
+ * Returns a Bitmap (which extends Image) so the caller can wrap it in
  * createTexture with their own sampler and colorSpace.
  *
- * @param source   The specular or gloss map as an ImageResource.
+ * @param source   The specular or gloss map as an Image.
  * @param mapPixel Callback receiving normalised [0..1] RGBA, returning normalised
  *                 roughness and metallic values.
  */
 export function createMetallicRoughnessImage(
-  source: ImageResource,
+  source: Image,
   mapPixel: (r: number, g: number, b: number, a: number) => PbrChannels,
 ): Bitmap {
   const surface = captureBitmapFromImageResource(source);

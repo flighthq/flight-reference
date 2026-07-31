@@ -6,6 +6,7 @@ import {
   configureDirectionalShadowCamera3D,
   createAabb,
   createCamera3D,
+  createExtendedPbrMaterial,
   createFxaaEffect,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -17,7 +18,7 @@ import {
   createScene3DFrom3ds,
   createNode3D,
   createScene3DLights,
-  createSpecularPbrMaterial,
+  createSpecularPbrExtension,
   createTexture,
   createToneMapEffect,
   defaultGlFxaaEffectRunner,
@@ -27,8 +28,9 @@ import {
   endGlRenderEffectPipeline,
   getNodeChildren,
   loadImageResourceFromUrl,
+  registerExtendedPbrGlMaterial,
   registerGlRenderEffect,
-  registerSpecularPbrGlMaterial,
+  registerSpecularPbrGlExtension,
   registerStandardPbrGlMaterial,
   renderGlBackground,
   setDirectionalLightDirection,
@@ -64,7 +66,8 @@ const state = createGlRenderState(canvas, {
 });
 
 registerStandardPbrGlMaterial(state);
-registerSpecularPbrGlMaterial(state);
+registerExtendedPbrGlMaterial(state);
+registerSpecularPbrGlExtension(state);
 registerGlRenderEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);
 registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
 
@@ -104,7 +107,7 @@ const lights = createScene3DLights({ ambient, directional });
 // fixed 0.04 dielectric spec that can't be zeroed (glossy highlight when panning, or a broad grey wash
 // at max roughness), so use KHR_materials_specular with specular = 0 to remove the specular lobe while
 // keeping the correct PBR diffuse energy.
-const groundMaterial = createSpecularPbrMaterial({ specular: 0 });
+const groundMaterial = createExtendedPbrMaterial({ extensions: [createSpecularPbrExtension({ specular: 0 })] });
 groundMaterial.standard.baseColor = 0xffffffff;
 groundMaterial.standard.metallic = 0;
 groundMaterial.standard.roughness = 1;

@@ -7,7 +7,7 @@ import {
   defaultWgpuShapeRenderer,
   defaultWgpuTextLabelRenderer,
   prepareScene2DRender,
-  registerStandardWgpuMaterial,
+  registerWgpuStandardMaterial,
   registerWgpuImageTextureResolver,
   registerRenderer,
   registerWgpuShapeCommands,
@@ -39,7 +39,7 @@ registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
-registerStandardWgpuMaterial(state);
+registerWgpuStandardMaterial(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 

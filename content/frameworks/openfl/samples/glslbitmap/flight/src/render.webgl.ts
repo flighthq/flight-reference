@@ -9,7 +9,7 @@ import {
   endGlRenderEffectPipeline,
   prepareScene2DRender,
   registerGlRenderEffect,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerStandardGlTextureResolvers,
   registerRenderer,
   renderGlBackground,
@@ -31,7 +31,7 @@ export const state = createGlRenderState(canvas, {
 });
 registerStandardGlTextureResolvers(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 registerGlRenderEffect(state, 'CustomShaderEffect', (context, effect) => {
   applyCustomShaderEffectToGl(context.state, context.source, context.dest, effect as CustomShaderEffect);
 });

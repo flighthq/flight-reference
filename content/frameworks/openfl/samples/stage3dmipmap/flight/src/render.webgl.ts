@@ -7,7 +7,7 @@ import {
   drawGlScene3D,
   endGlRenderEffectPipeline,
   registerStandardGlTextureResolvers,
-  registerUnlitGlMaterial,
+  registerGlUnlitMaterial,
   renderGlBackground,
 } from '@flighthq/sdk';
 
@@ -32,7 +32,7 @@ const state = createGlRenderState(canvas, {
 });
 
 registerStandardGlTextureResolvers(state);
-registerUnlitGlMaterial(state);
+registerGlUnlitMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   depth: 'depth-stencil',

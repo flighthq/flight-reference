@@ -31,7 +31,7 @@ import {
   invalidateNodeAppearance,
   loadImageResourceFromUrl,
   prepareScene2DRender,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerStandardGlTextureResolvers,
   registerDefaultHitTests,
   registerGlBlendEffectBackdrop,
@@ -67,7 +67,7 @@ const state = createGlRenderState(canvas, {
 });
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 registerStandardGlTextureResolvers(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);

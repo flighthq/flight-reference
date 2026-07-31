@@ -6,7 +6,7 @@ import {
   createGlRenderState,
   drawGlScene3D,
   endGlRenderEffectPipeline,
-  registerVertexColorGlMaterial,
+  registerGlVertexColorMaterial,
   renderGlBackground,
 } from '@flighthq/sdk';
 
@@ -30,7 +30,7 @@ const state = createGlRenderState(canvas, {
   pixelRatio,
 });
 
-registerVertexColorGlMaterial(state);
+registerGlVertexColorMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   depth: 'depth-stencil',

@@ -20,7 +20,7 @@ import {
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   prepareScene2DRender,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerStandardGlTextureResolvers,
   registerDefaultHitTests,
   registerRenderer,
@@ -152,7 +152,7 @@ const state = createGlRenderState(canvas, {
 });
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 registerStandardGlTextureResolvers(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);

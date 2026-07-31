@@ -6,7 +6,7 @@ import {
   defaultGlToneMapEffectRunner,
   registerGlRenderEffect,
   registerStandardGlTextureResolvers,
-  registerStandardPbrGlMaterial,
+  registerGlStandardPbrMaterial,
 } from '@flighthq/sdk';
 
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
@@ -36,7 +36,7 @@ export const glState = createGlRenderState(canvas, {
 // Textured materials resolve their maps through the backing-kind registry; without this every
 // texture resolves to null and the scene renders untextured.
 registerStandardGlTextureResolvers(glState);
-registerStandardPbrGlMaterial(glState);
+registerGlStandardPbrMaterial(glState);
 registerGlRenderEffect(glState, 'BloomEffect', defaultGlBloomEffectRunner);
 registerGlRenderEffect(glState, 'FxaaEffect', defaultGlFxaaEffectRunner);
 registerGlRenderEffect(glState, 'ToneMapEffect', defaultGlToneMapEffectRunner);

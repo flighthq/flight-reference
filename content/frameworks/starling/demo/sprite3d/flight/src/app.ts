@@ -35,8 +35,8 @@ import {
   registerRenderer,
   registerGlImageTextureResolver,
   registerGlRenderTextureResolver,
-  registerStandardGlMaterial,
-  registerUnlitGlMaterial,
+  registerGlStandardMaterial,
+  registerGlUnlitMaterial,
   renderGlBackground,
   renderGlScene2D,
   renderIntoGlRenderTexture,
@@ -79,7 +79,7 @@ const state = createGlRenderState(canvas, {
 });
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 // Sprites resolve their texture through the backing-kind registry; without these the background
@@ -87,7 +87,7 @@ registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 registerGlImageTextureResolver(state);
 registerGlRenderTextureResolver(state);
 enableGlBlendModeSupport(state);
-registerUnlitGlMaterial(state);
+registerGlUnlitMaterial(state);
 
 const root = createDisplayObject();
 

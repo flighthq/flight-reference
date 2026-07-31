@@ -4,7 +4,7 @@ import {
   createGlRenderState,
   defaultGlTextLabelRenderer,
   prepareScene2DRender,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -23,7 +23,7 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 

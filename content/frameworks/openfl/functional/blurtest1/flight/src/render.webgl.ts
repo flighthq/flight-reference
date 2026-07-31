@@ -16,7 +16,7 @@ import {
   getTextureWidth,
   prepareScene2DRender,
   registerRenderer,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
@@ -36,7 +36,7 @@ export const state = createGlRenderState(canvas, {
 });
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 // Sprites resolve their texture through the backing-kind registry; without this both the baked
 // source and the blurred result resolve to null and the sprites draw nothing.
 registerStandardGlTextureResolvers(state);

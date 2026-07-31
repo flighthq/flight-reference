@@ -8,7 +8,7 @@ import {
   defaultWgpuSpriteRenderer,
   prepareScene2DRender,
   registerRenderer,
-  registerStandardWgpuMaterial,
+  registerWgpuStandardMaterial,
   registerWgpuBitmapTextureResolver,
   registerWgpuImageTextureResolver,
   registerWgpuRenderTextureResolver,
@@ -34,7 +34,7 @@ registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);
-registerStandardWgpuMaterial(state);
+registerWgpuStandardMaterial(state);
 // Sprites resolve their texture through the backing-kind registry; Wgpu has no bundled equivalent
 // of registerStandardGlTextureResolvers, so the individual resolvers are registered here.
 registerWgpuBitmapTextureResolver(state);

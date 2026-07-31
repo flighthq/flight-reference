@@ -48,9 +48,9 @@ import {
   packOpaqueColor,
   registerBuiltInGlModifierSnippets,
   registerGlRenderEffect,
-  registerShadedGlMaterial,
+  registerGlShadedMaterial,
   registerStandardGlTextureResolvers,
-  registerUnlitGlMaterial,
+  registerGlUnlitMaterial,
   renderGlBackground,
   setCubeTextureFace,
   setQuaternionFromAxisAngle,
@@ -90,9 +90,9 @@ const state = createGlRenderState(canvas, {
 // Textured materials resolve their maps through the backing-kind registry; without this every
 // texture resolves to null and the scene renders untextured.
 registerStandardGlTextureResolvers(state);
-registerShadedGlMaterial(state);
+registerGlShadedMaterial(state);
 registerBuiltInGlModifierSnippets(state);
-registerUnlitGlMaterial(state);
+registerGlUnlitMaterial(state);
 registerGlRenderEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);
 registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
 registerEarthShader(state);

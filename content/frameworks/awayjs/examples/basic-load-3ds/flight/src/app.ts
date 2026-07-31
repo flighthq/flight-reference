@@ -28,11 +28,11 @@ import {
   endGlRenderEffectPipeline,
   getNodeChildren,
   loadImageResourceFromUrl,
-  registerExtendedPbrGlMaterial,
+  registerGlExtendedPbrMaterial,
   registerGlRenderEffect,
-  registerSpecularPbrGlExtension,
+  registerGlSpecularPbrExtension,
   registerStandardGlTextureResolvers,
-  registerStandardPbrGlMaterial,
+  registerGlStandardPbrMaterial,
   renderGlBackground,
   setDirectionalLightDirection,
   invalidateNodeLocalTransform,
@@ -69,9 +69,9 @@ const state = createGlRenderState(canvas, {
 // Textured materials resolve their maps through the backing-kind registry; without this every
 // texture resolves to null and the scene renders untextured.
 registerStandardGlTextureResolvers(state);
-registerStandardPbrGlMaterial(state);
-registerExtendedPbrGlMaterial(state);
-registerSpecularPbrGlExtension(state);
+registerGlStandardPbrMaterial(state);
+registerGlExtendedPbrMaterial(state);
+registerGlSpecularPbrExtension(state);
 registerGlRenderEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);
 registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
 

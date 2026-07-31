@@ -29,7 +29,7 @@ import {
   parseBitmapFontXml,
   prepareScene2DRender,
   QuadBatchKind,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerStandardGlTextureResolvers,
   registerDefaultHitTests,
   registerRenderer,
@@ -70,7 +70,7 @@ const state = createGlRenderState(canvas, {
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
 registerGlColorAdjustmentMaterialFeature(state);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 registerStandardGlTextureResolvers(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);

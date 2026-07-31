@@ -1,5 +1,5 @@
 import type { GlRenderState } from '@flighthq/sdk';
-import { registerCustomShaderGlMaterial, registerGlCustomMaterialShader } from '@flighthq/sdk';
+import { registerGlCustomShaderMaterial, registerGlCustomMaterialShader } from '@flighthq/sdk';
 
 // Earth day/night: an opaque custom shader that lights the day texture by the sun and cross-fades to
 // the city-lights texture on the night side (AwayJS composited the night lights as the ambient term).
@@ -7,7 +7,7 @@ import { registerCustomShaderGlMaterial, registerGlCustomMaterialShader } from '
 // not its transparent pass. Specular is the ocean mask; sRGB textures are decoded to linear here so
 // the linear->sRGB present pass encodes once.
 export function registerEarthShader(state: GlRenderState): void {
-  registerCustomShaderGlMaterial(state);
+  registerGlCustomShaderMaterial(state);
   registerGlCustomMaterialShader(state, 'globeEarth', {
     vertex: `#version 300 es
 in vec3 a_position;

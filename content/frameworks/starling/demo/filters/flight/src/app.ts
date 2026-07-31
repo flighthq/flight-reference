@@ -50,7 +50,7 @@ import {
   registerGlOuterGlowEffect,
   registerOuterGlowEffectPaddingResolver,
   registerRenderer,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
@@ -134,7 +134,7 @@ const state = createGlRenderState(canvas, {
 });
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 registerStandardGlTextureResolvers(state);
 registerGlColorAdjustmentMaterialFeature(state);
 registerGlBlurEffect(state);

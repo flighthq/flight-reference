@@ -26,7 +26,7 @@ import {
   isMesh,
   loadImageResourceFromUrl,
   registerGlRenderEffect,
-  registerShadedGlMaterial,
+  registerGlShadedMaterial,
   registerStandardGlTextureResolvers,
   renderGlBackground,
   setVector3,
@@ -56,7 +56,7 @@ const state = createGlRenderState(canvas, {
 // Textured materials resolve their maps through the backing-kind registry; without this every
 // texture resolves to null and the scene renders untextured.
 registerStandardGlTextureResolvers(state);
-registerShadedGlMaterial(state);
+registerGlShadedMaterial(state);
 registerGlRenderEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);
 registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
 const verifyFrame = createGlFrameVerifier(state);

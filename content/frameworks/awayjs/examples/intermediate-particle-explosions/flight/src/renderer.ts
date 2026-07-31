@@ -17,15 +17,15 @@ import {
   defaultGlToneMapEffectRunner,
   drawGlScene3D,
   endGlRenderEffectPipeline,
-  registerBlinnPhongGlMaterial,
+  registerGlBlinnPhongMaterial,
   registerBuiltInGlModifierSnippets,
-  registerExtendedPbrGlMaterial,
+  registerGlExtendedPbrMaterial,
   registerGlRenderEffect,
-  registerShadedGlMaterial,
-  registerSpecularPbrGlExtension,
+  registerGlShadedMaterial,
+  registerGlSpecularPbrExtension,
   registerStandardGlTextureResolvers,
-  registerStandardPbrGlMaterial,
-  registerUnlitGlMaterial,
+  registerGlStandardPbrMaterial,
+  registerGlUnlitMaterial,
   renderGlBackground,
 } from '@flighthq/sdk';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
@@ -72,12 +72,12 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
   // Textured materials resolve their maps through the backing-kind registry; without this every
   // texture resolves to null and the scene renders untextured.
   registerStandardGlTextureResolvers(state);
-  registerUnlitGlMaterial(state);
-  registerBlinnPhongGlMaterial(state);
-  registerStandardPbrGlMaterial(state);
-  registerExtendedPbrGlMaterial(state);
-  registerSpecularPbrGlExtension(state);
-  registerShadedGlMaterial(state);
+  registerGlUnlitMaterial(state);
+  registerGlBlinnPhongMaterial(state);
+  registerGlStandardPbrMaterial(state);
+  registerGlExtendedPbrMaterial(state);
+  registerGlSpecularPbrExtension(state);
+  registerGlShadedMaterial(state);
   registerBuiltInGlModifierSnippets(state);
 
   const verifyFrame = createGlFrameVerifier(state);

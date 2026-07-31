@@ -41,8 +41,8 @@ import {
   invalidateNodeLocalTransform,
   registerGlRenderEffect,
   registerStandardGlTextureResolvers,
-  registerStandardPbrGlMaterial,
-  registerUnlitGlMaterial,
+  registerGlStandardPbrMaterial,
+  registerGlUnlitMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
@@ -85,8 +85,8 @@ const glState = createGlRenderState(canvas, {
 // Textured materials resolve their maps through the backing-kind registry; without this every
 // texture resolves to null and the scene renders untextured.
 registerStandardGlTextureResolvers(glState);
-registerStandardPbrGlMaterial(glState);
-registerUnlitGlMaterial(glState);
+registerGlStandardPbrMaterial(glState);
+registerGlUnlitMaterial(glState);
 registerGlRenderEffect(glState, 'FxaaEffect', defaultGlFxaaEffectRunner);
 registerGlRenderEffect(glState, 'ScreenSpaceFogEffect', defaultGlScreenSpaceFogEffectRunner);
 registerGlRenderEffect(glState, 'ToneMapEffect', defaultGlToneMapEffectRunner);

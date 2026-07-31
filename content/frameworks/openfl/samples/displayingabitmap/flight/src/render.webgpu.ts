@@ -5,7 +5,7 @@ import {
   createWgpuRenderState,
   defaultWgpuSpriteRenderer,
   prepareScene2DRender,
-  registerStandardWgpuMaterial,
+  registerWgpuStandardMaterial,
   registerWgpuImageTextureResolver,
   registerRenderer,
   renderWgpuBackground,
@@ -25,7 +25,7 @@ export const state = await createWgpuRenderState(canvas, {
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
-registerStandardWgpuMaterial(state);
+registerWgpuStandardMaterial(state);
 registerWgpuImageTextureResolver(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;

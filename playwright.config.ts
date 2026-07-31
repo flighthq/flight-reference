@@ -12,7 +12,10 @@ export default defineConfig({
     },
   },
   webServer: {
-    command: 'npm run dev -- --port 5173',
+    // `npm run dev` takes a case name and serves only that one; with no positional argument it prints
+    // usage and exits, so the suite silently fell back to whatever was already on the port. The e2e run
+    // needs every case route, which is what `dev:all` serves.
+    command: 'npm run dev:all -- --port 5173',
     port: 5173,
     reuseExistingServer: true,
     timeout: 30_000,

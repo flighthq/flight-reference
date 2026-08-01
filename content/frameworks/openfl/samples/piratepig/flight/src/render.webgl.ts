@@ -73,7 +73,6 @@ export function setSize(w: number, h: number): void {
 }
 
 export function render(root: DisplayObject): void {
-  _applyBackgroundBlur?.();
   if (!prepareScene2DRender(state, root)) return;
   renderGlBackground(state);
   renderGlScene2D(state, root);
@@ -129,12 +128,9 @@ export function applyBackgroundBlur(node: Shape): () => void {
   replaceNodeChild(parent, node, panel);
 
   const pool = createGlRenderTexturePool();
-  _applyBackgroundBlur = () => {
-    withGlRenderTextures(state, pool, [descriptor], ([scratch]) => {
-      applyGlRenderEffectsToRenderTexture(state, pool, source, result, scratch, [effect]);
-    });
-  };
+  const applied = withGlRenderTextures(state, pool, [descriptor], ([scratch]) =>
+    applyGlRenderEffectsToRenderTexture(state, pool, source, result, scratch, [effect]),
+  );
+  panel.data.texture = applied ? result : source;
   return () => {};
 }
-
-let _applyBackgroundBlur: (() => void) | null = null;

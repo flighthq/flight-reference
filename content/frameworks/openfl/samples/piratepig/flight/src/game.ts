@@ -12,8 +12,10 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
+  computeNodeRootLocalBoundsRectangle,
   connectSignal,
   createDisplayObject,
+  createRectangle,
   createShape,
   createTextLabel,
   createTween,
@@ -35,8 +37,8 @@ import {
 
 const NUM_COLUMNS = 8;
 const NUM_ROWS = 8;
-const CONTENT_WIDTH = TILE_STEP * NUM_COLUMNS;
-const CONTENT_HEIGHT = TILE_STEP * NUM_ROWS;
+const CONTENT_WIDTH = 75 * NUM_COLUMNS;
+const CONTENT_HEIGHT = 75 * NUM_ROWS;
 const BACKGROUND_Y = 85;
 const TILE_CONTAINER_X = 14;
 const TILE_CONTAINER_Y = BACKGROUND_Y + 14;
@@ -144,16 +146,15 @@ export class PiratePigGame {
     this.obj.scaleX = 1;
     this.obj.scaleY = 1;
 
-    const scale = Math.min(
-      (stageWidth * 0.9) / CONTENT_WIDTH,
-      (stageHeight * 0.86) / (BACKGROUND_Y + CONTENT_HEIGHT),
-      1,
-    );
+    // OpenFL sizes the game from its complete subtree, including the blurred panel's expanded bounds.
+    const bounds = createRectangle();
+    computeNodeRootLocalBoundsRectangle(bounds, this.obj);
+    const scale = Math.min((stageWidth * 0.9) / bounds.width, (stageHeight * 0.86) / bounds.height, 1);
 
     this.currentScale = scale;
     this.obj.scaleX = scale;
     this.obj.scaleY = scale;
-    this.obj.x = stageWidth / 2 - (CONTENT_WIDTH * scale) / 2;
+    this.obj.x = stageWidth / 2 - (bounds.width * scale) / 2;
 
     invalidateNodeRender(this.obj);
   }

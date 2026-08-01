@@ -45,7 +45,7 @@ for (let row = 0; row < COLS_PER_ROW.length; row++) {
 const animation = createSpritesheetAnimation({
   frames: frames.map((_, i) => i),
   frameDuration: 1000 / FPS,
-  loop: true,
+  repeatCount: -1,
 });
 
 const spritesheet = createSpritesheet({

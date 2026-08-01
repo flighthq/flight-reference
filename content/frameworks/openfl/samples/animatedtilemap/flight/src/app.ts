@@ -53,7 +53,7 @@ for (const { name, row } of animationDefs) {
   sheet.animations[name] = createSpritesheetAnimation({
     frames: frameIndices,
     frameDuration: FRAME_DURATION,
-    loop: true,
+    repeatCount: -1,
   });
 }
 

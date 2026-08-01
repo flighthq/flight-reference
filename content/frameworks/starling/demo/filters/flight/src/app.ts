@@ -195,9 +195,9 @@ const sourceTexture = createRenderTexture(descriptor);
 const filteredTexture = createRenderTexture(descriptor);
 const renderTexturePool = createGlRenderTexturePool();
 
-// Bake at the texture origin, NOT inset by effectPadding. Each effect runner insets its own output
-// by the padding its registered resolver reports, so a pre-inset source is padded twice and the
-// filtered rocket lands effectPadding px down and to the right of where the unfiltered one sits.
+// Bake at the texture origin, NOT inset by effectPadding: the padded region is entirely headroom for
+// the filter to expand into. Insetting the source as well put every filtered rocket exactly
+// effectPadding px right and down of the unfiltered one, measured against the Starling reference.
 const bakeRoot = createDisplayObject();
 const bakeRocket = createSprite();
 bakeRocket.data.texture = rocketTexture;

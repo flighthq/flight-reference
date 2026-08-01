@@ -159,10 +159,13 @@ let sunAngle = 1.35;
 const sunLight = createDirectionalLight({
   direction: { x: Math.sin(sunAngle), y: 0, z: Math.cos(sunAngle) },
   color: 0xffffffff,
-  intensity: awayIntensity(2.6),
+  // AwayJS uses diffuse=2 on a classic MethodMaterial. Flight's ShadedMaterial is the same
+  // non-PBR lighting model, so pass the source intensity through without the PBR ×π exposure.
+  intensity: awayIntensity(2, 'phong'),
 });
 
-const ambient = createAmbientLight({ color: packOpaqueColor(0x0c1424), intensity: awayIntensity(0.5) });
+// AwayJS combines ambient=1 with the cloud material's 0x1b2048 style color.
+const ambient = createAmbientLight({ color: packOpaqueColor(0x1b2048), intensity: awayIntensity(1, 'phong') });
 
 const lights = createScene3DLights({
   ambient,

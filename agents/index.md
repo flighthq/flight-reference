@@ -93,6 +93,7 @@ When `FLIGHT_REPO` is unset (the default), the harness falls back to the `@fligh
 
 ## Conventions
 
+- [numeric domains](conventions/numeric-domains.md) — before assigning a numeric color, normalized factor, or encoded value.
 - [standalone examples](conventions/standalone-examples.md) — before factoring anything out of an example into `_shared/`.
 - [commit messages](conventions/commits.md) — before writing a commit.
 - [camera conversion](conventions/camera.md) — before porting AwayJS camera, position, or direction values to Flight.

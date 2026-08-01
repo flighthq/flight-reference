@@ -13,7 +13,9 @@ import {
 } from '@flighthq/sdk';
 
 const IDLE_NAME = 'idle';
-const ACTION_NAMES = ['walk', 'attack01', 'attack02', 'attack03', 'attack04', 'attack05'];
+// Keys 1-5 select attack01-attack05, matching the AwayJS reference. The AWD also carries a 'walk'
+// clip, but the reference never binds or plays it — including it here shifted every key by one.
+const ACTION_NAMES = ['attack01', 'attack02', 'attack03', 'attack04', 'attack05'];
 const CROSSFADE_DURATION = 0.3;
 
 export interface AnimationState {

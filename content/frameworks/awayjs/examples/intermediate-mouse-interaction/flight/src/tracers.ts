@@ -1,4 +1,4 @@
-import type { Mesh, Scene3D } from '@flighthq/sdk';
+import type { Camera3D, Mesh, Scene3D } from '@flighthq/sdk';
 import {
   addNodeChild,
   copyQuaternion,
@@ -6,7 +6,9 @@ import {
   createMesh,
   createQuaternion,
   createSphereMeshGeometry,
+  createVector3,
   invalidateNodeLocalTransform,
+  matrix4TransformPoint,
   multiplyQuaternion,
   setQuaternionFromAxisAngle,
   setVector3,
@@ -53,6 +55,26 @@ const xAxis = { x: 1, y: 0, z: 0 };
 const yAxis = { x: 0, y: 1, z: 0 };
 const scratchQuatA = createQuaternion();
 const scratchQuatB = createQuaternion();
+const scratchViewPosition = createVector3();
+
+export function updateNormalTracerStroke(
+  tracer: Mesh,
+  camera: Readonly<Camera3D>,
+  viewportHeight: number,
+  thickness: number,
+): void {
+  if (!tracer.visible || camera.projection.kind !== 'perspective' || viewportHeight <= 0) return;
+
+  matrix4TransformPoint(scratchViewPosition, camera.view, tracer.position);
+  const viewDepth = Math.max(0, -scratchViewPosition.z);
+  const worldUnitsPerPixel = (2 * viewDepth * Math.tan(camera.projection.fovY / 2)) / viewportHeight;
+
+  // AwayJS LineSegment thickness is screen-space. Flight has no 3D stroke primitive, so scale only
+  // the cylinder's cross-section to keep its apparent width stable while preserving its 25-unit length.
+  tracer.scale.x = thickness * worldUnitsPerPixel;
+  tracer.scale.z = thickness * worldUnitsPerPixel;
+  invalidateNodeLocalTransform(tracer);
+}
 
 export function positionNormalTracer(
   tracer: Mesh,

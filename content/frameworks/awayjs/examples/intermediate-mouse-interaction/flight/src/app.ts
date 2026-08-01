@@ -41,7 +41,7 @@ import { createPointLightFromAway } from '../../../_shared/flight/src/lighting';
 import { bindHoverPicking, bindOrbitControls } from './controls';
 import type { ObjectInfo } from './objects';
 import { createRandomObject, loadHeadModel } from './objects';
-import { createTracers } from './tracers';
+import { createTracers, updateNormalTracerStroke } from './tracers';
 import { createScene3DContext } from './renderer';
 
 const ctx = createScene3DContext({
@@ -90,6 +90,8 @@ updateCamera();
 
 function frame(): void {
   updateCamera();
+  updateNormalTracerStroke(tracers.pickingNormalTracer, camera, ctx.canvas.clientHeight, 3);
+  updateNormalTracerStroke(tracers.sceneNormalTracer, camera, ctx.canvas.clientHeight, 3);
 
   tracers.sceneTracer.visible = false;
   tracers.sceneNormalTracer.visible = false;

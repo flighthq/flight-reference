@@ -1,4 +1,4 @@
-import type { GlyphAtlas, RichText } from '@flighthq/sdk';
+import type { RichText } from '@flighthq/sdk';
 import {
   addNodeChild,
   attachKeyboardInput,
@@ -19,7 +19,6 @@ import {
   enableGlTextInput,
   enableTextInput,
   focusTextInput,
-  getGlyphAtlasBitmap,
   getGlyphAtlasEntry,
   invalidateNodeLocalTransform,
   loadFontFromUrl,
@@ -111,8 +110,6 @@ for (let i = 0; i < 300; i++) {
   textFields.push(tf);
 }
 
-showAtlasSurface(atlas);
-
 let cameraX = 0;
 let cameraY = 0;
 let cameraZ = -500;
@@ -175,25 +172,3 @@ window.addEventListener('resize', () => {
 });
 
 frame();
-
-function showAtlasSurface(glyphAtlas: GlyphAtlas): void {
-  const surface = getGlyphAtlasBitmap(glyphAtlas);
-  if (!surface) return;
-
-  const wrapper = document.createElement('div');
-  const displayCanvas = document.createElement('canvas');
-  displayCanvas.width = surface.width;
-  displayCanvas.height = surface.height;
-  displayCanvas.style.width = surface.width / pixelRatio + 'px';
-  displayCanvas.style.height = surface.height / pixelRatio + 'px';
-
-  const ctx = displayCanvas.getContext('2d');
-  if (ctx) {
-    const imageData = ctx.createImageData(surface.width, surface.height);
-    imageData.data.set(surface.data);
-    ctx.putImageData(imageData, 0, 0);
-  }
-
-  wrapper.appendChild(displayCanvas);
-  document.body.appendChild(wrapper);
-}

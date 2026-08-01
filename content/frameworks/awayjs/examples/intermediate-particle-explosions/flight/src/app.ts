@@ -37,7 +37,7 @@ import {
 
 import { bindOrbitDrag, createCameraFromAway, createOrbitControllerFromAway } from '../../../_shared/flight/src/camera';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
-import { CURVE_TIME_SCALE_SECONDS, loadParticleClouds, updateParticleCloud } from './particles';
+import { loadParticleClouds, updateParticleCloud } from './particles';
 import { createScene3DContext } from './renderer';
 
 const ctx = createScene3DContext({
@@ -66,9 +66,8 @@ bindOrbitDrag(ctx.canvas, orbit);
 
 const { clouds, paths } = await loadParticleClouds(scene.root);
 
-// Start with animator 0 fully reformed instead of halfway through its curve, so the source logos are
-// immediately legible while the other phase-offset clouds demonstrate the explosion.
-let time = -CURVE_TIME_SCALE_SECONDS * (Math.PI / 2);
+// AwayJS starts _time at zero before applying each animator's phase offset.
+let time = 0;
 let lightAngle = 0;
 let lastTs = 0;
 

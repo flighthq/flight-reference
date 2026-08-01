@@ -11,7 +11,6 @@ import {
   createGlRenderState,
   createGlyphAtlas,
   createInputManager,
-  createMatrix,
   createRichText,
   createTextInputManager,
   createWebGlyphRasterizerBackend,
@@ -36,7 +35,7 @@ import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 let width = window.innerWidth;
 let height = window.innerHeight;
 
-const pixelRatio = window.devicePixelRatio || 1;
+let pixelRatio = window.devicePixelRatio || 1;
 
 const mount = document.getElementById('app');
 const canvas = createGlCanvasElement(width, height, pixelRatio);
@@ -52,7 +51,6 @@ const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: false },
   pixelRatio,
 });
-// state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
 // Textured materials resolve their maps through the backing-kind registry; without this every
 // texture resolves to null and the scene renders untextured.
@@ -82,8 +80,8 @@ for (const character of '0123456789') {
 }
 
 const root = createDisplayObject();
-root.x = width / 2;
-root.y = height / 2;
+root.x = canvas.width / 2;
+root.y = canvas.height / 2;
 invalidateNodeLocalTransform(root);
 
 const textFields: RichText[] = [];
@@ -118,8 +116,9 @@ function updateCamera(): void {
   const s = 500 / Math.abs(cameraZ);
   root.scaleX = s;
   root.scaleY = s;
-  root.x = width / 2 - cameraX * s;
-  root.y = height / 2 - cameraY * s;
+  // Scene coordinates map directly to backing-store pixels, so centre against the backing dimensions.
+  root.x = canvas.width / 2 - cameraX * s;
+  root.y = canvas.height / 2 - cameraY * s;
   invalidateNodeLocalTransform(root);
 }
 
@@ -162,11 +161,12 @@ function frame(): void {
 window.addEventListener('resize', () => {
   width = window.innerWidth;
   height = window.innerHeight;
-  const pr = window.devicePixelRatio || 1;
-  canvas.width = width * pr;
-  canvas.height = height * pr;
+  pixelRatio = window.devicePixelRatio || 1;
+  canvas.width = width * pixelRatio;
+  canvas.height = height * pixelRatio;
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
+  state.pixelRatio = pixelRatio;
   state.gl.viewport(0, 0, canvas.width, canvas.height);
   updateCamera();
 });

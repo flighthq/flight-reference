@@ -47,7 +47,7 @@ const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: false },
   pixelRatio,
 });
-state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+// state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
 // Textured materials resolve their maps through the backing-kind registry; without this every
 // texture resolves to null and the scene renders untextured.

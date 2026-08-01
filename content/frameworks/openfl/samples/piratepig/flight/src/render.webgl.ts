@@ -18,6 +18,8 @@ import {
   defaultGlTextLabelRenderer,
   getNodeParent,
   getShapeBounds,
+  getTextureHeight,
+  getTextureWidth,
   prepareScene2DRender,
   registerBlurEffectPaddingResolver,
   registerGlBlurEffect,
@@ -104,6 +106,17 @@ export function applyBackgroundBlur(node: Shape): () => void {
   addNodeChild(bakeRoot, bakePanel);
 
   const offscreen = createGlOffscreenRenderState(state);
+  // createGlOffscreenRenderState shares the screen canvas, so its default 2D projection uses the
+  // canvas dimensions even while the render texture is bound. Scale each axis to the target so the
+  // panel is baked at its authored size rather than shrinking non-uniformly into the texture.
+  offscreen.renderTransform2D = createMatrix(
+    state.canvas.width / getTextureWidth(source),
+    0,
+    0,
+    state.canvas.height / getTextureHeight(source),
+    0,
+    0,
+  );
   renderIntoGlRenderTexture(state, source, () => {
     prepareScene2DRender(offscreen, bakeRoot);
     renderGlScene2D(offscreen, bakeRoot);

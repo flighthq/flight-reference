@@ -11,6 +11,7 @@ import {
   createMatrix,
   createRenderTexture,
   createSprite,
+  clearGlRenderTexture,
   defaultGlRichTextRenderer,
   defaultGlSpriteRenderer,
   getBlurEffectPadding,
@@ -92,6 +93,10 @@ export function applyBlurEffects(list: { node: Sprite; filter: BlurEffect }[]): 
 
 export function render(root: DisplayObject): void {
   for (const entry of _entries) {
+    // Effect passes blend into their destination rather than replacing it, and a RenderTexture keeps
+    // last frame's contents, so re-running the blur every frame would composite over itself and the
+    // icon would darken toward opaque. Clearing first makes each frame's blur stand alone.
+    clearGlRenderTexture(state, entry.result);
     withGlRenderTextures(state, _pool, [entry.descriptor], ([scratch]) => {
       applyGlRenderEffectsToRenderTexture(state, _pool, entry.source, entry.result, scratch, [entry.filter]);
     });

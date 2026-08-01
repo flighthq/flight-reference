@@ -126,10 +126,13 @@ const lights = createScene3DLights({
 // sheen on camera-facing surfaces (especially the eyes). Shininess 10 maps directly from
 // AwayJS's Blinn-based gloss=10. The diffuse tint compensates for AwayJS's style.color
 // (0x303040) which darkens/tints the ambient contribution.
+// `specular` is a packed 0xRRGGBBAA colour, not a 0..1 scalar — the renderer runs it through
+// unpackColorToLinear. A fractional value bit-shifts to zero in every channel, which silently
+// disabled specular entirely; 0x262626ff is the intended ~15% grey.
 const headMaterial = createShadedMaterial({
   diffuse: 0x606878ff,
   shininess: 10,
-  specular: 0.15,
+  specular: 0x262626ff,
 });
 
 async function tryLoadImage(url: string): Promise<Awaited<ReturnType<typeof loadImageResourceFromUrl>> | null> {

@@ -10,6 +10,8 @@ Flight uses `number` for packed colors, normalized factors, physical magnitudes,
 | RGB24 | `TextFormat.color`, shape fill and line colors, gradient color stops, glow and shadow colors whose alpha is separate, and source-framework colors before conversion | `0xRRGGBB` | `computeRgbHexString` in `@flighthq/color` |
 | normalized factors | object and effect alpha, PBR metallic and roughness, PBR specular factor, and bitmap gradient alpha stops | decimal `0..1` | the consumer that applies or clamps the field; for gradient stops, `buildBitmapGradientRamp` in `@flighthq/bitmap` |
 
+The right column names where to _read_ the decoding, not what to call. `setRenderStateBackgroundColor` in particular is internal to `@flighthq/render` — open `render/dist/renderColor.js` to confirm it, but do not try to import it.
+
 Use `packOpaqueColor` when an RGB24 source-framework color crosses into an RGBA32 Flight field. Use `packColor` when starting from separate normalized channels and `getColorRgb` when crossing back to RGB24. Do not move bytes by eye: opaque black is `0x000000ff` in Flight, even though its numeric value is only 255.
 
 Intensity, strength, emissive strength, distance, range, texture scale, and world coordinates are magnitudes, not normalized factors. Values above 1 can be correct. Resolve the receiving API before clamping them.

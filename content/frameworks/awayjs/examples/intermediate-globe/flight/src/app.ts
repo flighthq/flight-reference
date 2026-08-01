@@ -53,6 +53,8 @@ import {
   drawGlEnvironmentSkybox,
   drawGlScene3D,
   endGlRenderEffectPipeline,
+  flipBitmapHorizontal,
+  flipBitmapVertical,
   getCamera3DForward,
   getCamera3DPosition,
   getCamera3DScreenToWorldRay,
@@ -268,8 +270,8 @@ earthMaterial.textures = {
   u_specTex: createTexture({ source: specImage }),
 };
 
-// Space starfield skybox — the AwayJS space_texture.cube manifest's six faces into a cube map.
-// (Face slots: +X, -X, +Y, -Y, +Z, -Z.)
+// Space starfield skybox — convert the AwayJS left-handed cube into Flight's right-handed space.
+// X/Z faces mirror horizontally, Y faces mirror vertically, and the handedness flip swaps ±Z.
 const skyboxFaceUrls = [
   'awayjs/skybox/space_posX.jpg',
   'awayjs/skybox/space_negX.jpg',
@@ -280,7 +282,14 @@ const skyboxFaceUrls = [
 ];
 const skyboxFaces = await Promise.all(skyboxFaceUrls.map((url) => loadImageResourceFromUrl(url)));
 const skyboxTexture = createCubeTexture();
-for (let i = 0; i < 6; i++) setCubeTextureFace(skyboxTexture, i, skyboxFaces[i]);
+for (let i = 0; i < 6; i++) {
+  const face = captureBitmapFromImageResource(skyboxFaces[i]!);
+  const region = createBitmapRegion(face);
+  if (i === 2 || i === 3) flipBitmapVertical(region, region);
+  else flipBitmapHorizontal(region, region);
+  const faceIndex = i === 4 ? 5 : i === 5 ? 4 : i;
+  setCubeTextureFace(skyboxTexture, faceIndex, face);
+}
 const environment = createEnvironment({ environment: skyboxTexture, intensity: 1 });
 
 const orbit = createOrbitControllerFromAway(camera, {

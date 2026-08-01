@@ -104,19 +104,11 @@ export function applyBackgroundBlur(node: Shape): () => void {
   bakePanel.y = pad - bounds.y;
   addNodeChild(bakeRoot, bakePanel);
 
+  // Open the pass on the SAME state that draws it. renderIntoGlRenderTexture binds the target on the
+  // state it is given, so passing the screen state would leave the offscreen state projecting into
+  // canvas space while the render texture is bound, silently shrinking the bake by canvas/target.
   const offscreen = createGlOffscreenRenderState(state);
-  // createGlOffscreenRenderState shares the screen canvas, so its default 2D projection uses the
-  // canvas dimensions even while the render texture is bound. Scale each axis to the target so the
-  // panel is baked at its authored size rather than shrinking non-uniformly into the texture.
-  offscreen.renderTransform2D = createMatrix(
-    state.canvas.width / getTextureWidth(source),
-    0,
-    0,
-    state.canvas.height / getTextureHeight(source),
-    0,
-    0,
-  );
-  renderIntoGlRenderTexture(state, source, () => {
+  renderIntoGlRenderTexture(offscreen, source, () => {
     prepareScene2DRender(offscreen, bakeRoot);
     renderGlScene2D(offscreen, bakeRoot);
   });

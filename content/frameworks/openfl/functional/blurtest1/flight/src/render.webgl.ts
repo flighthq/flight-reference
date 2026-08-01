@@ -116,19 +116,11 @@ function bakeSource(destination: RenderTexture, node: Sprite, pad: number): void
   copy.y = pad;
   addNodeChild(bakeRoot, copy);
 
-  // createGlOffscreenRenderState shares the screen canvas, so the 2D walk projects into canvas space
-  // while the bound target is the render texture. Scale by canvas/target per axis so baked content
-  // lands 1:1 instead of being shrunk by that ratio.
+  // Open the pass on the SAME state that draws it. renderIntoGlRenderTexture binds the target on the
+  // state it is given, so passing the screen state would leave the offscreen state projecting into
+  // canvas space while the render texture is bound, silently shrinking the bake by canvas/target.
   const offscreen = createGlOffscreenRenderState(state);
-  offscreen.renderTransform2D = createMatrix(
-    state.canvas.width / getTextureWidth(destination),
-    0,
-    0,
-    state.canvas.height / getTextureHeight(destination),
-    0,
-    0,
-  );
-  renderIntoGlRenderTexture(state, destination, () => {
+  renderIntoGlRenderTexture(offscreen, destination, () => {
     prepareScene2DRender(offscreen, bakeRoot);
     renderGlScene2D(offscreen, bakeRoot);
   });

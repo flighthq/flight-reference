@@ -203,20 +203,11 @@ const bakeRocket = createSprite();
 bakeRocket.data.texture = rocketTexture;
 addNodeChild(bakeRoot, bakeRocket);
 
-// createGlOffscreenRenderState shares the screen canvas, so the 2D walk projects into canvas space
-// (320x480 at the device pixel ratio) while the bound target is the source render texture. Scale the
-// offscreen render transform by canvas/target on each axis so the rocket bakes 1:1 into the texture
-// instead of being shrunk by that ratio — non-uniformly, since the two are not the same aspect.
+// Open the pass on the SAME state that draws it. renderIntoGlRenderTexture binds the target on the
+// state it is given, so passing the screen state would leave the offscreen state projecting into
+// canvas space while the render texture is bound, silently shrinking the bake by canvas/target.
 const offscreenState = createGlOffscreenRenderState(state);
-offscreenState.renderTransform2D = createMatrix(
-  state.canvas.width / descriptor.width,
-  0,
-  0,
-  state.canvas.height / descriptor.height,
-  0,
-  0,
-);
-renderIntoGlRenderTexture(state, sourceTexture, () => {
+renderIntoGlRenderTexture(offscreenState, sourceTexture, () => {
   prepareScene2DRender(offscreenState, bakeRoot);
   renderGlScene2D(offscreenState, bakeRoot);
 });

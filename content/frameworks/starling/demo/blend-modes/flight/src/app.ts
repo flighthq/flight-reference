@@ -125,6 +125,9 @@ const eraseSource = createRenderTexture(eraseDescriptor);
 const eraseBackdrop = createRenderTexture(eraseDescriptor);
 const eraseResult = createRenderTexture(eraseDescriptor);
 const erasePool = createGlRenderTexturePool();
+// Open each bake pass on the SAME state that draws it. renderIntoGlRenderTexture binds the target on the
+// state it is given, so passing the screen state would leave the offscreen state projecting into
+// canvas space while the render texture is bound, silently shrinking the bake by canvas/target.
 const offscreenState = createGlOffscreenRenderState(state);
 
 const eraseSourceRoot = createDisplayObject();
@@ -133,7 +136,7 @@ eraseSourceRocket.data.texture = rocketTexture;
 eraseSourceRocket.x = rocketX;
 eraseSourceRocket.y = rocketY;
 addNodeChild(eraseSourceRoot, eraseSourceRocket);
-renderIntoGlRenderTexture(state, eraseSource, () => {
+renderIntoGlRenderTexture(offscreenState, eraseSource, () => {
   prepareScene2DRender(offscreenState, eraseSourceRoot);
   renderGlScene2D(offscreenState, eraseSourceRoot);
 });
@@ -142,7 +145,7 @@ const eraseBackdropRoot = createDisplayObject();
 const eraseBackdropSprite = createSprite();
 eraseBackdropSprite.data.texture = bgTexture;
 addNodeChild(eraseBackdropRoot, eraseBackdropSprite);
-renderIntoGlRenderTexture(state, eraseBackdrop, () => {
+renderIntoGlRenderTexture(offscreenState, eraseBackdrop, () => {
   prepareScene2DRender(offscreenState, eraseBackdropRoot);
   renderGlScene2D(offscreenState, eraseBackdropRoot);
 });

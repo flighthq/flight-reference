@@ -88,7 +88,7 @@ const camera = createCameraFromAway({ y: 20, z: -50, targetY: 20, fov: 60, near:
 // Bitmap is filled with a linear gradient ramp (warm hazy horizon -> cooler zenith) and mapped up the
 // sphere's latitude, so the horizon sits at the equator and the zenith at the top pole. Emissive values
 // stay < 1 so the ACES pass keeps them in range.
-const SKY_STOPS = { colors: [0x3f74c4, 0xa9c6e6, 0xead9b8], alphas: [255, 255, 255], ratios: [0, 132, 255] };
+const SKY_STOPS = { colors: [0x3f74c4, 0xa9c6e6, 0xead9b8], alphas: [1, 1, 1], ratios: [0, 132, 255] };
 const skyRamp = new Uint8ClampedArray(256 * 4);
 buildBitmapGradientRamp(skyRamp, SKY_STOPS.colors, SKY_STOPS.alphas, SKY_STOPS.ratios);
 const skySurface = createBitmap(1, 256);

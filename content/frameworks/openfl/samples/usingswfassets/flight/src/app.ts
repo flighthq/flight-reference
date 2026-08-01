@@ -23,7 +23,7 @@ const header = createShape();
 const column = createShape();
 const label = createTextLabel();
 label.data.text = 'SWF layout';
-label.data.textFormat = { size: 26, color: 0xffffffff };
+label.data.textFormat = { size: 26, color: 0xffffff };
 label.x = 24;
 label.y = 18;
 

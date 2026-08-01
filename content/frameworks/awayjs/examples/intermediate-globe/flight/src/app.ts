@@ -1,5 +1,6 @@
 import type {
   Adjustment,
+  Billboard,
   Camera3D,
   Environment,
   GlRenderEffectPipeline,
@@ -9,13 +10,19 @@ import type {
   RenderEffect,
   Scene3DLights,
   ShadedMaterial,
+  Texture,
 } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
   BlendMode,
+  captureBitmapFromImageResource,
+  copyBitmapChannel,
   copyQuaternion,
   createAmbientLight,
+  createBillboard,
+  createBitmap,
+  createBitmapRegion,
   createCubeTexture,
   createCustomShaderMaterial,
   createDirectionalLight,
@@ -29,12 +36,16 @@ import {
   createMesh,
   createNode3D,
   createQuaternion,
+  createQuadMeshGeometry,
+  createRay3D,
+  createSampler,
   createScene3D,
   createScene3DLights,
   createShadedMaterial,
   createSphereMeshGeometry,
   createTexture,
   createToneMapEffect,
+  createUnlitMaterial,
   createVector3,
   defaultGlFxaaEffectRunner,
   defaultGlToneMapEffectRunner,
@@ -42,6 +53,11 @@ import {
   drawGlEnvironmentSkybox,
   drawGlScene3D,
   endGlRenderEffectPipeline,
+  getCamera3DForward,
+  getCamera3DPosition,
+  getCamera3DScreenToWorldRay,
+  getCamera3DWorldToScreen,
+  ImageChannel,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   orientScene3DBillboardsToCamera,
@@ -53,6 +69,7 @@ import {
   registerGlUnlitMaterial,
   renderGlBackground,
   setCubeTextureFace,
+  setNode3DAlpha,
   setQuaternionFromAxisAngle,
   setVector3,
 } from '@flighthq/sdk';
@@ -104,6 +121,36 @@ const skyboxRef: SkyboxRenderState = { pipeline: null };
 const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 60, far: 100000 });
+
+interface FlareSpec {
+  index: number;
+  url: string;
+  size: number;
+  position: number;
+  opacity: number;
+}
+
+interface FlareObject {
+  billboard: Billboard;
+  index: number;
+  position: number;
+}
+
+// flare11.jpg and flare12.jpg are absent from the example assets. AwayJS leaves those two array
+// positions empty when their loads never complete, so retain the original indices for placement
+// depth while constructing only the ten entries that can actually load.
+const FLARE_SPECS: readonly FlareSpec[] = [
+  { index: 0, url: 'awayjs/lensflare/flare10.jpg', size: 3.2, position: -0.01, opacity: 100 },
+  { index: 2, url: 'awayjs/lensflare/flare7.jpg', size: 2, position: 0, opacity: 25.5 },
+  { index: 3, url: 'awayjs/lensflare/flare7.jpg', size: 4, position: 0, opacity: 17.85 },
+  { index: 5, url: 'awayjs/lensflare/flare6.jpg', size: 1, position: 0.68, opacity: 20.4 },
+  { index: 6, url: 'awayjs/lensflare/flare2.jpg', size: 1.25, position: 1.1, opacity: 48.45 },
+  { index: 7, url: 'awayjs/lensflare/flare3.jpg', size: 1.75, position: 1.37, opacity: 7.65 },
+  { index: 8, url: 'awayjs/lensflare/flare4.jpg', size: 2.75, position: 1.85, opacity: 12.75 },
+  { index: 9, url: 'awayjs/lensflare/flare8.jpg', size: 0.5, position: 2.21, opacity: 33.15 },
+  { index: 10, url: 'awayjs/lensflare/flare6.jpg', size: 4, position: 2.5, opacity: 10.4 },
+  { index: 11, url: 'awayjs/lensflare/flare7.jpg', size: 10, position: 2.66, opacity: 50 },
+];
 
 let sunAngle = 1.35;
 
@@ -158,6 +205,46 @@ const SUN_DISTANCE = 10000;
 const sun = createMesh(createSphereMeshGeometry(700, 32, 16), [sunMaterial]);
 addNodeChild(scene.root, sun);
 
+// The flare JPEGs are luminance masks rather than RGBA artwork. Match AwayJS by copying red into
+// alpha on an otherwise-white bitmap, and use smooth filtering without mipmaps.
+const flareTextures = new Map<string, Texture>();
+const flareUrls = [...new Set(FLARE_SPECS.map((spec) => spec.url))];
+await Promise.all(
+  flareUrls.map(async (url) => {
+    const sourceImage = await loadImageResourceFromUrl(url);
+    const sourceBitmap = captureBitmapFromImageResource(sourceImage);
+    const maskedBitmap = createBitmap(sourceBitmap.width, sourceBitmap.height, 0xffffffff);
+    copyBitmapChannel(
+      createBitmapRegion(maskedBitmap),
+      ImageChannel.Alpha,
+      createBitmapRegion(sourceBitmap),
+      ImageChannel.Red,
+    );
+    flareTextures.set(
+      url,
+      createTexture({
+        source: maskedBitmap,
+        sampler: createSampler({ magFilter: 'linear', minFilter: 'linear', mipmaps: false }),
+      }),
+    );
+  }),
+);
+
+const flares: FlareObject[] = FLARE_SPECS.map((spec) => {
+  const material = createUnlitMaterial({
+    baseColor: 0xffffffff,
+    baseColorMap: flareTextures.get(spec.url) ?? null,
+  });
+  material.alphaMode = 'blend';
+
+  const dimension = spec.size * 14.4;
+  const billboard = createBillboard(createQuadMeshGeometry(dimension, dimension), [material], 'screenAligned');
+  billboard.visible = false;
+  setNode3DAlpha(billboard, spec.opacity / 100);
+  addNodeChild(scene.root, billboard);
+  return { billboard, index: spec.index, position: spec.position };
+});
+
 const [dayImage, specImage] = await Promise.all([
   loadImageResourceFromUrl('awayjs/globe/land_ocean_ice_2048_match.jpg'),
   loadImageResourceFromUrl('awayjs/globe/earth_specular_2048.jpg'),
@@ -202,15 +289,80 @@ const orbit = createOrbitControllerFromAway(camera, {
   tiltAngle: 0,
   minTiltAngle: -90,
   maxTiltAngle: 90,
+  yFactor: 1,
 });
 
 bindOrbitDrag(canvas, orbit, { minDistance: 400, maxDistance: 10000 });
 
 const axisY = createVector3(0, 1, 0);
 const scratchQuat = createQuaternion();
+const sunScreenPosition = createVector3();
+const cameraPosition = createVector3();
+const cameraForward = createVector3();
+const flareRay = createRay3D();
 let earthAngle = 0;
 let cloudAngle = 0;
 let lastTime = 0;
+
+function updateFlares(): void {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const aspect = width / height;
+
+  getCamera3DPosition(cameraPosition, camera);
+  getCamera3DForward(cameraForward, camera);
+
+  const sunProjected = getCamera3DWorldToScreen(sunScreenPosition, camera, sun.position, aspect);
+  const sunDepth =
+    (sun.position.x - cameraPosition.x) * cameraForward.x +
+    (sun.position.y - cameraPosition.y) * cameraForward.y +
+    (sun.position.z - cameraPosition.z) * cameraForward.z;
+  const screenX = (sunScreenPosition.x + 1) * 0.5 * width;
+  const screenY = (1 - sunScreenPosition.y) * 0.5 * height;
+  const xOffset = screenX - width * 0.5;
+  const yOffset = screenY - height * 0.5;
+
+  // Earth is centred at the scene origin. AwayJS's projected z is the positive camera depth, so
+  // derive that value explicitly instead of using Flight's NDC z coordinate.
+  const earthDepth =
+    -cameraPosition.x * cameraForward.x - cameraPosition.y * cameraForward.y - cameraPosition.z * cameraForward.z;
+  const earthRadius = (190 * height) / earthDepth;
+  const visible =
+    sunProjected &&
+    screenX > 0 &&
+    screenX < width &&
+    screenY > 0 &&
+    screenY < height &&
+    sunDepth > 0 &&
+    Math.hypot(xOffset, yOffset) > earthRadius;
+
+  for (const flare of flares) flare.billboard.visible = visible;
+  if (!visible) return;
+
+  for (const flare of flares) {
+    const flareScreenX = screenX - xOffset * flare.position;
+    const flareScreenY = screenY - yOffset * flare.position;
+    const ndcX = (flareScreenX / width) * 2 - 1;
+    const ndcY = 1 - (flareScreenY / height) * 2;
+    if (!getCamera3DScreenToWorldRay(flareRay, camera, ndcX, ndcY, aspect)) continue;
+
+    // AwayJS unproject's third argument is positive camera depth. Place the point on Flight's
+    // screen ray where its forward-axis depth is exactly 100 - the sparse reference array index.
+    const forwardRate =
+      flareRay.direction.x * cameraForward.x +
+      flareRay.direction.y * cameraForward.y +
+      flareRay.direction.z * cameraForward.z;
+    if (forwardRate <= 0) continue;
+    const rayDistance = (100 - flare.index) / forwardRate;
+    setVector3(
+      flare.billboard.position,
+      cameraPosition.x + flareRay.direction.x * rayDistance,
+      cameraPosition.y + flareRay.direction.y * rayDistance,
+      cameraPosition.z + flareRay.direction.z * rayDistance,
+    );
+    invalidateNodeLocalTransform(flare.billboard);
+  }
+}
 
 function frame(ts: number): void {
   const dt = lastTime === 0 ? 16 : ts - lastTime;
@@ -240,6 +392,7 @@ function frame(ts: number): void {
   invalidateNodeLocalTransform(sun);
 
   orbit.update();
+  updateFlares();
   orientScene3DBillboardsToCamera(scene.root, camera);
   renderSkyboxScene(state, canvas, skyboxRef, environment, scene.root, camera, lights, [
     createToneMapEffect(),

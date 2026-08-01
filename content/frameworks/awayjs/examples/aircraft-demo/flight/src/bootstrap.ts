@@ -4,6 +4,7 @@ import {
   defaultGlBloomEffectRunner,
   defaultGlFxaaEffectRunner,
   defaultGlToneMapEffectRunner,
+  registerBloomEffectPaddingResolver,
   registerGlRenderEffect,
   registerStandardGlTextureResolvers,
   registerGlStandardPbrMaterial,
@@ -37,6 +38,7 @@ export const glState = createGlRenderState(canvas, {
 // texture resolves to null and the scene renders untextured.
 registerStandardGlTextureResolvers(glState);
 registerGlStandardPbrMaterial(glState);
+registerBloomEffectPaddingResolver(glState);
 registerGlRenderEffect(glState, 'BloomEffect', defaultGlBloomEffectRunner);
 registerGlRenderEffect(glState, 'FxaaEffect', defaultGlFxaaEffectRunner);
 registerGlRenderEffect(glState, 'ToneMapEffect', defaultGlToneMapEffectRunner);

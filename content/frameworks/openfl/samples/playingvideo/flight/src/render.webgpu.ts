@@ -1,13 +1,17 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   createWgpuRenderState,
+  defaultWgpuShapeCommands,
+  defaultWgpuShapeRenderer,
   defaultWgpuSpriteRenderer,
   prepareScene2DRender,
   registerWgpuStandardMaterial,
   registerWgpuImageTextureResolver,
+  registerWgpuShapeCommands,
   registerRenderer,
   renderWgpuBackground,
   renderWgpuScene2D,
+  ShapeKind,
   submitWgpuRenderPass,
   SpriteKind,
   createMatrix,
@@ -33,6 +37,8 @@ export const state = await createWgpuRenderState(canvas, {
 });
 registerWgpuImageTextureResolver(state);
 registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
+registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerWgpuStandardMaterial(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;

@@ -19,6 +19,7 @@ import {
   endGlRenderEffectPipeline,
   registerGlBlinnPhongMaterial,
   registerBuiltInGlModifierSnippets,
+  registerGlEmissiveMaterial,
   registerGlExtendedPbrMaterial,
   registerGlRenderEffect,
   registerGlShadedMaterial,
@@ -74,6 +75,7 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
   registerStandardGlTextureResolvers(state);
   registerGlUnlitMaterial(state);
   registerGlBlinnPhongMaterial(state);
+  registerGlEmissiveMaterial(state);
   registerGlStandardPbrMaterial(state);
   registerGlExtendedPbrMaterial(state);
   registerGlSpecularPbrExtension(state);

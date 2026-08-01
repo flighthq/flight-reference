@@ -16,10 +16,13 @@ import {
   createDisplayObject,
   createGlOffscreenRenderState,
   createGlRenderTexturePool,
+  createMatrix,
   createRenderTexture,
   createShape,
   createSprite,
   createTexture,
+  getTextureHeight,
+  getTextureWidth,
   loadImageResourceFromUrl,
   prepareScene2DRender,
   registerGlInnerGlowEffect,
@@ -97,9 +100,19 @@ function bakeSource(state: GlRenderState, destination: RenderTexture, texture: T
   icon.y = pad;
   addNodeChild(bakeRoot, icon);
 
-  // A second pipeline over the same context: it inherits the screen state's registrations but keeps
-  // its own identity render transform, so the icon bakes at texture scale rather than scene scale.
+  // createGlOffscreenRenderState shares the screen canvas, so the 2D walk projects into canvas space
+  // (800x600) while the bound target is the render texture. Scale the offscreen render transform by
+  // canvas/target on each axis so baked content lands 1:1 in the texture instead of being shrunk by
+  // that ratio — non-uniformly, since the canvas is not square.
   const offscreen = createGlOffscreenRenderState(state);
+  offscreen.renderTransform2D = createMatrix(
+    state.canvas.width / getTextureWidth(destination),
+    0,
+    0,
+    state.canvas.height / getTextureHeight(destination),
+    0,
+    0,
+  );
   renderIntoGlRenderTexture(state, destination, () => {
     prepareScene2DRender(offscreen, bakeRoot);
     renderGlScene2D(offscreen, bakeRoot);

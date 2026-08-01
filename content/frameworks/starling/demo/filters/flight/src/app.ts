@@ -195,14 +195,27 @@ const sourceTexture = createRenderTexture(descriptor);
 const filteredTexture = createRenderTexture(descriptor);
 const renderTexturePool = createGlRenderTexturePool();
 
+// Bake at the texture origin, NOT inset by effectPadding. Each effect runner insets its own output
+// by the padding its registered resolver reports, so a pre-inset source is padded twice and the
+// filtered rocket lands effectPadding px down and to the right of where the unfiltered one sits.
 const bakeRoot = createDisplayObject();
 const bakeRocket = createSprite();
 bakeRocket.data.texture = rocketTexture;
-bakeRocket.x = effectPadding;
-bakeRocket.y = effectPadding;
 addNodeChild(bakeRoot, bakeRocket);
 
+// createGlOffscreenRenderState shares the screen canvas, so the 2D walk projects into canvas space
+// (320x480 at the device pixel ratio) while the bound target is the source render texture. Scale the
+// offscreen render transform by canvas/target on each axis so the rocket bakes 1:1 into the texture
+// instead of being shrunk by that ratio — non-uniformly, since the two are not the same aspect.
 const offscreenState = createGlOffscreenRenderState(state);
+offscreenState.renderTransform2D = createMatrix(
+  state.canvas.width / descriptor.width,
+  0,
+  0,
+  state.canvas.height / descriptor.height,
+  0,
+  0,
+);
 renderIntoGlRenderTexture(state, sourceTexture, () => {
   prepareScene2DRender(offscreenState, bakeRoot);
   renderGlScene2D(offscreenState, bakeRoot);

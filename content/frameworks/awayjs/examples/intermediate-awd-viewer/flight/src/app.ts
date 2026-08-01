@@ -1,3 +1,5 @@
+import type { Texture } from '@flighthq/sdk';
+import type { Mesh } from '@flighthq/sdk';
 import type {
   Adjustment,
   Camera3D,
@@ -12,6 +14,7 @@ import {
   addNodeChild,
   beginGlRenderEffectPipeline,
   createAmbientLight,
+  createBuiltInScene3DResourceResolver,
   createDirectionalLight,
   createFxaaEffect,
   createGlCanvasElement,
@@ -25,16 +28,22 @@ import {
   defaultGlToneMapEffectRunner,
   drawGlScene3D,
   endGlRenderEffectPipeline,
+  isMesh,
+  loadScene3DResources,
+  prepareMeshSkinning,
   registerGlBlinnPhongMaterial,
   registerBuiltInGlModifierSnippets,
   registerGlExtendedPbrMaterial,
   registerGlRenderEffect,
   registerGlShadedMaterial,
   registerGlSpecularPbrExtension,
+  registerScene3DMaterialTextures,
   registerStandardGlTextureResolvers,
   registerGlStandardPbrMaterial,
   registerGlUnlitMaterial,
   renderGlBackground,
+  updateMeshSkin,
+  walkNodeDescendants,
 } from '@flighthq/sdk';
 
 import {
@@ -73,7 +82,35 @@ const lights: Scene3DLights = createScene3DLights({ ambient, directional });
 
 const awdBuffer = await fetch('awayjs/shambler.awd').then((r) => r.arrayBuffer());
 const awdScene = createScene3DFromAwd2(new Uint8Array(awdBuffer));
+
+// The AWD embeds its diffuse/normal/specular maps as byte blobs; nothing samples them until the
+// scene's resource references are resolved. createBuiltInScene3DResourceResolver only lists textures
+// for the Standard PBR and Unlit families, and this model parses to ShadedMaterial — so its slots
+// need their own lister or no texture is ever selected and the refs stay silently Unresolved.
+const resourceResolver = createBuiltInScene3DResourceResolver();
+registerScene3DMaterialTextures(resourceResolver.registry, 'ShadedMaterial', (material, out) => {
+  const shaded = material as unknown as Record<string, Texture | null | undefined>;
+  for (const slot of ['diffuseMap', 'normalMap', 'specularMap']) {
+    const texture = shaded[slot];
+    if (texture) out.push(texture);
+  }
+});
+await loadScene3DResources(awdScene, resourceResolver);
 addNodeChild(scene.root, awdScene.root);
+
+// The AWD's meshes are skinned — their vertex layout carries joint indices and weights, and the
+// parser fills in Mesh.skin. Nothing deforms them until skinning is prepared once per mesh and
+// refreshed each frame after the skeleton is posed, so without this the model draws at a degenerate
+// bind state and reads as an empty scene.
+const skinnedMeshes: Mesh[] = [];
+walkNodeDescendants(awdScene.root, (node) => {
+  if (isMesh(node) && node.skin) {
+    prepareMeshSkinning(node);
+    skinnedMeshes.push(node);
+  }
+  // walkNodeDescendants treats a falsy return as "stop traversing"
+  return true;
+});
 
 const animation = createAnimationState(awdScene.animations);
 
@@ -95,6 +132,7 @@ function frame(ts: number): void {
   lastTs = ts;
 
   animation.step(dt);
+  for (const mesh of skinnedMeshes) updateMeshSkin(mesh);
   orbit.update();
   ctx.render(scene.root, camera, lights);
   requestAnimationFrame(frame);

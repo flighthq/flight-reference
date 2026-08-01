@@ -7,6 +7,7 @@ import {
   createGlCanvasElement,
   createGlOffscreenRenderState,
   createGlRenderState,
+  createMatrix,
   createRenderTexture,
   createSprite,
   defaultGlRichTextRenderer,
@@ -104,7 +105,18 @@ function bakeSource(destination: RenderTexture, node: Sprite, pad: number): void
   copy.y = pad;
   addNodeChild(bakeRoot, copy);
 
+  // createGlOffscreenRenderState shares the screen canvas, so the 2D walk projects into canvas space
+  // while the bound target is the render texture. Scale by canvas/target per axis so baked content
+  // lands 1:1 instead of being shrunk by that ratio.
   const offscreen = createGlOffscreenRenderState(state);
+  offscreen.renderTransform2D = createMatrix(
+    state.canvas.width / getTextureWidth(destination),
+    0,
+    0,
+    state.canvas.height / getTextureHeight(destination),
+    0,
+    0,
+  );
   renderIntoGlRenderTexture(state, destination, () => {
     prepareScene2DRender(offscreen, bakeRoot);
     renderGlScene2D(offscreen, bakeRoot);

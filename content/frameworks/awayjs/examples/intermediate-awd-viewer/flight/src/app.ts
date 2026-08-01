@@ -15,7 +15,6 @@ import {
   beginGlRenderEffectPipeline,
   createAmbientLight,
   createBuiltInScene3DResourceResolver,
-  createDirectionalLight,
   createFxaaEffect,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -46,12 +45,7 @@ import {
   walkNodeDescendants,
 } from '@flighthq/sdk';
 
-import {
-  awayDirection,
-  bindOrbitDrag,
-  createCameraFromAway,
-  createOrbitControllerFromAway,
-} from '../../../_shared/flight/src/camera';
+import { bindOrbitDrag, createCameraFromAway, createOrbitControllerFromAway } from '../../../_shared/flight/src/camera';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 import { createAnimationState } from './animation';
 import { createScene3DContext } from './renderer';
@@ -70,15 +64,11 @@ const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 70, near: 1, far: 5000 });
 
-// The AWD ships a fully textured diffuse skin, so keep the lights modest — Flight's linear pipeline
-// blows the texture out to white at the AwayJS-era intensities (dir 3 / amb 1.5).
-const directional = createDirectionalLight({
-  direction: awayDirection(0, -1, -1),
-  color: 0xffffffff,
-  intensity: 1.1,
-});
-const ambient = createAmbientLight({ color: 0xffffffff, intensity: 0.35 });
-const lights: Scene3DLights = createScene3DLights({ ambient, directional });
+// The AwayJS reference creates NO lights at all for this viewer — the AWD's materials present their
+// diffuse skin flat. Matching that means a single full-intensity ambient and no directional term;
+// adding directional shading here is what made the model read differently from upstream.
+const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1 });
+const lights: Scene3DLights = createScene3DLights({ ambient });
 
 const awdBuffer = await fetch('awayjs/shambler.awd').then((r) => r.arrayBuffer());
 const awdScene = createScene3DFromAwd2(new Uint8Array(awdBuffer));

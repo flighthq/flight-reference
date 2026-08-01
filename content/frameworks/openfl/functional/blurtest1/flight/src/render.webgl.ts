@@ -1,12 +1,13 @@
 import type { BlurEffect } from '@flighthq/sdk';
-import { applyBlurEffectToGlRenderTextures } from '@flighthq/effects-gl';
 import type { DisplayObject, RenderTexture, Sprite } from '@flighthq/sdk';
 import {
   addNodeChild,
+  applyGlRenderEffectsToRenderTexture,
   createDisplayObject,
   createGlCanvasElement,
   createGlOffscreenRenderState,
   createGlRenderState,
+  createGlRenderTexturePool,
   createMatrix,
   createRenderTexture,
   createSprite,
@@ -16,14 +17,16 @@ import {
   getTextureHeight,
   getTextureWidth,
   prepareScene2DRender,
-  registerRenderer,
+  registerGlBlurEffect,
   registerGlStandardMaterial,
+  registerRenderer,
   registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
   renderIntoGlRenderTexture,
   RichTextKind,
   SpriteKind,
+  withGlRenderTextures,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -41,20 +44,21 @@ registerGlStandardMaterial(state);
 // Sprites resolve their texture through the backing-kind registry; without this both the baked
 // source and the blurred result resolve to null and the sprites draw nothing.
 registerStandardGlTextureResolvers(state);
+registerGlBlurEffect(state);
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-// Each blurred node keeps three same-sized render textures: `source` holds the unfiltered content,
-// baked once, and the separable blur runs source → result using `temp` as the intermediate. The
-// visible sprite samples `result`, so the blur composites through the normal 2D walk and picks up
-// the node's scene transform (which carries the stage pixelRatio) for free.
+// Each blurred node keeps two same-sized render textures: `source` holds the unfiltered content,
+// baked once, and the blur runs source → result each frame with a pooled scratch lease in between.
+// The visible sprite samples `result`, so the blur composites through the normal 2D walk and picks
+// up the node's scene transform (which carries the stage pixelRatio) for free.
 type BlurEntry = {
   sprite: Sprite;
   filter: Readonly<BlurEffect>;
   source: RenderTexture;
   result: RenderTexture;
-  temp: RenderTexture;
+  descriptor: { width: number; height: number };
 };
 
 // The blur animates up to σ=64 and a Gaussian tail runs a few σ past the bounds, so every texture is
@@ -82,13 +86,15 @@ export function applyBlurEffects(list: { node: Sprite; filter: BlurEffect }[]): 
     node.x -= pad;
     node.y -= pad;
 
-    _entries.push({ sprite: node, filter, source, result, temp: createRenderTexture(descriptor) });
+    _entries.push({ sprite: node, filter, source, result, descriptor: { width: w, height: h } });
   }
 }
 
 export function render(root: DisplayObject): void {
   for (const entry of _entries) {
-    applyBlurEffectToGlRenderTextures(state, entry.source, entry.result, entry.temp, entry.filter);
+    withGlRenderTextures(state, _pool, [entry.descriptor], ([scratch]) => {
+      applyGlRenderEffectsToRenderTexture(state, _pool, entry.source, entry.result, scratch, [entry.filter]);
+    });
   }
   if (!prepareScene2DRender(state, root)) return;
   renderGlBackground(state);
@@ -124,3 +130,4 @@ function bakeSource(destination: RenderTexture, node: Sprite, pad: number): void
 }
 
 const _entries: BlurEntry[] = [];
+const _pool = createGlRenderTexturePool();

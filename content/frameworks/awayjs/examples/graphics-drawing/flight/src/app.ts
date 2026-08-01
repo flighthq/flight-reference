@@ -92,8 +92,10 @@ function buildBatmanLogo(fillColor: number, strokeColor: number): Shape {
 
 const logoWidth = 950 - 50;
 const logoHeight = 450 - 50;
-const logoPivotX = logoWidth / 2 + 50;
-const logoPivotY = logoHeight / 2 + 50;
+// AwayJS uses half the bounds dimensions without adding the bounds origin, which leaves the logo
+// offset inside its origin-centred mask and makes the clipped Batman contour visible.
+const logoPivotX = logoWidth / 2;
+const logoPivotY = logoHeight / 2;
 
 const numSpritesV = 5;
 const numSpritesH = 5;

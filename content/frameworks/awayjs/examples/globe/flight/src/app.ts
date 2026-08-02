@@ -154,10 +154,10 @@ const FLARE_SPECS: readonly FlareSpec[] = [
   { index: 11, url: 'awayjs/lensflare/flare7.jpg', size: 4.5, position: 2.66, opacity: 18 },
 ];
 
-let sunAngle = 1.35;
-
 const sunLight = createDirectionalLight({
-  direction: { x: Math.sin(sunAngle), y: 0, z: Math.cos(sunAngle) },
+  // Equinox: sunlight is perpendicular to Earth's tilted axis. Directional-light direction is
+  // the direction the rays travel, from the Sun at +X toward Earth at the origin.
+  direction: { x: -1, y: 0, z: 0 },
   color: 0xffffffff,
   // AwayJS uses diffuse=2 on a classic MethodMaterial. Flight's ShadedMaterial is the same
   // non-PBR lighting model, so pass the source intensity through without the PBR ×π exposure.
@@ -175,21 +175,21 @@ const lights = createScene3DLights({
 const tiltContainer = createNode3D();
 const axisX = createVector3(1, 0, 0);
 const tiltQuat = createQuaternion();
-setQuaternionFromAxisAngle(tiltQuat, axisX, -23 * DEG_TO_RAD);
+setQuaternionFromAxisAngle(tiltQuat, axisX, -23.4 * DEG_TO_RAD);
 copyQuaternion(tiltContainer.rotation, tiltQuat);
 invalidateNodeLocalTransform(tiltContainer);
 addNodeChild(scene.root, tiltContainer);
 
 // Earth: the day/night custom shader (day texture + specular on the lit side, city lights on the
-// dark side). u_sunDir is refreshed each frame so the terminator tracks the orbiting sun.
-const earthSunDir: number[] = [Math.sin(sunAngle), 0, Math.cos(sunAngle)];
+// dark side). A fixed world-space sun direction lets the rotating surface pass through the terminator.
+const earthSunDir: number[] = [-1, 0, 0];
 const earthMaterial = createCustomShaderMaterial({ shaderKey: 'globeEarth', uniforms: { u_sunDir: earthSunDir } });
 
 const cloudMaterial = await loadCloudTexture();
 
 const { mesh: atmosphere } = createAtmosphere();
 
-// Sun: a self-lit additive disc far along the light direction (AwayJS 3000-unit camera-plane
+// Sun: a self-lit additive disc far opposite the light-ray direction (AwayJS 3000-unit camera-plane
 // billboard). A sphere reads the same from every orbit angle, so no per-frame billboarding is needed.
 const sunMaterial: ShadedMaterial = createShadedMaterial({
   diffuse: 0x000000ff,
@@ -208,6 +208,8 @@ addNodeChild(scene.root, atmosphere);
 
 const SUN_DISTANCE = 10000;
 const sun = createMesh(createSphereMeshGeometry(700, 32, 16), [sunMaterial]);
+setVector3(sun.position, SUN_DISTANCE, 0, 0);
+invalidateNodeLocalTransform(sun);
 addNodeChild(scene.root, sun);
 
 // The flare JPEGs are luminance masks rather than RGBA artwork. Match AwayJS by copying red into
@@ -328,6 +330,8 @@ const sunScreenPosition = createVector3();
 const cameraPosition = createVector3();
 const cameraForward = createVector3();
 const flareRay = createRay3D();
+// Deterministic equinox epoch: at zero rotation, the map's prime meridian faces the +X Sun
+// (12:00 UTC) while the initial camera looks toward 90°E.
 let earthAngle = 0;
 let cloudAngle = 0;
 let lastTime = 0;
@@ -398,8 +402,9 @@ function frame(ts: number): void {
 
   const earthSpeed = 0.2 * DEG_TO_RAD * (dt / 16);
   const cloudSpeed = 0.21 * DEG_TO_RAD * (dt / 16);
-  const orbitSpeed = 0.02 * DEG_TO_RAD * (dt / 16);
 
+  // Positive rotation around Flight's right-handed +Y axis is the handedness-converted form of
+  // Earth's eastward spin. The Sun remains fixed during this accelerated model of a single day.
   earthAngle += earthSpeed;
   setQuaternionFromAxisAngle(scratchQuat, axisY, earthAngle);
   copyQuaternion(earth.rotation, scratchQuat);
@@ -409,15 +414,6 @@ function frame(ts: number): void {
   setQuaternionFromAxisAngle(scratchQuat, axisY, cloudAngle);
   copyQuaternion(clouds.rotation, scratchQuat);
   invalidateNodeLocalTransform(clouds);
-
-  sunAngle += orbitSpeed;
-  sunLight.direction.x = Math.sin(sunAngle);
-  sunLight.direction.z = Math.cos(sunAngle);
-  earthSunDir[0] = Math.sin(sunAngle);
-  earthSunDir[2] = Math.cos(sunAngle);
-
-  setVector3(sun.position, -Math.sin(sunAngle) * SUN_DISTANCE, 0, -Math.cos(sunAngle) * SUN_DISTANCE);
-  invalidateNodeLocalTransform(sun);
 
   orbit.update();
   updateFlares();

@@ -10,15 +10,24 @@ import type {
 } from '@flighthq/sdk';
 import {
   addNodeChild,
+  bakeGlEnvironmentIbl,
   beginGlRenderEffectPipeline,
+  configureDirectionalShadowCamera3D,
   copyQuaternion,
+  createAabb,
+  createBitmap,
   createBoxMeshGeometry,
+  createCamera3D,
+  createCubeTexture,
+  createEnvironment,
   createFxaaEffect,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createHemisphereLight,
+  createImageResourceFromBitmap,
   createMesh,
+  createOrthographicProjection,
   createPlaneMeshGeometry,
   createQuaternion,
   createScene3D,
@@ -31,6 +40,7 @@ import {
   defaultGlFxaaEffectRunner,
   defaultGlToneMapEffectRunner,
   drawGlScene3D,
+  drawGlScene3DShadowMap,
   endGlRenderEffectPipeline,
   invalidateNodeLocalTransform,
   registerGlBlinnPhongMaterial,
@@ -44,6 +54,7 @@ import {
   registerGlUnlitMaterial,
   renderGlBackground,
   scaleMeshGeometryUvs,
+  setCubeTextureFace,
   setDirectionalLightDirection,
   setQuaternionFromAxisAngle,
   setVector3,
@@ -68,6 +79,21 @@ const ctx = createScene3DContext({
   effects: [createToneMapEffect({ exposure: 0.7 }), createFxaaEffect()],
 });
 
+// Keep the original black void as the visible backdrop, but give the remastered PBR materials a dim
+// studio to reflect. Broad cool light above, a faint warm bounce below, and dark horizon cards make
+// metal and vinyl read naturally without lifting the scene's established black point.
+const studioEnvironmentCube = createCubeTexture();
+const studioEnvironmentFaces = [0x07131aff, 0x07131aff, 0x31576aff, 0x1c100aff, 0x0b1820ff, 0x0b1820ff];
+for (let i = 0; i < studioEnvironmentFaces.length; i++) {
+  setCubeTextureFace(
+    studioEnvironmentCube,
+    i,
+    createImageResourceFromBitmap(createBitmap(8, 8, studioEnvironmentFaces[i])),
+  );
+}
+const studioEnvironment = createEnvironment({ environment: studioEnvironmentCube, intensity: 0.35 });
+bakeGlEnvironmentIbl(ctx.state, studioEnvironment);
+
 const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 60 });
@@ -89,6 +115,15 @@ const { directional, ambient } = createDirectionalLightFromAway({
   diffuse: 0.7,
   ambient: 0.1,
 });
+directional.castsShadow = true;
+directional.pcfRadius = 3;
+
+const shadowCamera = createCamera3D({
+  near: 1,
+  far: 1,
+  projection: createOrthographicProjection({ halfWidth: 1, halfHeight: 1 }),
+});
+const shadowBounds = createAabb(-900, -20, -900, 900, 380, 900);
 const cyanFill = createHemisphereLight({
   skyColor: 0x00ffffff,
   groundColor: 0x000000ff,
@@ -98,7 +133,7 @@ const lights = createScene3DLights({ ambient, directional, hemisphere: [cyanFill
 
 const { planeMaterial, sphereMaterial, cubeMaterial, torusMaterial } = createSceneMaterials();
 
-const planeGeometry = createPlaneMeshGeometry(1000, 1000, 1, 1);
+const planeGeometry = createPlaneMeshGeometry(1800, 1800, 1, 1);
 const plane = createMesh(planeGeometry, [planeMaterial]);
 plane.position.y = -20;
 invalidateNodeLocalTransform(plane);
@@ -147,9 +182,13 @@ function frame(ts: number): void {
   // that grazing angle is what lights the metal frame/ring and the floor's normal relief.
   const lightX = Math.sin(ts / 10000);
   const lightZ = -Math.cos(ts / 10000);
-  setDirectionalLightDirection(directional, lightX, -0.01, lightZ);
+  // Retain the original grazing sweep while giving it just enough elevation to produce legible,
+  // slow-moving shadows across the enlarged studio floor.
+  setDirectionalLightDirection(directional, lightX, -0.22, lightZ);
 
   orbit.update();
+  configureDirectionalShadowCamera3D(shadowCamera, directional.direction, shadowBounds);
+  drawGlScene3DShadowMap(ctx.state, scene.root, shadowCamera);
   ctx.render(scene.root, camera, lights);
   requestAnimationFrame(frame);
 }

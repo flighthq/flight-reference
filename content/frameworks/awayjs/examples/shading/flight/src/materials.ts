@@ -29,9 +29,9 @@ export function createSceneMaterials(): SceneMaterials {
   const sphereMaterial = createStandardPbrMaterial({
     baseColor: 0xffffffff,
     emissive: 0xffffffff,
-    emissiveStrength: 0.06,
+    emissiveStrength: 0.04,
     metallic: 0,
-    roughness: 0.3,
+    roughness: 1,
   });
 
   // The trinket is a metal frame around a wood panel. trinket_specular marks where it's shiny (bright
@@ -40,8 +40,11 @@ export function createSceneMaterials(): SceneMaterials {
   // taken straight from the map (frame smooth/reflective so the sweeping light glints off it, wood
   // rough/matte).
   const cubeMaterial = createStandardPbrMaterial({
-    baseColor: 0xffffffff,
-    metallic: 0.6,
+    // The source JPEG is opaque. State that explicitly, then keep the bright frame reflective without
+    // letting it turn into a white mirror around the darker wood panels (which reads as transparency).
+    alphaMode: 'opaque',
+    baseColor: 0x60b8b8ff,
+    metallic: 0.5,
     roughness: 1,
   });
 
@@ -50,6 +53,7 @@ export function createSceneMaterials(): SceneMaterials {
   const torusMaterial = createStandardPbrMaterial({
     baseColor: 0xd7dadcff,
     metallic: 1,
+    normalScale: 0.8,
     roughness: 1,
   });
 
@@ -154,9 +158,19 @@ export async function loadSceneTextures(materials: SceneMaterials, tilingSampler
       // making the vinyl look self-lit or erasing the moving directional shading.
       sphereMaterial.emissiveMap = tex;
     }),
-    createMetalRoughnessFromSpecular('awayjs/beachball_specular.jpg').then((tex) => {
-      tex.sampler = sphereSampler;
-      sphereMaterial.metallicRoughnessMap = tex;
+    loadImageResourceFromUrl('awayjs/beachball_specular.jpg').then((image) => {
+      // AwayJS's modest gloss creates a broad vinyl highlight. The generic conversion combined with
+      // the old 0.3 material factor collapsed the bright parts of this map to near-mirror roughness,
+      // producing a tiny aliased-looking dot instead of the original soft cyan lobe.
+      const mrImage = createMetallicRoughnessImage(image, (r) => ({
+        roughness: 0.22 + (1 - r) * 0.5,
+        metallic: 0,
+      }));
+      sphereMaterial.metallicRoughnessMap = createTexture({
+        source: mrImage,
+        colorSpace: 'linear',
+        sampler: sphereSampler,
+      });
     }),
     applyTextures(
       cubeMaterial,
@@ -166,8 +180,14 @@ export async function loadSceneTextures(materials: SceneMaterials, tilingSampler
       },
       tilingSampler,
     ),
-    createMetalRoughnessFromSpecular('awayjs/trinket_specular.jpg').then((tex) => {
-      cubeMaterial.metallicRoughnessMap = tex;
+    loadImageResourceFromUrl('awayjs/trinket_specular.jpg').then((image) => {
+      // Preserve the map's metal/wood separation, but broaden the frame highlight. The generic
+      // conversion's 0.12 roughness floor produced razor-white edges on the new Flight renderer.
+      const mrImage = createMetallicRoughnessImage(image, (r) => ({
+        roughness: 0.42 + (1 - r) * 0.45,
+        metallic: r,
+      }));
+      cubeMaterial.metallicRoughnessMap = createTexture({ source: mrImage, colorSpace: 'linear' });
     }),
     loadImageResourceFromUrl('awayjs/weave_diffuse.jpg').then((image) => {
       const tex = createTexture({ source: image, sampler: tilingSampler });

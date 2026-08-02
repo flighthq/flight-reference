@@ -68,7 +68,11 @@ import {
   createOrbitControllerFromAway,
 } from '../../../_shared/flight/src/camera';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
-import { awayIntensity, createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
+import {
+  awayIntensity,
+  createDirectionalLightFromAway,
+  createPointLightFromAway,
+} from '../../../_shared/flight/src/lighting';
 import { createSceneMaterials, loadSceneTextures } from './materials';
 import { createScene3DContext } from './renderer';
 
@@ -108,12 +112,17 @@ tilingSampler.anisotropy = 16;
 // ambient 0.1) pointing straight down. Flight's Scene3DLights carries one directional, so the animated
 // white primary stays the directional — it's the moving light, grazing the surfaces so the shading
 // and the specular highlights on the metal sweep as it turns (this is what keeps the scene lively).
-// The downward cyan secondary becomes a hemisphere light: cyan from above tints the up-facing floor
-// and the tops of the objects, standing in for the straight-down cyan directional.
+// Approximate the downward cyan secondary with a distant overhead point plus a faint hemisphere skirt.
+// A hemisphere alone has no punctual specular lobe, which left the vinyl and trinket looking flat; the
+// point restores the original shaped cyan highlight while remaining nearly parallel across this scene.
 const { directional, ambient } = createDirectionalLightFromAway({
   direction: awayDirection(0, -1, 0),
   diffuse: 0.7,
   ambient: 0.1,
+  // The broad cyan fill below otherwise dominates the energy-correct PBR response and makes the
+  // scene look uniformly self-lit. Let the moving white key do more of the shaping so its highlights
+  // travel across the ball, trinket, and ring as clearly as they do in AwayJS.
+  tuning: { diffuse: 1.12 },
 });
 directional.castsShadow = true;
 directional.pcfRadius = 3;
@@ -127,9 +136,16 @@ const shadowBounds = createAabb(-900, -20, -900, 900, 380, 900);
 const cyanFill = createHemisphereLight({
   skyColor: 0x00ffffff,
   groundColor: 0x000000ff,
-  intensity: awayIntensity(0.7),
+  intensity: awayIntensity(0.2),
 });
-const lights = createScene3DLights({ ambient, directional, hemisphere: [cyanFill] });
+const cyanKey = createPointLightFromAway({
+  color: 0x00ffff,
+  diffuse: 0.38,
+  range: 4000,
+  referenceDistance: 1800,
+});
+setVector3(cyanKey.position, ...awayPosition(300, 1800, 300));
+const lights = createScene3DLights({ ambient, directional, hemisphere: [cyanFill], point: [cyanKey] });
 
 const { planeMaterial, sphereMaterial, cubeMaterial, torusMaterial } = createSceneMaterials();
 

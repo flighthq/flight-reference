@@ -5,7 +5,11 @@ import MouseEvent from 'openfl/events/MouseEvent';
 import { Box, Circle, MouseJoint, Vec2, World } from 'planck';
 import type { Body } from 'planck';
 
-const PHYSICS_SCALE = 1 / 30;
+// The source lays its scene out for a 500x400 stage at 30 pixels per metre. The corpus standard is
+// 800x600, so the layout below is the source's scaled 1.6x to fill it, and the pixels-per-metre scales
+// with it: the bodies keep the same size in metres, so the simulation is the one the source ran and
+// only the picture is larger.
+const PHYSICS_SCALE = 1 / 48;
 
 // b2DebugDraw's own palette and stroke weights: green static bodies, pink awake dynamic bodies, grey
 // once they fall asleep.
@@ -59,10 +63,10 @@ class App extends Sprite {
     this.physicsDebug = new Sprite();
     this.addChild(this.physicsDebug);
 
-    this.ground = this.createBox(250, 300, 500, 100, false);
-    this.createBox(250, 100, 100, 100, true);
-    this.createCircle(100, 100, 50, false);
-    this.createCircle(400, 100, 50, true);
+    this.ground = this.createBox(400, 480, 800, 160, false);
+    this.createBox(400, 160, 160, 160, true);
+    this.createCircle(160, 160, 80, false);
+    this.createCircle(640, 160, 80, true);
 
     this.addEventListener(Event.ENTER_FRAME, this.this_onEnterFrame);
     this.addEventListener(MouseEvent.MOUSE_DOWN, this.this_onMouseDown);

@@ -33,7 +33,11 @@ import {
 
 import { canvas, render, scale } from './render';
 
-const PHYSICS_SCALE = 1 / 30;
+// The source lays its scene out for a 500x400 stage at 30 pixels per metre. The corpus standard is
+// 800x600, so the layout below is the source's scaled 1.6x to fill it, and the pixels-per-metre scales
+// with it: the bodies keep the same size in metres, so the simulation is the one the source ran and
+// only the picture is larger.
+const PHYSICS_SCALE = 1 / 48;
 const RAD_TO_DEG = 180 / Math.PI;
 
 // b2DebugDraw's palette, so this column reads as the same debug view as the OpenFL one.
@@ -164,10 +168,10 @@ function createCircle(x: number, y: number, radius: number, dynamicBody: boolean
   return body;
 }
 
-createBox(250, 300, 500, 100, false);
-createBox(250, 100, 100, 100, true);
-createCircle(100, 100, 50, false);
-createCircle(400, 100, 50, true);
+createBox(400, 480, 800, 160, false);
+createBox(400, 160, 160, 160, true);
+createCircle(160, 160, 80, false);
+createCircle(640, 160, 80, true);
 
 const query = createPhysics2DQueryResult();
 

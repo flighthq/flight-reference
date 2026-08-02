@@ -29,7 +29,7 @@ export function createSceneMaterials(): SceneMaterials {
   const sphereMaterial = createStandardPbrMaterial({
     baseColor: 0xffffffff,
     emissive: 0xffffffff,
-    emissiveStrength: 0.12,
+    emissiveStrength: 0.06,
     metallic: 0,
     roughness: 0.3,
   });
@@ -48,7 +48,7 @@ export function createSceneMaterials(): SceneMaterials {
   // Give the pale weave texture a cool pewter tint and let the studio environment supply its reflected
   // color. The map below carries the final metalness and roughness, so these factors stay at one.
   const torusMaterial = createStandardPbrMaterial({
-    baseColor: 0xaeb5b9ff,
+    baseColor: 0xd7dadcff,
     metallic: 1,
     roughness: 1,
   });
@@ -106,6 +106,10 @@ export async function createMetalRoughnessFromSpecular(url: string): Promise<Tex
 
 export async function loadSceneTextures(materials: SceneMaterials, tilingSampler: Sampler): Promise<void> {
   const { planeMaterial, sphereMaterial, cubeMaterial, torusMaterial } = materials;
+  // The 512x256 ball artwork converges at the sphere poles. AwayJS samples it without mipmaps; doing
+  // the same prevents the pinched UV footprint from selecting a coarse level, while linear filtering
+  // keeps the round top cap smooth instead of introducing nearest-neighbor stair steps.
+  const sphereSampler = createSampler({ magFilter: 'linear', minFilter: 'linear', mipmaps: false });
 
   const torusWeaveNormalImage = await loadImageResourceFromUrl('awayjs/weave_normal.jpg');
   const torusNormalTex = createTexture({
@@ -144,13 +148,14 @@ export async function loadSceneTextures(materials: SceneMaterials, tilingSampler
       planeMaterial.metallicRoughnessMap = tex;
     }),
     loadImageResourceFromUrl('awayjs/beachball_diffuse.jpg').then((image) => {
-      const tex = createTexture({ source: image });
+      const tex = createTexture({ source: image, sampler: sphereSampler });
       sphereMaterial.baseColorMap = tex;
       // A restrained albedo-matched lift keeps the red panels red beneath the strong cyan fill without
       // making the vinyl look self-lit or erasing the moving directional shading.
       sphereMaterial.emissiveMap = tex;
     }),
     createMetalRoughnessFromSpecular('awayjs/beachball_specular.jpg').then((tex) => {
+      tex.sampler = sphereSampler;
       sphereMaterial.metallicRoughnessMap = tex;
     }),
     applyTextures(

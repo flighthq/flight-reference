@@ -21,7 +21,12 @@ const LINE_THICKNESS = 1;
 // its fixtures a real density — and the Flight column uses the same one, which is what keeps the two
 // halves of the comparison moving alike.
 const DENSITY = 1;
+
+// Box2D's testbed drag: a 5 Hz spring at 0.7 damping, bounded by a force proportional to the body's
+// own mass. The Flight column passes the same three to its own mouse joint.
 const DRAG_FORCE_PER_MASS = 1000;
+const DRAG_FREQUENCY_HZ = 5;
+const DRAG_DAMPING_RATIO = 0.7;
 
 // A body dragged clear of the stage is put back where it started. The source demo had no way to lose
 // one, but dragging does, and a body left falling grows the debug sprite's bounds without limit — far
@@ -199,7 +204,16 @@ class App extends Sprite {
 
     body.setAwake(true);
     this.mouseJoint = this.world.createJoint(
-      new MouseJoint({ maxForce: DRAG_FORCE_PER_MASS * body.getMass() }, this.ground, body, point),
+      new MouseJoint(
+        {
+          maxForce: DRAG_FORCE_PER_MASS * body.getMass(),
+          frequencyHz: DRAG_FREQUENCY_HZ,
+          dampingRatio: DRAG_DAMPING_RATIO,
+        },
+        this.ground,
+        body,
+        point,
+      ),
     );
 
     this.stage.addEventListener(MouseEvent.MOUSE_MOVE, this.stage_onMouseMove);

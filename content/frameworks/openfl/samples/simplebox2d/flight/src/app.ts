@@ -52,16 +52,12 @@ const DENSITY = 1;
 const FRICTION = 0.2;
 const RESTITUTION = 0;
 
-// Box2D's testbed drag is a 5 Hz spring at 0.7 damping, bounded by a force proportional to the body's
-// own mass so heavy things are no harder to move than light ones. The force bound and damping carry
-// over directly, but the stiffness does not: Flight's mouse joint reaches the right answer only where
-// its softness term is small, and below about 15 the response inverts and throws the body instead of
-// following it. 20 tracks the cursor to a few pixels with room above that floor, where the OpenFL
-// column's true 5 Hz spring trails by about ten. createPhysics2DMouseJoint defaults stiffness to 5,
-// inside that unstable band, so it is always passed explicitly here.
+// Box2D's testbed drag: a 5 Hz spring at 0.7 damping, bounded by a force proportional to the body's
+// own mass so heavy things are no harder to move than light ones. Every value carries over unchanged,
+// and the OpenFL column passes the same three to its own mouse joint.
 const DRAG_FORCE_PER_MASS = 1000;
-const DRAG_STIFFNESS = 20;
-const DRAG_DAMPING = 0.7;
+const DRAG_FREQUENCY_HZ = 5;
+const DRAG_DAMPING_RATIO = 0.7;
 
 // A body dragged clear of the stage is put back where it started. The source demo had no way to lose
 // one, but dragging does, and nothing else bounds how far a thrown body travels.
@@ -218,8 +214,8 @@ canvas.addEventListener('pointerdown', (event) => {
     maxForce: DRAG_FORCE_PER_MASS * body.mass,
     localAnchorX: offsetX * cos + offsetY * sin,
     localAnchorY: -offsetX * sin + offsetY * cos,
-    stiffness: DRAG_STIFFNESS,
-    damping: DRAG_DAMPING,
+    frequencyHz: DRAG_FREQUENCY_HZ,
+    dampingRatio: DRAG_DAMPING_RATIO,
   });
 
   addPhysics2DJoint(world, joint);

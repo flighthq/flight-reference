@@ -1,11 +1,13 @@
 import type { BlinnPhongMaterial, Image, Texture } from '@flighthq/sdk';
 import {
   createBlinnPhongMaterial,
-  createSampler,
   createTexture,
+  createTilingSampler,
   loadImageResourceFromUrl,
   setTextureUvScale,
 } from '@flighthq/sdk';
+
+import { applyAwayGloss } from '../../../_shared/flight/src/lighting';
 
 // AwayJS's MethodMaterial is a classic specular material, and Flight's Blinn-Phong lane can consume
 // the same three maps directly. Keeping the normal and specular images as data textures is important:
@@ -13,28 +15,15 @@ import {
 export function createFloorMaterial(): BlinnPhongMaterial {
   const material = createBlinnPhongMaterial({
     diffuse: 0xffffffff,
-    // Strengthen the tangent-space relief so the tile edges cut as deeply as the reference grooves.
-    normalScale: 1.8,
-    // AwayJS's SpecularBasicMethod is already Blinn-Phong and defaults to gloss 50; applying the
-    // generic Phong-to-Blinn conversion here made the lobe much too tight and the floor read dull.
-    shininess: 50,
-    specular: 0xffffffff,
+    normalScale: 1,
   });
+  applyAwayGloss(material, { gloss: 50, specular: 1 });
   material.doubleSided = true;
   return material;
 }
 
 function createFloorTexture(image: Image, colorSpace: 'linear' | 'srgb' = 'srgb'): Texture {
-  // The AwayJS sample explicitly requests repeat + smooth filtering with mipmaps disabled. Flight's
-  // tiling preset enables trilinear mipmaps, which selects a visibly soft mip over this oblique floor.
-  const sampler = createSampler({
-    magFilter: 'linear',
-    minFilter: 'linear',
-    mipmaps: false,
-    wrapU: 'repeat',
-    wrapV: 'repeat',
-  });
-  const tex = createTexture({ source: image, sampler, colorSpace });
+  const tex = createTexture({ source: image, sampler: createTilingSampler(), colorSpace });
   setTextureUvScale(tex, 2, 2);
   return tex;
 }

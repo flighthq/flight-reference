@@ -14,7 +14,9 @@ Where a port also adds interaction the source did not have, set the same density
 
 A mouse joint drags `bodyB` and ignores `bodyA`, but the step's awake test resolves both ends and drops the joint when either is missing, so `bodyA` must still name a real body — the ground is the conventional anchor. Set `collideConnected` to true, or the joint suppresses contacts between the dragged body and that anchor and the body falls through it. Wake the body on pick: the solver skips sleeping joints, so grabbing a settled body otherwise does nothing.
 
-`stiffness` is not the source's frequency in Hz. Flight's mouse joint folds its softness term in a way that only holds while that term is small, and the response inverts below roughly 15 — lowering stiffness past that throws the body across the scene instead of following the cursor, harder the lower it goes. Stay well above the floor: 20 tracks to a few pixels, where Box2D's 5 Hz spring trails by about ten. Verified unchanged through `0.3.0-next.1562.75af469`.
+The spring carries over unchanged: `frequencyHz` and `dampingRatio` mean what they do in Box2D, so a testbed's 5 Hz at 0.7 can be copied across. At those values Flight trails the cursor by about the same distance Box2D does.
+
+Before `0.3.0-next.1593.a47f94a` these were named `stiffness` and `damping` and were not in Hz — the softness term was mis-scaled, and any value below roughly 15 threw the body across the scene instead of following it. A port written against an older SDK will carry a compensating value well above 5; treat one as a leftover and put the source's real frequency back.
 
 ## Order of construction
 

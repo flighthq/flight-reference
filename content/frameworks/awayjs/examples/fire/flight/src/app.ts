@@ -52,8 +52,7 @@ import { createFloorMaterial, loadFloorTextures } from './floor';
 import { createScene3DContext } from './renderer';
 
 const FIRE_START_INTERVAL = 1000;
-const FIRE_LIGHT_COUNT = 2;
-const FIRE_LIGHT_REFERENCE_DISTANCE = 250;
+const FIRE_LIGHT_REFERENCE_DISTANCE = 200;
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -86,24 +85,28 @@ loadFloorTextures(planeMaterial);
 const { fires, config } = await createFireEmitters(scene);
 startFiresSequentially(fires, FIRE_START_INTERVAL);
 
-// Light the first two sequential emitters. Each light remains dark until its own fire starts, then
-// flickers independently so the second pool appears directly under the second emitter rather than
-// merging into a single synthetic floor glow.
-const litFires = fires.slice(0, FIRE_LIGHT_COUNT).map((fire) => {
-  const light = createPointLightFromAway({
-    color: 0xff3301,
-    diffuse: 1,
-    range: 400,
-    referenceDistance: FIRE_LIGHT_REFERENCE_DISTANCE,
-    shading: 'phong',
-  });
-  const fullIntensity = light.intensity;
-  light.intensity = 0;
-  setVector3(light.position, fire.emitter.position.x, fire.emitter.position.y, fire.emitter.position.z);
-  return { fire, fullIntensity, light };
+// The reference's first fire provides the dominant red reflection seen across the foreground tiles.
+// Use a real point light so the floor's normal and specular maps shape that reflection instead of
+// painting a translucent quad over the texture. Flight attenuates point lights physically, so the
+// reference distance preserves AwayJS's full-strength pool out to roughly its 200-unit radius.
+const primaryFire = fires[0]!;
+const fireLight = createPointLightFromAway({
+  color: 0xff3301,
+  diffuse: 1,
+  range: 400,
+  referenceDistance: FIRE_LIGHT_REFERENCE_DISTANCE,
+  shading: 'phong',
 });
+const fireLightIntensity = fireLight.intensity;
+fireLight.intensity = 0;
+setVector3(
+  fireLight.position,
+  primaryFire.emitter.position.x,
+  primaryFire.emitter.position.y,
+  primaryFire.emitter.position.z,
+);
 
-const lights = createScene3DLights({ ambient, directional, point: litFires.map(({ light }) => light) });
+const lights = createScene3DLights({ ambient, directional, point: [fireLight] });
 
 const orbit = createOrbitControllerFromAway(camera, {
   distance: 1000,
@@ -127,10 +130,9 @@ function frame(ts: number): void {
     stepParticleEmitter3D(fire.emitter, fire.state, config, dt);
 
     if (fire.strength < 1) fire.strength += 0.1;
-    const litFire = litFires.find((entry) => entry.fire === fire);
-    if (litFire) {
-      litFire.light.range = 380 + Math.random() * 20;
-      litFire.light.intensity = litFire.fullIntensity * (Math.min(1, fire.strength) + Math.random() * 0.2);
+    if (fire === primaryFire) {
+      fireLight.range = 380 + Math.random() * 20;
+      fireLight.intensity = fireLightIntensity * (Math.min(1, fire.strength) + Math.random() * 0.2);
     }
   }
 

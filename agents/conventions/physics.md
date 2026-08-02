@@ -8,6 +8,14 @@ Box2D demos port to `@flighthq/physics2d`, not to a Box2D binding. The solver is
 
 Flight derives mass strictly from collider area and density and does not promote. Carry the source's density of 0 across and every dynamic body gets an inverse mass of 0, which reads as a scene where nothing falls at all. Give Flight a real density instead. The body then also gains the rotational inertia Box2D's promotion skipped, so it can tip and roll where the source could only slide.
 
+Where a port also adds interaction the source did not have, set the same density on the source column rather than leaning on the promotion. A grabbed body that cannot rotate does not swing about the grab point, and the two columns stop matching the moment anyone drags one.
+
+## Dragging
+
+A mouse joint drags `bodyB` and ignores `bodyA`, but the step's awake test resolves both ends and drops the joint when either is missing, so `bodyA` must still name a real body — the ground is the conventional anchor. Set `collideConnected` to true, or the joint suppresses contacts between the dragged body and that anchor and the body falls through it. Wake the body on pick: the solver skips sleeping joints, so grabbing a settled body otherwise does nothing.
+
+`stiffness` is not the source's frequency in Hz. Flight's mouse joint folds its softness term in a way that only holds while that term is small, and the response inverts below roughly 15 — lowering stiffness past that throws the body across the scene instead of following the cursor, harder the lower it goes. Stay well above the floor: 20 tracks to a few pixels, where Box2D's 5 Hz spring trails by about ten. Verified unchanged through `0.3.0-next.1562.75af469`.
+
 ## Order of construction
 
 Mass is derived when the body joins the world, so push every collider onto `body.colliders` before `addPhysics2DBody`. A body added empty and populated afterwards keeps a mass of 0.

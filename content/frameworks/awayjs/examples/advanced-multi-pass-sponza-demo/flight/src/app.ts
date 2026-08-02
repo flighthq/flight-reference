@@ -48,14 +48,14 @@ import {
 } from './materials';
 
 // AwayJS used linear fog from 0–4,000 world units. Flight's post effect consumes the camera's
-// nonlinear window depth, so this starts around 800 units and reaches the background near 4,000.
+// nonlinear window depth, so this starts around 1,050 units and reaches the background near 4,000.
 const fogEffect = createScreenSpaceFogEffect({
   // Applied in the HDR pipeline before tone mapping, so the original bright lavender reads nearly
   // white. A deep blue-grey keeps the atmosphere visible without bleaching the distant materials.
   color: packOpaqueColor(0x30384a),
-  near: 0.98,
+  near: 0.985,
   far: 0.999,
-  density: 2.5,
+  density: 1.8,
 });
 const effects = [fogEffect, createToneMapEffect(), createFxaaEffect()];
 

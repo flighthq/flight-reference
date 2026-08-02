@@ -13,6 +13,8 @@ import {
   createShape,
   createSprite,
   defaultGlSpriteRenderer,
+  createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
@@ -26,6 +28,7 @@ import {
   registerGlStandardMaterial,
   registerStandardGlTextureResolvers,
   registerGlShapeCommands,
+  registerGlShapeRasterizer,
   registerRenderer,
   renderIntoGlRenderTexture,
   renderGlBackground,
@@ -59,6 +62,7 @@ registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
+registerGlShapeRasterizer(state, createCanvasShapeRasterizer(createCanvasTextureResolvers(), true));
 registerGlStandardMaterial(state);
 registerBlurEffectPaddingResolver(state);
 registerGlBlurEffect(state);

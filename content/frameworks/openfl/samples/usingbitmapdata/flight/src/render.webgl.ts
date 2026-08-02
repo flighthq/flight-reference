@@ -3,6 +3,8 @@ import {
   createGlCanvasElement,
   createGlRenderState,
   defaultGlSpriteRenderer,
+  createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
@@ -10,6 +12,7 @@ import {
   registerGlStandardMaterial,
   registerStandardGlTextureResolvers,
   registerGlShapeCommands,
+  registerGlShapeRasterizer,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -35,6 +38,7 @@ registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
+registerGlShapeRasterizer(state, createCanvasShapeRasterizer(createCanvasTextureResolvers(), true));
 registerGlStandardMaterial(state);
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);

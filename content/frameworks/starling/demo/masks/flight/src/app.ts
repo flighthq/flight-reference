@@ -20,6 +20,8 @@ import {
   createTexture,
   defaultGlSpriteRenderer,
   defaultGlRichTextRenderer,
+  createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
@@ -32,6 +34,7 @@ import {
   registerStandardGlTextureResolvers,
   registerDefaultHitTests,
   registerGlShapeCommands,
+  registerGlShapeRasterizer,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -65,6 +68,7 @@ registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
+registerGlShapeRasterizer(state, createCanvasShapeRasterizer(createCanvasTextureResolvers(), true));
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 enableGlClipSupport(state);
 

@@ -4,6 +4,8 @@ import {
   createGlCanvasElement,
   createGlRenderState,
   defaultGlSpriteRenderer,
+  createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
@@ -11,6 +13,7 @@ import {
   registerGlStandardMaterial,
   registerStandardGlTextureResolvers,
   registerGlShapeCommands,
+  registerGlShapeRasterizer,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -34,6 +37,7 @@ registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
+registerGlShapeRasterizer(state, createCanvasShapeRasterizer(createCanvasTextureResolvers(), true));
 registerGlStandardMaterial(state);
 registerStandardGlTextureResolvers(state);
 

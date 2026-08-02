@@ -24,6 +24,8 @@ import {
   createTextLabel,
   createTexture,
   defaultGlSpriteRenderer,
+  createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
@@ -37,6 +39,7 @@ import {
   registerGlBlendEffectBackdrop,
   registerGlCompositeEffect,
   registerGlShapeCommands,
+  registerGlShapeRasterizer,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -72,6 +75,7 @@ registerStandardGlTextureResolvers(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
+registerGlShapeRasterizer(state, createCanvasShapeRasterizer(createCanvasTextureResolvers(), true));
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 enableGlBlendModeSupport(state);
 registerGlCompositeEffect(state);

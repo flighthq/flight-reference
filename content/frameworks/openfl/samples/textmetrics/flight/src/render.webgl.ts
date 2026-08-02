@@ -2,11 +2,14 @@
 import {
   createGlRenderState,
   defaultGlRichTextRenderer,
+  createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerGlShapeCommands,
+  registerGlShapeRasterizer,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -35,6 +38,7 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
+registerGlShapeRasterizer(state, createCanvasShapeRasterizer(createCanvasTextureResolvers(), true));
 registerGlStandardMaterial(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;

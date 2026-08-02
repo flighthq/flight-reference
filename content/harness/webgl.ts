@@ -7,6 +7,8 @@ import {
   defaultGlQuadBatchRenderer,
   defaultGlRichTextRenderer,
   defaultGlScale9ShapeRenderer,
+  createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   defaultGlSpriteRenderer,
@@ -20,6 +22,7 @@ import {
   QuadBatchKind,
   registerGlStandardMaterial,
   registerGlShapeCommands,
+  registerGlShapeRasterizer,
   registerRenderer,
   registerStandardGlTextureResolvers,
   renderGlBackground,
@@ -63,6 +66,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
       registerGlShapeCommands(defaultGlShapeCommands);
+      registerGlShapeRasterizer(state, createCanvasShapeRasterizer(createCanvasTextureResolvers(), true));
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
     } else if (kind === TextLabelKind) {
@@ -78,6 +82,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultGlScale9ShapeRenderer);
       registerGlShapeCommands(defaultGlShapeCommands);
+      registerGlShapeRasterizer(state, createCanvasShapeRasterizer(createCanvasTextureResolvers(), true));
     }
   }
 

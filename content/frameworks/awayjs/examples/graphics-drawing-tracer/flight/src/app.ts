@@ -13,6 +13,8 @@ import {
   createGlRenderState,
   createMatrix,
   createShape,
+  createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   invalidateNodeAppearance,
@@ -20,6 +22,7 @@ import {
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerGlShapeCommands,
+  registerGlShapeRasterizer,
   registerRenderer,
   registerStandardGlTextureResolvers,
   renderGlBackground,
@@ -61,6 +64,7 @@ registerStandardGlTextureResolvers(state);
 registerGlStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
+registerGlShapeRasterizer(state, createCanvasShapeRasterizer(createCanvasTextureResolvers(), true));
 
 const verifyFrame = createGlFrameVerifier(state);
 

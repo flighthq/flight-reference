@@ -13,6 +13,8 @@ import {
   createGlRenderState,
   createMatrix,
   createShape,
+  createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   enableGlClipSupport,
@@ -20,6 +22,7 @@ import {
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerGlShapeCommands,
+  registerGlShapeRasterizer,
   registerRenderer,
   registerStandardGlTextureResolvers,
   renderGlBackground,
@@ -57,6 +60,7 @@ registerStandardGlTextureResolvers(state);
 registerGlStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
+registerGlShapeRasterizer(state, createCanvasShapeRasterizer(createCanvasTextureResolvers(), true));
 enableGlClipSupport(state);
 
 const verifyFrame = createGlFrameVerifier(state);

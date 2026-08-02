@@ -29,9 +29,10 @@ export function createMd5LightRig(): Md5LightRig {
     diffuse: 1,
     ambient: 1,
     ambientColor: 0x303040,
-    // Retain just enough cool fill to read the diffuse texture while allowing the directional
-    // shadow and roaming red/blue lights to define the Doom-like character silhouette.
-    tuning: { diffuse: 1.1, ambient: 1.075, ambientColor: 0x3e4556 },
+    // Retain just enough cool fill to read the diffuse texture while giving the white key enough
+    // weight for a legible cast shadow and directional normal-map relief. The roaming red/blue lights
+    // still define the Doom-like character silhouette.
+    tuning: { diffuse: 1.75, ambient: 0.8, ambientColor: 0x3e4556 },
   });
 
   const lights = createScene3DLights({ ambient, directional, point: [redLight, blueLight] });

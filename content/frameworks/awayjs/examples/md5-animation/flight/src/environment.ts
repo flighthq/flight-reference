@@ -27,7 +27,9 @@ export async function loadEnvironment(): Promise<EnvironmentData> {
     skyFaceNames.map((face) => loadImageResourceFromUrl(`awayjs/skybox/grimnight_${face}.png`)),
   );
   const skyTexture = createCubeTextureFromAwayFaces(skyImages);
-  const environment = createEnvironment({ environment: skyTexture, intensity: 0.875 });
+  // Keep the sky as the backdrop while restraining its IBL contribution: a strong environment fill
+  // washes out both the directional contact shadow and the ground normal-map response.
+  const environment = createEnvironment({ environment: skyTexture, intensity: 0.55 });
 
   const [rockDiffuse, rockNormal, rockSpecular] = await Promise.all([
     loadImageResourceFromUrl('awayjs/rockbase_diffuse.jpg'),
@@ -52,7 +54,9 @@ export async function loadEnvironment(): Promise<EnvironmentData> {
       baseColorMap: groundDiffuseTexture,
       metallic: 0,
       normalMap: groundNormalTexture,
-      normalScale: 0.75,
+      // AwayJS applies the map at full strength; the small lift accounts for Flight's smoother PBR
+      // response and makes the same rock relief legible under the moving lights.
+      normalScale: 1.35,
       roughness: 0.68,
     }),
     extensions: [createSpecularPbrExtension({ specularColorMap: groundSpecularTexture })],

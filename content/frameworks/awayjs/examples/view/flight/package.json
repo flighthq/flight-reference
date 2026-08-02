@@ -1,5 +1,5 @@
 {
-  "name": "awayjs-examples-basic-view-flight",
+  "name": "awayjs-examples-view-flight",
   "private": true,
   "type": "module",
   "dependencies": {

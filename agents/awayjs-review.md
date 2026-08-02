@@ -19,7 +19,7 @@ No user feedback yet.
 
 ---
 
-### 2. AWD Viewer (`intermediate-awd-viewer`)
+### 2. AWD Viewer (`awd-viewer`)
 
 **Status:** open — needs visual review
 
@@ -47,7 +47,7 @@ No user feedback yet.
 
 ---
 
-### 5. Fire (`basic-fire`)
+### 5. Fire (`fire`)
 
 **Status:** open — partially addressed
 
@@ -57,7 +57,7 @@ No user feedback yet.
 
 ---
 
-### 6. Generate FNT (`basic-generate-fnt`)
+### 6. Generate FNT (`generate-fnt`)
 
 **Status:** open — needs visual review
 
@@ -67,7 +67,7 @@ No user feedback yet.
 
 ---
 
-### 7. Globe (`intermediate-globe`)
+### 7. Globe (`globe`)
 
 **Status:** open — needs visual review
 
@@ -118,7 +118,7 @@ No user feedback yet.
 
 ---
 
-### 12. Load AWD (`basic-load-awd`)
+### 12. Load AWD (`load-awd`)
 
 **Status:** open — needs visual review
 
@@ -126,7 +126,7 @@ No user feedback yet.
 
 ---
 
-### 13. Load 3DS (`basic-load-3ds`)
+### 13. Load 3DS (`load-3ds`)
 
 **Status:** open — needs visual review
 
@@ -144,7 +144,7 @@ No user feedback yet.
 
 ---
 
-### 15. MD5 Animation (`intermediate-md5-animation`)
+### 15. MD5 Animation (`md5-animation`)
 
 **Status:** open — addressed, awaiting re-verification
 
@@ -163,7 +163,7 @@ No user feedback yet.
 
 ---
 
-### 16. Monster Head Shading (`intermediate-monster-head-shading`)
+### 16. Monster Head Shading (`monster-head-shading`)
 
 **Status:** open — addressed, awaiting re-verification
 
@@ -176,7 +176,7 @@ No user feedback yet.
 
 ---
 
-### 17. Mouse Interaction (`intermediate-mouse-interaction`)
+### 17. Mouse Interaction (`mouse-interaction`)
 
 **Status:** open — partially addressed, SDK limitation
 
@@ -190,7 +190,7 @@ No user feedback yet.
 
 ---
 
-### 18. Sponza (`advanced-multi-pass-sponza-demo`)
+### 18. Sponza Demo (`sponza-demo`)
 
 **Status:** open — partially addressed, awaiting re-verification
 
@@ -207,7 +207,7 @@ No user feedback yet.
 
 ---
 
-### 19. Particle Explosions (`intermediate-particle-explosions`)
+### 19. Particle Explosions (`particle-explosions`)
 
 **Status:** open — addressed
 
@@ -217,7 +217,7 @@ No user feedback yet.
 
 ---
 
-### 20. Perelith Knight (`intermediate-perelith-knight`)
+### 20. Perelith Knight (`perelith-knight`)
 
 **Status:** open — addressed
 
@@ -227,7 +227,7 @@ No user feedback yet.
 
 ---
 
-### 21. Shading (`basic-shading`)
+### 21. Shading (`shading`)
 
 **Status:** open — addressed, awaiting re-verification
 

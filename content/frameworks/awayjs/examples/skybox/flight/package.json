@@ -1,5 +1,5 @@
 {
-  "name": "awayjs-examples-basic-shading-flight",
+  "name": "awayjs-examples-skybox-flight",
   "private": true,
   "type": "module",
   "dependencies": {

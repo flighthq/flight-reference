@@ -36,7 +36,7 @@ import {
 } from '@awayjs/materials';
 import { AWDParser } from '@awayjs/parsers';
 
-class Advanced_MultiPassSponzaDemo {
+class SponzaDemo {
   private _assetsRoot: string = 'awayjs/';
 
   private _materialNameStrings: Array<string> = Array<string>(
@@ -717,4 +717,4 @@ class FlameVO {
   }
 }
 
-new Advanced_MultiPassSponzaDemo();
+new SponzaDemo();

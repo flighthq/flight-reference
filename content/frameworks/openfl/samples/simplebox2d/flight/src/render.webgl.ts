@@ -18,7 +18,7 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-export const canvas = createGlCanvasElement(500, 400, pixelRatio);
+export const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.getElementById('app')?.remove();
 document.body.appendChild(canvas);
 

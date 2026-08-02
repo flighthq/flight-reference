@@ -4,7 +4,6 @@ import {
   createGlRenderState,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
-  defaultGlTextLabelRenderer,
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerGlShapeCommands,
@@ -12,7 +11,6 @@ import {
   renderGlBackground,
   renderGlScene2D,
   ShapeKind,
-  TextLabelKind,
   createMatrix,
 } from '@flighthq/sdk';
 
@@ -28,7 +26,6 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerGlStandardMaterial(state);
 

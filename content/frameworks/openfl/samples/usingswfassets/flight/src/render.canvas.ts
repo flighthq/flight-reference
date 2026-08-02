@@ -2,23 +2,14 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
-  defaultCanvasBeginFill,
-  defaultCanvasDrawCircle,
-  defaultCanvasDrawEllipse,
-  defaultCanvasDrawRectangle,
-  defaultCanvasDrawRoundRectangle,
-  defaultCanvasLineStyle,
-  defaultCanvasLineTo,
-  defaultCanvasMoveTo,
+  defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
-  defaultCanvasTextLabelRenderer,
   prepareScene2DRender,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
   ShapeKind,
-  TextLabelKind,
   createMatrix,
 } from '@flighthq/sdk';
 
@@ -34,17 +25,7 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
-registerCanvasShapeCommands([
-  defaultCanvasBeginFill,
-  defaultCanvasDrawCircle,
-  defaultCanvasDrawEllipse,
-  defaultCanvasDrawRectangle,
-  defaultCanvasDrawRoundRectangle,
-  defaultCanvasLineStyle,
-  defaultCanvasLineTo,
-  defaultCanvasMoveTo,
-]);
+registerCanvasShapeCommands(defaultCanvasShapeCommands);
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;

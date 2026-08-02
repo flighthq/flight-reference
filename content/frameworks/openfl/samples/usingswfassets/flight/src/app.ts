@@ -1,63 +1,51 @@
 import {
-  addNodeChild,
-  appendShapeBeginFill,
-  appendShapeRectangle,
   attachWindowResize,
-  clearShapeCommands,
   connectSignal,
   createApplicationWindow,
-  createDisplayObject,
-  createShape,
-  createTextLabel,
-  invalidateNodeRender,
+  createScene2DSymbolFromSwf,
+  findNodeByName,
+  getNodeHeight,
+  getNodeWidth,
+  registerDeflateDecompressor,
+  setNodeHeight,
+  setNodeWidth,
 } from '@flighthq/sdk';
 
-import { container, render, scale, setSize } from './render';
+import { render, scale, setSize } from './render';
 
-const root = createDisplayObject();
-root.scaleX = scale;
-root.scaleY = scale;
+registerDeflateDecompressor();
 
-const background = createShape();
-const header = createShape();
-const column = createShape();
-const label = createTextLabel();
-label.data.text = 'SWF layout';
-label.data.textFormat = { size: 26, color: 0xffffff };
-label.x = 24;
-label.y = 18;
+const response = await fetch('openfl/swf/layout.swf');
+if (!response.ok) throw new Error(`Unable to load layout SWF: ${response.status}`);
 
-addNodeChild(root, background);
-addNodeChild(root, header);
-addNodeChild(root, column);
-addNodeChild(root, label);
-
-const columnOffsetHeight = -90;
-const headerOffsetWidth = 0;
-
-function drawRect(
-  shape: ReturnType<typeof createShape>,
-  color: number,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-): void {
-  clearShapeCommands(shape);
-  appendShapeBeginFill(shape, color);
-  appendShapeRectangle(shape, x, y, w, h);
-  invalidateNodeRender(shape);
+function requireValue<T>(value: T | null, message: string): T {
+  if (value === null) throw new Error(message);
+  return value;
 }
+
+const layout = requireValue(
+  createScene2DSymbolFromSwf(new Uint8Array(await response.arrayBuffer()), 'Layout'),
+  'Unable to decode the Layout symbol',
+);
+const background = requireValue(findNodeByName(layout, 'Background'), 'Layout symbol is missing Background');
+const column = requireValue(findNodeByName(layout, 'Column'), 'Layout symbol is missing Column');
+const header = requireValue(findNodeByName(layout, 'Header'), 'Layout symbol is missing Header');
+
+const columnOffsetHeight = getNodeHeight(column) - getNodeHeight(layout);
+const headerOffsetWidth = getNodeWidth(header) - getNodeWidth(layout);
+layout.scaleX = scale;
+layout.scaleY = scale;
 
 function resize(width: number, height: number): void {
   setSize(width, height);
-  drawRect(background, 0xf5f5f5, 0, 0, width, height);
-  drawRect(header, 0x24afc4, 0, 0, Math.max(width + headerOffsetWidth, 0), 70);
-  drawRect(column, 0xd8eef2, 360, 70, 170, Math.max(height + columnOffsetHeight, 0));
-  render(root);
+  setNodeWidth(background, width);
+  setNodeHeight(background, height);
+  setNodeHeight(column, Math.max(height + columnOffsetHeight, 0));
+  setNodeWidth(header, Math.max(width + headerOffsetWidth, 0));
+  render(layout);
 }
 
 const win = createApplicationWindow();
 connectSignal(win.onResize, () => resize(win.width, win.height));
-attachWindowResize(win, container);
+attachWindowResize(win, document.documentElement);
 resize(window.innerWidth, window.innerHeight);

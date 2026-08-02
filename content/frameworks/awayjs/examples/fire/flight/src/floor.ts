@@ -1,59 +1,40 @@
-import type { Image, StandardPbrMaterial, Texture } from '@flighthq/sdk';
+import type { BlinnPhongMaterial, Image, Texture } from '@flighthq/sdk';
 import {
-  createStandardPbrMaterial,
+  createBlinnPhongMaterial,
   createTexture,
   createTilingSampler,
   loadImageResourceFromUrl,
   setTextureUvScale,
 } from '@flighthq/sdk';
 
-import { createMetallicRoughnessImage } from '../../../_shared/flight/src/pbrConvert';
+import { applyAwayGloss } from '../../../_shared/flight/src/lighting';
 
-// AwayJS gives the floor its wet-tile sheen with a specular map plus `specularMethod.strength = 10`;
-// Flight's metallic-roughness PBR has no specular map, so we bake `floor_specular.jpg` into a
-// roughness map instead. AwayJS's specular map is a gloss mask (bright = shiny), which is the inverse
-// of PBR roughness, so bright texels map to the glossy end and dark texels to the matte end.
-const FLOOR_ROUGHNESS_GLOSSY = 0.15;
-const FLOOR_ROUGHNESS_MATTE = 0.85;
-
-export function createFloorMaterial(): StandardPbrMaterial {
-  const material = createStandardPbrMaterial({
-    baseColor: 0xffffffff,
-    metallic: 0,
-    roughness: 1,
+// AwayJS's MethodMaterial is a classic specular material, and Flight's Blinn-Phong lane can consume
+// the same three maps directly. Keeping the normal and specular images as data textures is important:
+// an sRGB decode distorts packed normals and turns the specular mask into a rough color approximation.
+export function createFloorMaterial(): BlinnPhongMaterial {
+  const material = createBlinnPhongMaterial({
+    diffuse: 0xffffffff,
+    normalScale: 1,
   });
+  applyAwayGloss(material, { gloss: 50, specular: 1 });
   material.doubleSided = true;
   return material;
 }
 
-function specularToRoughnessTexture(specular: Image): Texture {
-  const spread = FLOOR_ROUGHNESS_MATTE - FLOOR_ROUGHNESS_GLOSSY;
-  const mrImage = createMetallicRoughnessImage(specular, (r) => ({
-    roughness: FLOOR_ROUGHNESS_MATTE - spread * r,
-    metallic: 0,
-  }));
-  const tex = createTexture({
-    source: mrImage,
-    sampler: createTilingSampler(),
-    colorSpace: 'linear',
-  });
+function createFloorTexture(image: Image, colorSpace: 'linear' | 'srgb' = 'srgb'): Texture {
+  const tex = createTexture({ source: image, sampler: createTilingSampler(), colorSpace });
   setTextureUvScale(tex, 2, 2);
   return tex;
 }
 
-export async function loadFloorTextures(material: StandardPbrMaterial): Promise<void> {
+export async function loadFloorTextures(material: BlinnPhongMaterial): Promise<void> {
   const [diffuseImg, normalImg, specularImg] = await Promise.all([
     loadImageResourceFromUrl('awayjs/floor_diffuse.jpg'),
     loadImageResourceFromUrl('awayjs/floor_normal.jpg'),
     loadImageResourceFromUrl('awayjs/floor_specular.jpg'),
   ]);
-  const diffuseTex = createTexture({ source: diffuseImg, sampler: createTilingSampler() });
-  setTextureUvScale(diffuseTex, 2, 2);
-  material.baseColorMap = diffuseTex;
-
-  const normalTex = createTexture({ source: normalImg, sampler: createTilingSampler() });
-  setTextureUvScale(normalTex, 2, 2);
-  material.normalMap = normalTex;
-
-  material.metallicRoughnessMap = specularToRoughnessTexture(specularImg);
+  material.diffuseMap = createFloorTexture(diffuseImg);
+  material.normalMap = createFloorTexture(normalImg, 'linear');
+  material.specularMap = createFloorTexture(specularImg, 'linear');
 }

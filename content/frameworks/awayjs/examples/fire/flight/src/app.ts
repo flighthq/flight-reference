@@ -35,6 +35,7 @@ import {
   registerGlStandardPbrMaterial,
   registerGlUnlitMaterial,
   renderGlBackground,
+  setVector3,
   stepParticleEmitter3D,
 } from '@flighthq/sdk';
 
@@ -45,12 +46,13 @@ import {
   createOrbitControllerFromAway,
 } from '../../../_shared/flight/src/camera';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
-import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
-import { createFireEmitters, DECAL_MAX_OPACITY, startFiresSequentially } from './fire';
+import { createDirectionalLightFromAway, createPointLightFromAway } from '../../../_shared/flight/src/lighting';
+import { createFireEmitters, startFiresSequentially } from './fire';
 import { createFloorMaterial, loadFloorTextures } from './floor';
 import { createScene3DContext } from './renderer';
 
 const FIRE_START_INTERVAL = 1000;
+const FIRE_LIGHT_REFERENCE_DISTANCE = 200;
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -68,9 +70,8 @@ const { directional, ambient } = createDirectionalLightFromAway({
   diffuse: 0.5,
   ambient: 0.5,
   ambientColor: 0x808090,
+  shading: 'phong',
 });
-
-const lights = createScene3DLights({ ambient, directional });
 
 const planeMaterial = createFloorMaterial();
 const planeGeometry = createPlaneMeshGeometry(1000, 1000, 1, 1);
@@ -83,6 +84,29 @@ loadFloorTextures(planeMaterial);
 
 const { fires, config } = await createFireEmitters(scene);
 startFiresSequentially(fires, FIRE_START_INTERVAL);
+
+// The reference's first fire provides the dominant red reflection seen across the foreground tiles.
+// Use a real point light so the floor's normal and specular maps shape that reflection instead of
+// painting a translucent quad over the texture. Flight attenuates point lights physically, so the
+// reference distance preserves AwayJS's full-strength pool out to roughly its 200-unit radius.
+const primaryFire = fires[0]!;
+const fireLight = createPointLightFromAway({
+  color: 0xff3301,
+  diffuse: 1,
+  range: 400,
+  referenceDistance: FIRE_LIGHT_REFERENCE_DISTANCE,
+  shading: 'phong',
+});
+const fireLightIntensity = fireLight.intensity;
+fireLight.intensity = 0;
+setVector3(
+  fireLight.position,
+  primaryFire.emitter.position.x,
+  primaryFire.emitter.position.y,
+  primaryFire.emitter.position.z,
+);
+
+const lights = createScene3DLights({ ambient, directional, point: [fireLight] });
 
 const orbit = createOrbitControllerFromAway(camera, {
   distance: 1000,
@@ -106,9 +130,10 @@ function frame(ts: number): void {
     stepParticleEmitter3D(fire.emitter, fire.state, config, dt);
 
     if (fire.strength < 1) fire.strength += 0.1;
-    const opacity = Math.min(1, fire.strength) * DECAL_MAX_OPACITY * (0.85 + Math.random() * 0.3);
-    const alpha = Math.max(0, Math.min(255, Math.round(opacity * 255)));
-    fire.decalMaterial.baseColor = (0xffffff00 | alpha) >>> 0;
+    if (fire === primaryFire) {
+      fireLight.range = 380 + Math.random() * 20;
+      fireLight.intensity = fireLightIntensity * (Math.min(1, fire.strength) + Math.random() * 0.2);
+    }
   }
 
   orbit.update();

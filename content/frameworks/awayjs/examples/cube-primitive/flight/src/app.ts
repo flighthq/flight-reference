@@ -15,6 +15,7 @@ import {
   copyQuaternion,
   createBlinnPhongMaterial,
   createBoxMeshGeometry,
+  createCustomShaderMaterial,
   createFxaaEffect,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -37,6 +38,8 @@ import {
   multiplyQuaternion,
   registerGlBlinnPhongMaterial,
   registerBuiltInGlModifierSnippets,
+  registerGlCustomMaterialShader,
+  registerGlCustomShaderMaterial,
   registerGlExtendedPbrMaterial,
   registerGlRenderEffect,
   registerGlShadedMaterial,
@@ -56,11 +59,52 @@ import { applyAwayGloss, createDirectionalLightFromAway } from '../../../_shared
 import { createScene3DContext } from './renderer';
 
 const DEG = Math.PI / 180;
+const TORUS_CUTOUT_SHADER = 'cubePrimitiveTorusCutout';
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
   effects: [createToneMapEffect(), createFxaaEffect()],
+});
+
+registerGlCustomShaderMaterial(ctx.state);
+registerGlCustomMaterialShader(ctx.state, TORUS_CUTOUT_SHADER, {
+  vertex: `#version 300 es
+layout(location = 0) in vec3 a_position;
+layout(location = 1) in vec3 a_normal;
+layout(location = 3) in vec2 a_uv0;
+uniform mat4 u_viewProjection;
+uniform mat4 u_model;
+uniform mat3 u_normalMatrix;
+out vec3 v_normal;
+out vec2 v_uv;
+void main() {
+  v_normal = u_normalMatrix * a_normal;
+  v_uv = a_uv0;
+  gl_Position = u_viewProjection * u_model * vec4(a_position, 1.0);
+}`,
+  fragment: `#version 300 es
+precision highp float;
+in vec3 v_normal;
+in vec2 v_uv;
+uniform sampler2D u_diffuseMap;
+uniform vec3 u_diffuseTint;
+uniform vec3 u_lightDirection;
+uniform vec3 u_lightRadiance;
+uniform vec3 u_ambientRadiance;
+out vec4 o_color;
+void main() {
+  vec4 texel = texture(u_diffuseMap, v_uv);
+  // Reject the torus's heavily minified transition texels; leaving them blended turns the lit side
+  // of each transparent window into a pale outline.
+  if (texel.a < 0.99) discard;
+  vec3 normal = normalize(v_normal);
+  if (!gl_FrontFacing) normal = -normal;
+  float nDotL = max(dot(normal, -normalize(u_lightDirection)), 0.0);
+  vec3 albedo = texel.rgb * u_diffuseTint;
+  vec3 radiance = albedo * (u_ambientRadiance + u_lightRadiance * nDotL);
+  o_color = vec4(radiance, 1.0);
+}`,
 });
 
 const scene = createScene3D();
@@ -89,7 +133,7 @@ const texture = createTexture({
 // AwayJS MethodMaterial uses a classic Phong response. Keeping this demo on Flight's classic path
 // avoids the dielectric Fresnel rim that the PBR material turned into white outlines under additive
 // blending, while preserving the original transparent, double-sided space-texture treatment.
-const material = createBlinnPhongMaterial({
+const cubeMaterial = createBlinnPhongMaterial({
   // A cool diffuse tint keeps the source texture's white texels luminous without clipping the
   // silhouette to neutral white under the demo's intentionally strong 2.8× directional light.
   diffuse: 0x80a8c0ff,
@@ -100,14 +144,29 @@ const material = createBlinnPhongMaterial({
 });
 // The additive space texture already supplies its own luminous detail. A second white specular lobe
 // accumulates at silhouettes and reintroduces the very edge halo the classic material avoids.
-applyAwayGloss(material, { gloss: 50, specular: 0 });
+applyAwayGloss(cubeMaterial, { gloss: 50, specular: 0 });
+
+const torusMaterial = createCustomShaderMaterial({
+  shaderKey: TORUS_CUTOUT_SHADER,
+  textures: { u_diffuseMap: texture },
+  uniforms: {
+    // Linear-space equivalents of the source material tint and AwayJS light values.
+    u_diffuseTint: [0.216, 0.392, 0.527],
+    u_lightDirection: [1, 0, 0],
+    u_lightRadiance: [2.8, 2.8, 2.8],
+    u_ambientRadiance: [0.094, 0.178, 0.244],
+  },
+  alphaMode: 'blend',
+  blendMode: BlendMode.Add,
+  doubleSided: true,
+});
 
 const torusGeometry = createTorusMeshGeometry(150, 80, 32, 16);
-const torus = createMesh(torusGeometry, [material]);
+const torus = createMesh(torusGeometry, [torusMaterial]);
 addNodeChild(scene.root, torus);
 
 const cubeGeometry = createBoxMeshGeometry(20, 20, 20);
-const cube = createMesh(cubeGeometry, [material]);
+const cube = createMesh(cubeGeometry, [cubeMaterial]);
 setVector3(cube.position, ...awayPosition(130, 0, 40));
 invalidateNodeLocalTransform(cube);
 addNodeChild(scene.root, cube);

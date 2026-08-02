@@ -15,14 +15,15 @@ import {
   createApplication,
   createDisplayObject,
   createPhysics2DCollider,
+  createPhysics2DMouseJoint,
+  createPhysics2DQueryResult,
   createPhysics2DWorld,
   createRigidBody2D,
   createShape,
-  findPhysics2DBody,
-  getCollisionShapeContainsPoint,
   invalidateNodeLocalTransform,
   Physics2DMouseJointKind,
   physics2DMouseJointSolver,
+  queryPhysics2DPoint,
   registerPhysics2DJointSolver,
   removePhysics2DJoint,
   startApplicationLoop,
@@ -56,7 +57,8 @@ const RESTITUTION = 0;
 // over directly, but the stiffness does not: Flight's mouse joint reaches the right answer only where
 // its softness term is small, and below about 15 the response inverts and throws the body instead of
 // following it. 20 tracks the cursor to a few pixels with room above that floor, where the OpenFL
-// column's true 5 Hz spring trails by about ten.
+// column's true 5 Hz spring trails by about ten. createPhysics2DMouseJoint defaults stiffness to 5,
+// inside that unstable band, so it is always passed explicitly here.
 const DRAG_FORCE_PER_MASS = 1000;
 const DRAG_STIFFNESS = 20;
 const DRAG_DAMPING = 0.7;
@@ -154,24 +156,19 @@ function createCircle(x: number, y: number, radius: number, dynamicBody: boolean
   return body;
 }
 
-const ground = createBox(250, 300, 500, 100, false);
+createBox(250, 300, 500, 100, false);
 createBox(250, 100, 100, 100, true);
 createCircle(100, 100, 50, false);
 createCircle(400, 100, 50, true);
 
-const hits: number[] = [];
+const query = createPhysics2DQueryResult();
 
 function bodyAt(worldX: number, worldY: number): RigidBody2D | null {
-  hits.length = 0;
-  world.index.querySpatialPoint(worldX, worldY, hits);
+  queryPhysics2DPoint(world, worldX, worldY, query);
 
-  for (const id of hits) {
-    const body = findPhysics2DBody(world, id);
-    if (body === null || body.type !== 'dynamic') continue;
-    // The index answers by bounding box, so the exact shape still has to be asked.
-    for (const collider of body.colliders) {
-      if (getCollisionShapeContainsPoint(collider.world, worldX, worldY)) return body;
-    }
+  for (let i = 0; i < query.hitCount; i++) {
+    const body = query.hits[i].body;
+    if (body.type === 'dynamic') return body;
   }
 
   return null;
@@ -200,33 +197,18 @@ canvas.addEventListener('pointerdown', (event) => {
   const offsetX = point.x - body.x;
   const offsetY = point.y - body.y;
 
-  // Built as a typed local because there is no factory for a mouse joint and addPhysics2DJoint both
-  // takes and returns the base Physics2DJoint, which does not carry the target or the spring.
-  const joint: Physics2DMouseJoint = {
-    kind: Physics2DMouseJointKind,
-    // The solver drags bodyB alone and ignores bodyA, but the step's awake test still resolves both
-    // ends and drops the joint if either is missing — so bodyA has to name a real body. The ground is
-    // the conventional anchor, and collideConnected keeps the dragged body colliding with it.
-    bodyA: ground.index,
-    bodyB: body.index,
-    localAnchorAX: 0,
-    localAnchorAY: 0,
-    localAnchorBX: offsetX * cos + offsetY * sin,
-    localAnchorBY: -offsetX * sin + offsetY * cos,
-    collideConnected: true,
-    impulse0: 0,
-    impulse1: 0,
-    impulse2: 0,
-    rAX: 0,
-    rAY: 0,
-    rBX: 0,
-    rBY: 0,
+  // The anchor is given in the body's own frame, so the grab point has to be rotated out of world
+  // space by the body's current angle.
+  const joint = createPhysics2DMouseJoint({
+    body: body.index,
     targetX: point.x,
     targetY: point.y,
     maxForce: DRAG_FORCE_PER_MASS * body.mass,
+    localAnchorX: offsetX * cos + offsetY * sin,
+    localAnchorY: -offsetX * sin + offsetY * cos,
     stiffness: DRAG_STIFFNESS,
     damping: DRAG_DAMPING,
-  };
+  });
 
   addPhysics2DJoint(world, joint);
   drag = joint;

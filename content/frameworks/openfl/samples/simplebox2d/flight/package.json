@@ -1,5 +1,5 @@
 {
-  "name": "openfl-sample-box2d-flight",
+  "name": "openfl-sample-simplebox2d-flight",
   "private": true,
   "type": "module",
   "dependencies": {

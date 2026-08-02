@@ -19,6 +19,7 @@ import {
   ParticleEmitter2DKind,
   prepareScene2DRender,
   QuadBatchKind,
+  getCanvasRenderStateTextureResolvers,
   registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
   registerCanvasRenderTextureResolver,

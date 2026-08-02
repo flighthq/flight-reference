@@ -1,5 +1,5 @@
 {
-  "name": "org.openfl.samples.box2d-typescript",
+  "name": "org.openfl.samples.simplebox2d-typescript",
   "version": "1.0.0",
   "private": true,
   "devDependencies": {

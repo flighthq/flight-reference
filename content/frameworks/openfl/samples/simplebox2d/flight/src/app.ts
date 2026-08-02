@@ -109,8 +109,8 @@ function bodyColor(body: RigidBody2D): number {
 
 function addView(body: RigidBody2D, outline: BodyView['outline']): void {
   const view: BodyView = { body, node: createShape(), outline, color: 0 };
-  paint(view, bodyColor(body));
   addNodeChild(root, view.node);
+  paint(view, bodyColor(body));
   place(view);
   views.push(view);
 }
@@ -246,3 +246,6 @@ connectSignal(app.onUpdate, () => {
 });
 connectSignal(app.onRender, () => render(root));
 startApplicationLoop(app);
+
+// TEMP DEBUG
+(globalThis as unknown as Record<string, unknown>).__dbg = { root, views };

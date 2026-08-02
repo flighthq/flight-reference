@@ -1,5 +1,6 @@
 import type {
   Adjustment,
+  BlinnPhongMaterial,
   Camera3D,
   Environment,
   GlRenderEffectPipeline,
@@ -8,7 +9,6 @@ import type {
   PerspectiveProjection,
   RenderEffect,
   Scene3DLights,
-  StandardPbrMaterial,
 } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -87,6 +87,7 @@ const { directional, ambient } = createDirectionalLightFromAway({
   color: 0xeedddd,
   ambient: 0.35,
   ambientColor: 0x808090,
+  shading: 'phong',
 });
 const lights = createScene3DLights({ ambient, directional });
 
@@ -114,7 +115,7 @@ const [awdBuffer, sponzaTextureImages, skyboxFaceImages] = await Promise.all([
 ]);
 
 const textureMap = createTextureMap(sponzaTextureFiles, sponzaTextureImages);
-const materialCache = new Map<string, StandardPbrMaterial>();
+const materialCache = new Map<string, BlinnPhongMaterial>();
 
 const awdScene = createScene3DFromAwd2(new Uint8Array(awdBuffer));
 

@@ -1,9 +1,14 @@
-import type { Texture2D } from '@flighthq/sdk';
-import type { Image, Material, Mesh, Node3D, StandardPbrMaterial } from '@flighthq/sdk';
-import { createTexture, getNodeChildren, isMesh, loadImageResourceFromUrl } from '@flighthq/sdk';
+import type { BlinnPhongMaterial, Image, Material, Mesh, Node3D, Texture2D } from '@flighthq/sdk';
+import {
+  createBlinnPhongMaterial,
+  createTexture,
+  createTilingSampler,
+  getNodeChildren,
+  isMesh,
+  loadImageResourceFromUrl,
+} from '@flighthq/sdk';
 
-import { createAwayMatteMaterial } from '../../../_shared/flight/src/materials';
-import { createMetallicRoughnessImage } from '../../../_shared/flight/src/pbrConvert';
+import { applyAwayGloss } from '../../../_shared/flight/src/lighting';
 
 export const materialNameToTextureFile: Record<string, string> = {
   arch: 'arch_diff.jpg',
@@ -79,26 +84,21 @@ export function createTextureMap(
   sponzaTextureImages: readonly Image[],
 ): Map<string, Texture2D> {
   const textureMap = new Map<string, Texture2D>();
+  // Sponza's authored UVs deliberately extend well outside the unit square. AwayJS applies
+  // ImageSampler(repeat=true, smooth=true, mipmap=true) to every material map, so use Flight's
+  // equivalent tiling sampler for diffuse, normal, and specular textures.
+  const sampler = createTilingSampler();
   for (const file of new Set(Object.values(materialNameToTextureFile))) {
     const image = sponzaTextureImages[sponzaTextureFiles.indexOf(file)];
-    if (image) textureMap.set(file, createTexture({ source: image }));
+    if (image) textureMap.set(file, createTexture({ source: image, sampler }));
   }
   for (const file of new Set(Object.values(materialNameToNormalFile))) {
     const image = sponzaTextureImages[sponzaTextureFiles.indexOf(file)];
-    if (image) textureMap.set(file, createTexture({ source: image, colorSpace: 'linear' }));
+    if (image) textureMap.set(file, createTexture({ source: image, colorSpace: 'linear', sampler }));
   }
   for (const file of new Set(Object.values(materialNameToSpecularFile))) {
     const image = sponzaTextureImages[sponzaTextureFiles.indexOf(file)];
-    if (!image) continue;
-
-    const metallicRoughnessImage = createMetallicRoughnessImage(image, (r, g, b) => {
-      const specular = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-      return {
-        roughness: Math.max(0.12, 1 - specular * 1.7),
-        metallic: 0,
-      };
-    });
-    textureMap.set(file, createTexture({ source: metallicRoughnessImage, colorSpace: 'linear' }));
+    if (image) textureMap.set(file, createTexture({ source: image, colorSpace: 'linear', sampler }));
   }
   return textureMap;
 }
@@ -108,17 +108,22 @@ const knownMaterialNames = new Set(Object.keys(materialNameToTextureFile));
 export function getOrCreateMaterial(
   name: string,
   textureMap: ReadonlyMap<string, Texture2D>,
-  materialCache: Map<string, StandardPbrMaterial>,
-): StandardPbrMaterial {
+  materialCache: Map<string, BlinnPhongMaterial>,
+): BlinnPhongMaterial {
   let mat = materialCache.get(name);
   if (mat) return mat;
 
-  mat = createAwayMatteMaterial(0xffffffff);
+  // AwayJS MethodMaterial uses a classic Blinn-Phong base. Keep the source specular maps as
+  // specular strength instead of reinterpreting them as PBR roughness. Preserve the source's
+  // default gloss; its specularMethod.strength = 2 saturates at Flight's maximum packed-white
+  // specular color through the shared conversion helper.
+  mat = createBlinnPhongMaterial({ diffuse: 0xffffffff });
+  applyAwayGloss(mat, { gloss: 50, specular: 2 });
 
   const textureFile = materialNameToTextureFile[name];
   if (textureFile) {
     const tex = textureMap.get(textureFile);
-    if (tex) mat.baseColorMap = tex;
+    if (tex) mat.diffuseMap = tex;
   }
 
   const normalFile = materialNameToNormalFile[name];
@@ -130,7 +135,7 @@ export function getOrCreateMaterial(
   const specularFile = materialNameToSpecularFile[name];
   if (specularFile) {
     const tex = textureMap.get(specularFile);
-    if (tex) mat.metallicRoughnessMap = tex;
+    if (tex) mat.specularMap = tex;
   }
 
   if (alphaCutoutMaterials.has(name)) {
@@ -148,7 +153,7 @@ const skippedFlagpoleNums = new Set([260, 261, 263, 265, 268, 269, 271, 273]);
 
 export function walkAndAssignMaterials(
   node: Node3D,
-  materialCache: Map<string, StandardPbrMaterial>,
+  materialCache: Map<string, BlinnPhongMaterial>,
   textureMap: ReadonlyMap<string, Texture2D>,
 ): void {
   if (isMesh(node)) {

@@ -143,14 +143,14 @@ interface FlareObject {
 // depth while constructing only the ten entries that can actually load.
 const FLARE_SPECS: readonly FlareSpec[] = [
   { index: 0, url: 'awayjs/lensflare/flare10.jpg', size: 3.2, position: -0.01, opacity: 100 },
-  { index: 2, url: 'awayjs/lensflare/flare7.jpg', size: 2, position: 0, opacity: 25.5 },
-  { index: 3, url: 'awayjs/lensflare/flare7.jpg', size: 4, position: 0, opacity: 17.85 },
-  { index: 5, url: 'awayjs/lensflare/flare6.jpg', size: 1, position: 0.68, opacity: 20.4 },
-  { index: 6, url: 'awayjs/lensflare/flare2.jpg', size: 1.25, position: 1.1, opacity: 48.45 },
-  { index: 7, url: 'awayjs/lensflare/flare3.jpg', size: 1.75, position: 1.37, opacity: 7.65 },
-  { index: 8, url: 'awayjs/lensflare/flare4.jpg', size: 2.75, position: 1.85, opacity: 12.75 },
-  { index: 9, url: 'awayjs/lensflare/flare8.jpg', size: 0.5, position: 2.21, opacity: 33.15 },
-  { index: 10, url: 'awayjs/lensflare/flare6.jpg', size: 4, position: 2.5, opacity: 10.4 },
+  { index: 2, url: 'awayjs/lensflare/flare7.jpg', size: 2, position: 0, opacity: 17.5 },
+  { index: 3, url: 'awayjs/lensflare/flare7.jpg', size: 4, position: 0, opacity: 12 },
+  { index: 5, url: 'awayjs/lensflare/flare6.jpg', size: 1, position: 0.68, opacity: 12 },
+  { index: 6, url: 'awayjs/lensflare/flare2.jpg', size: 1.25, position: 1.1, opacity: 33 },
+  { index: 7, url: 'awayjs/lensflare/flare3.jpg', size: 1.75, position: 1.37, opacity: 5 },
+  { index: 8, url: 'awayjs/lensflare/flare4.jpg', size: 2.75, position: 1.85, opacity: 6 },
+  { index: 9, url: 'awayjs/lensflare/flare8.jpg', size: 0.5, position: 2.21, opacity: 22 },
+  { index: 10, url: 'awayjs/lensflare/flare6.jpg', size: 4, position: 2.5, opacity: 3 },
   { index: 11, url: 'awayjs/lensflare/flare7.jpg', size: 4.5, position: 2.66, opacity: 18 },
 ];
 

@@ -27,7 +27,7 @@ export async function loadEnvironment(): Promise<EnvironmentData> {
     skyFaceNames.map((face) => loadImageResourceFromUrl(`awayjs/skybox/grimnight_${face}.png`)),
   );
   const skyTexture = createCubeTextureFromAwayFaces(skyImages);
-  const environment = createEnvironment({ environment: skyTexture, intensity: 0.75 });
+  const environment = createEnvironment({ environment: skyTexture, intensity: 0.875 });
 
   const [rockDiffuse, rockNormal, rockSpecular] = await Promise.all([
     loadImageResourceFromUrl('awayjs/rockbase_diffuse.jpg'),

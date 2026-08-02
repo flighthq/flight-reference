@@ -23,14 +23,11 @@ import {
   DEG_TO_RAD,
   drawGlScene3DShadowMap,
   invalidateNodeLocalTransform,
-  loadImageResourceFromUrl,
-  orientScene3DBillboardsToCamera,
   registerGlExtendedPbrMaterial,
   registerGlRenderEffect,
   registerGlSpecularPbrExtension,
   registerStandardGlTextureResolvers,
   registerGlStandardPbrMaterial,
-  registerGlUnlitMaterial,
   setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
   setTextureUvOffset,
@@ -76,7 +73,6 @@ registerStandardGlTextureResolvers(glState);
 registerGlStandardPbrMaterial(glState);
 registerGlExtendedPbrMaterial(glState);
 registerGlSpecularPbrExtension(glState);
-registerGlUnlitMaterial(glState);
 registerGlRenderEffect(glState, 'FxaaEffect', defaultGlFxaaEffectRunner);
 registerGlRenderEffect(glState, 'ScreenSpaceFogEffect', defaultGlScreenSpaceFogEffectRunner);
 registerGlRenderEffect(glState, 'ToneMapEffect', defaultGlToneMapEffectRunner);
@@ -97,16 +93,11 @@ function updateCamera(): void {
   setCamera3DViewMatrix4FromLookAt(camera, eye, cameraTarget, up);
 }
 
-const [{ environment, groundMesh, fogEffect }, character, redLightImage, blueLightImage] = await Promise.all([
-  loadEnvironment(),
-  loadCharacter(),
-  loadImageResourceFromUrl('awayjs/redlight.png'),
-  loadImageResourceFromUrl('awayjs/bluelight.png'),
-]);
+const [{ environment, groundMesh, fogEffect }, character] = await Promise.all([loadEnvironment(), loadCharacter()]);
 addNodeChild(scene.root, groundMesh);
-const effects = [fogEffect, createToneMapEffect({ exposure: 0.9 }), createFxaaEffect()];
+const effects = [fogEffect, createToneMapEffect({ exposure: 1.025 }), createFxaaEffect()];
 
-const lightRig = createMd5LightRig(scene.root, redLightImage, blueLightImage);
+const lightRig = createMd5LightRig();
 const { directional: whiteLight, lights } = lightRig;
 whiteLight.castsShadow = true;
 whiteLight.pcfRadius = 2;
@@ -252,7 +243,6 @@ function frame(ts: number): void {
   cameraTarget.x = characterX;
   cameraTarget.z = characterZ;
   updateCamera();
-  orientScene3DBillboardsToCamera(scene.root, camera);
 
   shadowBounds.min.x = characterX - 250;
   shadowBounds.min.z = characterZ - 250;

@@ -14,7 +14,7 @@ import { createSingleSpriteAtlas } from '../../../_shared/flight/src/particles';
 
 const NUM_FIRES = 10;
 const FIRE_RADIUS = 400;
-const FIRE_SPRITE_SIZE = 30;
+const FIRE_SPRITE_SIZE = 60;
 
 export interface FireEntry {
   emitter: ParticleEmitter3D;
@@ -62,8 +62,7 @@ export async function createFireEmitters(scene: Readonly<Scene3D>): Promise<Fire
     directionZ: 0,
     speedMin: 70,
     speedMax: 90,
-    // AwayJS renders a 10-unit plane scaled from 2.5 to 0.5. A modest size lift preserves that 5:1
-    // shrink while matching the fuller apparent flame body in the reference capture.
+    // Preserve AwayJS's 5:1 lifetime shrink while matching the roughly 2x larger apparent sprites.
     scaleMin: FIRE_SPRITE_SIZE,
     scaleMax: FIRE_SPRITE_SIZE,
     scaleEnd: 0.2,

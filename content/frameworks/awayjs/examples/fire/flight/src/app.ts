@@ -53,7 +53,7 @@ import { createScene3DContext } from './renderer';
 
 const FIRE_START_INTERVAL = 1000;
 const FIRE_LIGHT_COUNT = 2;
-const FIRE_LIGHT_REFERENCE_DISTANCE = 225;
+const FIRE_LIGHT_REFERENCE_DISTANCE = 250;
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -86,9 +86,9 @@ loadFloorTextures(planeMaterial);
 const { fires, config } = await createFireEmitters(scene);
 startFiresSequentially(fires, FIRE_START_INTERVAL);
 
-// The first two fires provide the overlapping red pools visible during the reference's early sequence.
-// Real point lights let the normal/specular maps shape those pools; the reference distance compensates
-// for Flight's inverse-square attenuation across AwayJS's roughly 200-unit full-brightness radius.
+// Light the first two sequential emitters. Each light remains dark until its own fire starts, then
+// flickers independently so the second pool appears directly under the second emitter rather than
+// merging into a single synthetic floor glow.
 const litFires = fires.slice(0, FIRE_LIGHT_COUNT).map((fire) => {
   const light = createPointLightFromAway({
     color: 0xff3301,

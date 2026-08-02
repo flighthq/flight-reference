@@ -18,7 +18,6 @@ import {
   createToneMapEffect,
   createVector3,
   defaultGlFxaaEffectRunner,
-  defaultGlScreenSpaceFogEffectRunner,
   defaultGlToneMapEffectRunner,
   DEG_TO_RAD,
   drawGlScene3DShadowMap,
@@ -40,6 +39,7 @@ import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 import { ANIM_NAMES, IDLE_NAME, WALK_NAME, loadCharacter } from './character';
 import { bindCharacterControls } from './controls';
 import { loadEnvironment } from './environment';
+import { backgroundAwareFogEffectRunner } from './fog';
 import { createMd5LightRig } from './lights';
 import type { SkyboxRenderState } from './skybox';
 import { renderSkyboxScene } from './skybox';
@@ -74,7 +74,7 @@ registerGlStandardPbrMaterial(glState);
 registerGlExtendedPbrMaterial(glState);
 registerGlSpecularPbrExtension(glState);
 registerGlRenderEffect(glState, 'FxaaEffect', defaultGlFxaaEffectRunner);
-registerGlRenderEffect(glState, 'ScreenSpaceFogEffect', defaultGlScreenSpaceFogEffectRunner);
+registerGlRenderEffect(glState, 'ScreenSpaceFogEffect', backgroundAwareFogEffectRunner);
 registerGlRenderEffect(glState, 'ToneMapEffect', defaultGlToneMapEffectRunner);
 
 const verifyFrame = createGlFrameVerifier(glState);

@@ -13,15 +13,14 @@ import type {
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
-  createAmbientLight,
   createBuiltInScene3DResourceResolver,
   createFxaaEffect,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createScene3D,
-  createScene3DFromAwd2,
-  createScene3DLights,
+  createScene3DFromDocument,
+  createScene3DLightsFromDocument,
   createToneMapEffect,
   defaultGlFxaaEffectRunner,
   defaultGlToneMapEffectRunner,
@@ -29,6 +28,7 @@ import {
   endGlRenderEffectPipeline,
   isMesh,
   loadScene3DResources,
+  parseAwd2,
   prepareMeshSkinning,
   registerGlBlinnPhongMaterial,
   registerBuiltInGlModifierSnippets,
@@ -64,14 +64,14 @@ const scene = createScene3D();
 
 const camera = createCameraFromAway({ fov: 70, near: 1, far: 5000 });
 
-// The AwayJS reference creates NO lights at all for this viewer — the AWD's materials present their
-// diffuse skin flat. Matching that means a single full-intensity ambient and no directional term;
-// adding directional shading here is what made the model read differently from upstream.
-const ambient = createAmbientLight({ color: 0xffffffff, intensity: 1 });
-const lights: Scene3DLights = createScene3DLights({ ambient });
-
 const awdBuffer = await fetch('awayjs/shambler.awd').then((r) => r.arrayBuffer());
-const awdScene = createScene3DFromAwd2(new Uint8Array(awdBuffer));
+const awdDocument = parseAwd2(new Uint8Array(awdBuffer));
+const awdScene = createScene3DFromDocument(awdDocument);
+
+// The AWD embeds a directional light plus its ambient contribution. Keep the parsed document long enough
+// to build both the live scene and the renderer's separate light set; the adapter also resolves the
+// directional light's authored transform into its world-space direction.
+const lights: Scene3DLights = createScene3DLightsFromDocument(awdDocument);
 
 // The AWD embeds its diffuse/normal/specular maps as byte blobs; nothing samples them until the
 // scene's resource references are resolved. createBuiltInScene3DResourceResolver only lists textures

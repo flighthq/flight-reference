@@ -23,7 +23,21 @@ const LINE_THICKNESS = 1;
 const DENSITY = 1;
 const DRAG_FORCE_PER_MASS = 1000;
 
-type BodyOutline = { kind: 'box'; halfWidth: number; halfHeight: number } | { kind: 'circle'; radius: number };
+// A body dragged clear of the stage is put back where it started. The source demo had no way to lose
+// one, but dragging does, and a body left falling grows the debug sprite's bounds without limit — far
+// enough out and OpenFL can no longer size the texture it rasterizes those bounds into.
+const STAGE_WIDTH = 800;
+const STAGE_HEIGHT = 600;
+const LOST_MARGIN = 200;
+
+type BodyOutline = ({ kind: 'box'; halfWidth: number; halfHeight: number } | { kind: 'circle'; radius: number }) & {
+  spawnX: number;
+  spawnY: number;
+};
+
+function isLost(x: number, y: number): boolean {
+  return x < -LOST_MARGIN || x > STAGE_WIDTH + LOST_MARGIN || y < -LOST_MARGIN || y > STAGE_HEIGHT + LOST_MARGIN;
+}
 
 class App extends Sprite {
   private ground: Body;
@@ -59,7 +73,7 @@ class App extends Sprite {
     });
 
     body.createFixture(new Box(halfWidth, halfHeight), DENSITY);
-    body.setUserData({ kind: 'box', halfWidth, halfHeight });
+    body.setUserData({ kind: 'box', halfWidth, halfHeight, spawnX: x * PHYSICS_SCALE, spawnY: y * PHYSICS_SCALE });
     return body;
   }
 
@@ -72,7 +86,7 @@ class App extends Sprite {
     });
 
     body.createFixture(new Circle(scaledRadius), DENSITY);
-    body.setUserData({ kind: 'circle', radius: scaledRadius });
+    body.setUserData({ kind: 'circle', radius: scaledRadius, spawnX: x * PHYSICS_SCALE, spawnY: y * PHYSICS_SCALE });
     return body;
   }
 
@@ -93,6 +107,26 @@ class App extends Sprite {
     );
 
     return found;
+  }
+
+  private resetLostBodies(): void {
+    for (var body: Body | null = this.world.getBodyList(); body !== null; body = body.getNext()) {
+      if (!body.isDynamic()) continue;
+
+      var outline = body.getUserData() as BodyOutline | null;
+      if (outline === null) continue;
+
+      // The body on the end of the cursor is exempt: it is only out there because it is being held.
+      if (this.mouseJoint !== null && this.mouseJoint.getBodyB() === body) continue;
+
+      var position = body.getPosition();
+      if (!isLost(position.x / PHYSICS_SCALE, position.y / PHYSICS_SCALE)) continue;
+
+      body.setTransform(new Vec2(outline.spawnX, outline.spawnY), 0);
+      body.setLinearVelocity(new Vec2(0, 0));
+      body.setAngularVelocity(0);
+      body.setAwake(true);
+    }
   }
 
   private drawDebugData(): void {
@@ -154,6 +188,7 @@ class App extends Sprite {
   private this_onEnterFrame = (event: Event): void => {
     this.world.step(1 / 30, 10, 10);
     this.world.clearForces();
+    this.resetLostBodies();
     this.drawDebugData();
   };
 

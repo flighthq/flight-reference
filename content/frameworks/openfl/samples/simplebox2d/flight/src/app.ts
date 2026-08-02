@@ -63,11 +63,23 @@ const DRAG_FORCE_PER_MASS = 1000;
 const DRAG_STIFFNESS = 20;
 const DRAG_DAMPING = 0.7;
 
+// A body dragged clear of the stage is put back where it started. The source demo had no way to lose
+// one, but dragging does, and nothing else bounds how far a thrown body travels.
+const STAGE_WIDTH = 800;
+const STAGE_HEIGHT = 600;
+const LOST_MARGIN = 200;
+
 interface BodyView {
   body: RigidBody2D;
   node: Shape;
   outline: { kind: 'box'; width: number; height: number } | { kind: 'circle'; radius: number };
   color: number;
+  spawnX: number;
+  spawnY: number;
+}
+
+function isLost(x: number, y: number): boolean {
+  return x < -LOST_MARGIN || x > STAGE_WIDTH + LOST_MARGIN || y < -LOST_MARGIN || y > STAGE_HEIGHT + LOST_MARGIN;
 }
 
 const root = createDisplayObject();
@@ -108,7 +120,7 @@ function bodyColor(body: RigidBody2D): number {
 }
 
 function addView(body: RigidBody2D, outline: BodyView['outline']): void {
-  const view: BodyView = { body, node: createShape(), outline, color: 0 };
+  const view: BodyView = { body, node: createShape(), outline, color: 0, spawnX: body.x, spawnY: body.y };
   addNodeChild(root, view.node);
   paint(view, bodyColor(body));
   place(view);
@@ -231,6 +243,21 @@ function endDrag(): void {
 canvas.addEventListener('pointerup', endDrag);
 canvas.addEventListener('pointercancel', endDrag);
 
+function resetIfLost(view: BodyView): void {
+  if (view.body.type !== 'dynamic') return;
+  // The body on the end of the cursor is exempt: it is only out there because it is being held.
+  if (drag !== null && drag.bodyB === view.body.index) return;
+  if (!isLost(view.body.x / PHYSICS_SCALE, view.body.y / PHYSICS_SCALE)) return;
+
+  view.body.x = view.spawnX;
+  view.body.y = view.spawnY;
+  view.body.angle = 0;
+  view.body.velocityX = 0;
+  view.body.velocityY = 0;
+  view.body.angularVelocity = 0;
+  wakePhysics2DBody(view.body);
+}
+
 const app = createApplication();
 connectSignal(app.onUpdate, () => {
   // A constant step, matching the source demo's per-frame World.step(1 / 30). Advancing by the
@@ -239,6 +266,7 @@ connectSignal(app.onUpdate, () => {
   stepPhysics2D(world, 1 / 30);
 
   for (const view of views) {
+    resetIfLost(view);
     place(view);
     const color = bodyColor(view.body);
     if (color !== view.color) paint(view, color);

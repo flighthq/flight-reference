@@ -21,6 +21,7 @@ import {
   createGlRenderState,
   createMesh,
   createQuaternion,
+  createSampler,
   createScene3D,
   createScene3DLights,
   createTexture,
@@ -77,7 +78,13 @@ const { directional, ambient } = createDirectionalLightFromAway({
 const lights = createScene3DLights({ ambient, directional });
 
 const image = await loadImageResourceFromUrl('awayjs/spacy_texture.png');
-const texture = createTexture({ source: image });
+// The texture contains hard, binary-alpha window cutouts. Mipmap averaging turns those cutouts into
+// bright partial-coverage texels, which show up as pale borders under additive blending. Match the
+// source ImageSampler's smooth base-level sampling without generating alpha-bleeding mip levels.
+const texture = createTexture({
+  source: image,
+  sampler: createSampler({ magFilter: 'linear', minFilter: 'linear', mipmaps: false }),
+});
 
 // AwayJS MethodMaterial uses a classic Phong response. Keeping this demo on Flight's classic path
 // avoids the dielectric Fresnel rim that the PBR material turned into white outlines under additive

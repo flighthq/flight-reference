@@ -151,7 +151,7 @@ const FLARE_SPECS: readonly FlareSpec[] = [
   { index: 8, url: 'awayjs/lensflare/flare4.jpg', size: 2.75, position: 1.85, opacity: 12.75 },
   { index: 9, url: 'awayjs/lensflare/flare8.jpg', size: 0.5, position: 2.21, opacity: 33.15 },
   { index: 10, url: 'awayjs/lensflare/flare6.jpg', size: 4, position: 2.5, opacity: 10.4 },
-  { index: 11, url: 'awayjs/lensflare/flare7.jpg', size: 10, position: 2.66, opacity: 50 },
+  { index: 11, url: 'awayjs/lensflare/flare7.jpg', size: 4.5, position: 2.66, opacity: 18 },
 ];
 
 let sunAngle = 1.35;
@@ -217,7 +217,23 @@ const flareUrls = [...new Set(FLARE_SPECS.map((spec) => spec.url))];
 await Promise.all(
   flareUrls.map(async (url) => {
     const sourceImage = await loadImageResourceFromUrl(url);
-    const sourceBitmap = captureBitmapFromImageResource(sourceImage);
+    let maskSource = sourceImage;
+    // flare7 supplies the large ring sprites, where its 128px source reveals a stairstepped edge.
+    // Prefilter it once at upload resolution so magnification stays smooth without changing its shape.
+    if (url.endsWith('/flare7.jpg') && sourceImage.source) {
+      const smoothCanvas = document.createElement('canvas');
+      smoothCanvas.width = sourceImage.width * 4;
+      smoothCanvas.height = sourceImage.height * 4;
+      const smoothCtx = smoothCanvas.getContext('2d');
+      if (smoothCtx) {
+        smoothCtx.imageSmoothingEnabled = true;
+        smoothCtx.imageSmoothingQuality = 'high';
+        smoothCtx.filter = 'blur(1px)';
+        smoothCtx.drawImage(sourceImage.source, 0, 0, smoothCanvas.width, smoothCanvas.height);
+        maskSource = createImageResourceFromCanvas(smoothCanvas);
+      }
+    }
+    const sourceBitmap = captureBitmapFromImageResource(maskSource);
     const maskedBitmap = createBitmap(sourceBitmap.width, sourceBitmap.height, 0xffffffff);
     copyBitmapChannel(
       createBitmapRegion(maskedBitmap),

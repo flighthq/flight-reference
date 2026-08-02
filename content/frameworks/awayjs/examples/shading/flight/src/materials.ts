@@ -1,7 +1,5 @@
 import type { Sampler, StandardPbrMaterial, Texture } from '@flighthq/sdk';
 import {
-  createBitmap,
-  createClampLinearSampler,
   createSampler,
   createStandardPbrMaterial,
   createTexture,
@@ -18,34 +16,6 @@ export interface SceneMaterials {
   torusMaterial: StandardPbrMaterial;
 }
 
-function createFloorEdgeFadeTexture(): Texture {
-  const size = 128;
-  const bitmap = createBitmap(size, size, 0x000000ff);
-  const data = bitmap.data;
-
-  for (let y = 0; y < size; y++) {
-    const ny = Math.abs((y + 0.5) / size - 0.5) * 2;
-    for (let x = 0; x < size; x++) {
-      const nx = Math.abs((x + 0.5) / size - 0.5) * 2;
-      const edge = Math.max(nx, ny);
-      const t = Math.min(1, Math.max(0, (edge - 0.62) / 0.36));
-      const smooth = t * t * (3 - 2 * t);
-      const coverage = Math.round((1 - smooth) * 255);
-      const offset = (y * size + x) * 4;
-      data[offset] = coverage;
-      data[offset + 1] = coverage;
-      data[offset + 2] = coverage;
-      data[offset + 3] = 255;
-    }
-  }
-
-  return createTexture({
-    source: bitmap,
-    colorSpace: 'linear',
-    sampler: createClampLinearSampler(),
-  });
-}
-
 // PBR material intent (per the sample's assets): floor = stone (rough dielectric), beach ball =
 // vinyl (smooth dielectric), trinket = mixed metal + wood (part-metallic), ring = polished metal.
 export function createSceneMaterials(): SceneMaterials {
@@ -55,8 +25,6 @@ export function createSceneMaterials(): SceneMaterials {
     roughness: 0.85,
   });
   planeMaterial.doubleSided = true;
-  planeMaterial.alphaMode = 'blend';
-  planeMaterial.alphaMap = createFloorEdgeFadeTexture();
 
   const sphereMaterial = createStandardPbrMaterial({
     baseColor: 0xffffffff,
@@ -138,9 +106,6 @@ export async function createMetalRoughnessFromSpecular(url: string): Promise<Tex
 
 export async function loadSceneTextures(materials: SceneMaterials, tilingSampler: Sampler): Promise<void> {
   const { planeMaterial, sphereMaterial, cubeMaterial, torusMaterial } = materials;
-  // The remastered floor is 1.8x wider than the original 1000-unit plane, so 3.6 repeats retain the
-  // original two-tiles-per-1000-unit density while the independent alpha map feathers only once.
-  const floorUvScale = { x: 3.6, y: 3.6 };
 
   const torusWeaveNormalImage = await loadImageResourceFromUrl('awayjs/weave_normal.jpg');
   const torusNormalTex = createTexture({
@@ -173,11 +138,11 @@ export async function loadSceneTextures(materials: SceneMaterials, tilingSampler
         normal: 'awayjs/floor_normal.jpg',
       },
       tilingSampler,
-      floorUvScale,
+      { x: 2, y: 2 },
     ),
     createMetalRoughnessFromSpecular('awayjs/floor_specular.jpg').then((tex) => {
       tex.sampler = tilingSampler;
-      setTextureUvScale(tex, floorUvScale.x, floorUvScale.y);
+      setTextureUvScale(tex, 2, 2);
       planeMaterial.metallicRoughnessMap = tex;
     }),
     applyTextures(

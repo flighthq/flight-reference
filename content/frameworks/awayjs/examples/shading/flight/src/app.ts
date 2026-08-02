@@ -133,7 +133,7 @@ const lights = createScene3DLights({ ambient, directional, hemisphere: [cyanFill
 
 const { planeMaterial, sphereMaterial, cubeMaterial, torusMaterial } = createSceneMaterials();
 
-const planeGeometry = createPlaneMeshGeometry(1800, 1800, 1, 1);
+const planeGeometry = createPlaneMeshGeometry(1000, 1000, 1, 1);
 const plane = createMesh(planeGeometry, [planeMaterial]);
 plane.position.y = -20;
 invalidateNodeLocalTransform(plane);
@@ -142,6 +142,9 @@ addNodeChild(scene.root, plane);
 const sphereGeometry = createSphereMeshGeometry(150, 40, 20);
 const sphere = createMesh(sphereGeometry, [sphereMaterial]);
 setVector3(sphere.position, ...awayPosition(300, 160, 300));
+const sphereRotation = createQuaternion();
+setQuaternionFromAxisAngle(sphereRotation, createVector3(0, 1, 0), Math.PI);
+copyQuaternion(sphere.rotation, sphereRotation);
 invalidateNodeLocalTransform(sphere);
 addNodeChild(scene.root, sphere);
 

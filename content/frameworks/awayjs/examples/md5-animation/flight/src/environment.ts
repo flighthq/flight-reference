@@ -1,6 +1,5 @@
-import type { CubeTexture, Environment, Mesh, ScreenSpaceFogEffect } from '@flighthq/sdk';
+import type { Environment, Mesh, ScreenSpaceFogEffect } from '@flighthq/sdk';
 import {
-  createCubeTexture,
   createEnvironment,
   createExtendedPbrMaterial,
   createMesh,
@@ -11,9 +10,10 @@ import {
   createTexture,
   createTilingSampler,
   loadImageResourceFromUrl,
-  setCubeTextureFace,
   setTextureUvScale,
 } from '@flighthq/sdk';
+
+import { createCubeTextureFromAwayFaces } from '../../../_shared/flight/src/cubemap';
 
 export interface EnvironmentData {
   environment: Environment;
@@ -26,9 +26,8 @@ export async function loadEnvironment(): Promise<EnvironmentData> {
   const skyImages = await Promise.all(
     skyFaceNames.map((face) => loadImageResourceFromUrl(`awayjs/skybox/grimnight_${face}.png`)),
   );
-  const skyTexture: CubeTexture = createCubeTexture();
-  for (let i = 0; i < skyImages.length; i++) setCubeTextureFace(skyTexture, i, skyImages[i]);
-  const environment = createEnvironment({ environment: skyTexture, intensity: 1 });
+  const skyTexture = createCubeTextureFromAwayFaces(skyImages);
+  const environment = createEnvironment({ environment: skyTexture, intensity: 0.75 });
 
   const [rockDiffuse, rockNormal, rockSpecular] = await Promise.all([
     loadImageResourceFromUrl('awayjs/rockbase_diffuse.jpg'),
@@ -63,12 +62,14 @@ export async function loadEnvironment(): Promise<EnvironmentData> {
   const groundMesh = createMesh(createPlaneMeshGeometry(50000, 50000, 1, 1), [groundMaterial]);
 
   // WebGL stores perspective depth nonlinearly. These window-depth values correspond to the AwayJS
-  // fog interval of 2,500–5,000 world units for this camera's near/far planes.
+  // fog interval of 2,500–5,000 world units for this camera's near/far planes. Screen-space fog also
+  // sees the skybox at far depth, so keep its density restrained: the source's material fog never
+  // obscured the skybox itself.
   const fogEffect = createScreenSpaceFogEffect({
-    color: 0x060912ff,
+    color: 0x02040aff,
     near: 0.995984,
     far: 1,
-    density: 5,
+    density: 0.45,
   });
 
   return { environment, groundMesh, fogEffect };

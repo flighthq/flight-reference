@@ -104,7 +104,7 @@ const [{ environment, groundMesh, fogEffect }, character, redLightImage, blueLig
   loadImageResourceFromUrl('awayjs/bluelight.png'),
 ]);
 addNodeChild(scene.root, groundMesh);
-const effects = [fogEffect, createToneMapEffect({ exposure: 1.15 }), createFxaaEffect()];
+const effects = [fogEffect, createToneMapEffect({ exposure: 0.9 }), createFxaaEffect()];
 
 const lightRig = createMd5LightRig(scene.root, redLightImage, blueLightImage);
 const { directional: whiteLight, lights } = lightRig;
@@ -117,7 +117,7 @@ const shadowCamera = createCamera3D({
 });
 // Recenter this box on the moving character each frame so the shadow retains its detail after root
 // motion carries the model away from the scene origin.
-const shadowBounds = createAabb(-400, -20, -400, 400, 260, 400);
+const shadowBounds = createAabb(-250, -20, -250, 250, 180, 250);
 
 const { clips, skinnedMeshes, characterPositionNode, characterNode, gobTexture } = character;
 const yAxisVec = createVector3(0, 1, 0);
@@ -254,13 +254,14 @@ function frame(ts: number): void {
   updateCamera();
   orientScene3DBillboardsToCamera(scene.root, camera);
 
-  shadowBounds.min.x = characterX - 400;
-  shadowBounds.min.z = characterZ - 400;
-  shadowBounds.max.x = characterX + 400;
-  shadowBounds.max.z = characterZ + 400;
+  shadowBounds.min.x = characterX - 250;
+  shadowBounds.min.z = characterZ - 250;
+  shadowBounds.max.x = characterX + 250;
+  shadowBounds.max.z = characterZ + 250;
   configureDirectionalShadowCamera3D(shadowCamera, whiteLight.direction, shadowBounds);
-  // Only the character casts. The source explicitly excludes the ground and animated light cards.
-  drawGlScene3DShadowMap(glState, characterPositionNode.root, shadowCamera);
+  // Use the SDK's scene-root traversal for shadow casters. The tight moving bounds keep the map
+  // concentrated on the character and its contact shadow rather than the decorative ground plane.
+  drawGlScene3DShadowMap(glState, scene.root, shadowCamera);
 
   renderSkyboxScene(glState, canvas, skyboxRef, environment, scene.root, camera, lights, effects);
 

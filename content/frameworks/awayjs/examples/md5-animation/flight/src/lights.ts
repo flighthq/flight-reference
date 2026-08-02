@@ -22,15 +22,15 @@ export interface Md5LightRig {
 export function createMd5LightRig(root: Node3D, redImage: Image, blueImage: Image): Md5LightRig {
   const redLight = createPointLightFromAway({
     color: 0xff1111,
-    diffuse: 1.2,
+    diffuse: 0.9,
     range: 5000,
-    referenceDistance: 950,
+    referenceDistance: 850,
   });
   const blueLight = createPointLightFromAway({
     color: 0x1111ff,
-    diffuse: 1.2,
+    diffuse: 0.9,
     range: 5000,
-    referenceDistance: 950,
+    referenceDistance: 850,
   });
   const { directional, ambient } = createDirectionalLightFromAway({
     direction: awayDirection(-50, -20, 10),
@@ -38,9 +38,9 @@ export function createMd5LightRig(root: Node3D, redImage: Image, blueImage: Imag
     diffuse: 1,
     ambient: 1,
     ambientColor: 0x303040,
-    // The source's gamma-space ambient fill does not survive a literal linear-PBR conversion. Lift
-    // it enough to expose the diffuse texture while retaining the cool, night-time shadow colour.
-    tuning: { diffuse: 1.1, ambient: 1.5, ambientColor: 0x485064 },
+    // Retain just enough cool fill to read the diffuse texture while allowing the directional
+    // shadow and roaming red/blue lights to define the Doom-like character silhouette.
+    tuning: { diffuse: 1.1, ambient: 0.65, ambientColor: 0x343947 },
   });
 
   const redSprite = createLightSprite(redImage);

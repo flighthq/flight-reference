@@ -13,6 +13,7 @@ import {
   beginGlRenderEffectPipeline,
   BlendMode,
   copyQuaternion,
+  createBlinnPhongMaterial,
   createBoxMeshGeometry,
   createFxaaEffect,
   createGlCanvasElement,
@@ -22,7 +23,6 @@ import {
   createQuaternion,
   createScene3D,
   createScene3DLights,
-  createStandardPbrMaterial,
   createTexture,
   createToneMapEffect,
   createTorusMeshGeometry,
@@ -31,7 +31,6 @@ import {
   defaultGlToneMapEffectRunner,
   drawGlScene3D,
   endGlRenderEffectPipeline,
-  getPbrRoughnessFromPhongShininess,
   invalidateNodeLocalTransform,
   loadImageResourceFromUrl,
   multiplyQuaternion,
@@ -52,7 +51,7 @@ import {
 
 import { awayDirection, awayPosition, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
-import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
+import { applyAwayGloss, createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
 import { createScene3DContext } from './renderer';
 
 const DEG = Math.PI / 180;
@@ -73,21 +72,28 @@ const { directional, ambient } = createDirectionalLightFromAway({
   diffuse: 2.8,
   ambient: 0.4,
   ambientColor: 0x85b2cd,
+  shading: 'phong',
 });
 const lights = createScene3DLights({ ambient, directional });
 
 const image = await loadImageResourceFromUrl('awayjs/spacy_texture.png');
 const texture = createTexture({ source: image });
 
-const material = createStandardPbrMaterial({
-  baseColor: 0xffffffff,
-  metallic: 0,
-  roughness: getPbrRoughnessFromPhongShininess(50),
+// AwayJS MethodMaterial uses a classic Phong response. Keeping this demo on Flight's classic path
+// avoids the dielectric Fresnel rim that the PBR material turned into white outlines under additive
+// blending, while preserving the original transparent, double-sided space-texture treatment.
+const material = createBlinnPhongMaterial({
+  // A cool diffuse tint keeps the source texture's white texels luminous without clipping the
+  // silhouette to neutral white under the demo's intentionally strong 2.8× directional light.
+  diffuse: 0x80a8c0ff,
+  diffuseMap: texture,
+  alphaMode: 'blend',
+  blendMode: BlendMode.Add,
+  doubleSided: true,
 });
-material.baseColorMap = texture;
-material.blendMode = BlendMode.Add;
-material.alphaMode = 'blend';
-material.doubleSided = true;
+// The additive space texture already supplies its own luminous detail. A second white specular lobe
+// accumulates at silhouettes and reintroduces the very edge halo the classic material avoids.
+applyAwayGloss(material, { gloss: 50, specular: 0 });
 
 const torusGeometry = createTorusMeshGeometry(150, 80, 32, 16);
 const torus = createMesh(torusGeometry, [material]);

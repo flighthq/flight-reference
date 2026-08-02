@@ -43,7 +43,7 @@ export function createSceneMaterials(): SceneMaterials {
     // The source JPEG is opaque. State that explicitly, then keep the bright frame reflective without
     // letting it turn into a white mirror around the darker wood panels (which reads as transparency).
     alphaMode: 'opaque',
-    baseColor: 0x60b8b8ff,
+    baseColor: 0xffffffff,
     metallic: 0.5,
     roughness: 1,
   });

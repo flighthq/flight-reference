@@ -13,7 +13,6 @@ import {
   beginGlRenderEffectPipeline,
   BlendMode,
   copyQuaternion,
-  createBlinnPhongMaterial,
   createBoxMeshGeometry,
   createCustomShaderMaterial,
   createFxaaEffect,
@@ -55,11 +54,11 @@ import {
 
 import { awayDirection, awayPosition, createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
-import { applyAwayGloss, createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
+import { createDirectionalLightFromAway } from '../../../_shared/flight/src/lighting';
 import { createScene3DContext } from './renderer';
 
 const DEG = Math.PI / 180;
-const TORUS_CUTOUT_SHADER = 'cubePrimitiveTorusCutout';
+const CUTOUT_SHADER = 'cubePrimitiveCutout';
 
 const ctx = createScene3DContext({
   width: window.innerWidth,
@@ -68,7 +67,7 @@ const ctx = createScene3DContext({
 });
 
 registerGlCustomShaderMaterial(ctx.state);
-registerGlCustomMaterialShader(ctx.state, TORUS_CUTOUT_SHADER, {
+registerGlCustomMaterialShader(ctx.state, CUTOUT_SHADER, {
   vertex: `#version 300 es
 layout(location = 0) in vec3 a_position;
 layout(location = 1) in vec3 a_normal;
@@ -95,8 +94,8 @@ uniform vec3 u_ambientRadiance;
 out vec4 o_color;
 void main() {
   vec4 texel = texture(u_diffuseMap, v_uv);
-  // Reject the torus's heavily minified transition texels; leaving them blended turns the lit side
-  // of each transparent window into a pale outline.
+  // Reject filtered transition texels; leaving them blended turns the lit side of each transparent
+  // window into a pale outline on both the cube and the more heavily minified torus.
   if (texel.a < 0.99) discard;
   vec3 normal = normalize(v_normal);
   if (!gl_FrontFacing) normal = -normal;
@@ -130,28 +129,14 @@ const texture = createTexture({
   sampler: createSampler({ magFilter: 'linear', minFilter: 'linear', mipmaps: false }),
 });
 
-// AwayJS MethodMaterial uses a classic Phong response. Keeping this demo on Flight's classic path
-// avoids the dielectric Fresnel rim that the PBR material turned into white outlines under additive
-// blending, while preserving the original transparent, double-sided space-texture treatment.
-const cubeMaterial = createBlinnPhongMaterial({
-  // A cool diffuse tint keeps the source texture's white texels luminous without clipping the
-  // silhouette to neutral white under the demo's intentionally strong 2.8× directional light.
-  diffuse: 0x80a8c0ff,
-  diffuseMap: texture,
-  alphaMode: 'blend',
-  blendMode: BlendMode.Add,
-  doubleSided: true,
-});
-// The additive space texture already supplies its own luminous detail. A second white specular lobe
-// accumulates at silhouettes and reintroduces the very edge halo the classic material avoids.
-applyAwayGloss(cubeMaterial, { gloss: 50, specular: 0 });
-
-const torusMaterial = createCustomShaderMaterial({
-  shaderKey: TORUS_CUTOUT_SHADER,
+// AwayJS MethodMaterial is a classic lit material. Use one bright, non-PBR response for both meshes;
+// its hard alpha boundary fixes the actual cutout artifact instead of hiding it with a dark tint.
+const cutoutMaterial = createCustomShaderMaterial({
+  shaderKey: CUTOUT_SHADER,
   textures: { u_diffuseMap: texture },
   uniforms: {
-    // Linear-space equivalents of the source material tint and AwayJS light values.
-    u_diffuseTint: [0.216, 0.392, 0.527],
+    // Linear-space equivalents of the source white material and AwayJS light values.
+    u_diffuseTint: [1, 1, 1],
     u_lightDirection: [1, 0, 0],
     u_lightRadiance: [2.8, 2.8, 2.8],
     u_ambientRadiance: [0.094, 0.178, 0.244],
@@ -162,11 +147,11 @@ const torusMaterial = createCustomShaderMaterial({
 });
 
 const torusGeometry = createTorusMeshGeometry(150, 80, 32, 16);
-const torus = createMesh(torusGeometry, [torusMaterial]);
+const torus = createMesh(torusGeometry, [cutoutMaterial]);
 addNodeChild(scene.root, torus);
 
 const cubeGeometry = createBoxMeshGeometry(20, 20, 20);
-const cube = createMesh(cubeGeometry, [cubeMaterial]);
+const cube = createMesh(cubeGeometry, [cutoutMaterial]);
 setVector3(cube.position, ...awayPosition(130, 0, 40));
 invalidateNodeLocalTransform(cube);
 addNodeChild(scene.root, cube);

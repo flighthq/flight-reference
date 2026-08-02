@@ -1,0 +1,21 @@
+const SWFLiteLibrary = require('openfl/lib/_gen/swf/exporters/swflite/SWFLiteLibrary.js').default;
+require('openfl/lib/_gen/swf/exporters/core/FilterType.js');
+require('openfl/lib/_gen/swf/exporters/core/ShapeCommand.js');
+require('openfl/lib/_gen/swf/exporters/swflite/BitmapSymbol.js');
+require('openfl/lib/_gen/swf/exporters/swflite/ButtonSymbol.js');
+require('openfl/lib/_gen/swf/exporters/swflite/DynamicTextSymbol.js');
+require('openfl/lib/_gen/swf/exporters/swflite/FontSymbol.js');
+require('openfl/lib/_gen/swf/exporters/swflite/ShapeSymbol.js');
+require('openfl/lib/_gen/swf/exporters/swflite/SpriteSymbol.js');
+require('openfl/lib/_gen/swf/exporters/swflite/StaticTextRecord.js');
+require('openfl/lib/_gen/swf/exporters/swflite/StaticTextSymbol.js');
+require('openfl/lib/_gen/swf/exporters/swflite/SWFLite.js');
+require('openfl/lib/_gen/swf/exporters/swflite/SWFSymbol.js');
+require('openfl/lib/_gen/swf/exporters/swflite/TextSymbol.js');
+require('openfl/lib/_gen/swf/exporters/swflite/timeline/Frame.js');
+require('openfl/lib/_gen/swf/exporters/swflite/timeline/FrameObject.js');
+require('openfl/lib/_gen/swf/exporters/swflite/timeline/FrameObjectType.js');
+require('openfl/lib/_gen/swf/exporters/swflite/timeline/SymbolTimeline.js');
+require('openfl/lib/_gen/swf/exporters/swflite/timeline/_SymbolTimeline/FrameSymbolInstance.js');
+
+module.exports = SWFLiteLibrary;

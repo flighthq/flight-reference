@@ -1,5 +1,7 @@
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { basename, join, relative, resolve, sep } from 'node:path';
 
 import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
@@ -9,6 +11,9 @@ const repoRoot = resolve(__dirname);
 const openflContentDir = join(repoRoot, 'content', 'frameworks', 'openfl');
 const starlingContentDir = join(repoRoot, 'content', 'frameworks', 'starling');
 const awayjsContentDir = join(repoRoot, 'content', 'frameworks', 'awayjs');
+const openflPublicSwfDir = join(repoRoot, 'content', 'assets', 'public', 'openfl', 'swf');
+const openflSwfLiteRuntimeId = 'openfl-swflite-runtime';
+const openflSwfLiteRuntimePath = join(repoRoot, 'content', 'harness', 'openfl-swflite-runtime.cjs');
 
 function resolveFlightWorkspaceRoot(): string | null {
   const candidate = process.env.FLIGHT_REPO;
@@ -547,6 +552,143 @@ function starlingPreviewEntrySource(corpus: string, name: string): string | null
 // Vite plugin
 // ---------------------------------------------------------------------------
 
+interface OpenflSwfLiteAsset {
+  fileName: string;
+  source: Buffer;
+}
+
+function collectOpenflSwfLiteAssets(bundleDir: string, currentDir = bundleDir): OpenflSwfLiteAsset[] {
+  const assets: OpenflSwfLiteAsset[] = [];
+
+  for (const entry of readdirSync(currentDir, { withFileTypes: true })) {
+    const filePath = join(currentDir, entry.name);
+    if (entry.isDirectory()) {
+      assets.push(...collectOpenflSwfLiteAssets(bundleDir, filePath));
+    } else if (entry.isFile()) {
+      assets.push({
+        fileName: relative(bundleDir, filePath).split(sep).join('/'),
+        source: readFileSync(filePath),
+      });
+    }
+  }
+
+  return assets;
+}
+
+function openflSwfLitePlugin(): Plugin {
+  const openflCli = join(repoRoot, 'node_modules', 'openfl', 'bin', 'openfl.js');
+  const virtualPrefix = '\0reference:openfl-swflite:';
+  const sourcePaths = new Set<string>();
+  const generatedAssets = new Map<string, Buffer>();
+  let viteBase = '/';
+  let viteCommand: 'build' | 'serve' = 'serve';
+
+  function generateAssets(sourcePath: string): OpenflSwfLiteAsset[] {
+    const temporaryRoot = mkdtempSync(join(tmpdir(), 'flight-reference-swflite-'));
+    try {
+      if (!existsSync(sourcePath)) throw new Error(`OpenFL SWF asset does not exist: ${sourcePath}`);
+
+      const bundleName = `${basename(sourcePath, '.swf')}.bundle`;
+      const bundleDir = join(temporaryRoot, bundleName);
+      const bundlePrefix = `openfl/swf/${bundleName}/`;
+      execFileSync(process.execPath, [openflCli, 'process', sourcePath, bundleDir], { stdio: 'pipe' });
+
+      for (const fileName of generatedAssets.keys()) {
+        if (fileName.startsWith(bundlePrefix)) generatedAssets.delete(fileName);
+      }
+
+      const assets = collectOpenflSwfLiteAssets(bundleDir).map((asset) => ({
+        fileName: `${bundlePrefix}${asset.fileName}`,
+        source: asset.source,
+      }));
+      for (const asset of assets) {
+        generatedAssets.set(asset.fileName, asset.source);
+      }
+
+      return assets;
+    } finally {
+      rmSync(temporaryRoot, { recursive: true, force: true });
+    }
+  }
+
+  function requestAssetPath(requestUrl: string): string {
+    let urlPath = requestUrl.split('?')[0] ?? '/';
+    if (viteBase !== '/' && urlPath.startsWith(viteBase)) urlPath = `/${urlPath.slice(viteBase.length)}`;
+    return urlPath.replace(/^\/+/, '');
+  }
+
+  return {
+    name: 'reference:openfl-swflite',
+    enforce: 'pre',
+
+    configResolved(config) {
+      viteBase = config.base;
+      viteCommand = config.command;
+    },
+
+    resolveId(source) {
+      const [publicUrl, query] = splitFirst(source, '?');
+      if (!new URLSearchParams(query).has('swflite')) return;
+      if (!publicUrl.startsWith('/openfl/swf/') || !publicUrl.endsWith('.swf')) return;
+
+      const sourcePath = resolve(repoRoot, 'content', 'assets', 'public', publicUrl.slice(1));
+      if (!sourcePath.startsWith(`${openflPublicSwfDir}${sep}`)) return;
+      return `${virtualPrefix}${sourcePath}`;
+    },
+
+    load(id) {
+      if (!id.startsWith(virtualPrefix)) return;
+
+      const sourcePath = id.slice(virtualPrefix.length);
+      sourcePaths.add(sourcePath);
+      this.addWatchFile(sourcePath);
+      const assets = generateAssets(sourcePath);
+      if (viteCommand === 'build') {
+        for (const asset of assets) this.emitFile({ type: 'asset', ...asset });
+      }
+
+      const bundleUrl = `openfl/swf/${basename(sourcePath, '.swf')}.bundle`;
+      return `
+        import SWFLiteLibrary from ${JSON.stringify(openflSwfLiteRuntimeId)};
+        if (typeof SWFLiteLibrary !== 'function') throw new Error('OpenFL SWFLite runtime is unavailable');
+        export default import.meta.env.BASE_URL + ${JSON.stringify(bundleUrl)};
+      `;
+    },
+
+    configureServer(server) {
+      server.watcher.on('change', (changedPath) => {
+        if (!sourcePaths.has(changedPath)) return;
+
+        try {
+          generateAssets(changedPath);
+          server.ws.send({ type: 'full-reload' });
+        } catch (error) {
+          server.config.logger.error(`Failed to generate OpenFL SWFLite assets: ${String(error)}`);
+        }
+      });
+
+      server.middlewares.use((req, res, next) => {
+        const assetPath = requestAssetPath(req.url ?? '/');
+        const source = generatedAssets.get(assetPath);
+        if (!source) return next();
+
+        const extension = assetPath.slice(assetPath.lastIndexOf('.'));
+        const contentType =
+          extension === '.json'
+            ? 'application/json; charset=utf-8'
+            : extension === '.xml'
+              ? 'application/xml; charset=utf-8'
+              : extension === '.png'
+                ? 'image/png'
+                : 'application/octet-stream';
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Cache-Control', 'no-store');
+        res.end(source);
+      });
+    },
+  };
+}
+
 function referencePlugin(): Plugin[] {
   let viteBase = '/';
 
@@ -892,7 +1034,7 @@ function referencePlugin(): Plugin[] {
 
 export default defineConfig({
   base: process.env.VITE_BASE || '/',
-  plugins: [react(), ...referencePlugin()],
+  plugins: [react(), openflSwfLitePlugin(), ...referencePlugin()],
   publicDir: resolve(repoRoot, 'content/assets/public'),
   optimizeDeps: {
     force: true,
@@ -902,11 +1044,13 @@ export default defineConfig({
         $_: 'globalThis.$_',
       },
     },
-    include: flightLocalSource && !watchFlightSdk ? ['@flighthq/sdk'] : [],
+    include: [openflSwfLiteRuntimeId, ...(flightLocalSource && !watchFlightSdk ? ['@flighthq/sdk'] : [])],
     exclude: watchFlightSdk ? ['@flighthq/sdk'] : [],
   },
   resolve: {
     alias: {
+      [openflSwfLiteRuntimeId]: openflSwfLiteRuntimePath,
+      'openfl/lib/_gen': resolve(repoRoot, 'node_modules/openfl/lib/_gen'),
       '@ft/render': join(repoRoot, 'content', 'harness', 'render.ts'),
       '@ft/verify': join(repoRoot, 'content', 'harness', 'verify.ts'),
       ...(flightLocalSource ? { ...flightPackageAliases, ...flightHarnessAliases } : {}),

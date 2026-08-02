@@ -1,4 +1,4 @@
-declare module '*.swf' {
+declare module '*.swf?url&swflite' {
   const path: string;
-  export = path;
+  export default path;
 }

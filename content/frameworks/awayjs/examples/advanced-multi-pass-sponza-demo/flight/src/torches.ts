@@ -7,6 +7,7 @@ import {
   createSampler,
   createTexture,
   createUnlitMaterial,
+  setTextureFlip,
   setTextureUvOffset,
   setTextureUvScale,
 } from '@flighthq/sdk';
@@ -38,6 +39,9 @@ export function createSponzaTorches(root: Node3D, fireImage: Image): SponzaTorch
       wrapV: 'clamp-to-edge',
     }),
   });
+  // Flight's billboard quad addresses V opposite to AwayJS's plane geometry. Flip the atlas once so
+  // every animated frame rises from the torch instead of hanging downward.
+  setTextureFlip(fireTexture, false, true);
   setTextureUvScale(fireTexture, 1 / 16, 1);
 
   const flameMaterial = createUnlitMaterial({

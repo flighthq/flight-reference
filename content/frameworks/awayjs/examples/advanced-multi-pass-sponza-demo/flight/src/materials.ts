@@ -105,6 +105,18 @@ export function createTextureMap(
 
 const knownMaterialNames = new Set(Object.keys(materialNameToTextureFile));
 
+// These maps already contain the three fabric dyes, but direct PBR exposure and atmospheric fill can
+// wash their non-dominant channels toward grey. A restrained multiplicative grade preserves the
+// authored weave and gold trim while keeping the blue, red, and green variants distinct.
+const materialBaseColor: Partial<Record<string, number>> = {
+  fabric_g: 0x94b8ffff,
+  fabric_c: 0xffa090ff,
+  fabric_f: 0xa0ffadff,
+  fabric_d: 0x94b8ffff,
+  fabric_a: 0xffa090ff,
+  fabric_e: 0xa0ffadff,
+};
+
 // The source only supplies diffuse/specular/normal maps, so these are deliberately conservative
 // material classifications rather than an attempted texture-channel conversion. Roughness carries
 // the broad physical character while the original specular texture preserves the authored detail.
@@ -158,7 +170,7 @@ export function getOrCreateMaterial(
   // roughness. (The scalar SpecularPbr map is alpha-only; these JPGs belong on specularColorMap.)
   mat = createExtendedPbrMaterial({
     standard: createStandardPbrMaterialProperties({
-      baseColor: 0xffffffff,
+      baseColor: materialBaseColor[name] ?? 0xffffffff,
       baseColorMap: textureFile ? (textureMap.get(textureFile) ?? null) : null,
       metallic: materialMetallic[name] ?? 0,
       normalMap: normalFile ? (textureMap.get(normalFile) ?? null) : null,

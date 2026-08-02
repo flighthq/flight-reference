@@ -1,46 +1,28 @@
-import type {
-  Adjustment,
-  BlinnPhongMaterial,
-  Camera3D,
-  Environment,
-  GlRenderEffectPipeline,
-  GlRenderState,
-  Node3D,
-  PerspectiveProjection,
-  RenderEffect,
-  Scene3DLights,
-} from '@flighthq/sdk';
+import type { ExtendedPbrMaterial, Node3D, PerspectiveProjection } from '@flighthq/sdk';
 import {
   addNodeChild,
   bakeGlEnvironmentIbl,
-  beginGlRenderEffectPipeline,
+  cloneMesh,
+  configureDirectionalShadowCamera3DTightFit,
+  createAabb,
+  createCamera3D,
   createEnvironment,
   createFxaaEffect,
-  createGlCanvasElement,
-  createGlRenderEffectPipeline,
-  createGlRenderState,
+  createOrthographicProjection,
   createScene3D,
   createScene3DFromAwd2,
   createScene3DLights,
+  createScreenSpaceFogEffect,
   createToneMapEffect,
-  defaultGlFxaaEffectRunner,
-  defaultGlToneMapEffectRunner,
-  drawGlEnvironmentSkybox,
-  drawGlScene3D,
-  endGlRenderEffectPipeline,
   getNodeChildren,
+  getNode3DWorldBounds,
+  getNodeWorldMatrix4,
+  isMesh,
   loadImageResourceFromUrl,
+  orientScene3DBillboardsToCamera,
   packOpaqueColor,
-  registerGlBlinnPhongMaterial,
-  registerBuiltInGlModifierSnippets,
-  registerGlExtendedPbrMaterial,
-  registerGlRenderEffect,
-  registerGlShadedMaterial,
-  registerGlSpecularPbrExtension,
-  registerStandardGlTextureResolvers,
-  registerGlStandardPbrMaterial,
-  registerGlUnlitMaterial,
-  renderGlBackground,
+  drawGlScene3DShadowMap,
+  setNodeLocalMatrix4,
 } from '@flighthq/sdk';
 
 import {
@@ -55,9 +37,9 @@ import { bindFirstPersonControls } from './controls';
 import { createScene3DContext } from './renderer';
 import type { SkyboxRenderState } from './skybox';
 import { renderSkyboxScene } from './skybox';
+import { createSponzaTorches } from './torches';
 import {
   createTextureMap,
-  getOrCreateMaterial,
   loadSponzaTextures,
   materialNameToNormalFile,
   materialNameToSpecularFile,
@@ -65,16 +47,26 @@ import {
   walkAndAssignMaterials,
 } from './materials';
 
+// AwayJS used linear fog from 0–4,000 world units. Flight's post effect consumes the camera's
+// nonlinear window depth, so this starts around 800 units and reaches the background near 4,000.
+const fogEffect = createScreenSpaceFogEffect({
+  color: packOpaqueColor(0x9090e7),
+  near: 0.98,
+  far: 0.999,
+  density: 2.5,
+});
+const effects = [fogEffect, createToneMapEffect(), createFxaaEffect()];
+
 const ctx = createScene3DContext({
   width: window.innerWidth,
   height: window.innerHeight,
   backgroundColor: packOpaqueColor(0x9090e7),
-  effects: [createToneMapEffect(), createFxaaEffect()],
+  effects,
 });
 
 const scene = createScene3D();
 
-const camera = createCameraFromAway({ fov: 60 });
+const camera = createCameraFromAway({ fov: 60, far: 5000 });
 
 const lightElevation = Math.PI / 18;
 const lightAzimuth = Math.PI / 2;
@@ -85,11 +77,11 @@ const { directional, ambient } = createDirectionalLightFromAway({
     Math.sin(lightElevation) * Math.sin(lightAzimuth),
   ),
   color: 0xeedddd,
-  ambient: 0.35,
+  ambient: 0.3,
   ambientColor: 0x808090,
-  shading: 'phong',
 });
-const lights = createScene3DLights({ ambient, directional });
+directional.castsShadow = true;
+directional.pcfRadius = 2;
 
 const sponzaTextureFiles = [
   ...new Set([
@@ -108,14 +100,15 @@ const skyboxFaceFiles = [
   'hourglass_negZ.jpg',
 ];
 
-const [awdBuffer, sponzaTextureImages, skyboxFaceImages] = await Promise.all([
+const [awdBuffer, sponzaTextureImages, skyboxFaceImages, fireImage] = await Promise.all([
   fetch('awayjs/sponza/sponza.awd').then((r) => r.arrayBuffer()),
   loadSponzaTextures(sponzaTextureFiles),
   Promise.all(skyboxFaceFiles.map((file) => loadImageResourceFromUrl(`awayjs/skybox/${file}`))),
+  loadImageResourceFromUrl('awayjs/fire.png'),
 ]);
 
 const textureMap = createTextureMap(sponzaTextureFiles, sponzaTextureImages);
-const materialCache = new Map<string, BlinnPhongMaterial>();
+const materialCache = new Map<string, ExtendedPbrMaterial>();
 
 const awdScene = createScene3DFromAwd2(new Uint8Array(awdBuffer));
 
@@ -125,10 +118,43 @@ for (const child of getNodeChildren(awdScene.root)) {
   addNodeChild(scene.root, child);
 }
 
+// The shadow-map renderer intentionally visits every drawable node, including hidden ones. Build a
+// flat, world-space clone containing only the visible architecture so discarded AWD pieces and the
+// additive flame cards cannot cover the open courtyard in the sun pass.
+const shadowScene = createScene3D();
+function addVisibleShadowMeshes(source: Node3D, parentVisible = true): void {
+  const visible = parentVisible && source.enabled && source.visible;
+  if (!visible) return;
+
+  if (isMesh(source)) {
+    const shadowMesh = cloneMesh(source);
+    setNodeLocalMatrix4(shadowMesh, getNodeWorldMatrix4(source));
+    addNodeChild(shadowScene.root, shadowMesh);
+  }
+
+  for (const child of getNodeChildren(source)) addVisibleShadowMeshes(child as Node3D, visible);
+}
+addVisibleShadowMeshes(scene.root);
+
+const shadowBounds = createAabb();
+getNode3DWorldBounds(shadowBounds, shadowScene.root);
+const shadowCamera = createCamera3D({
+  near: 1,
+  far: 3000,
+  projection: createOrthographicProjection({ halfWidth: 1000, halfHeight: 1000 }),
+});
+configureDirectionalShadowCamera3DTightFit(shadowCamera, directional.direction, shadowBounds, 1.02);
+drawGlScene3DShadowMap(ctx.state, shadowScene.root, shadowCamera);
+
+const torches = createSponzaTorches(scene.root, fireImage);
+const lights = createScene3DLights({ ambient, directional, point: torches.lights });
+
 const cubeTexture = createCubeTextureFromAwayFaces(skyboxFaceImages);
 const environment = createEnvironment({
   environment: cubeTexture,
-  intensity: 1,
+  // The original skybox was only a backdrop. A restrained IBL contribution gives the remastered PBR
+  // materials plausible reflections without flattening the courtyard's sun/shadow contrast.
+  intensity: 0.4,
 });
 bakeGlEnvironmentIbl(ctx.state, environment);
 const skyboxRef: SkyboxRenderState = { pipeline: null };
@@ -143,9 +169,11 @@ const fps = createFirstPersonControllerFromAway(camera, {
 
 const step = bindFirstPersonControls(ctx.canvas, fps);
 
-function frame(): void {
+function frame(timeMs: number): void {
   step();
-  renderSkyboxScene(ctx.state, ctx.canvas, skyboxRef, environment, scene.root, camera, lights);
+  torches.update(timeMs);
+  orientScene3DBillboardsToCamera(scene.root, camera);
+  renderSkyboxScene(ctx.state, ctx.canvas, skyboxRef, environment, scene.root, camera, lights, effects);
   verifyFrame();
   requestAnimationFrame(frame);
 }

@@ -14,6 +14,7 @@ import {
   createGlRenderState,
   createToneMapEffect,
   defaultGlFxaaEffectRunner,
+  defaultGlScreenSpaceFogEffectRunner,
   defaultGlToneMapEffectRunner,
   drawGlScene3D,
   endGlRenderEffectPipeline,
@@ -84,6 +85,7 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
 
   const effects = options.effects ?? [createToneMapEffect()];
   registerGlRenderEffect(state, 'FxaaEffect', defaultGlFxaaEffectRunner);
+  registerGlRenderEffect(state, 'ScreenSpaceFogEffect', defaultGlScreenSpaceFogEffectRunner);
   registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
 
   let pipeline: GlRenderEffectPipeline | null = null;
@@ -93,7 +95,7 @@ export function createScene3DContext(options: Readonly<Scene3DOptions> = {}): Sc
     height,
     render(scene, camera, lights) {
       if (pipeline === null) {
-        pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
+        pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil-sampled' });
       }
       beginGlRenderEffectPipeline(state, pipeline);
       renderGlBackground(state);

@@ -35,7 +35,7 @@ export function renderSkyboxScene(
   effects: ReadonlyArray<RenderEffect | Adjustment> = [createToneMapEffect()],
 ): void {
   if (ref.pipeline === null) {
-    ref.pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil' });
+    ref.pipeline = createGlRenderEffectPipeline(state, { format: 'rgba16f', depth: 'depth-stencil-sampled' });
   }
   beginGlRenderEffectPipeline(state, ref.pipeline);
   renderGlBackground(state);

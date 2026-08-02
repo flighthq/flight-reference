@@ -1,14 +1,14 @@
-import type { BlinnPhongMaterial, Image, Material, Mesh, Node3D, Texture2D } from '@flighthq/sdk';
+import type { ExtendedPbrMaterial, Image, Material, Mesh, Node3D, Texture2D } from '@flighthq/sdk';
 import {
-  createBlinnPhongMaterial,
+  createExtendedPbrMaterial,
+  createSpecularPbrExtension,
+  createStandardPbrMaterialProperties,
   createTexture,
   createTilingSampler,
   getNodeChildren,
   isMesh,
   loadImageResourceFromUrl,
 } from '@flighthq/sdk';
-
-import { applyAwayGloss } from '../../../_shared/flight/src/lighting';
 
 export const materialNameToTextureFile: Record<string, string> = {
   arch: 'arch_diff.jpg',
@@ -105,38 +105,67 @@ export function createTextureMap(
 
 const knownMaterialNames = new Set(Object.keys(materialNameToTextureFile));
 
+// The source only supplies diffuse/specular/normal maps, so these are deliberately conservative
+// material classifications rather than an attempted texture-channel conversion. Roughness carries
+// the broad physical character while the original specular texture preserves the authored detail.
+const materialRoughness: Partial<Record<string, number>> = {
+  arch: 0.68,
+  Material__298: 0.82,
+  bricks: 0.78,
+  ceiling: 0.82,
+  chain: 0.38,
+  column_a: 0.62,
+  column_b: 0.58,
+  column_c: 0.62,
+  fabric_g: 0.88,
+  fabric_c: 0.88,
+  fabric_f: 0.88,
+  details: 0.55,
+  fabric_d: 0.9,
+  fabric_a: 0.9,
+  fabric_e: 0.9,
+  flagpole: 0.32,
+  floor: 0.52,
+  '16___Default': 0.85,
+  Material__25: 0.58,
+  roof: 0.8,
+  leaf: 0.75,
+  vase: 0.42,
+  vase_hanging: 0.5,
+  Material__57: 0.7,
+  vase_round: 0.4,
+};
+
+const materialMetallic: Partial<Record<string, number>> = {
+  chain: 0.85,
+  flagpole: 0.75,
+};
+
 export function getOrCreateMaterial(
   name: string,
   textureMap: ReadonlyMap<string, Texture2D>,
-  materialCache: Map<string, BlinnPhongMaterial>,
-): BlinnPhongMaterial {
+  materialCache: Map<string, ExtendedPbrMaterial>,
+): ExtendedPbrMaterial {
   let mat = materialCache.get(name);
   if (mat) return mat;
 
-  // AwayJS MethodMaterial uses a classic Blinn-Phong base. Keep the source specular maps as
-  // specular strength instead of reinterpreting them as PBR roughness. Preserve the source's
-  // default gloss; its specularMethod.strength = 2 saturates at Flight's maximum packed-white
-  // specular color through the shared conversion helper.
-  mat = createBlinnPhongMaterial({ diffuse: 0xffffffff });
-  applyAwayGloss(mat, { gloss: 50, specular: 2 });
-
   const textureFile = materialNameToTextureFile[name];
-  if (textureFile) {
-    const tex = textureMap.get(textureFile);
-    if (tex) mat.diffuseMap = tex;
-  }
-
   const normalFile = materialNameToNormalFile[name];
-  if (normalFile) {
-    const tex = textureMap.get(normalFile);
-    if (tex) mat.normalMap = tex;
-  }
-
   const specularFile = materialNameToSpecularFile[name];
-  if (specularFile) {
-    const tex = textureMap.get(specularFile);
-    if (tex) mat.specularMap = tex;
-  }
+  const specularMap = specularFile ? (textureMap.get(specularFile) ?? null) : null;
+
+  // Extended PBR lets us keep Sponza's original RGB specular maps without misreading them as
+  // roughness. (The scalar SpecularPbr map is alpha-only; these JPGs belong on specularColorMap.)
+  mat = createExtendedPbrMaterial({
+    standard: createStandardPbrMaterialProperties({
+      baseColor: 0xffffffff,
+      baseColorMap: textureFile ? (textureMap.get(textureFile) ?? null) : null,
+      metallic: materialMetallic[name] ?? 0,
+      normalMap: normalFile ? (textureMap.get(normalFile) ?? null) : null,
+      roughness: materialRoughness[name] ?? 0.7,
+    }),
+    extensions: specularMap ? [createSpecularPbrExtension({ specularColorMap: specularMap })] : [],
+  });
 
   if (alphaCutoutMaterials.has(name)) {
     mat.alphaMode = 'mask';
@@ -153,7 +182,7 @@ const skippedFlagpoleNums = new Set([260, 261, 263, 265, 268, 269, 271, 273]);
 
 export function walkAndAssignMaterials(
   node: Node3D,
-  materialCache: Map<string, BlinnPhongMaterial>,
+  materialCache: Map<string, ExtendedPbrMaterial>,
   textureMap: ReadonlyMap<string, Texture2D>,
 ): void {
   if (isMesh(node)) {

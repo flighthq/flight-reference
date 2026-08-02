@@ -28,6 +28,8 @@ export function createSceneMaterials(): SceneMaterials {
 
   const sphereMaterial = createStandardPbrMaterial({
     baseColor: 0xffffffff,
+    emissive: 0xffffffff,
+    emissiveStrength: 0.12,
     metallic: 0,
     roughness: 0.3,
   });
@@ -43,14 +45,12 @@ export function createSceneMaterials(): SceneMaterials {
     roughness: 1,
   });
 
-  // AwayJS uses default Phong (gloss ~50, specular 1) with the weave_normal doubling as specular.
-  // In PBR, metallic=0 (dielectric) with low roughness produces a similar tight specular highlight
-  // from the sweeping light. The metallicRoughnessMap (generated from weave_normal below) adds the
-  // per-texel specular variation that AwayJS gets from using weave_normal as both maps.
+  // Give the pale weave texture a cool pewter tint and let the studio environment supply its reflected
+  // color. The map below carries the final metalness and roughness, so these factors stay at one.
   const torusMaterial = createStandardPbrMaterial({
-    baseColor: 0xffffffff,
-    metallic: 0,
-    roughness: 0.15,
+    baseColor: 0xaeb5b9ff,
+    metallic: 1,
+    roughness: 1,
   });
 
   return { planeMaterial, sphereMaterial, cubeMaterial, torusMaterial };
@@ -115,14 +115,12 @@ export async function loadSceneTextures(materials: SceneMaterials, tilingSampler
   });
   torusMaterial.normalMap = torusNormalTex;
 
-  // AwayJS assigns weave_normal.jpg to both the normal and specular maps (using the red channel
-  // as specular intensity). This MR map approximates that by varying roughness from the red
-  // channel — bright texels get lower roughness (tighter highlights), dark texels get higher
-  // roughness. This does not preserve the exact specular strength semantics, but adds per-texel
-  // variation that the flat scalar values alone would miss.
+  // AwayJS assigns weave_normal.jpg to both the normal and specular maps. Preserve that variation as
+  // a medium-rough metallic response: brighter weave catches a tighter highlight, while darker fibers
+  // stay more diffuse. High, slightly sub-unity metalness keeps the result in pewter/silver territory.
   const torusMrImage = createMetallicRoughnessImage(torusWeaveNormalImage, (r) => ({
-    roughness: Math.max(0.08, 1 - r * 1.5),
-    metallic: 0,
+    roughness: 0.34 + (1 - r) * 0.24,
+    metallic: 0.9,
   }));
   torusMaterial.metallicRoughnessMap = createTexture({
     source: torusMrImage,
@@ -145,13 +143,13 @@ export async function loadSceneTextures(materials: SceneMaterials, tilingSampler
       setTextureUvScale(tex, 2, 2);
       planeMaterial.metallicRoughnessMap = tex;
     }),
-    applyTextures(
-      sphereMaterial,
-      {
-        diffuse: 'awayjs/beachball_diffuse.jpg',
-      },
-      tilingSampler,
-    ),
+    loadImageResourceFromUrl('awayjs/beachball_diffuse.jpg').then((image) => {
+      const tex = createTexture({ source: image });
+      sphereMaterial.baseColorMap = tex;
+      // A restrained albedo-matched lift keeps the red panels red beneath the strong cyan fill without
+      // making the vinyl look self-lit or erasing the moving directional shading.
+      sphereMaterial.emissiveMap = tex;
+    }),
     createMetalRoughnessFromSpecular('awayjs/beachball_specular.jpg').then((tex) => {
       sphereMaterial.metallicRoughnessMap = tex;
     }),

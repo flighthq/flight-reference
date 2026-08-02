@@ -1,20 +1,8 @@
-import type {
-  Adjustment,
-  AnimationPlayer,
-  Camera3D,
-  Environment,
-  GlRenderEffectPipeline,
-  GlRenderState,
-  Node3D,
-  PerspectiveProjection,
-  RenderEffect,
-  Scene3DLights,
-} from '@flighthq/sdk';
+import type { AnimationPlayer, PerspectiveProjection } from '@flighthq/sdk';
 import {
   addNodeChild,
   advanceAnimationPlayer,
   applyAnimationClipToScene3D,
-  beginGlRenderEffectPipeline,
   configureDirectionalShadowCamera3D,
   copyQuaternion,
   createAabb,
@@ -27,35 +15,35 @@ import {
   createOrthographicProjection,
   createQuaternion,
   createScene3D,
-  createScene3DLights,
   createToneMapEffect,
   createVector3,
   defaultGlFxaaEffectRunner,
   defaultGlScreenSpaceFogEffectRunner,
   defaultGlToneMapEffectRunner,
   DEG_TO_RAD,
-  drawGlEnvironmentSkybox,
-  drawGlScene3D,
   drawGlScene3DShadowMap,
-  endGlRenderEffectPipeline,
   invalidateNodeLocalTransform,
+  loadImageResourceFromUrl,
+  orientScene3DBillboardsToCamera,
+  registerGlExtendedPbrMaterial,
   registerGlRenderEffect,
+  registerGlSpecularPbrExtension,
   registerStandardGlTextureResolvers,
   registerGlStandardPbrMaterial,
   registerGlUnlitMaterial,
-  renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
+  setTextureUvOffset,
   setVector3,
   updateMeshSkin,
 } from '@flighthq/sdk';
 
-import { awayDirection, createCameraFromAway, setAwayPosition } from '../../../_shared/flight/src/camera';
-import { createDirectionalLightFromAway, createPointLightFromAway } from '../../../_shared/flight/src/lighting';
+import { createCameraFromAway } from '../../../_shared/flight/src/camera';
 import { createGlFrameVerifier } from '../../../_shared/flight/src/verify';
 import { ANIM_NAMES, IDLE_NAME, WALK_NAME, loadCharacter } from './character';
 import { bindCharacterControls } from './controls';
 import { loadEnvironment } from './environment';
+import { createMd5LightRig } from './lights';
 import type { SkyboxRenderState } from './skybox';
 import { renderSkyboxScene } from './skybox';
 
@@ -86,6 +74,8 @@ const glState = createGlRenderState(canvas, {
 // texture resolves to null and the scene renders untextured.
 registerStandardGlTextureResolvers(glState);
 registerGlStandardPbrMaterial(glState);
+registerGlExtendedPbrMaterial(glState);
+registerGlSpecularPbrExtension(glState);
 registerGlUnlitMaterial(glState);
 registerGlRenderEffect(glState, 'FxaaEffect', defaultGlFxaaEffectRunner);
 registerGlRenderEffect(glState, 'ScreenSpaceFogEffect', defaultGlScreenSpaceFogEffectRunner);
@@ -107,20 +97,17 @@ function updateCamera(): void {
   setCamera3DViewMatrix4FromLookAt(camera, eye, cameraTarget, up);
 }
 
-const redLight = createPointLightFromAway({ color: 0xff1111, range: 3000, referenceDistance: 1225 });
-const blueLight = createPointLightFromAway({ color: 0x1111ff, range: 3000, referenceDistance: 1225 });
-const { directional: whiteLight, ambient } = createDirectionalLightFromAway({
-  direction: awayDirection(-50, -20, 10),
-  color: 0xffffee,
-  ambient: 1,
-  ambientColor: 0x303040,
-});
-const lights: Scene3DLights = createScene3DLights({
-  ambient,
-  directional: whiteLight,
-  point: [redLight, blueLight],
-});
+const [{ environment, groundMesh, fogEffect }, character, redLightImage, blueLightImage] = await Promise.all([
+  loadEnvironment(),
+  loadCharacter(),
+  loadImageResourceFromUrl('awayjs/redlight.png'),
+  loadImageResourceFromUrl('awayjs/bluelight.png'),
+]);
+addNodeChild(scene.root, groundMesh);
+const effects = [fogEffect, createToneMapEffect({ exposure: 1.15 }), createFxaaEffect()];
 
+const lightRig = createMd5LightRig(scene.root, redLightImage, blueLightImage);
+const { directional: whiteLight, lights } = lightRig;
 whiteLight.castsShadow = true;
 whiteLight.pcfRadius = 2;
 const shadowCamera = createCamera3D({
@@ -128,15 +115,11 @@ const shadowCamera = createCamera3D({
   far: 10,
   projection: createOrthographicProjection({ halfWidth: 1, halfHeight: 1 }),
 });
-// Keep the shadow map concentrated around the playable area instead of spending its resolution on
-// the full 50,000-unit decorative ground plane.
-const shadowBounds = createAabb(-500, -20, -500, 500, 500, 500);
+// Recenter this box on the moving character each frame so the shadow retains its detail after root
+// motion carries the model away from the scene origin.
+const shadowBounds = createAabb(-400, -20, -400, 400, 260, 400);
 
-const { environment, groundMesh, fogEffect } = await loadEnvironment();
-addNodeChild(scene.root, groundMesh);
-const effects = [fogEffect, createToneMapEffect(), createFxaaEffect()];
-
-const { clips, skinnedMeshes, characterPositionNode, characterNode } = await loadCharacter();
+const { clips, skinnedMeshes, characterPositionNode, characterNode, gobTexture } = character;
 const yAxisVec = createVector3(0, 1, 0);
 const characterQuat = createQuaternion();
 const identityQuat = createQuaternion();
@@ -156,7 +139,6 @@ let isRunning = false;
 let movementDir = 1;
 let spriteRotY = Math.PI;
 let rotationInc = 0;
-let count = 0;
 let characterX = 0;
 let characterZ = 0;
 const skyboxRef: SkyboxRenderState = {
@@ -222,8 +204,6 @@ let lastTs = 0;
 function frame(ts: number): void {
   const dt = Math.min((ts - lastTs) / 1000, 0.1);
   lastTs = ts;
-  count += dt;
-
   advanceAnimationPlayer(activePlayer, dt);
 
   if (onceAnim && !activePlayer.playing) {
@@ -266,25 +246,21 @@ function frame(ts: number): void {
   copyQuaternion(characterNode.root.rotation, characterQuat);
   invalidateNodeLocalTransform(characterNode.root);
 
-  setAwayPosition(
-    redLight.position,
-    Math.sin(count) * 1500,
-    250 + Math.sin(count * 0.54) * 200,
-    Math.cos(count * 0.7) * 1500,
-  );
-  setAwayPosition(
-    blueLight.position,
-    -Math.sin(count * 0.8) * 1500,
-    250 - Math.sin(count * 0.65) * 200,
-    -Math.cos(count * 0.9) * 1500,
-  );
+  lightRig.update(ts / 1000);
+  setTextureUvOffset(gobTexture, 0, (-ts / 2000) % 1);
 
   cameraTarget.x = characterX;
   cameraTarget.z = characterZ;
   updateCamera();
+  orientScene3DBillboardsToCamera(scene.root, camera);
 
+  shadowBounds.min.x = characterX - 400;
+  shadowBounds.min.z = characterZ - 400;
+  shadowBounds.max.x = characterX + 400;
+  shadowBounds.max.z = characterZ + 400;
   configureDirectionalShadowCamera3D(shadowCamera, whiteLight.direction, shadowBounds);
-  drawGlScene3DShadowMap(glState, scene.root, shadowCamera);
+  // Only the character casts. The source explicitly excludes the ground and animated light cards.
+  drawGlScene3DShadowMap(glState, characterPositionNode.root, shadowCamera);
 
   renderSkyboxScene(glState, canvas, skyboxRef, environment, scene.root, camera, lights, effects);
 

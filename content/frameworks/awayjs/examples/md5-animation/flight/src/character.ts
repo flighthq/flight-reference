@@ -1,17 +1,21 @@
-import type { AnimationClip, Mesh, Node3D, Scene3D } from '@flighthq/sdk';
+import type { AnimationClip, Mesh, Node3D, Scene3D, Texture2D } from '@flighthq/sdk';
 import {
   addNodeChild,
   computeMeshGeometryNormals,
+  computeMeshGeometryTangents,
+  createExtendedPbrMaterial,
   createScene3D,
   createScene3DFromMd5Mesh,
+  createSpecularPbrExtension,
+  createStandardPbrMaterial,
+  createStandardPbrMaterialProperties,
   createTexture,
+  createTilingSampler,
   getNodeChildren,
   isMesh,
   loadImageResourceFromUrl,
   parseMd5Anim,
 } from '@flighthq/sdk';
-
-import { createAwayMatteMaterial } from '../../../_shared/flight/src/materials';
 
 export const ANIM_NAMES = [
   'idle2',
@@ -36,16 +40,48 @@ export interface CharacterData {
   jointNodes: Node3D[];
   characterPositionNode: Scene3D;
   characterNode: Scene3D;
+  gobTexture: Texture2D;
 }
 
 export async function loadCharacter(): Promise<CharacterData> {
-  const bodyMaterial = createAwayMatteMaterial(0xffffffff);
-  const [bodyDiffuse, bodyNormal] = await Promise.all([
+  const [bodyDiffuse, bodyNormal, bodySpecular, gobImage] = await Promise.all([
     loadImageResourceFromUrl('awayjs/hellknight/hellknight_diffuse.jpg'),
     loadImageResourceFromUrl('awayjs/hellknight/hellknight_normals.png'),
+    loadImageResourceFromUrl('awayjs/hellknight/hellknight_specular.png'),
+    loadImageResourceFromUrl('awayjs/hellknight/gob.png'),
   ]);
-  bodyMaterial.baseColorMap = createTexture({ source: bodyDiffuse });
-  bodyMaterial.normalMap = createTexture({ source: bodyNormal, colorSpace: 'linear' });
+  const bodyMaterial = createExtendedPbrMaterial({
+    standard: createStandardPbrMaterialProperties({
+      baseColor: 0xffffffff,
+      baseColorMap: createTexture({ source: bodyDiffuse }),
+      metallic: 0,
+      normalMap: createTexture({ source: bodyNormal, colorSpace: 'linear' }),
+      normalScale: 0.8,
+      roughness: 0.42,
+    }),
+    // The source uses this RGB map as Phong specular strength. Keeping it on the PBR specular-colour
+    // extension preserves its wet highlights without interpreting its dark pixels as roughness.
+    extensions: [
+      createSpecularPbrExtension({
+        specular: 1,
+        specularColorMap: createTexture({ source: bodySpecular, colorSpace: 'linear' }),
+      }),
+    ],
+  });
+
+  const gobTexture = createTexture({ source: gobImage, sampler: createTilingSampler() });
+  const gobMaterial = createStandardPbrMaterial({
+    baseColor: 0xcbd8cfff,
+    baseColorMap: gobTexture,
+    emissive: 0x101810ff,
+    emissiveStrength: 0.2,
+    metallic: 0,
+    roughness: 0.18,
+  });
+  // Flight now draws blended materials after opaque geometry, so the source's translucent scrolling
+  // saliva can be restored without the old transparent depth-write hiding the character body.
+  gobMaterial.alphaMode = 'blend';
+  gobMaterial.doubleSided = true;
 
   const meshText = await fetch('awayjs/hellknight/hellknight.md5mesh').then((r) => r.text());
   const md5Scene = createScene3DFromMd5Mesh(meshText);
@@ -54,11 +90,14 @@ export async function loadCharacter(): Promise<CharacterData> {
   const characterPositionNode = createScene3D();
   const characterNode = createScene3D();
   const skinnedMeshes: Mesh[] = [];
+  let meshIndex = 0;
   for (const child of md5Children) {
     if (isMesh(child)) {
-      child.materials[0] = bodyMaterial;
+      child.materials[0] = meshIndex === 0 ? bodyMaterial : gobMaterial;
       computeMeshGeometryNormals(child.geometry, child.geometry);
+      computeMeshGeometryTangents(child.geometry, child.geometry);
       skinnedMeshes.push(child);
+      meshIndex++;
     }
     addNodeChild(characterNode.root, child);
   }
@@ -84,5 +123,5 @@ export async function loadCharacter(): Promise<CharacterData> {
     clips.set(ANIM_NAMES[i]!, clip);
   }
 
-  return { clips, skinnedMeshes, jointNodes, characterPositionNode, characterNode };
+  return { clips, skinnedMeshes, jointNodes, characterPositionNode, characterNode, gobTexture };
 }

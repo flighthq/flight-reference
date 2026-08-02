@@ -155,10 +155,13 @@ No user feedback yet.
 - Root cause identified: Flight's `computeSkeleton3DJointMatrices` uses `getNodeWorldMatrix4(joints[j])` which includes ancestor transforms (character rotation/position). The renderer then applies the mesh's world transform on top — doubling the character transform.
 - Fix (`11f7a53`): temporarily reset `characterNode` and `characterPositionNode` to identity before `updateMeshSkin`, then restore the real transforms for rendering. Skinning now sees model-space joint world matrices; the renderer applies the character transform once.
 - All animation clips zero joint-0 translation to match AwayJS root-motion extraction.
+- Restored the moving red and blue light cards and retuned their physically attenuated point lights so their colour sweeps read clearly across the character.
+- Restored the authored body specular map through the PBR specular extension, generated tangents for normal mapping, and added a restrained ambient/exposure lift.
+- Restored the three alpha-blended gob/drool meshes with the source's scrolling V texture now that Flight renders transparent geometry in a separate sorted pass.
+- The directional shadow volume now follows character root motion and excludes the ground and light cards, matching the source caster setup.
 
 **Known remaining gaps:**
 
-- AwayJS assigns alpha-blended `gob.png` with scrolling V UV to meshes 1–3 (drool/gob sections). Flight currently uses the opaque body material for all 4 meshes. An earlier attempt to add gob material caused alpha-blend depth-write occlusion; deferred until base skinning is confirmed working.
 - AwayJS extracts and applies root-joint translation as owner root motion for every clip. Flight zeroes it for all clips but only drives container movement during `walk7`. Attack/pain clips lose their owner lunge.
 
 ---

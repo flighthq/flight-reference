@@ -2,17 +2,18 @@ import type { CubeTexture, Environment, Mesh, ScreenSpaceFogEffect } from '@flig
 import {
   createCubeTexture,
   createEnvironment,
+  createExtendedPbrMaterial,
   createMesh,
   createPlaneMeshGeometry,
   createScreenSpaceFogEffect,
+  createSpecularPbrExtension,
+  createStandardPbrMaterialProperties,
   createTexture,
   createTilingSampler,
   loadImageResourceFromUrl,
   setCubeTextureFace,
   setTextureUvScale,
 } from '@flighthq/sdk';
-
-import { createAwayMatteMaterial } from '../../../_shared/flight/src/materials';
 
 export interface EnvironmentData {
   environment: Environment;
@@ -29,34 +30,45 @@ export async function loadEnvironment(): Promise<EnvironmentData> {
   for (let i = 0; i < skyImages.length; i++) setCubeTextureFace(skyTexture, i, skyImages[i]);
   const environment = createEnvironment({ environment: skyTexture, intensity: 1 });
 
-  const groundMaterial = createAwayMatteMaterial(0xffffffff, 10);
-  groundMaterial.doubleSided = false;
-
-  const [rockDiffuse, rockNormal] = await Promise.all([
+  const [rockDiffuse, rockNormal, rockSpecular] = await Promise.all([
     loadImageResourceFromUrl('awayjs/rockbase_diffuse.jpg'),
     loadImageResourceFromUrl('awayjs/rockbase_normals.png'),
+    loadImageResourceFromUrl('awayjs/rockbase_specular.png'),
   ]);
 
+  const groundSampler = createTilingSampler();
   const groundDiffuseTexture = createTexture({ source: rockDiffuse });
   const groundNormalTexture = createTexture({ source: rockNormal, colorSpace: 'linear' });
-  const groundSampler = createTilingSampler();
+  const groundSpecularTexture = createTexture({ source: rockSpecular, colorSpace: 'linear' });
   groundDiffuseTexture.sampler = groundSampler;
   groundNormalTexture.sampler = groundSampler;
+  groundSpecularTexture.sampler = groundSampler;
   setTextureUvScale(groundDiffuseTexture, 200, 200);
   setTextureUvScale(groundNormalTexture, 200, 200);
-  groundMaterial.baseColorMap = groundDiffuseTexture;
-  groundMaterial.normalMap = groundNormalTexture;
-  groundMaterial.normalScale = 0.75;
+  setTextureUvScale(groundSpecularTexture, 200, 200);
+
+  const groundMaterial = createExtendedPbrMaterial({
+    standard: createStandardPbrMaterialProperties({
+      baseColor: 0xffffffff,
+      baseColorMap: groundDiffuseTexture,
+      metallic: 0,
+      normalMap: groundNormalTexture,
+      normalScale: 0.75,
+      roughness: 0.68,
+    }),
+    extensions: [createSpecularPbrExtension({ specularColorMap: groundSpecularTexture })],
+  });
+  groundMaterial.doubleSided = false;
 
   const groundMesh = createMesh(createPlaneMeshGeometry(50000, 50000, 1, 1), [groundMaterial]);
 
   // WebGL stores perspective depth nonlinearly. These window-depth values correspond to the AwayJS
   // fog interval of 2,500–5,000 world units for this camera's near/far planes.
   const fogEffect = createScreenSpaceFogEffect({
-    color: 0x000000ff,
+    color: 0x060912ff,
     near: 0.995984,
     far: 1,
-    density: 8,
+    density: 5,
   });
 
   return { environment, groundMesh, fogEffect };

@@ -1,13 +1,20 @@
-﻿import type { DisplayObject } from '@flighthq/sdk';
+import type { DisplayObject } from '@flighthq/sdk';
 import {
-  SpriteKind,
+  createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
   createDomRenderState,
-  defaultDomSpriteRenderer,
+  defaultCanvasShapeCommands,
+  defaultCanvasTextureShapeCommands,
+  defaultDomShapeRenderer,
   prepareScene2DRender,
-  registerDomImageTextureResolver,
+  registerCanvasBitmapTextureResolver,
+  registerCanvasImageTextureResolver,
+  registerCanvasShapeCommands,
+  registerDomShapeRasterizer,
   registerRenderer,
   renderDomBackground,
   renderDomScene2D,
+  ShapeKind,
 } from '@flighthq/sdk';
 
 const container = document.createElement('div');
@@ -22,8 +29,13 @@ export const state = createDomRenderState(container, {
   backgroundColor: 0xffffffff,
   imageSmoothingEnabled: false,
 });
-registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
-registerDomImageTextureResolver(state);
+const resolvers = createCanvasTextureResolvers();
+registerCanvasImageTextureResolver(resolvers);
+registerCanvasBitmapTextureResolver(resolvers);
+registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands(defaultCanvasTextureShapeCommands);
+registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
+registerDomShapeRasterizer(state, createCanvasShapeRasterizer(resolvers, false));
 export const scale = 1;
 
 export function render(root: DisplayObject): void {

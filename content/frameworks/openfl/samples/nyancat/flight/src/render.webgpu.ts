@@ -1,17 +1,24 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  SpriteKind,
+  createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
+  createMatrix,
   createWgpuCanvasElement,
   createWgpuRenderState,
-  defaultWgpuSpriteRenderer,
+  defaultCanvasShapeCommands,
+  defaultCanvasTextureShapeCommands,
+  defaultWgpuShapeRenderer,
   prepareScene2DRender,
-  registerWgpuStandardMaterial,
-  registerWgpuImageTextureResolver,
+  registerCanvasBitmapTextureResolver,
+  registerCanvasImageTextureResolver,
+  registerCanvasShapeCommands,
   registerRenderer,
+  registerWgpuShapeRasterizer,
+  registerWgpuStandardMaterial,
   renderWgpuBackground,
   renderWgpuScene2D,
+  ShapeKind,
   submitWgpuRenderPass,
-  createMatrix,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -25,9 +32,14 @@ export const state = await createWgpuRenderState(canvas, {
   backgroundColor: 0xffffffff,
   imageSmoothingEnabled: false,
 });
-registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
+const resolvers = createCanvasTextureResolvers();
+registerCanvasImageTextureResolver(resolvers);
+registerCanvasBitmapTextureResolver(resolvers);
+registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands(defaultCanvasTextureShapeCommands);
+registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(resolvers, false));
 registerWgpuStandardMaterial(state);
-registerWgpuImageTextureResolver(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 

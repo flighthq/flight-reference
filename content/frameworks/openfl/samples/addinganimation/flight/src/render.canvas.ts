@@ -5,6 +5,7 @@ import {
   createCanvasRenderState,
   defaultCanvasSpriteRenderer,
   prepareScene2DRender,
+  getCanvasRenderStateTextureResolvers,
   registerCanvasImageTextureResolver,
   registerRenderer,
   renderCanvasBackground,
@@ -23,7 +24,7 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
-registerCanvasImageTextureResolver(state);
+registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 

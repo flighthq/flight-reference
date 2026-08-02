@@ -2,11 +2,9 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   createGlCanvasElement,
   createGlRenderState,
-  defaultGlShapeCommands,
   defaultGlShapeRenderer,
   prepareScene2DRender,
   registerGlStandardMaterial,
-  registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -26,7 +24,6 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-registerGlShapeCommands(defaultGlShapeCommands);
 registerGlStandardMaterial(state);
 
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);

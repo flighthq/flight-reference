@@ -1,16 +1,23 @@
-﻿import type { DisplayObject } from '@flighthq/sdk';
+import type { DisplayObject } from '@flighthq/sdk';
 import {
-  SpriteKind,
+  createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
   createGlCanvasElement,
   createGlRenderState,
-  defaultGlSpriteRenderer,
+  createMatrix,
+  defaultCanvasShapeCommands,
+  defaultCanvasTextureShapeCommands,
+  defaultGlShapeRenderer,
   prepareScene2DRender,
+  registerCanvasBitmapTextureResolver,
+  registerCanvasImageTextureResolver,
+  registerCanvasShapeCommands,
+  registerGlShapeRasterizer,
   registerGlStandardMaterial,
-  registerStandardGlTextureResolvers,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
-  createMatrix,
+  ShapeKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -24,9 +31,14 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0xffffffff,
   imageSmoothingEnabled: false,
 });
-registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
+const resolvers = createCanvasTextureResolvers();
+registerCanvasImageTextureResolver(resolvers);
+registerCanvasBitmapTextureResolver(resolvers);
+registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands(defaultCanvasTextureShapeCommands);
+registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerGlShapeRasterizer(state, createCanvasShapeRasterizer(resolvers, false));
 registerGlStandardMaterial(state);
-registerStandardGlTextureResolvers(state);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 

@@ -8,6 +8,7 @@ import {
   defaultCanvasShapeRenderer,
   defaultCanvasTextLabelRenderer,
   prepareScene2DRender,
+  getCanvasRenderStateTextureResolvers,
   registerCanvasShapeCommands,
   registerCanvasImageTextureResolver,
   registerRenderer,
@@ -34,7 +35,7 @@ export const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerCanvasImageTextureResolver(state);
+registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
 registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);

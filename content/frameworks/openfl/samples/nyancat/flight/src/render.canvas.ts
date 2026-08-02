@@ -1,15 +1,20 @@
-﻿import type { DisplayObject } from '@flighthq/sdk';
+import type { DisplayObject } from '@flighthq/sdk';
 import {
-  SpriteKind,
   createCanvasElement,
   createCanvasRenderState,
-  defaultCanvasSpriteRenderer,
+  createMatrix,
+  defaultCanvasShapeCommands,
+  defaultCanvasShapeRenderer,
+  defaultCanvasTextureShapeCommands,
+  getCanvasRenderStateTextureResolvers,
   prepareScene2DRender,
+  registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
+  registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
-  createMatrix,
+  ShapeKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -23,8 +28,12 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xffffffff,
   imageSmoothingEnabled: false,
 });
-registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
-registerCanvasImageTextureResolver(state);
+const resolvers = getCanvasRenderStateTextureResolvers(state);
+registerCanvasImageTextureResolver(resolvers);
+registerCanvasBitmapTextureResolver(resolvers);
+registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands(defaultCanvasTextureShapeCommands);
+registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 export const scale = 1;
 

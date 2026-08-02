@@ -6,6 +6,7 @@ import {
   defaultCanvasShapeRenderer,
   defaultCanvasSpriteRenderer,
   prepareScene2DRender,
+  getCanvasRenderStateTextureResolvers,
   registerCanvasShapeCommands,
   registerCanvasImageTextureResolver,
   registerRenderer,
@@ -34,7 +35,7 @@ export const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerCanvasImageTextureResolver(state);
+registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
 registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle]);

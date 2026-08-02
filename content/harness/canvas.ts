@@ -15,6 +15,7 @@ import {
   enableCanvasBlendMode,
   enableCanvasClip,
   enableCanvasRenderCache,
+  getCanvasRenderStateTextureResolvers,
   ParticleEmitter2DKind,
   prepareScene2DRender,
   QuadBatchKind,
@@ -56,9 +57,10 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
 
   // Sprites and other textured nodes resolve their texture through the backing-kind registry;
   // without a resolver the lookup returns null and the node renders nothing.
-  registerCanvasBitmapTextureResolver(state);
-  registerCanvasImageTextureResolver(state);
-  registerCanvasRenderTextureResolver(state);
+  const textureResolvers = getCanvasRenderStateTextureResolvers(state);
+  registerCanvasBitmapTextureResolver(textureResolvers);
+  registerCanvasImageTextureResolver(textureResolvers);
+  registerCanvasRenderTextureResolver(textureResolvers, state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);

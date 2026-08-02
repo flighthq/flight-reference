@@ -23,10 +23,11 @@ function requireValue<T>(value: T | null, message: string): T {
   return value;
 }
 
-const layout = requireValue(
+const layoutDocument = requireValue(
   createScene2DSymbolFromSwf(new Uint8Array(await response.arrayBuffer()), 'Layout'),
   'Unable to decode the Layout symbol',
 );
+const layout = layoutDocument.root;
 const background = requireValue(findNodeByName(layout, 'Background'), 'Layout symbol is missing Background');
 const column = requireValue(findNodeByName(layout, 'Column'), 'Layout symbol is missing Column');
 const header = requireValue(findNodeByName(layout, 'Header'), 'Layout symbol is missing Header');
